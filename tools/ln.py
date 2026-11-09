@@ -373,6 +373,48 @@ def cmd_proto(args) -> int:
     return 1 if bad else 0
 
 
+GENERATED_DIR = PROJECT / "Assets" / "_Project" / "Generated"
+
+
+def cmd_gen(args) -> int:
+    """proto/ + content/ -> C# under Assets/_Project/Generated (see tools/protogen.py)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import protogen
+    protoc, include = ensure_protoc()
+    try:
+        files = protogen.run(str(protoc), include, PROTO_DIR, CONTENT_DIR, CONTENT_HEADER)
+    except subprocess.CalledProcessError as e:
+        print((e.stderr or b"").decode(errors="replace").strip())
+        return fail("protoc failed; run `ln.py proto` for details")
+    except ValueError as e:
+        return fail(str(e))
+
+    wanted = {GENERATED_DIR / rel: text for rel, text in files.items()}
+    existing = {p for p in GENERATED_DIR.rglob("*") if p.is_file() and not p.name.endswith(".meta")} \
+        if GENERATED_DIR.exists() else set()
+    changed = [p for p, t in wanted.items() if not p.is_file() or p.read_text(encoding="utf-8") != t]
+    stale = sorted(existing - set(wanted))
+
+    if args.check:
+        for p in changed + stale:
+            print(f"  out of date: {p.relative_to(ROOT)}")
+        if changed or stale:
+            return fail("generated code is stale; run `python3 tools/ln.py gen` and commit")
+        print(f"  up to date ({len(wanted)} files)")
+        return 0
+
+    for p in changed:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(wanted[p], encoding="utf-8", newline="\n")
+        print(f"  wrote   {p.relative_to(ROOT)}")
+    for p in stale:
+        p.unlink()
+        Path(str(p) + ".meta").unlink(missing_ok=True)
+        print(f"  removed {p.relative_to(ROOT)}")
+    print(f"  {len(changed)} written, {len(stale)} removed, {len(wanted) - len(changed)} unchanged")
+    return 0
+
+
 ENV_FILE = ROOT / ".env"
 SECRET_KEYS = ("UNITY_EMAIL", "UNITY_PASSWORD", "UNITY_LICENSE", "BUTLER_API_KEY")
 VARIABLE_KEYS = ("ITCH_TARGET",)
@@ -468,6 +510,10 @@ def main(argv=None) -> int:
 
     s = sub.add_parser("proto", help="validate proto schemas and content/*.txtpb (pinned protoc)")
     s.set_defaults(func=cmd_proto)
+
+    s = sub.add_parser("gen", help="generate C# from proto/ + content/ into Assets/_Project/Generated")
+    s.add_argument("--check", action="store_true", help="only verify the committed output is up to date")
+    s.set_defaults(func=cmd_gen)
 
     s = sub.add_parser("version", help="print the game version from CHANGELOG.md")
     s.add_argument("--notes", action="store_true", help="print that entry's release notes instead")

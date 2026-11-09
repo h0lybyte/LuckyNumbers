@@ -15,4 +15,6 @@ extend google.protobuf.MessageOptions {
   bool state = 50002;
   // Authored data, loaded from a content/*.txtpb file.
   bool config = 50003;
+  // Small immutable value type (C# readonly struct), e.g. vectors.
+  bool value = 50004;
 }
