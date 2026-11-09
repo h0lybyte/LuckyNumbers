@@ -66,8 +66,49 @@ namespace LuckyNumbers.Editor
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var ui = Document("UI", rig.Panel, "Intro");
             SpaceRig(rig, ui);   // same universe as the title (IntroScope registers the intro backdrop)
+            ShipRig();
+            var view = new GameObject("IntroView").AddComponent<IntroView>();
+            Assign(view, ("document", ui));
+            var dice = new GameObject("DiceView").AddComponent<DiceView>();
+            Assign(dice, ("document", ui));
             Scopes<IntroScope>();
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Intro.unity");
+        }
+
+        const string FighterDir = "Assets/_Project/Art/Models/Fighter";
+
+        /// <summary>The fighter: pivot (+Z forward) around the model (nose is +X in the file), all skins listed.</summary>
+        static void ShipRig()
+        {
+            var model = AssetDatabase.LoadAssetAtPath<GameObject>($"{FighterDir}/fighter1.fbx")
+                        ?? throw new System.Exception("fighter1.fbx missing");
+            var material = MaterialAsset("Ship", "LuckyNumbers/Ship");
+            var view = new GameObject("Ship").AddComponent<ShipView>();
+            var pivot = new GameObject("Pivot").transform;
+            pivot.SetParent(view.transform, false);
+            var ship = (GameObject)PrefabUtility.InstantiatePrefab(model);
+            ship.transform.SetParent(pivot, false);
+            ship.transform.localRotation = Quaternion.Euler(0f, -90f, 0f);
+            var renderers = ship.GetComponentsInChildren<Renderer>();
+            foreach (var r in renderers)
+            {
+                r.sharedMaterial = material;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            var skins = new System.Collections.Generic.List<Texture2D>();
+            foreach (var guid in AssetDatabase.FindAssets("t:Texture2D", new[] { $"{FighterDir}/Skins" }))
+                skins.Add(AssetDatabase.LoadAssetAtPath<Texture2D>(AssetDatabase.GUIDToAssetPath(guid)));
+            skins.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+            var so = new SerializedObject(view);
+            so.FindProperty("pivot").objectReferenceValue = pivot;
+            var rs = so.FindProperty("renderers");
+            rs.arraySize = renderers.Length;
+            for (var i = 0; i < renderers.Length; i++) rs.GetArrayElementAtIndex(i).objectReferenceValue = renderers[i];
+            var sk = so.FindProperty("skins");
+            sk.arraySize = skins.Count;
+            for (var i = 0; i < skins.Count; i++) sk.GetArrayElementAtIndex(i).objectReferenceValue = skins[i];
+            so.ApplyModifiedPropertiesWithoutUndo();
+            pivot.gameObject.SetActive(false);
         }
 
         sealed class Rig

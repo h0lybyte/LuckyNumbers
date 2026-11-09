@@ -28,24 +28,30 @@ namespace LuckyNumbers.Model
                 {
                     ShipPulledIn = new ShipPulledIn
                     {
-                        DurationSeconds = 4.0f,
+                        DurationSeconds = 7.0f,
+                        StartDistance = 4.0f,
+                        Turns = 0.9f,
+                        BankDegrees = 55.0f,
+                        CameraRelease = 0.12f,
                     },
                 },
                 new CutsceneStep
                 {
                     CrashLanding = new CrashLanding
                     {
-                        DurationSeconds = 2.0f,
+                        DurationSeconds = 2.5f,
                         CameraShake = 1.0f,
+                        FlashSeconds = 0.15f,
                     },
                 },
                 new CutsceneStep
                 {
                     Dialogue = new Dialogue
                     {
-                        Speaker = "Player",
+                        Speaker = "You",
                         Text = "Uhh... how did I live through that?!",
-                        DurationSeconds = 3.0f,
+                        DurationSeconds = 3.5f,
+                        CharsPerSecond = 28.0f,
                     },
                 },
                 new CutsceneStep
@@ -453,6 +459,7 @@ namespace LuckyNumbers.Model
                 },
                 Instant = true,
             },
+            ShipSize = 0.05f,
         };
 
         /// <summary>From <c>content/player.txtpb</c>.</summary>

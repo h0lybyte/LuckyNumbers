@@ -16,6 +16,10 @@ message Cutscene {
   // The universe it plays in. Generated from the player's lucky number, so it is the title's world.
   SpaceBackdrop backdrop = 3;
   string backdrop_ref = 4 [(ln.ref) = "backdrop"];
+  // Ship skin file name in Art/Models/Fighter/Skins (e.g. "idolknight"); empty = the lucky number picks one.
+  string ship_skin = 5;
+  // Ship length, in target-planet diameters.
+  float ship_size = 6;
 }
 
 message CutsceneStep {
@@ -34,21 +38,33 @@ message DiceRoll {
   float duration_seconds = 2;
 }
 
-// The ship is dragged toward the planet.
+// The ship is dragged toward the planet: a spiral that tightens and speeds up (gravity), banking into it.
 message ShipPulledIn {
   float duration_seconds = 1;
+  // Start distance from the planet's centre, in planet diameters.
+  float start_distance = 2;
+  // Laps around the planet before impact.
+  float turns = 3;
+  // Bank angle reached at the end of the spiral.
+  float bank_degrees = 4;
+  // Share of the step (0..1, from the end) where the camera stops chasing and watches the ship fall in.
+  float camera_release = 5;
 }
 
 message CrashLanding {
   float duration_seconds = 1;
   // 0..1 camera shake strength.
   float camera_shake = 2;
+  // White flash on impact, then fade to black over the rest of the step.
+  float flash_seconds = 3;
 }
 
 message Dialogue {
   string speaker = 1;
   string text = 2;
   float duration_seconds = 3;
+  // Typewriter speed; 0 = show the whole line at once.
+  float chars_per_second = 4;
 }
 
 message GoTo {

@@ -48,6 +48,13 @@ namespace LuckyNumbers.Title
                 _sides.Add(die.Sides);
                 _faces.Add(Mathf.Clamp(die.InitialFace, 1, die.Sides));
             }
+            if (_state.Seed.Value != 0 && _state.Faces.Count == _faces.Count)
+            {
+                // Back on the title (e.g. after the intro): keep the current universe, just show its dice.
+                for (var i = 0; i < _faces.Count; i++) { _faces[i] = _state.Faces[i]; _view.ShowFace(i, _faces[i], 0f); }
+                _view.SetLuckyNumber(_config.SeedFormat.Replace("{0}", _state.Seed.Value.ToString()));
+                return;
+            }
             Land(previous: 0u); // the starting universe: from the initial faces (6 6 6)
         }
 

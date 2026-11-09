@@ -20,6 +20,14 @@ namespace LuckyNumbers.Model
         /// The universe it plays in. Generated from the player's lucky number, so it is the title's world.
         /// </summary>
         public SpaceBackdrop Backdrop { get; set; }
+        /// <summary>
+        /// Ship skin file name in Art/Models/Fighter/Skins (e.g. "idolknight"); empty = the lucky number picks one.
+        /// </summary>
+        public string ShipSkin { get; set; }
+        /// <summary>
+        /// Ship length, in target-planet diameters.
+        /// </summary>
+        public float ShipSize { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public Cutscene Clone() => (Cutscene)MemberwiseClone();
@@ -69,11 +77,27 @@ namespace LuckyNumbers.Model
     }
 
     /// <summary>
-    /// The ship is dragged toward the planet.
+    /// The ship is dragged toward the planet: a spiral that tightens and speeds up (gravity), banking into it.
     /// </summary>
     public sealed class ShipPulledIn
     {
         public float DurationSeconds { get; set; }
+        /// <summary>
+        /// Start distance from the planet's centre, in planet diameters.
+        /// </summary>
+        public float StartDistance { get; set; }
+        /// <summary>
+        /// Laps around the planet before impact.
+        /// </summary>
+        public float Turns { get; set; }
+        /// <summary>
+        /// Bank angle reached at the end of the spiral.
+        /// </summary>
+        public float BankDegrees { get; set; }
+        /// <summary>
+        /// Share of the step (0..1, from the end) where the camera stops chasing and watches the ship fall in.
+        /// </summary>
+        public float CameraRelease { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public ShipPulledIn Clone() => (ShipPulledIn)MemberwiseClone();
@@ -86,6 +110,10 @@ namespace LuckyNumbers.Model
         /// 0..1 camera shake strength.
         /// </summary>
         public float CameraShake { get; set; }
+        /// <summary>
+        /// White flash on impact, then fade to black over the rest of the step.
+        /// </summary>
+        public float FlashSeconds { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public CrashLanding Clone() => (CrashLanding)MemberwiseClone();
@@ -96,6 +124,10 @@ namespace LuckyNumbers.Model
         public string Speaker { get; set; }
         public string Text { get; set; }
         public float DurationSeconds { get; set; }
+        /// <summary>
+        /// Typewriter speed; 0 = show the whole line at once.
+        /// </summary>
+        public float CharsPerSecond { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public Dialogue Clone() => (Dialogue)MemberwiseClone();

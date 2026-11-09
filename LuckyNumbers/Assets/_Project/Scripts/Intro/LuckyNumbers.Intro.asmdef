@@ -10,7 +10,9 @@
         "VContainer",
         "MessagePipe",
         "R3.Unity",
-        "UniTask"
+        "UniTask",
+        "LuckyNumbers.Title",
+        "Unity.Mathematics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

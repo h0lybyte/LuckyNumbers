@@ -9,6 +9,7 @@ Shader "LuckyNumbers/Ship"
         _Ambient ("Ambient", Range(0, 1)) = 0.18
         _Glow ("Light Glow", Float) = 1.5
         _Rim ("Rim", Float) = 0.35
+        _Heat ("Entry Heat (0..1, set at runtime)", Range(0, 1)) = 0
     }
 
     SubShader
@@ -27,7 +28,7 @@ Shader "LuckyNumbers/Ship"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
-                float _Ambient, _Glow, _Rim;
+                float _Ambient, _Glow, _Rim, _Heat;
             CBUFFER_END
 
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; float2 uv : TEXCOORD0; };
@@ -57,6 +58,9 @@ Shader "LuckyNumbers/Ship"
                 float maxc = max(albedo.r, max(albedo.g, albedo.b)), minc = min(albedo.r, min(albedo.g, albedo.b));
                 float glow = smoothstep(0.35, 0.8, maxc - minc) * smoothstep(0.5, 0.9, maxc);   // lights & engines
                 float3 color = albedo * (sun * diffuse + _Ambient) + albedo * glow * _Glow + sun * rim * 0.5;
+                // Atmospheric entry: hot orange-white fresnel that swallows the hull as heat rises.
+                float hot = pow(1.0 - saturate(dot(n, v)), 1.5);
+                color = lerp(color, float3(1.0, 0.45, 0.12) * 3.0, saturate(_Heat * (0.35 + 0.9 * hot)));
                 return float4(color, 1);
             }
             ENDHLSL

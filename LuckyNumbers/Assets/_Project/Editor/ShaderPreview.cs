@@ -78,6 +78,29 @@ namespace LuckyNumbers.Editor
                 ship.transform.SetPositionAndRotation(new Vector3(-2.2f + 2.2f * k, 0, 0), Quaternion.Euler(20 + 15 * k, 40 + 110 * k, 0));
             }
             Debug.Log($"[ShaderPreview] fighter bounds {bounds.size}");
+            if (System.Environment.GetEnvironmentVariable("LN_SHIP_AXES") == "1")
+            {
+                // Orientation check: one ship at identity seen from above; red = +X, blue = +Z markers.
+                foreach (var go in Object.FindObjectsByType<MeshRenderer>()) Object.DestroyImmediate(go.gameObject);
+                var ship = (GameObject)Object.Instantiate(model);
+                foreach (var r in ship.GetComponentsInChildren<Renderer>()) r.sharedMaterial = mat;
+                ship.transform.localScale *= 4f;
+                ship.transform.position = Vector3.zero;
+                foreach (var (dir, c) in new[] { (Vector3.right, Color.red), (Vector3.forward, Color.blue) })
+                {
+                    var m = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                    m.transform.position = dir * 1.4f;
+                    m.transform.localScale = Vector3.one * 0.2f;
+                    m.GetComponent<MeshRenderer>().sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Unlit")) { color = c };
+                }
+                var top = new GameObject("TopCamera").AddComponent<Camera>();
+                top.fieldOfView = 45f;
+                top.clearFlags = CameraClearFlags.SolidColor;
+                top.backgroundColor = new Color(0.1f, 0.1f, 0.12f);
+                top.transform.SetPositionAndRotation(new Vector3(0, 4.5f, 0), Quaternion.Euler(90, 0, 0));
+                Save(top, "preview-ship-axes.png");
+                return;
+            }
             var cam = new GameObject("PreviewCamera").AddComponent<Camera>();
             cam.fieldOfView = 45f;
             cam.clearFlags = CameraClearFlags.Skybox;

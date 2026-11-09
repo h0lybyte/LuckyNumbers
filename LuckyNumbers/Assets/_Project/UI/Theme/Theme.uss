@@ -162,6 +162,71 @@
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 }
 
+/* Intro cutscene */
+.ln-intro-dice {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 38%;
+    align-items: center;
+    transition-property: opacity;
+    transition-duration: 0.6s;
+}
+
+.ln-intro-dice .ln-die {
+    width: 84px;
+    height: 84px;
+    margin: 0 9px;
+    padding: 9px;
+    border-radius: 16px;
+}
+
+.ln-intro-dice .ln-pip {
+    width: 15px;
+    height: 15px;
+    border-radius: 7.5px;
+}
+
+.ln-intro-dice .ln-lucky {
+    margin-top: 14px;
+    font-size: 22px;
+}
+
+.ln-dialogue {
+    position: absolute;
+    left: 15%;
+    right: 15%;
+    bottom: 9%;
+    padding: 16px 22px;
+    background-color: rgba(8, 8, 20, 0.7);
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgba(140, 150, 255, 0.35);
+}
+
+.ln-dialogue-speaker {
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: rgb(150, 170, 255);
+    margin-bottom: 4px;
+}
+
+.ln-dialogue-line {
+    font-size: 26px;
+    color: white;
+    white-space: normal;
+}
+
+.ln-flash {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0;
+    background-color: white;
+}
+
 .ln-hidden {
     display: none;
 }

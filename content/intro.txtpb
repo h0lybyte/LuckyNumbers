@@ -8,14 +8,18 @@ id: "intro"
 backdrop_ref: "space/systems/home"
 backdrop { instant: true }
 
+# Empty skin: the lucky number picks one of the 22 community skins.
+ship_skin: ""
+ship_size: 0.05
+
 # Dice tumble in space and land on the player's roll (no faces = keep their universe).
 steps { dice_roll { duration_seconds: 3 } }
 
 # The ship gets dragged into the planet.
-steps { ship_pulled_in { duration_seconds: 4 } }
+steps { ship_pulled_in { duration_seconds: 7 start_distance: 4 turns: 0.9 bank_degrees: 55 camera_release: 0.12 } }
 
-steps { crash_landing { duration_seconds: 2 camera_shake: 1 } }
+steps { crash_landing { duration_seconds: 2.5 camera_shake: 1 flash_seconds: 0.15 } }
 
-steps { dialogue { speaker: "Player" text: "Uhh... how did I live through that?!" duration_seconds: 3 } }
+steps { dialogue { speaker: "You" text: "Uhh... how did I live through that?!" duration_seconds: 3.5 chars_per_second: 28 } }
 
 steps { go_to { scene: GAME_SCENE_PLANET } }

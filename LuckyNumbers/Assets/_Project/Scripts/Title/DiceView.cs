@@ -37,8 +37,11 @@ namespace LuckyNumbers.Title
 
         public void Build(IReadOnlyList<Die> dice, string rollLabel, Action onRoll)
         {
-            _roll.text = rollLabel;
-            _roll.clicked += onRoll;
+            if (onRoll != null)   // the intro shows the dice without a Roll button
+            {
+                _roll.text = rollLabel;
+                _roll.clicked += onRoll;
+            }
             foreach (var die in dice)
             {
                 var body = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -95,6 +98,7 @@ namespace LuckyNumbers.Title
         }
 
         public void SetLuckyNumber(string text) => _lucky.text = text;
+        public int Count => _dieElements.Count;
         public void SetRolling(bool rolling) => _roll.SetEnabled(!rolling);
     }
 }

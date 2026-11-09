@@ -16,7 +16,7 @@ namespace LuckyNumbers.Space
     /// target body (drag rotates, scroll zooms). New seeds play a big bang: collapse, then expand.
     /// </summary>
     [Presenter]
-    public sealed class SpacePresenter : IStartable, ITickable, IDisposable
+    public sealed class SpacePresenter : IStartable, ITickable, IDisposable, ISpaceDirector
     {
         static readonly int SunPosition = Shader.PropertyToID("_LnSunPosition");
         static readonly int SunColor = Shader.PropertyToID("_LnSunColor");
@@ -42,6 +42,34 @@ namespace LuckyNumbers.Space
         Phase _phase;
         float _phaseTime;
         UniverseSeedChanged? _pendingRoll;
+        uint _seed;
+        bool _directed;
+
+        public uint Seed => _seed;
+        public Camera Camera => _view.Camera;
+        public void TakeCamera() => _directed = true;
+        public void Release() => _directed = false;
+
+        public string Nearest(float3 point, out float surfaceDistance)
+        {
+            string best = null;
+            surfaceDistance = float.MaxValue;
+            for (var i = 0; i < (_world?.Count ?? 0); i++)
+            {
+                if (_world.Kind[i] == BodyKind.Galaxy) continue;
+                var d = math.distance(point, _world.Position[i]) - _world.Scale[i] * 0.5f;
+                if (d < surfaceDistance) { surfaceDistance = d; best = _world.Ids[i]; }
+            }
+            return best;
+        }
+
+        public bool TryGetBody(string id, out float3 position, out float diameter)
+        {
+            var i = _world?.IndexOf(id) ?? -1;
+            position = i >= 0 ? _world.Position[i] : float3.zero;
+            diameter = i >= 0 ? _world.Scale[i] : 0f;
+            return i >= 0;
+        }
         float _diskRadius, _systemRadius, _overviewRadius;
 
         [Inject]
@@ -87,6 +115,7 @@ namespace LuckyNumbers.Space
         void Expand()
         {
             var roll = _pendingRoll ?? new UniverseSeedChanged(1u, -1f, -1f, -1f);
+            _seed = roll.Seed;
             var bodies = UniverseGenerator.Generate(_backdrop.Generator, roll);
             Build(bodies);
             var sky = UniverseGenerator.Sky(_backdrop.Generator, roll);
@@ -146,7 +175,7 @@ namespace LuckyNumbers.Space
                 var s = _world.Position[_sun];
                 Shader.SetGlobalVector(SunPosition, new Vector4(s.x, s.y, s.z, 1f)); // w = 1: point light set
             }
-            OrbitCamera(dt);
+            if (!_directed) OrbitCamera(dt);
             // Galaxies are sky objects: Position is an offset from the camera, so they never come closer.
             var eye = (float3)_view.Camera.transform.position;
             for (var i = 0; i < _world.Count; i++)

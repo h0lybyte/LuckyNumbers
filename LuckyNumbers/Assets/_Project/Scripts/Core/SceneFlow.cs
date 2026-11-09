@@ -72,6 +72,11 @@ namespace LuckyNumbers.Core
 
         void Activate(GameScene target)
         {
+            if (!Application.CanStreamedLevelBeLoaded(target.ToString()))
+            {
+                Debug.LogWarning($"[SceneFlow] {target} scene not built yet; back to Title");
+                target = GameScene.Title;
+            }
             var op = _pending != null && _pendingScene == target ? _pending : SceneManager.LoadSceneAsync(target.ToString());
             _pending = null;
             op.allowSceneActivation = true;
