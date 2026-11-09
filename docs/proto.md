@@ -27,7 +27,7 @@ Assemblies: `LuckyNumbers.Model` (types + content, no engine refs) and `LuckyNum
 ## Content layout
 
 ```
-content/title.txtpb, intro.txtpb, player.txtpb   game configs (top level, must be (ln.config)) -> GameContent.*
+content/title.txtpb, intro.txtpb, planet.txtpb, player.txtpb   game configs (top level, must be (ln.config)) -> GameContent.*
 content/space/systems/home.txtpb                 library: a whole solar system (camera, bodies, orbits)
 content/space/looks/planet_base.txtpb            library: defaults every planet look extends
 content/space/looks/planets/*.txtpb              library: planet presets

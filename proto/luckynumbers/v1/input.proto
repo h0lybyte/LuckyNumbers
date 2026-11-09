@@ -31,6 +31,8 @@ message PlayerInput {
   bool pointer_pressed = 5;
   // Mouse wheel / trackpad scroll this frame (positive = up/away).
   float pointer_scroll = 6;
+  // Sprint held.
+  bool sprinting = 7;
 }
 
 message InputActionPerformed {

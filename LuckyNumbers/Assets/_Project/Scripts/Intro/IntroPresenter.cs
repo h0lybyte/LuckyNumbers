@@ -33,6 +33,7 @@ namespace LuckyNumbers.Intro
         readonly IPublisher<CutsceneStepStarted> _stepStarted;
         readonly IPublisher<CutsceneFinished> _finished;
         readonly CameraHandoff _handoff;
+        readonly LandingSite _landing;
         readonly CancellationTokenSource _cts = new();
 
         Cutscene _cut;
@@ -49,8 +50,9 @@ namespace LuckyNumbers.Intro
         [Inject]
         public IntroPresenter(ISpaceDirector space, IntroView view, ShipView ship, DiceView dice, DiceState diceState,
                               IPublisher<SceneChangeRequested> scenes, IPublisher<CutsceneStepStarted> stepStarted,
-                              IPublisher<CutsceneFinished> finished, CameraHandoff handoff)
+                              IPublisher<CutsceneFinished> finished, CameraHandoff handoff, LandingSite landing)
         {
+            _landing = landing;
             _handoff = handoff;
             _space = space;
             _view = view;
@@ -219,6 +221,10 @@ namespace LuckyNumbers.Intro
         /// <summary>Impact: white flash, big shake that dies down, fade to black.</summary>
         async UniTask CrashAsync(CrashLanding crash, CancellationToken ct)
         {
+            // Remember where we came down: the Planet scene rebuilds this planet and puts the wreck there.
+            _landing.Body.Value = Target;
+            _landing.ShipSkin.Value = _ship.SkinName;
+            _landing.Valid.Value = true;
             _ship.Hide();
             var duration = math.max(0.3f, crash.DurationSeconds);
             var flash = math.max(0.02f, crash.FlashSeconds);

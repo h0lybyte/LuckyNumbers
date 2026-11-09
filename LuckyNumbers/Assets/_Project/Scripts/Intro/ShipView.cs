@@ -18,6 +18,7 @@ namespace LuckyNumbers.Intro
 
         public Transform Pivot => pivot;
         public int SkinCount => skins.Length;
+        public string SkinName => _material != null && _material.mainTexture != null ? _material.mainTexture.name : "";
 
         /// <summary>Show the ship with a skin (by file name, or by index when the name is empty) at a world length.</summary>
         public void Show(string skin, int fallbackIndex, float length)

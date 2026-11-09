@@ -28,6 +28,8 @@ Shader "LuckyNumbers/Starfield"
         _TwinkleSpeed ("Twinkle Speed", Float) = 2
         _Drift ("Drift (radians/s around y, x)", Vector) = (0.003, 0, 0, 0)
         _Seed ("Seed", Float) = 7
+        _HazeColor ("Horizon Haze Color (planet surface, set at runtime)", Color) = (0.4, 0.6, 1, 1)
+        _Haze ("Horizon Haze (0 = space)", Range(0, 1)) = 0
     }
 
     SubShader
@@ -52,6 +54,8 @@ Shader "LuckyNumbers/Starfield"
                 float _StarDensity, _StarBrightness, _TwinkleSpeed;
                 float4 _Drift;
                 float _Seed;
+                float4 _HazeColor;
+                float _Haze;
             CBUFFER_END
 
             struct Attributes { float4 positionOS : POSITION; };
@@ -145,6 +149,9 @@ Shader "LuckyNumbers/Starfield"
 
                 float3 sky = _SpaceColor.rgb + (nebula + glow) * dust + knots * dust
                            + stars * _StarBrightness * bandStars * lerp(1.0, dust, 0.6);
+                // On a planet surface: atmosphere glow near the horizon, dimming the stars low in the sky.
+                float low = 1.0 - saturate(i.dir.y / max(length(i.dir), 1e-4) * 2.5 + 0.1);
+                sky = lerp(sky, _HazeColor.rgb * 0.75, _Haze * low * low);
                 return float4(sky, 1.0);
             }
             ENDHLSL

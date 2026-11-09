@@ -6,7 +6,8 @@
         "LuckyNumbers.Title",
         "VContainer",
         "LuckyNumbers.Space",
-        "LuckyNumbers.Intro"
+        "LuckyNumbers.Intro",
+        "LuckyNumbers.Planet"
     ],
     "includePlatforms": [
         "Editor"

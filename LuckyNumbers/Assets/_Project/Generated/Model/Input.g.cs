@@ -44,6 +44,10 @@ namespace LuckyNumbers.Model
         /// Mouse wheel / trackpad scroll this frame (positive = up/away).
         /// </summary>
         public readonly ReactiveProperty<float> PointerScroll = new ReactiveProperty<float>();
+        /// <summary>
+        /// Sprint held.
+        /// </summary>
+        public readonly ReactiveProperty<bool> Sprinting = new ReactiveProperty<bool>();
 
         public void Dispose()
         {
@@ -53,6 +57,7 @@ namespace LuckyNumbers.Model
             PointerDelta.Dispose();
             PointerPressed.Dispose();
             PointerScroll.Dispose();
+            Sprinting.Dispose();
         }
     }
 

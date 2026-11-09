@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- Crash-site overlay (content/planet.txtpb). -->
+    <ui:VisualElement name="screen" class="ln-screen" picking-mode="Ignore">
+        <ui:VisualElement name="flash" class="ln-flash ln-flash--black" picking-mode="Ignore" />
+        <ui:Label name="hint" class="ln-hint" picking-mode="Ignore" />
+        <ui:VisualElement name="crosshair" class="ln-crosshair" picking-mode="Ignore" />
+    </ui:VisualElement>
+</ui:UXML>

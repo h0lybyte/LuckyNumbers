@@ -1,0 +1,30 @@
+# proto-file: luckynumbers/v1/planet.proto
+# proto-message: luckynumbers.v1.PlanetScene
+# The crash site. Ground colours, sky and sun come from the planet you crashed on.
+
+backdrop_ref: "space/systems/home"
+
+ground_size: 160
+ground_height: 7
+ground_noise_scale: 0.018
+ground_resolution: 96
+surface_noise_scale: 0.12
+
+walk_speed: 4.5
+sprint_speed: 8
+jump_speed: 5
+gravity: 14
+eye_height: 1.7
+look_degrees_per_pixel: 0.12
+
+bob_amount: 0.045
+bob_frequency: 1.9
+sway: 0.06
+
+wake_seconds: 3.2
+wreck_distance: 9
+wreck_length: 11
+
+haze: 0.55
+sun_elevation_degrees: 38
+hint: "Click to look around - WASD to move - Shift to run - Space to jump"

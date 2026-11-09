@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+import "luckynumbers/v1/space.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// The crash site: a small patch of the planet you landed on, walked in first person.
+message PlanetScene {
+  option (ln.config) = true;
+  // The universe (same generator as the title), so the ground, sky and sun match the planet you hit.
+  SpaceBackdrop backdrop = 1;
+  string backdrop_ref = 2 [(ln.ref) = "backdrop"];
+  // Ground patch: size across (metres), hill height, noise scale (bigger = busier), vertices per side.
+  float ground_size = 3;
+  float ground_height = 4;
+  float ground_noise_scale = 5;
+  int32 ground_resolution = 6;
+  // Surface colour noise scale (detail on the ground texture).
+  float surface_noise_scale = 7;
+  // Walking (metres, seconds).
+  float walk_speed = 8;
+  float sprint_speed = 9;
+  float jump_speed = 10;
+  float gravity = 11;
+  float eye_height = 12;
+  float look_degrees_per_pixel = 13;
+  // Feel: head bob (metres, steps per second at walk speed), arm sway (degrees per look pixel).
+  float bob_amount = 14;
+  float bob_frequency = 15;
+  float sway = 16;
+  // Wake up lying on the ground, then stand.
+  float wake_seconds = 17;
+  // The wreck: distance from where you wake, and ship length (metres).
+  float wreck_distance = 18;
+  float wreck_length = 19;
+  // Atmosphere haze over the horizon and with distance (0..1).
+  float haze = 20;
+  // Sun height in the sky (degrees above the horizon).
+  float sun_elevation_degrees = 21;
+  string hint = 22;
+}
+
+// Where the intro's ship came down: read by the Planet scene (and later a save file).
+message LandingSite {
+  option (ln.state) = true;
+  bool valid = 1;
+  // Body id of the planet (e.g. "home") in the universe of the current lucky number.
+  string body = 2;
+  string ship_skin = 3;
+}

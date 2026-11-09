@@ -30,7 +30,7 @@ namespace LuckyNumbers.Core
         readonly IPublisher<InputActionPerformed> _publisher;
         readonly ModelPlayerInput _input;
         readonly List<IDisposable> _subscriptions = new();
-        UnityEngine.InputSystem.InputAction _move, _look;
+        UnityEngine.InputSystem.InputAction _move, _look, _sprint;
 
         [Inject]
         public InputBridge(IPublisher<InputActionPerformed> publisher, ModelPlayerInput input)
@@ -56,6 +56,8 @@ namespace LuckyNumbers.Core
                 _publisher.Publish(new InputActionPerformed(ModelInputAction.AnyButton))));
 
             _move = actions?.FindAction("Player/Move");
+            _sprint = actions?.FindAction("Player/Sprint");
+            _sprint?.Enable();
             _look = actions?.FindAction("Player/Look");
             _move?.Enable();
             _look?.Enable();
@@ -64,6 +66,7 @@ namespace LuckyNumbers.Core
         public void Tick()
         {
             if (_move != null) { var v = _move.ReadValue<UnityEngine.Vector2>(); _input.Move.Value = new Vec2(v.x, v.y); }
+            _input.Sprinting.Value = _sprint != null && _sprint.IsPressed();
             if (_look != null) { var v = _look.ReadValue<UnityEngine.Vector2>(); _input.Look.Value = new Vec2(v.x, v.y); }
 
             var pointer = Pointer.current; // mouse, pen or touch

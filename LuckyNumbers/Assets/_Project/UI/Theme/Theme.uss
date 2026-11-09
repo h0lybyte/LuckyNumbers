@@ -227,6 +227,35 @@
     background-color: white;
 }
 
+/* Crash site */
+.ln-flash--black {
+    background-color: black;
+    opacity: 1;
+}
+
+.ln-hint {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 7%;
+    -unity-text-align: middle-center;
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+
+.ln-crosshair {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    margin-left: -2px;
+    margin-top: -2px;
+    border-radius: 2px;
+    background-color: rgba(255, 255, 255, 0.7);
+}
+
 .ln-hidden {
     display: none;
 }

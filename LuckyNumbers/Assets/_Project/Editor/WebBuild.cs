@@ -64,6 +64,10 @@ namespace LuckyNumbers.Editor
             PlayerSettings.SetIl2CppCodeGeneration(UnityEditor.Build.NamedBuildTarget.WebGL, UnityEditor.Build.Il2CppCodeGeneration.OptimizeSize);
             UnityEditor.WebGL.UserBuildSettings.codeOptimization = UnityEditor.WebGL.WasmCodeOptimization.DiskSizeLTO;
 
+            // Assets/WebGLTemplates/LuckyNumbers: Unity's Default template + an errorHandler that keeps a
+            // refused pointer lock from stopping the game.
+            PlayerSettings.WebGL.template = "PROJECT:LuckyNumbers";
+
             PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.WebGL, false);
             PlayerSettings.SetGraphicsAPIs(BuildTarget.WebGL, ApisFor(gfx));
 
