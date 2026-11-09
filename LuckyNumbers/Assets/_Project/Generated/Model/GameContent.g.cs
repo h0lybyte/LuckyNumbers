@@ -449,7 +449,7 @@ namespace LuckyNumbers.Model
                 },
                 Instant = true,
             },
-            ShipSize = 0.05f,
+            ShipSize = 0.1f,
         };
 
         /// <summary>From <c>content/planet.txtpb</c>.</summary>
@@ -867,8 +867,8 @@ namespace LuckyNumbers.Model
             BobFrequency = 1.9f,
             Sway = 0.06f,
             WakeSeconds = 3.2f,
-            WreckDistance = 9.0f,
-            WreckLength = 11.0f,
+            WreckDistance = 26.0f,
+            WreckLength = 30.0f,
             Haze = 0.6f,
             SunElevationDegrees = 38.0f,
             Hint = "Click to look around - WASD to move - Shift to run - Space to jump - E to pick up, click to throw - M for the map",

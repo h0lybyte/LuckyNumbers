@@ -55,8 +55,8 @@ wake_seconds: 3.2
 # Said as you come to (the controls hint follows).
 wake_lines { speaker: "You" text: "Uhh... how did I live through that?!" duration_seconds: 3.5 chars_per_second: 28 }
 wake_lines_delay: 0.8
-wreck_distance: 9
-wreck_length: 11
+wreck_distance: 26
+wreck_length: 30
 
 haze: 0.6
 

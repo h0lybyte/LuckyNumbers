@@ -8,7 +8,7 @@ id: "intro"
 backdrop_ref: "space/systems/home"
 backdrop { instant: true }
 
-ship_size: 0.05
+ship_size: 0.1
 
 # Continues straight from the title's camera (the dice were rolled there): the ship streaks in past it.
 steps { ship_arrives { duration_seconds: 3 } }
