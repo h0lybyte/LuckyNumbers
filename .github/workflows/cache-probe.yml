@@ -3,11 +3,11 @@
 name: Cache probe
 
 on:
-  workflow_dispatch:
-    inputs:
-      key:
-        description: "Library cache key to restore"
-        required: true
+  push:
+    branches: [ci/cache-probe]
+
+env:
+  KEY: Library-WebGL-659f568af4a92f8e1249e5d01a2ecf0e8e09576edb5926e9dde83f656ed25c68   # the 0.2.0 build's Library
 
 permissions:
   contents: read
@@ -30,7 +30,8 @@ jobs:
       - uses: actions/cache/restore@v4
         with:
           path: LuckyNumbers/Library
-          key: ${{ inputs.key }}
+          key: ${{ env.KEY }}
+          fail-on-cache-miss: true
 
       - name: Trim Library (${{ matrix.variant }})
         run: |
