@@ -90,28 +90,32 @@ message PlanetScene {
   PlanetMap map = 52;
 }
 
-// A Goldberg globe: hexagons plus exactly 12 pentagons (Euler), 10 * frequency^2 + 2 cells, each coloured
-// and raised by the planet's own terrain noise.
+// A Goldberg globe: hexagons plus exactly 12 pentagons (Euler), 10 * frequency^2 + 2 cells, each coloured by
+// the planet's own terrain noise (smooth: no relief), set in your real universe (its sky, star and moons).
 message PlanetMap {
+  reserved 3; // relief: the map stays smooth
   int32 frequency = 1;
-  // Gap between cells (share of a cell), relief height (share of the radius), terrain noise scale and octaves.
+  // Grout between cells (share of a cell), terrain noise scale and octaves.
   float gap = 2;
-  float relief = 3;
   float noise_scale = 4;
   int32 octaves = 5;
-  // Cells below this terrain height (0..1) are flat sea (0 = no sea).
+  // Cells below this terrain rank (0..1) are sea (0 = no sea).
   float sea_level = 6;
   // How far you walk (metres) to cross one radian of the globe: sets how far the pin moves as you walk.
   float walk_radius_metres = 7;
   Rgba crash_color = 8;
   Rgba pin_color = 9;
-  Rgba background = 10;
-  // Camera distance in globe radii (start, nearest, farthest), drag speed (degrees per pixel).
+  Rgba grout = 10;
+  // Camera distance in globe radii (overview, nearest, farthest), drag speed (degrees per pixel).
   float distance = 11;
   float zoom_min = 12;
   float zoom_max = 13;
   float drag_degrees_per_pixel = 14;
   string hint = 15;
+  // Opening: from straight above your own tile (this distance, globe radii) out to `distance`, and back on close.
+  float zoom_from = 16;
+  float open_seconds = 17;
+  float close_seconds = 18;
 }
 
 // Where the intro's ship came down: read by the Planet scene (and later a save file).

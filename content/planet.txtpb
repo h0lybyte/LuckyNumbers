@@ -68,21 +68,24 @@ boulder_size_max: 3.5
 sun_elevation_degrees: 38
 hint: "Click to look around - WASD to move - Shift to run - Space to jump - E to pick up, click to throw - M for the map"
 
-# The map (M): this planet as a hex globe, 10 * 14^2 + 2 = 1962 cells (12 of them pentagons).
+# The map (M): this planet as a smooth hex globe, 10 * 14^2 + 2 = 1962 cells (12 of them pentagons), in your
+# real universe: the roll's sky, your star (lighting it) and home's moons. Opens from straight above your tile.
 map {
   frequency: 14
-  gap: 0.1
-  relief: 0.06
+  gap: 0.06
   noise_scale: 1.6
   octaves: 5
   sea_level: 0.45
   walk_radius_metres: 3000
   crash_color { r: 1 g: 0.45 b: 0.15 a: 1 }
   pin_color { r: 1 g: 1 b: 1 a: 1 }
-  background { r: 0.01 g: 0.012 b: 0.03 a: 1 }
+  grout { r: 0.05 g: 0.05 b: 0.08 a: 1 }
   distance: 3.2
-  zoom_min: 1.6
-  zoom_max: 6
+  zoom_min: 1.4
+  zoom_max: 8
   drag_degrees_per_pixel: 0.25
+  zoom_from: 1.06
+  open_seconds: 1.6
+  close_seconds: 0.8
   hint: "Drag to turn - scroll to zoom - M to close"
 }

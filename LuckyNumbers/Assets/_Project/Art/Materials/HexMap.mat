@@ -25,7 +25,7 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _Ambient: 0.22
+    - _Ambient: 0.12
     - _Rim: 0.6
     m_Colors:
     - _AtmosphereColor: {r: 0.39999998, g: 0.6, b: 1, a: 1}

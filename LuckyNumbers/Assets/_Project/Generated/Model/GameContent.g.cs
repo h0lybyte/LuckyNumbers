@@ -1330,20 +1330,22 @@ namespace LuckyNumbers.Model
             Map = new PlanetMap
             {
                 Frequency = 14,
-                Gap = 0.1f,
-                Relief = 0.06f,
+                Gap = 0.06f,
                 NoiseScale = 1.6f,
                 Octaves = 5,
                 SeaLevel = 0.45f,
                 WalkRadiusMetres = 3000.0f,
                 CrashColor = new Rgba(1.0f, 0.45f, 0.15f, 1.0f),
                 PinColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
-                Background = new Rgba(0.01f, 0.012f, 0.03f, 1.0f),
+                Grout = new Rgba(0.05f, 0.05f, 0.08f, 1.0f),
                 Distance = 3.2f,
-                ZoomMin = 1.6f,
-                ZoomMax = 6.0f,
+                ZoomMin = 1.4f,
+                ZoomMax = 8.0f,
                 DragDegreesPerPixel = 0.25f,
                 Hint = "Drag to turn - scroll to zoom - M to close",
+                ZoomFrom = 1.06f,
+                OpenSeconds = 1.6f,
+                CloseSeconds = 0.8f,
             },
         };
 

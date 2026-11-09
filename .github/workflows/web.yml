@@ -93,6 +93,8 @@ jobs:
           buildMethod: LuckyNumbers.Editor.WebBuild.Build
           customParameters: -lnGfx both -lnVersion ${{ needs.version.outputs.version }}
           versioning: None
+          # Docker's default /dev/shm is 64 MB; Unity's licensing and import workers use shared memory.
+          dockerShmSize: 2g
 
       - name: Check build output
         run: |

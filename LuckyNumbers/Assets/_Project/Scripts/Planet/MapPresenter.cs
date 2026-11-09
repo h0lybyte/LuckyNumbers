@@ -10,14 +10,19 @@ using Random = Unity.Mathematics.Random;
 namespace LuckyNumbers.Planet
 {
     /// <summary>
-    /// M: the planet you're on as a hex globe (content/planet.txtpb map). Built once, from the same seed and
-    /// look as the ground: cells coloured and raised by terrain noise, sea below sea_level. The crash cell is
-    /// marked and a pin shows where you've walked to (walk_radius_metres per radian). Drag to turn, scroll to
-    /// zoom, M (or Esc) to close; first-person control pauses meanwhile.
+    /// M: the planet you're on as a smooth hex globe (content/planet.txtpb map), in your real universe: the roll's
+    /// sky (without the surface haze), your star where it really is (lighting the globe) and the planet's moons.
+    /// The globe is turned so your crash cell points up, east along x, north along z: the same frame as the
+    /// ground, so sky, sun and map all agree. Opens from straight above your own tile and pulls out; closes by
+    /// zooming back into it. Drag to orbit, scroll to zoom, M (or Esc) to close.
     /// </summary>
     [Presenter]
-    public sealed class MapPresenter : IStartable, ITickable, IDisposable
+    public sealed class MapPresenter : IStartable, ITickable, ILateTickable, IDisposable
     {
+        static readonly int SunPosition = Shader.PropertyToID("_LnSunPosition");
+        static readonly int Haze = Shader.PropertyToID("_Haze");
+        enum Phase { Closed, Opening, Open, Closing }
+
         readonly PlanetScene _config;
         readonly MapView _map;
         readonly PlanetView _view;
@@ -27,10 +32,12 @@ namespace LuckyNumbers.Planet
         readonly PlayerInput _input;
         readonly ISubscriber<InputActionPerformed> _actions;
         IDisposable _subscription;
-        bool _open, _toggle, _close;
-        float _distance;
-        Vector3 _crash, _east, _north;
-        Vector3 _crashOnGround;
+        bool _toggle, _close;
+        Phase _phase;
+        float _t, _distance, _fromDistance, _haze;
+        Quaternion _rotation, _fromRotation;
+        Vector3 _crash, _east, _north, _star;
+        static readonly Vector3 WokeAt = new(0f, 0f, -1.5f);   // where you wake (CrashSitePresenter): the walk counts from here
 
         [Inject]
         public MapPresenter(PlanetScene config, MapView map, PlanetView view, PlayerView player, IFirstPerson firstPerson,
@@ -53,54 +60,116 @@ namespace LuckyNumbers.Planet
                 if (e.Action == InputAction.Map) _toggle = true;
                 if (e.Action == InputAction.Cancel) _close = true;
             });
-            _map.Show(false, Color.black);
+            _map.Show(false);
         }
 
         public void Tick()
         {
             var config = _config.Map;
             if (config == null) return;
-            if (_toggle && (_open || _firstPerson.Active) && _site.Built) Toggle(config);
-            else if (_close && _open) Toggle(config);
+            var dt = Time.deltaTime;
+            if (_toggle && _phase == Phase.Closed && _firstPerson.Active && _site.Built) Open(config);
+            else if ((_toggle || _close) && _phase == Phase.Open) BeginClose();
             _toggle = _close = false;
-            if (!_open) return;
 
-            // Drag to turn (about the camera's up and right), scroll to zoom.
-            if (_input.PointerPressed.Value)
+            switch (_phase)
             {
-                var d = _input.PointerDelta.Value;
-                var k = config.DragDegreesPerPixel * (_distance - 1f) / math.max(0.1f, config.Distance - 1f);   // finer up close
-                _map.Globe.rotation = Quaternion.AngleAxis(-d.X * k, Vector3.up) * Quaternion.AngleAxis(d.Y * k, Vector3.right) * _map.Globe.rotation;
+                case Phase.Closed: return;
+                case Phase.Opening:
+                {
+                    _t = math.min(1f, _t + dt / math.max(0.05f, config.OpenSeconds));
+                    var e = 1f - math.pow(1f - _t, 3f);                       // rise fast off your tile, settle in orbit
+                    _distance = math.lerp(config.ZoomFrom, config.Distance, e);
+                    if (_t >= 1f) { _phase = Phase.Open; _view.MapHint(config.Hint); }
+                    break;
+                }
+                case Phase.Open:
+                {
+                    // Drag to orbit (finer up close), scroll to zoom.
+                    if (_input.PointerPressed.Value)
+                    {
+                        var d = _input.PointerDelta.Value;
+                        var k = config.DragDegreesPerPixel * (_distance - 1f) / math.max(0.1f, config.Distance - 1f);
+                        _rotation = Quaternion.AngleAxis(d.X * k, _rotation * Vector3.up) *
+                                    Quaternion.AngleAxis(-d.Y * k, _rotation * Vector3.right) * _rotation;
+                    }
+                    var scroll = _input.PointerScroll.Value;
+                    if (scroll != 0f) _distance = math.clamp(_distance * math.pow(1.1f, -math.sign(scroll)), config.ZoomMin, config.ZoomMax);
+                    break;
+                }
+                case Phase.Closing:
+                {
+                    _t = math.min(1f, _t + dt / math.max(0.05f, config.CloseSeconds));
+                    var e = _t * _t * (3f - 2f * _t);
+                    _distance = math.lerp(_fromDistance, config.ZoomFrom, e);
+                    _rotation = Quaternion.Slerp(_fromRotation, AboveYou(), e);   // back over your tile, heading up
+                    if (_t >= 1f) { FinishClose(); return; }
+                    break;
+                }
             }
-            var scroll = _input.PointerScroll.Value;
-            if (scroll != 0f) _distance = math.clamp(_distance * math.pow(1.1f, -math.sign(scroll)), config.ZoomMin, config.ZoomMax);
-            _map.Distance(_distance);
-            _map.Place(_crash, Pin(config), config.Relief * 1.5f + 0.02f, config.CrashColor.ToColor(), config.PinColor.ToColor());
+            _map.Look(_rotation, _distance);
+            _map.Place(_crash, Pin(config), config.CrashColor.ToColor(), config.PinColor.ToColor());
         }
 
-        void Toggle(PlanetMap config)
+        public void LateTick()
         {
-            _open = !_open;
-            if (_open && !_map.Built) Build(config);
-            _firstPerson.Active = !_open;
-            _player.Camera.enabled = !_open;               // the map camera draws instead (and the arms with it)
-            if (_open)
-            {
-                Cursor.lockState = CursorLockMode.None;    // drag the globe
-                _distance = config.Distance;
-                // Turn the globe so where you are faces the camera, north up.
-                var here = Pin(config);
-                _map.Globe.rotation = Quaternion.Inverse(Quaternion.LookRotation(-here, _north));
-            }
-            _map.Show(_open, config.Background.ToColor());
-            _view.MapHint(_open ? config.Hint : null);
-            Debug.Log(_open ? $"[Map] open: {_site.Body}" : "[Map] closed");
+            // While open, the star that lights the globe (and the moons) is the map's: after the crash site sets its own.
+            if (_phase != Phase.Closed) Shader.SetGlobalVector(SunPosition, new Vector4(_star.x, _star.y, _star.z, 1f));
         }
 
-        /// <summary>Where you are on the globe: walking (x, z) metres from the crash goes east/north along a great circle.</summary>
+        void Open(PlanetMap config)
+        {
+            if (!_map.Built) Build(config);
+            _phase = Phase.Opening;
+            _t = 0f;
+            _firstPerson.Active = false;
+            _player.Camera.enabled = false;               // the map camera draws instead (and the arms with it)
+            Cursor.lockState = CursorLockMode.None;       // drag the globe
+            if (RenderSettings.skybox != null)            // the same sky, seen from space: no atmosphere haze
+            {
+                _haze = RenderSettings.skybox.GetFloat(Haze);
+                RenderSettings.skybox.SetFloat(Haze, 0f);
+            }
+            _rotation = AboveYou();
+            _distance = config.ZoomFrom;
+            _map.Show(true);
+            _map.Look(_rotation, _distance);
+            _view.MapHint("");                            // hide the crosshair and controls hint now; the map's own line comes once open
+            Debug.Log($"[Map] open: {_site.Body}");
+        }
+
+        void BeginClose()
+        {
+            _phase = Phase.Closing;
+            _t = 0f;
+            _fromDistance = _distance;
+            _fromRotation = _rotation;
+            _view.MapHint(null);
+        }
+
+        void FinishClose()
+        {
+            _phase = Phase.Closed;
+            _map.Show(false);
+            if (RenderSettings.skybox != null) RenderSettings.skybox.SetFloat(Haze, _haze);
+            _player.Camera.enabled = true;
+            _firstPerson.Active = true;
+            Debug.Log("[Map] closed");
+        }
+
+        /// <summary>Camera straight above your tile, looking down, the way you face at the top of the screen.</summary>
+        Quaternion AboveYou()
+        {
+            var here = _map.Globe.rotation * Pin(_config.Map);
+            var heading = Vector3.ProjectOnPlane(_player.Body.transform.forward, here);
+            if (heading.sqrMagnitude < 1e-6f) heading = Vector3.ProjectOnPlane(Vector3.forward, here);
+            return Quaternion.LookRotation(-here, heading.normalized);
+        }
+
+        /// <summary>Where you are (globe space): walking (x, z) metres from where you woke goes east/north on a great circle.</summary>
         Vector3 Pin(PlanetMap config)
         {
-            var offset = _player.Body.transform.position - _crashOnGround;
+            var offset = _player.Body.transform.position - WokeAt;
             var walked = new Vector2(offset.x, offset.z);
             var angle = walked.magnitude / math.max(1f, config.WalkRadiusMetres);
             if (angle < 1e-6f) return _crash;
@@ -117,6 +186,7 @@ namespace LuckyNumbers.Planet
             var land = look != null ? look.PlanetColor.ToColor() : new Color(0.5f, 0.45f, 0.4f);
             var air = look != null ? look.AtmosphereColor.ToColor() : new Color(0.4f, 0.6f, 1f);
             var sea = Color.Lerp(Color.Lerp(air, land, 0.25f), new Color(0.08f, 0.22f, 0.55f), 0.55f) * 0.6f;   // deep, bluer than the land
+
             // Terrain by rank, not raw noise: fBm bunches around 0.5, so spread it to an even 0..1 over the cells
             // (sea_level is then exactly the share of sea).
             var raw = new float[cells.Count];
@@ -126,7 +196,6 @@ namespace LuckyNumbers.Planet
             var rank = new float[cells.Count];
             for (var r = 0; r < order.Length; r++) rank[order[r]] = r / (float)(order.Length - 1);
 
-            var heights = new float[cells.Count];
             var colors = new Color[cells.Count];
             var lowland = Color.Lerp(land * 0.55f, air * 0.5f, 0.2f);
             var highland = Color.Lerp(land, Color.white, 0.15f);
@@ -135,7 +204,6 @@ namespace LuckyNumbers.Planet
                 var h = rank[i];
                 var wet = config.SeaLevel > 0f && h < config.SeaLevel;
                 var height = wet ? 0f : (h - config.SeaLevel) / math.max(0.01f, 1f - config.SeaLevel);   // 0 at the shore
-                heights[i] = height * height * config.Relief;                                               // mostly low, a few peaks
                 var c = wet ? Color.Lerp(sea * 0.6f, sea * 1.1f, h / math.max(0.01f, config.SeaLevel))
                       : height > 0.9f ? Color.Lerp(highland, Color.white, (height - 0.9f) * 6f)               // snowy tops
                       : Color.Lerp(lowland, highland, height / 0.9f);
@@ -144,26 +212,59 @@ namespace LuckyNumbers.Planet
                 colors[i] = c;
             }
 
-            // The crash site: a seeded cell on land.
+            // The crash site: a seeded cell on land. Turn the globe so it points up (x east, z north), like the ground.
             var rng = new Random(_site.Seed * 2654435761u | 1u);
             var crashCell = 0;
             for (var tries = 0; tries < 64; tries++)
             {
                 crashCell = rng.NextInt(0, cells.Count);
-                if (heights[crashCell] > 0f) break;
+                if (rank[crashCell] >= config.SeaLevel) break;
             }
             _crash = cells[crashCell].Centre;
-            _east = Vector3.Cross(Vector3.up, _crash).normalized;
-            if (_east.sqrMagnitude < 1e-6f) _east = Vector3.right;
-            _north = Vector3.Cross(_crash, _east).normalized;
-            _crashOnGround = new Vector3(0f, 0f, -1.5f);   // where you woke (CrashSitePresenter): the walk counts from here
+            _north = Vector3.ProjectOnPlane(Vector3.up, _crash);
+            if (_north.sqrMagnitude < 1e-6f) _north = Vector3.ProjectOnPlane(Vector3.forward, _crash);
+            _north.Normalize();
+            _east = Vector3.Cross(_crash, _north);
+            _map.Globe.rotation = Quaternion.Inverse(Quaternion.LookRotation(_north, _crash));
 
-            _map.Build(cells, heights, colors, config.Gap);
+            _map.Build(cells, colors, config.Gap, config.Grout.ToColor());
             _map.Material.SetColor("_AtmosphereColor", air);
+            Universe();
             var pentagons = 0;
             foreach (var c in cells) if (c.Pentagon) pentagons++;
             Debug.Log($"[Map] hex globe: {cells.Count} cells ({cells.Count - pentagons} hexagons, {pentagons} pentagons), " +
                       $"built in {(Time.realtimeSinceStartup - started) * 1000f:0} ms");
+        }
+
+        /// <summary>The star and moons, to scale with the globe (its radius = 1) where the system really has them.</summary>
+        void Universe()
+        {
+            CelestialBody home = null, sun = null;
+            foreach (var b in _site.Bodies ?? Array.Empty<CelestialBody>())
+            {
+                if (b.Id == _site.Body) home = b;
+                if (b.Star != null && sun == null) sun = b;
+            }
+            var radius = home != null ? math.max(0.01f, home.Scale * 0.5f) : 1f;
+            // The star: real direction (from the ground), real size for its distance, pulled in to fit the camera.
+            var orbit = home?.Orbit != null && home.Orbit.Radius > 0f ? home.Orbit.Radius / radius : 80f;
+            var size = sun != null ? sun.Scale / radius : 8f;
+            var distance = math.min(orbit, 150f);
+            _map.Star(_view.Sun.sharedMaterial, _site.SunDirection, distance, size * distance / orbit);
+            _star = _map.Globe.position + _site.SunDirection.normalized * distance;
+
+            var moons = 0;
+            foreach (var b in _site.Bodies ?? Array.Empty<CelestialBody>())
+            {
+                if (b.Orbit == null || b.Orbit.Around != _site.Body || b.Planet == null) continue;
+                var o = b.Orbit;
+                var angle = o.Phase * 2f * math.PI;
+                var flat = new Vector3(math.cos(angle), 0f, math.sin(angle));
+                var tilt = Quaternion.AngleAxis(o.NodeDegrees, Vector3.up) * Quaternion.AngleAxis(o.InclinationDegrees, Vector3.right);
+                b.Planet.ApplyTo(_map.Moon(tilt * flat * (o.Radius / radius), b.Scale / radius));
+                moons++;
+            }
+            Debug.Log($"[Map] universe: star {sun?.Id} {distance:0} radii away, {moons} moon(s)");
         }
 
         static float Terrain(Vector3 dir, PlanetMap config, float3 offset)

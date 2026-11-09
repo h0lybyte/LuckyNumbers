@@ -26,6 +26,10 @@ namespace LuckyNumbers.Planet
         uint Seed { get; }
         string Body { get; }
         PlanetLook Look { get; }
+        /// <summary>The whole system (regenerated from the seed), for the map's star and moons.</summary>
+        System.Collections.Generic.IReadOnlyList<CelestialBody> Bodies { get; }
+        /// <summary>Towards the sun, in the ground's frame (x east, y up, z north).</summary>
+        Vector3 SunDirection { get; }
     }
 
     [Presenter]
@@ -52,6 +56,8 @@ namespace LuckyNumbers.Planet
         public uint Seed { get; private set; }
         public string Body { get; private set; }
         public PlanetLook Look { get; private set; }
+        public System.Collections.Generic.IReadOnlyList<CelestialBody> Bodies { get; private set; }
+        public Vector3 SunDirection => _sunDirection;
 
         [Inject]
         public CrashSitePresenter(PlanetScene config, GroundView ground, PlanetView view, PlayerView player, ShipView wreck,
@@ -98,6 +104,7 @@ namespace LuckyNumbers.Planet
             Seed = roll.Seed;
             Body = bodyId;
             Look = planet?.Planet;
+            Bodies = bodies;
             var rng = new Random(roll.Seed | 1u);
 
             // Ground: the planet's colours and noise, at walking scale.

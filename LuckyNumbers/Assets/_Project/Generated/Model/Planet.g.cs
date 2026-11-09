@@ -134,21 +134,20 @@ namespace LuckyNumbers.Model
     }
 
     /// <summary>
-    /// A Goldberg globe: hexagons plus exactly 12 pentagons (Euler), 10 * frequency^2 + 2 cells, each coloured
-    /// and raised by the planet's own terrain noise.
+    /// A Goldberg globe: hexagons plus exactly 12 pentagons (Euler), 10 * frequency^2 + 2 cells, each coloured by
+    /// the planet's own terrain noise (smooth: no relief), set in your real universe (its sky, star and moons).
     /// </summary>
     public sealed class PlanetMap
     {
         public int Frequency { get; set; }
         /// <summary>
-        /// Gap between cells (share of a cell), relief height (share of the radius), terrain noise scale and octaves.
+        /// Grout between cells (share of a cell), terrain noise scale and octaves.
         /// </summary>
         public float Gap { get; set; }
-        public float Relief { get; set; }
         public float NoiseScale { get; set; }
         public int Octaves { get; set; }
         /// <summary>
-        /// Cells below this terrain height (0..1) are flat sea (0 = no sea).
+        /// Cells below this terrain rank (0..1) are sea (0 = no sea).
         /// </summary>
         public float SeaLevel { get; set; }
         /// <summary>
@@ -157,15 +156,21 @@ namespace LuckyNumbers.Model
         public float WalkRadiusMetres { get; set; }
         public Rgba CrashColor { get; set; }
         public Rgba PinColor { get; set; }
-        public Rgba Background { get; set; }
+        public Rgba Grout { get; set; }
         /// <summary>
-        /// Camera distance in globe radii (start, nearest, farthest), drag speed (degrees per pixel).
+        /// Camera distance in globe radii (overview, nearest, farthest), drag speed (degrees per pixel).
         /// </summary>
         public float Distance { get; set; }
         public float ZoomMin { get; set; }
         public float ZoomMax { get; set; }
         public float DragDegreesPerPixel { get; set; }
         public string Hint { get; set; }
+        /// <summary>
+        /// Opening: from straight above your own tile (this distance, globe radii) out to `distance`, and back on close.
+        /// </summary>
+        public float ZoomFrom { get; set; }
+        public float OpenSeconds { get; set; }
+        public float CloseSeconds { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public PlanetMap Clone() => (PlanetMap)MemberwiseClone();

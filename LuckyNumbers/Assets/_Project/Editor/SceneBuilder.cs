@@ -198,19 +198,24 @@ namespace LuckyNumbers.Editor
             }
             var crashMarker = Marker("Crash", PrimitiveType.Cylinder, new Vector3(0.02f, 0.04f, 0.02f));
             var pinMarker = Marker("You", PrimitiveType.Sphere, Vector3.one * 0.022f);
+            // The system's star (its look set at runtime) and a moon template (Planet3D, copied per moon).
+            var mapStar = Sphere("Star", rig.Star, mapGo.transform);
+            var moonTemplate = Sphere("MoonTemplate", rig.Planet, mapGo.transform);
+            moonTemplate.gameObject.SetActive(false);
             var mapCamGo = new GameObject("MapCamera");
             mapCamGo.transform.SetParent(mapGo.transform, false);
             mapCamGo.transform.localPosition = new Vector3(0f, 0f, -3f);
             var mapCam = mapCamGo.AddComponent<Camera>();
-            mapCam.clearFlags = CameraClearFlags.SolidColor;
+            mapCam.clearFlags = CameraClearFlags.Skybox;   // your universe's sky behind the globe
             mapCam.cullingMask = 1 << mapLayer;
             mapCam.fieldOfView = 40f;
             mapCam.nearClipPlane = 0.05f;
-            mapCam.farClipPlane = 20f;
+            mapCam.farClipPlane = 400f;                   // out to the star
             ArmsView.SetLayer(mapGo.transform, mapLayer);
             var mapView = mapGo.AddComponent<MapView>();
             Assign(mapView, ("mapCamera", mapCam), ("globe", globe.transform), ("globeMesh", globeFilter), ("globeRenderer", globeRenderer),
-                   ("crash", crashMarker), ("pin", pinMarker));
+                   ("crash", crashMarker), ("pin", pinMarker), ("star", mapStar),
+                   ("moonTemplate", moonTemplate));
             mapCamGo.SetActive(false);
 
             ShipRig(collide: true);   // the wreck: solid, so you walk around (and onto) it
