@@ -16,22 +16,26 @@ enum GameScene {
 
 message FlowState {
   option (ln.state) = true;
+  option (ln.web) = true;
   GameScene scene = 1;
 }
 
 message SceneChangeRequested {
   option (ln.event) = true;
+  option (ln.web_in) = true;
   GameScene target = 1;
 }
 
 message SceneEntered {
   option (ln.event) = true;
+  option (ln.web) = true;
   GameScene scene = 1;
 }
 
 // Background loading of the next scene (title doubles as preloader).
 message LoadingState {
   option (ln.state) = true;
+  option (ln.web) = true;
   float progress = 1;
   bool ready = 2;
 }

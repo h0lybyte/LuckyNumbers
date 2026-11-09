@@ -20,6 +20,11 @@ extend google.protobuf.MessageOptions {
   // Fields map 1:1 to this shader's properties (planet_color -> _PlanetColor);
   // generates ApplyTo(Material). Content must set every field.
   string material = 50005;
+  // On an (ln.state) or (ln.event): mirrored to the web page (tools/protogen.py -> WebMirror.g.cs + web/src/generated).
+  // States go out as one snapshot per changed state per frame; events go out as they happen.
+  bool web = 50006;
+  // On an (ln.event): the page may also publish it into the game (implies web; fields must be scalars/enums).
+  bool web_in = 50007;
 }
 
 extend google.protobuf.FieldOptions {

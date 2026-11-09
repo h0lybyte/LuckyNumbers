@@ -127,9 +127,24 @@ jobs:
           versioning: None
           dockerShmSize: 2g
 
+      # HTML overlays (web/) go next to the Unity build as overlay/overlay.js. Built after Unity so the
+      # Unity cache key and build don't depend on the web app. The builder container writes as root.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build overlay
+        run: |
+          sudo chown -R "$(id -u):$(id -g)" "$BUILD_DIR"
+          npm ci --prefix web
+          LN_OVERLAY_OUT="$GITHUB_WORKSPACE/$BUILD_DIR/overlay" npm run build --prefix web
+
       - name: Check build output
         run: |
           test -f "$BUILD_DIR/index.html" || { echo "::error::no index.html in $BUILD_DIR"; exit 1; }
+          test -f "$BUILD_DIR/overlay/overlay.js" || { echo "::error::no overlay/overlay.js in $BUILD_DIR"; exit 1; }
           du -sh "$BUILD_DIR"
           ls -la "$BUILD_DIR/Build"
 

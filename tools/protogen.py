@@ -8,6 +8,8 @@ Message options (proto/ln/options.proto) decide the C# shape:
   (ln.state)  sealed class of R3 ReactiveProperty / ObservableList fields
   (ln.config) sealed data class; content/*.txtpb of this type is baked into GameContent
   (ln.value)  readonly struct with value equality
+  (ln.web)    on a state/event: mirrored to the web page (Di/WebMirror.g.cs + web/src/generated/ln.g.ts)
+  (ln.web_in) on an event: the page may publish it too
   (none)      sealed data class (oneofs get a <Name>Case enum + property)
 """
 from __future__ import annotations
@@ -63,7 +65,7 @@ def _packed_varints(b: bytes):
 # FieldDescriptorProto.Type -> C# type for the scalar types we support.
 SCALARS = {1: "double", 2: "float", 3: "long", 5: "int", 8: "bool", 9: "string", 13: "uint"}
 T_MESSAGE, T_ENUM, LABEL_REPEATED = 11, 14, 3
-OPT_EVENT, OPT_STATE, OPT_CONFIG, OPT_VALUE, OPT_MATERIAL = 50001, 50002, 50003, 50004, 50005
+OPT_EVENT, OPT_STATE, OPT_CONFIG, OPT_VALUE, OPT_MATERIAL, OPT_WEB, OPT_WEB_IN = 50001, 50002, 50003, 50004, 50005, 50006, 50007
 FIELD_OPT_REF = 50101
 
 
@@ -208,7 +210,7 @@ def _load_message(model, b, scope, fname, docs, path):
             nested.append(v)
         elif n == 7:
             for on, _, ov in _fields(v):
-                if on in (OPT_EVENT, OPT_STATE, OPT_CONFIG, OPT_VALUE) and ov:
+                if on in (OPT_EVENT, OPT_STATE, OPT_CONFIG, OPT_VALUE, OPT_WEB, OPT_WEB_IN) and ov:
                     options.add(on)
                 elif on == OPT_MATERIAL:
                     material = _str(ov)
@@ -562,6 +564,10 @@ def generate(model: Model, content: list[tuple[str, str, bytes]], namespace: str
     files["Di/ModelRegistration.g.cs"] = (HEADER.format(src="proto/**/*.proto") + "\nusing MessagePipe;\nusing VContainer;\n"
                                         + f"\nnamespace {namespace}\n{{\n" + "\n".join(di) + "\n}\n")
 
+    # (ln.web): page bridge. "@web/" paths land in web/src/generated (see ln.py gen).
+    from webgen import web_files
+    files.update(web_files(model, em, namespace))
+
     files["Unity/MaterialBindings.g.cs"] = material_bindings(model, em, namespace)
     files["Unity/LuckyNumbers.Model.Unity.asmdef"] = json.dumps({
         "name": "LuckyNumbers.Model.Unity", "rootNamespace": namespace,
@@ -572,7 +578,8 @@ def generate(model: Model, content: list[tuple[str, str, bytes]], namespace: str
         "autoReferenced": True, "noEngineReferences": True}, indent=4) + "\n"
     files["Di/LuckyNumbers.Model.Di.asmdef"] = json.dumps({
         "name": "LuckyNumbers.Model.Di", "rootNamespace": namespace,
-        "references": ["LuckyNumbers.Model", "VContainer", "MessagePipe", "MessagePipe.VContainer"],
+        "references": ["LuckyNumbers.Model", "VContainer", "MessagePipe", "MessagePipe.VContainer",
+                       "UniTask"],  # MessagePipe's Subscribe overloads mention UniTask
         "autoReferenced": True}, indent=4) + "\n"
     return files
 

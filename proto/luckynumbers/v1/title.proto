@@ -64,6 +64,7 @@ enum DieRole {
 
 message DiceState {
   option (ln.state) = true;
+  option (ln.web) = true;
   repeated int32 faces = 1;
   bool rolling = 2;
   uint32 seed = 3;
@@ -89,5 +90,6 @@ message SettingsPanel {
 
 message MenuItemSelected {
   option (ln.event) = true;
+  option (ln.web_in) = true;
   MenuAction action = 1;
 }

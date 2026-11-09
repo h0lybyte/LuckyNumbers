@@ -39,5 +39,6 @@ message PlayerInput {
 
 message InputActionPerformed {
   option (ln.event) = true;
+  option (ln.web_in) = true;
   InputAction action = 1;
 }

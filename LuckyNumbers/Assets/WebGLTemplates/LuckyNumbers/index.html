@@ -52,6 +52,83 @@
     </div>
 
     <script>
+      // window.LN: the page side of the Unity bridge (WebBridge.cs / WebBridge.jslib).
+      // Unity pushes one batch per frame ({s: changed states, e: events}); the page queues events
+      // for Unity, which drains them once per frame. Types: web/src/generated/ln.g.ts.
+      window.LN = (function () {
+        var states = {};
+        var stateSubs = {};   // name -> [fn(snapshot)]; "*" -> [fn(snapshot, name)]
+        var eventSubs = {};   // name -> [fn(payload)]; "*" -> [fn(payload, name)]
+        var readySubs = [];
+        var outbox = [];
+        var ready = false;
+
+        function add(map, name, fn) {
+          (map[name] = map[name] || []).push(fn);
+          return function () {
+            var list = map[name];
+            var i = list ? list.indexOf(fn) : -1;
+            if (i >= 0) list.splice(i, 1);
+          };
+        }
+        function call(list, a, b) {
+          if (!list) return;
+          for (var i = 0, l = list.slice(); i < l.length; i++) {
+            try { l[i](a, b); } catch (e) { console.error("[LN]", e); }
+          }
+        }
+
+        return {
+          /** Latest snapshot of every state, by name (each snapshot is a fresh object). */
+          states: states,
+          get ready() { return ready; },
+          getState: function (name) { return states[name]; },
+          /** fn(snapshot) now (if known) and on every change; name "*" gets fn(snapshot, name). Returns unsubscribe. */
+          subscribe: function (name, fn) {
+            if (name !== "*" && name in states) fn(states[name]);
+            return add(stateSubs, name, fn);
+          },
+          /** fn(payload) for each event; name "*" gets fn(payload, name). Returns unsubscribe. */
+          on: function (name, fn) { return add(eventSubs, name, fn); },
+          /** fn() once Unity's bridge is up (now, if it already is). */
+          onReady: function (fn) { if (ready) fn(); else readySubs.push(fn); },
+          /** Publish an inbound (ln.web) event into the game; delivered on Unity's next frame. */
+          send: function (name, payload) { outbox.push([name, payload || {}]); },
+
+          _fromUnity: function (json) {
+            var batch = JSON.parse(json);
+            for (var name in batch.s) {
+              states[name] = batch.s[name];
+              call(stateSubs[name], states[name]);
+              call(stateSubs["*"], states[name], name);
+            }
+            for (var i = 0; i < batch.e.length; i++) {
+              call(eventSubs[batch.e[i][0]], batch.e[i][1]);
+              call(eventSubs["*"], batch.e[i][1], batch.e[i][0]);
+            }
+          },
+          _drain: function () {
+            if (!outbox.length) return null;
+            var json = JSON.stringify(outbox);
+            outbox = [];
+            return json;
+          },
+          _ready: function () {
+            ready = true;
+            call(readySubs.splice(0));
+          },
+        };
+      })();
+
+      // HTML overlays (web/, built into overlay/). Optional: the game runs without them.
+      (function () {
+        var s = document.createElement("script");
+        s.type = "module";
+        s.src = "overlay/overlay.js";
+        s.onerror = function () { console.info("[web] no overlay build (overlay/overlay.js)"); };
+        document.head.appendChild(s);
+      })();
+
       var canvas = document.querySelector("#unity-canvas");
       var stage = document.querySelector("#stage");
       var fullscreenButton = document.querySelector("#unity-fullscreen-button");

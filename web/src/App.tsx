@@ -1,0 +1,147 @@
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { LN, useLNEvent, useLNReady, useLNState } from "./ln";
+import type { GameScene, WebEvents } from "./ln";
+
+export function App({ dock }: { dock: HTMLElement | null }) {
+  const [inspector, setInspector] = useState(() => new URLSearchParams(location.search).has("ln-debug"));
+
+  // ` toggles the bridge inspector (capture phase: runs before Unity's keyboard handling).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code === "Backquote") setInspector((v) => !v);
+    };
+    window.addEventListener("keydown", onKey, { capture: true });
+    return () => window.removeEventListener("keydown", onKey, { capture: true });
+  }, []);
+
+  // The dock is a grid column: showing it narrows the stage and Unity resizes to fit.
+  useEffect(() => {
+    if (dock) dock.hidden = !inspector;
+  }, [dock, inspector]);
+
+  return (
+    <>
+      <Hud />
+      <Toasts />
+      {inspector && dock && createPortal(<Inspector />, dock)}
+    </>
+  );
+}
+
+// ---- HUD ------------------------------------------------------------------------------------------
+
+function Hud() {
+  const flow = useLNState("FlowState");
+  const health = useLNState("PlayerHealth");
+  if (flow?.scene !== "Planet") return null;
+
+  return (
+    <div className="hud">
+      {health && health.max > 0 && (
+        <div className="health" title={`${health.current} / ${health.max}`}>
+          <div className="health-fill" style={{ width: `${(100 * health.current) / health.max}%` }} />
+        </div>
+      )}
+      <button
+        type="button"
+        className="ui chip"
+        onClick={() => LN.send("InputActionPerformed", { action: "Map" })}
+        title="Open the map (M)"
+      >
+        Map <kbd>M</kbd>
+      </button>
+    </div>
+  );
+}
+
+// ---- toasts ---------------------------------------------------------------------------------------
+
+type Toast = { id: number; text: string; tone: "info" | "bad" | "good" };
+let nextToast = 1;
+
+const SCENE_TITLES: Partial<Record<GameScene, string>> = { Planet: "Crash site" };
+
+function Toasts() {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const push = (text: string, tone: Toast["tone"] = "info") => {
+    const id = nextToast++;
+    setToasts((t) => [...t.slice(-3), { id, text, tone }]);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3500);
+  };
+
+  useLNEvent("SceneEntered", (e) => SCENE_TITLES[e.scene] && push(SCENE_TITLES[e.scene]!));
+  useLNEvent("PlayerDamaged", (e) => push(`-${e.amount}${e.source ? ` (${e.source})` : ""}`, "bad"));
+  useLNEvent("PlayerHealed", (e) => push(`+${e.amount}`, "good"));
+  useLNEvent("PlayerDied", (e) => push(e.cause ? `You died: ${e.cause}` : "You died", "bad"));
+
+  return (
+    <div className="toasts" aria-live="polite">
+      {toasts.map((t) => (
+        <div key={t.id} className={`toast ${t.tone}`}>
+          {t.text}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---- inspector (dev) ------------------------------------------------------------------------------
+
+type LoggedEvent = { at: number; name: keyof WebEvents; payload: unknown };
+
+function Inspector() {
+  const ready = useLNReady();
+  const [states, setStates] = useState(() => ({ ...LN.states }));
+  const [events, setEvents] = useState<LoggedEvent[]>([]);
+
+  useEffect(() => LN.subscribe("*", () => setStates({ ...LN.states })), []);
+  useLNEvent("*", (payload, name) =>
+    setEvents((list) => [{ at: performance.now(), name, payload }, ...list].slice(0, 40)),
+  );
+
+  return (
+    <div className="inspector">
+      <header>
+        <strong>Bridge</strong>
+        <span className={ready ? "ok" : "wait"}>{ready ? "connected" : "waiting for Unity"}</span>
+        <span className="hint">` to close</span>
+      </header>
+
+      <section>
+        <h3>Send</h3>
+        <div className="row">
+          {(["Title", "Intro", "Planet"] as const).map((scene) => (
+            <button key={scene} type="button" onClick={() => LN.send("SceneChangeRequested", { target: scene })}>
+              {scene}
+            </button>
+          ))}
+          <button type="button" onClick={() => LN.send("InputActionPerformed", { action: "Map" })}>
+            Map
+          </button>
+        </div>
+      </section>
+
+      <section>
+        <h3>States</h3>
+        {Object.entries(states).map(([name, value]) => (
+          <details key={name} open>
+            <summary>{name}</summary>
+            <pre>{JSON.stringify(value, null, 1)}</pre>
+          </details>
+        ))}
+      </section>
+
+      <section>
+        <h3>Events</h3>
+        <ol className="events">
+          {events.map((e, i) => (
+            <li key={events.length - i}>
+              <code>{e.name}</code> <span className="payload">{JSON.stringify(e.payload)}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
+    </div>
+  );
+}
