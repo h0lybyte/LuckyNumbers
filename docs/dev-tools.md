@@ -11,6 +11,10 @@ Python 3 stdlib. Windows: `py tools/ln.py …`.
 | `deploy [--target user/game] [--version] [--dry-run]` | `butler push` to itch.io `html5` |
 | `proto` | Validate `proto/` schemas and `content/*.txtpb` (pinned protoc) |
 | `gen [--check]` | Generate C# from `proto/` + `content/` into `Assets/_Project/Generated` |
+| `roslyn` | Build the Roslyn source generator (`tools/roslyn/`) into `Assets/_Project/Generators` |
+| `scenes` | Rebuild Title/Intro scenes from code (`Editor/SceneBuilder.cs`), editor closed |
+| `preview` | Render the space background to `LuckyNumbers/Logs/preview-space.png` |
+| `webshot [--wait text]` | Screenshot the served Web build after a console marker (Node 22+, Chrome) |
 | `version [--notes]` | Version or notes from top of `CHANGELOG.md` |
 | `secrets [--dry-run]` | Push `.env` to GitHub Actions secrets; values never printed |
 

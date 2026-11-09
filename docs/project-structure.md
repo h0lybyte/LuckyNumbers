@@ -3,15 +3,19 @@
 ```
 LuckyNumbers/            Unity project
   Assets/_Project/       all our assets and code
-    Editor/              WebBuild (Web settings + headless build)
+    Art/Shaders/         Starfield, Planet2D, Include/Noise.hlsl; Art/Materials/
+    Editor/              WebBuild, SceneBuilder, ShaderPreview
+    Generators/          Roslyn generator DLL + [Presenter]/[View] attributes
     Generated/           C# generated from proto/ + content/ (do not edit)
-    Scenes/
+    Scenes/              Title, Intro (built by SceneBuilder)
+    Scripts/Core/        RootLifetimeScope, SceneFlow, InputBridge
+    Scripts/Title/       TitleView, TitlePresenter, TitleScope
     Scripts/Rendering/   RenderResolutionCap
     Settings/            URP assets, input actions
     Spikes/WebThreadsTest/  temporary threading benchmark
   Builds/                build output (gitignored)
 proto/, content/         schema + authored data (source of truth)
-tools/ln.py              dev CLI
+tools/ln.py              dev CLI (protogen.py, webshot.mjs, roslyn/)
 CHANGELOG.md             version source, triggers releases
 .env.example             template for CI secrets (.env gitignored)
 ```

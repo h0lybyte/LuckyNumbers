@@ -17,6 +17,7 @@ content/*.txtpb                  title, intro cutscene, player config
 | `(ln.state)` | class of R3 `ReactiveProperty<T>` / `ObservableList<T>` | `builder.RegisterModelState()` registers each as a singleton |
 | `(ln.config)` | data class | each `content/<name>.txtpb` is baked into `GameContent.<Name>` |
 | `(ln.value)` | `readonly struct` with value equality | |
+| `(ln.material) = "Shader/Name"` | data class | `look.ApplyTo(material)`: fields → `_PascalCase` shader properties; gen fails if a property is missing or content leaves a field unset |
 | none | data class; oneof → `<Name>Case` enum + property | |
 
 Assemblies: `LuckyNumbers.Model` (types + content, no engine refs) and `LuckyNumbers.Model.Di`
@@ -41,3 +42,12 @@ Python stdlib only.
 - Events and values are flat (no repeated/oneof). Oneof members are messages. No nested type declarations.
 - Each `.txtpb` starts with `# proto-file:` / `# proto-message:` headers; its message must be `(ln.config)`.
 - After changing `proto/` or `content/`: run `ln.py gen` and commit the result.
+
+## Roslyn generator (C# side)
+
+`tools/roslyn/LuckyNumbers.Generators` (Microsoft.CodeAnalysis 4.3.1; Unity 6000.6 compiles with Roslyn 4.10)
+runs inside Unity's compiler for assemblies referencing `LuckyNumbers.Attributes`:
+
+- `[Presenter]` class → `RegisterEntryPoint<T>()`; `[View]` MonoBehaviour → `RegisterComponentInHierarchy<T>()`
+- emitted as `builder.Register<AssemblyName>()` (e.g. `RegisterLuckyNumbersTitle()`); diagnostics LN0001/LN0002
+- rebuild after changing the generator: `python3 tools/ln.py roslyn`

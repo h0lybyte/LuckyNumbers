@@ -1,7 +1,12 @@
 {
     "name": "LuckyNumbers.Editor",
     "rootNamespace": "LuckyNumbers.Editor",
-    "references": [],
+    "references": [
+        "LuckyNumbers.Core",
+        "LuckyNumbers.Title",
+        "VContainer",
+        "UnityEngine.UI"
+    ],
     "includePlatforms": [
         "Editor"
     ],
