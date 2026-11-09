@@ -39,7 +39,7 @@ namespace LuckyNumbers.Model
         public PlanetLook Planet { get; set; }
         public StarLook Star { get; set; }
         /// <summary>
-        /// Optional: circle another body (listed earlier) in the XZ plane. radius 0 = static.
+        /// Optional: orbit another body (listed earlier). radius 0 = static at `position`.
         /// </summary>
         public Orbit Orbit { get; set; }
 
@@ -57,15 +57,30 @@ namespace LuckyNumbers.Model
             AppearanceCase.None;
     }
 
+    /// <summary>
+    /// Keplerian orbit around another body (listed earlier). radius = semi-major axis.
+    /// </summary>
     public sealed class Orbit
     {
         public string Around { get; set; }
         public float Radius { get; set; }
         public float PeriodSeconds { get; set; }
         /// <summary>
-        /// Starting angle, 0..1 of a full turn.
+        /// Starting point along the orbit, 0..1 of a full period (mean anomaly).
         /// </summary>
         public float Phase { get; set; }
+        /// <summary>
+        /// 0 = circle, up to &lt;1 = increasingly stretched ellipse (parent at one focus).
+        /// </summary>
+        public float Eccentricity { get; set; }
+        /// <summary>
+        /// Tilt of the orbit plane from the XZ plane.
+        /// </summary>
+        public float InclinationDegrees { get; set; }
+        /// <summary>
+        /// Direction (around Y) of the line where the tilted plane crosses XZ.
+        /// </summary>
+        public float NodeDegrees { get; set; }
     }
 
     /// <summary>

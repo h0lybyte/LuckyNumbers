@@ -46,10 +46,10 @@ backdrop {
     seed: 7
   }
 
-  # The sun: first star = light source for every planet.
+  # The sun at the centre: first star = light source for every planet; planets orbit it.
   bodies {
     id: "sun"
-    position { x: 42 y: 14 z: -26 }
+    position { x: 0 y: 0 z: 0 }
     scale: 9
     star {
       core_color { r: 1 g: 0.78 b: 0.42 a: 1 }
@@ -68,6 +68,7 @@ backdrop {
   bodies {
     id: "home"
     position { x: 0 y: 0 z: 0 }
+    orbit { around: "sun" radius: 48 period_seconds: 900 phase: 0.41 eccentricity: 0.05 inclination_degrees: 17 node_degrees: 0 }
     scale: 2.4
     planet {
       planet_color { r: 1 g: 0.34 b: 0 a: 1 }
@@ -90,9 +91,9 @@ backdrop {
   # Grey moon circling the home planet.
   bodies {
     id: "moon"
-    position { x: 0 y: 0.3 z: 0 }
+    position { x: 0 y: 0 z: 0 }
+    orbit { around: "home" radius: 2.6 period_seconds: 45 phase: 0.15 inclination_degrees: 8 }
     scale: 0.6
-    orbit { around: "home" radius: 2.6 period_seconds: 45 phase: 0.15 }
     planet {
       planet_color { r: 0.6 g: 0.6 b: 0.65 a: 1 }
       atmosphere_color { r: 0.7 g: 0.7 b: 0.8 a: 1 }
@@ -111,10 +112,11 @@ backdrop {
     }
   }
 
-  # Ice world, far behind and to the left (drag around to find it).
+  # Ice world, further out.
   bodies {
     id: "ice"
-    position { x: -9 y: 3 z: -14 }
+    position { x: 0 y: 0 z: 0 }
+    orbit { around: "sun" radius: 72 period_seconds: 2400 phase: 0.47 eccentricity: 0.12 inclination_degrees: -6 node_degrees: 40 }
     scale: 1.6
     planet {
       planet_color { r: 0.3 g: 0.75 b: 1 a: 1 }
@@ -134,10 +136,11 @@ backdrop {
     }
   }
 
-  # Purple giant, opposite side of the sky.
+  # Purple giant, outermost.
   bodies {
     id: "giant"
-    position { x: 14 y: -4 z: 18 }
+    position { x: 0 y: 0 z: 0 }
+    orbit { around: "sun" radius: 115 period_seconds: 5200 phase: 0.3 eccentricity: 0.06 inclination_degrees: 4 node_degrees: 120 }
     scale: 6
     planet {
       planet_color { r: 0.55 g: 0.2 b: 0.85 a: 1 }

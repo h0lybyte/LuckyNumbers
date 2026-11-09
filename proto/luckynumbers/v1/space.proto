@@ -27,16 +27,23 @@ message CelestialBody {
     PlanetLook planet = 4;
     StarLook star = 6;
   }
-  // Optional: circle another body (listed earlier) in the XZ plane. radius 0 = static.
+  // Optional: orbit another body (listed earlier). radius 0 = static at `position`.
   Orbit orbit = 5;
 }
 
+// Keplerian orbit around another body (listed earlier). radius = semi-major axis.
 message Orbit {
   string around = 1;
   float radius = 2;
   float period_seconds = 3;
-  // Starting angle, 0..1 of a full turn.
+  // Starting point along the orbit, 0..1 of a full period (mean anomaly).
   float phase = 4;
+  // 0 = circle, up to <1 = increasingly stretched ellipse (parent at one focus).
+  float eccentricity = 5;
+  // Tilt of the orbit plane from the XZ plane.
+  float inclination_degrees = 6;
+  // Direction (around Y) of the line where the tilted plane crosses XZ.
+  float node_degrees = 7;
 }
 
 // Drag rotates the camera around `target`; scroll zooms.

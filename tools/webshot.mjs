@@ -4,7 +4,7 @@
 //   node tools/webshot.mjs <url> <out.png> [--wait "console text"] [--timeout 90] [--steps JSON]
 //
 // --steps: JSON list run after --wait, coordinates are fractions of the game canvas (0..1, top-left):
-//   [{"drag":[x1,y1,x2,y2]}, {"sleep":1}, {"shot":"a.png"}, {"click":[x,y]}, {"wait":"text"}]
+//   [{"drag":[x1,y1,x2,y2]}, {"scroll":[x,y,notches]}, {"sleep":1}, {"shot":"a.png"}, {"click":[x,y]}, {"wait":"text"}]
 // Prints the page's console lines. Without --steps it takes one screenshot to <out.png>.
 import { spawn } from "node:child_process";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
@@ -81,6 +81,13 @@ for (const step of steps) {
     await mouse("mouseMoved", p); await sleep(100);
     await mouse("mousePressed", p, 1); await sleep(120);
     await mouse("mouseReleased", p); await sleep(200);
+  }
+  if (step.scroll) { // [x, y, notches]: positive = scroll down (zoom out)
+    const [x, y, notches] = step.scroll, p = px([x, y]);
+    for (let i = 0; i < Math.abs(notches); i++) {
+      await send("Input.dispatchMouseEvent", { type: "mouseWheel", x: p.x, y: p.y, deltaX: 0, deltaY: Math.sign(notches) * 120 });
+      await sleep(60);
+    }
   }
   if (step.drag) {
     const [x1, y1, x2, y2] = step.drag, n = 30;

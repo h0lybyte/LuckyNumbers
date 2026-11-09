@@ -96,7 +96,7 @@ namespace LuckyNumbers.Model
                     new CelestialBody
                     {
                         Id = "sun",
-                        Position = new Vec3(42.0f, 14.0f, -26.0f),
+                        Position = new Vec3(default(float), default(float), default(float)),
                         Scale = 9.0f,
                         Star = new StarLook
                         {
@@ -133,11 +133,20 @@ namespace LuckyNumbers.Model
                             TerminatorSoftness = 0.15f,
                             AxialTiltDegrees = -12.0f,
                         },
+                        Orbit = new Orbit
+                        {
+                            Around = "sun",
+                            Radius = 48.0f,
+                            PeriodSeconds = 900.0f,
+                            Phase = 0.41f,
+                            Eccentricity = 0.05f,
+                            InclinationDegrees = 17.0f,
+                        },
                     },
                     new CelestialBody
                     {
                         Id = "moon",
-                        Position = new Vec3(default(float), 0.3f, default(float)),
+                        Position = new Vec3(default(float), default(float), default(float)),
                         Scale = 0.6f,
                         Planet = new PlanetLook
                         {
@@ -162,12 +171,13 @@ namespace LuckyNumbers.Model
                             Radius = 2.6f,
                             PeriodSeconds = 45.0f,
                             Phase = 0.15f,
+                            InclinationDegrees = 8.0f,
                         },
                     },
                     new CelestialBody
                     {
                         Id = "ice",
-                        Position = new Vec3(-9.0f, 3.0f, -14.0f),
+                        Position = new Vec3(default(float), default(float), default(float)),
                         Scale = 1.6f,
                         Planet = new PlanetLook
                         {
@@ -186,11 +196,21 @@ namespace LuckyNumbers.Model
                             TerminatorSoftness = 0.15f,
                             AxialTiltDegrees = 20.0f,
                         },
+                        Orbit = new Orbit
+                        {
+                            Around = "sun",
+                            Radius = 72.0f,
+                            PeriodSeconds = 2400.0f,
+                            Phase = 0.47f,
+                            Eccentricity = 0.12f,
+                            InclinationDegrees = -6.0f,
+                            NodeDegrees = 40.0f,
+                        },
                     },
                     new CelestialBody
                     {
                         Id = "giant",
-                        Position = new Vec3(14.0f, -4.0f, 18.0f),
+                        Position = new Vec3(default(float), default(float), default(float)),
                         Scale = 6.0f,
                         Planet = new PlanetLook
                         {
@@ -208,6 +228,16 @@ namespace LuckyNumbers.Model
                             AtmospherePower = 2.0f,
                             TerminatorSoftness = 0.15f,
                             AxialTiltDegrees = -25.0f,
+                        },
+                        Orbit = new Orbit
+                        {
+                            Around = "sun",
+                            Radius = 115.0f,
+                            PeriodSeconds = 5200.0f,
+                            Phase = 0.3f,
+                            Eccentricity = 0.06f,
+                            InclinationDegrees = 4.0f,
+                            NodeDegrees = 120.0f,
                         },
                     },
                 },

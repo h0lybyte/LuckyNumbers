@@ -21,6 +21,8 @@ namespace LuckyNumbers.Space
         public readonly float[] OrbitRadius;
         public readonly float[] OrbitPeriod;
         public readonly float[] OrbitPhase;
+        public readonly float[] OrbitEccentricity;
+        public readonly quaternion[] OrbitPlane;   // inclination + node, rotates the XZ ellipse
         public readonly PlanetLook[] Planet;   // set when Kind == Planet
         public readonly StarLook[] Star;       // set when Kind == Star
         public readonly float3[] Position;     // output of OrbitSystem
@@ -38,6 +40,8 @@ namespace LuckyNumbers.Space
             OrbitRadius = new float[n];
             OrbitPeriod = new float[n];
             OrbitPhase = new float[n];
+            OrbitEccentricity = new float[n];
+            OrbitPlane = new quaternion[n];
             Planet = new PlanetLook[n];
             Star = new StarLook[n];
             Position = new float3[n];
@@ -67,7 +71,11 @@ namespace LuckyNumbers.Space
                     OrbitRadius[i] = b.Orbit.Radius;
                     OrbitPeriod[i] = math.max(0.01f, b.Orbit.PeriodSeconds);
                     OrbitPhase[i] = b.Orbit.Phase;
+                    OrbitEccentricity[i] = math.clamp(b.Orbit.Eccentricity, 0f, 0.95f);
+                    OrbitPlane[i] = math.mul(quaternion.RotateY(math.radians(b.Orbit.NodeDegrees)),
+                                             quaternion.RotateX(math.radians(b.Orbit.InclinationDegrees)));
                 }
+                else OrbitPlane[i] = quaternion.identity;
             }
         }
 
@@ -77,7 +85,10 @@ namespace LuckyNumbers.Space
         public int FirstStar() => Array.IndexOf(Kind, BodyKind.Star);
     }
 
-    /// <summary>Positions every body for time t (seconds); orbits lie in the XZ plane. Pure function.</summary>
+    /// <summary>
+    /// Positions every body for time t (seconds) on Keplerian orbits: ellipse with the parent at a focus,
+    /// tilted by inclination/node. Pure function over the arrays; parents are updated before children.
+    /// </summary>
     public static class OrbitSystem
     {
         public static void Update(SpaceWorld w, float t)
@@ -85,15 +96,22 @@ namespace LuckyNumbers.Space
             for (var i = 0; i < w.Count; i++)
             {
                 var p = w.OrbitParent[i];
-                if (p < 0)
-                {
-                    w.Position[i] = w.BasePosition[i];
-                    continue;
-                }
-                var angle = 2f * math.PI * (t / w.OrbitPeriod[i] + w.OrbitPhase[i]);
-                w.Position[i] = w.Position[p] + w.BasePosition[i]
-                              + w.OrbitRadius[i] * new float3(math.cos(angle), 0f, math.sin(angle));
+                w.Position[i] = p < 0
+                    ? w.BasePosition[i]
+                    : w.Position[p] + w.BasePosition[i] + OrbitOffset(w.OrbitRadius[i], w.OrbitEccentricity[i],
+                          w.OrbitPhase[i] + t / w.OrbitPeriod[i], w.OrbitPlane[i]);
             }
+        }
+
+        /// <summary>Offset from the parent for a semi-major axis a, eccentricity e, and turns elapsed.</summary>
+        public static float3 OrbitOffset(float a, float e, float turns, quaternion plane)
+        {
+            var mean = 2f * math.PI * math.frac(turns);              // mean anomaly
+            var ecc = mean;                                          // Kepler: E - e sin E = M (Newton)
+            for (var k = 0; k < 5; k++)
+                ecc -= (ecc - e * math.sin(ecc) - mean) / (1f - e * math.cos(ecc));
+            var local = new float3(a * (math.cos(ecc) - e), 0f, a * math.sqrt(1f - e * e) * math.sin(ecc));
+            return math.mul(plane, local);
         }
     }
 }
