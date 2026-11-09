@@ -1,0 +1,58 @@
+# TEMPORARY diagnostic (delete after): which part of a restored Library gets the Unity editor killed (exit 137)
+# on start-up? Restores the last good Library, removes one part per variant, builds (no deploy, no cache save).
+name: Cache probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      key:
+        description: "Library cache key to restore"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: Probe ${{ matrix.variant }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        variant: [full, no-scriptassemblies, no-bee, no-packagecache, import-only]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: LuckyNumbers/Library
+          key: ${{ inputs.key }}
+
+      - name: Trim Library (${{ matrix.variant }})
+        run: |
+          cd LuckyNumbers/Library
+          du -sh * 2>/dev/null | sort -h | tail -15
+          case "${{ matrix.variant }}" in
+            no-scriptassemblies) rm -rf ScriptAssemblies ;;
+            no-bee) rm -rf Bee ;;
+            no-packagecache) rm -rf PackageCache ;;
+            import-only) find . -mindepth 1 -maxdepth 1 ! -name 'Artifacts' ! -name 'ArtifactDB*' ! -name 'SourceAssetDB*' ! -name 'ShaderCache*' -exec rm -rf {} + ;;
+          esac
+          echo "--- after"; ls
+
+      - uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: LuckyNumbers
+          targetPlatform: WebGL
+          buildMethod: LuckyNumbers.Editor.WebBuild.Build
+          customParameters: -lnGfx both
+          versioning: None
+          dockerShmSize: 2g
