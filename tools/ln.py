@@ -158,7 +158,7 @@ def summarize_log(log: Path) -> int:
     for line in shader_errors[:20]:
         print(f"  {line}")
     errors += shader_errors
-    for line in re.findall(r"^\[(?:WebBuild|ShaderPreview)\].*$", text, re.M):
+    for line in re.findall(r"^\[(?:WebBuild|ShaderPreview|SceneBuilder)\].*$", text, re.M):
         print(f"  {line}")
     for marker in ("Scripts have compiler errors.", "Aborting batchmode due to failure:"):
         if marker in text:
@@ -223,6 +223,25 @@ def cmd_preview(args) -> int:
         return fail("preview failed, see log above")
     print(f"Preview: {out}")
     return 0
+
+
+def cmd_scenes(args) -> int:
+    code, log = run_unity(["-executeMethod", "LuckyNumbers.Editor.SceneBuilder.BuildAll"],
+                          "ln-scenes.log", args.force)
+    errors = summarize_log(log)
+    return 0 if code == 0 and not errors else fail("scene build failed, see log above")
+
+
+def cmd_webshot(args) -> int:
+    """Screenshot the served Web build once the console shows --wait (needs Node 22+ and Chrome)."""
+    node = shutil.which("node")
+    if not node:
+        return fail("node not found (Node 22+ needed for tools/webshot.mjs)")
+    out = Path(args.out).resolve()
+    cmd = [node, str(ROOT / "tools" / "webshot.mjs"), args.url, str(out), "--timeout", str(args.timeout)]
+    if args.wait:
+        cmd += ["--wait", args.wait]
+    return subprocess.call(cmd)
 
 
 def cmd_build_web(args) -> int:
@@ -388,6 +407,75 @@ def cmd_proto(args) -> int:
     return 1 if bad else 0
 
 
+ROSLYN_PROJECT = ROOT / "tools" / "roslyn" / "LuckyNumbers.Generators" / "LuckyNumbers.Generators.csproj"
+ROSLYN_TARGET = PROJECT / "Assets" / "_Project" / "Generators" / "LuckyNumbers.Generators.dll"
+# Unity treats a DLL as a source generator via this label with every platform disabled.
+ROSLYN_META = """fileFormatVersion: 2
+guid: 6c1f0b3a9d2e4f7a8b5c3d1e2f4a6b8c
+labels:
+- RoslynAnalyzer
+PluginImporter:
+  externalObjects: {}
+  serializedVersion: 3
+  iconMap: {}
+  executionOrder: {}
+  defineConstraints: []
+  isPreloaded: 0
+  isOverridable: 0
+  isExplicitlyReferenced: 0
+  validateReferences: 1
+  platformData:
+    Any:
+      enabled: 0
+      settings: {}
+    Editor:
+      enabled: 0
+      settings:
+        CPU: AnyCPU
+        DefaultValueInitialized: true
+        OS: AnyOS
+  userData:
+  assetBundleName:
+  assetBundleVariant:
+"""
+
+
+def dotnet() -> Path:
+    """The .NET SDK bundled with the project's Unity editor (no separate install needed)."""
+    env = shutil.which("dotnet")
+    unity = find_unity()
+    bundled = {"Darwin": unity.parents[1] / "Resources" / "Scripting" / "DotNetSdk" / "dotnet",
+               "Windows": unity.parent / "Data" / "Resources" / "Scripting" / "DotNetSdk" / "dotnet.exe",
+               "Linux": unity.parent / "Data" / "Resources" / "Scripting" / "DotNetSdk" / "dotnet"}[SYSTEM]
+    if bundled.is_file():
+        return bundled
+    if env:
+        return Path(env)
+    raise RuntimeError(f"no .NET SDK found (looked for {bundled}); install one or set PATH")
+
+
+def cmd_roslyn(args) -> int:
+    """Build the Roslyn source generator and copy it into the Unity project."""
+    out = CACHE_DIR / "roslyn"
+    r = subprocess.run([str(dotnet()), "build", str(ROSLYN_PROJECT), "-c", "Release", "-nologo",
+                        "-v", "quiet", "-o", str(out)], capture_output=True, text=True)
+    if r.returncode != 0:
+        print(r.stdout[-4000:])
+        return fail("generator build failed")
+    built = out / ROSLYN_TARGET.name
+    data = built.read_bytes()
+    if ROSLYN_TARGET.is_file() and ROSLYN_TARGET.read_bytes() == data:
+        print(f"  unchanged {ROSLYN_TARGET.relative_to(ROOT)}")
+    else:
+        ROSLYN_TARGET.write_bytes(data)
+        print(f"  wrote {ROSLYN_TARGET.relative_to(ROOT)} ({len(data) // 1024} KB)")
+    meta = Path(str(ROSLYN_TARGET) + ".meta")
+    if not meta.is_file() or meta.read_text(encoding="utf-8") != ROSLYN_META:
+        meta.write_text(ROSLYN_META, encoding="utf-8", newline="\n")
+        print(f"  wrote {meta.relative_to(ROOT)} (RoslynAnalyzer label)")
+    return 0
+
+
 GENERATED_DIR = PROJECT / "Assets" / "_Project" / "Generated"
 
 
@@ -510,6 +598,17 @@ def main(argv=None) -> int:
     s.add_argument("--version", help="game version (default: top entry of CHANGELOG.md)")
     s.set_defaults(func=cmd_build_web)
 
+    s = sub.add_parser("scenes", help="rebuild game scenes from code (Editor/SceneBuilder.cs)")
+    s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
+    s.set_defaults(func=cmd_scenes)
+
+    s = sub.add_parser("webshot", help="screenshot the served Web build after a console marker (Node + Chrome)")
+    s.add_argument("--url", default="http://localhost:8080/")
+    s.add_argument("--out", default=str(PROJECT / "Logs" / "webshot.png"))
+    s.add_argument("--wait", default="[Title] ready", help="console text to wait for ('' = don't wait)")
+    s.add_argument("--timeout", type=int, default=90)
+    s.set_defaults(func=cmd_webshot)
+
     s = sub.add_parser("preview", help="render the space background to LuckyNumbers/Logs/preview-space.png")
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
     s.set_defaults(func=cmd_preview)
@@ -534,6 +633,9 @@ def main(argv=None) -> int:
     s = sub.add_parser("gen", help="generate C# from proto/ + content/ into Assets/_Project/Generated")
     s.add_argument("--check", action="store_true", help="only verify the committed output is up to date")
     s.set_defaults(func=cmd_gen)
+
+    s = sub.add_parser("roslyn", help="build the Roslyn source generator into Assets/_Project/Generators")
+    s.set_defaults(func=cmd_roslyn)
 
     s = sub.add_parser("version", help="print the game version from CHANGELOG.md")
     s.add_argument("--notes", action="store_true", help="print that entry's release notes instead")

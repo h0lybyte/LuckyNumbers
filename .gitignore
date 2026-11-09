@@ -115,3 +115,8 @@ $RECYCLE.BIN/
 
 # Tool downloads (pinned protoc etc.), recreated by tools/ln.py
 /.cache/
+
+# Roslyn generator build output
+/tools/roslyn/**/bin/
+/tools/roslyn/**/obj/
+!/tools/roslyn/**/*.csproj
