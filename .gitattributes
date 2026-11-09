@@ -1,0 +1,100 @@
+# =============================================================
+# Line endings: store LF in the repo, check out LF on every OS.
+# Overrides each dev's core.autocrlf so Mac + Windows agree.
+# =============================================================
+* text=auto eol=lf
+
+# --- Code ---
+*.cs       text eol=lf diff=csharp
+*.shader   text eol=lf
+*.cginc    text eol=lf
+*.hlsl     text eol=lf
+*.compute  text eol=lf
+*.uss      text eol=lf
+*.uxml     text eol=lf
+*.json     text eol=lf
+*.xml      text eol=lf
+*.md       text eol=lf
+*.txt      text eol=lf
+*.yml      text eol=lf
+*.yaml     text eol=lf
+*.sh       text eol=lf
+
+# Windows scripts must stay CRLF
+*.bat      text eol=crlf
+*.cmd      text eol=crlf
+*.ps1      text eol=crlf
+
+# --- Unity YAML (Force Text serialization) ---
+# linguist-generated hides them from GitHub diff stats.
+# merge=unityyamlmerge uses Unity's Smart Merge if configured (see README).
+*.unity             text eol=lf merge=unityyamlmerge linguist-generated
+*.prefab            text eol=lf merge=unityyamlmerge linguist-generated
+*.asset             text eol=lf merge=unityyamlmerge linguist-generated
+*.mat               text eol=lf merge=unityyamlmerge linguist-generated
+*.anim              text eol=lf merge=unityyamlmerge linguist-generated
+*.controller        text eol=lf merge=unityyamlmerge linguist-generated
+*.overrideController text eol=lf merge=unityyamlmerge linguist-generated
+*.physicMaterial    text eol=lf merge=unityyamlmerge linguist-generated
+*.physicsMaterial2D text eol=lf merge=unityyamlmerge linguist-generated
+*.playable          text eol=lf merge=unityyamlmerge linguist-generated
+*.mask              text eol=lf merge=unityyamlmerge linguist-generated
+*.brush             text eol=lf merge=unityyamlmerge linguist-generated
+*.flare             text eol=lf merge=unityyamlmerge linguist-generated
+*.fontsettings      text eol=lf merge=unityyamlmerge linguist-generated
+*.guiskin           text eol=lf merge=unityyamlmerge linguist-generated
+*.giparams          text eol=lf merge=unityyamlmerge linguist-generated
+*.renderTexture     text eol=lf merge=unityyamlmerge linguist-generated
+*.spriteatlas       text eol=lf merge=unityyamlmerge linguist-generated
+*.terrainlayer      text eol=lf merge=unityyamlmerge linguist-generated
+*.mixer             text eol=lf merge=unityyamlmerge linguist-generated
+*.shadervariants    text eol=lf merge=unityyamlmerge linguist-generated
+*.preset            text eol=lf merge=unityyamlmerge linguist-generated
+*.lighting          text eol=lf merge=unityyamlmerge linguist-generated
+*.signal            text eol=lf merge=unityyamlmerge linguist-generated
+*.inputactions      text eol=lf
+*.meta              text eol=lf merge=unityyamlmerge linguist-generated
+
+# --- Binary (never touch line endings, never diff) ---
+# Images
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.psd  binary
+*.tga  binary
+*.tif  binary
+*.tiff binary
+*.bmp  binary
+*.exr  binary
+*.hdr  binary
+*.ico  binary
+# Audio
+*.wav  binary
+*.mp3  binary
+*.ogg  binary
+*.aif  binary
+*.aiff binary
+# Video
+*.mp4  binary
+*.mov  binary
+*.webm binary
+# 3D
+*.fbx   binary
+*.obj   binary
+*.blend binary
+*.max   binary
+*.ma    binary
+*.mb    binary
+# Fonts
+*.ttf  binary
+*.otf  binary
+# Compiled / archives
+*.dll    binary
+*.so     binary
+*.a      binary
+*.zip    binary
+*.7z     binary
+*.unitypackage binary
+*.cubemap binary
+*.pdf    binary
