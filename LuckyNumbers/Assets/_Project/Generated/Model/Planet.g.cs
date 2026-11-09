@@ -19,12 +19,16 @@ namespace LuckyNumbers.Model
         /// </summary>
         public SpaceBackdrop Backdrop { get; set; }
         /// <summary>
-        /// Ground patch: size across (metres), hill height, noise scale (bigger = busier), vertices per side.
+        /// Endless ground: hill height and noise scale (bigger = busier), the same function everywhere so chunks meet.
         /// </summary>
-        public float GroundSize { get; set; }
         public float GroundHeight { get; set; }
         public float GroundNoiseScale { get; set; }
-        public int GroundResolution { get; set; }
+        /// <summary>
+        /// Chunks around the player: size (metres), vertices per side, and how many chunks out in each direction.
+        /// </summary>
+        public float ChunkSize { get; set; }
+        public int ChunkResolution { get; set; }
+        public int ViewChunks { get; set; }
         /// <summary>
         /// Surface colour noise scale (detail on the ground texture).
         /// </summary>

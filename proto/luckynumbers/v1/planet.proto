@@ -13,11 +13,14 @@ message PlanetScene {
   // The universe (same generator as the title), so the ground, sky and sun match the planet you hit.
   SpaceBackdrop backdrop = 1;
   string backdrop_ref = 2 [(ln.ref) = "backdrop"];
-  // Ground patch: size across (metres), hill height, noise scale (bigger = busier), vertices per side.
-  float ground_size = 3;
+  reserved 3, 6; // ground_size, ground_resolution: the ground is endless chunks now
+  // Endless ground: hill height and noise scale (bigger = busier), the same function everywhere so chunks meet.
   float ground_height = 4;
   float ground_noise_scale = 5;
-  int32 ground_resolution = 6;
+  // Chunks around the player: size (metres), vertices per side, and how many chunks out in each direction.
+  float chunk_size = 26;
+  int32 chunk_resolution = 27;
+  int32 view_chunks = 28;
   // Surface colour noise scale (detail on the ground texture).
   float surface_noise_scale = 7;
   // Walking (metres, seconds).

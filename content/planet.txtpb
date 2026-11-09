@@ -4,10 +4,12 @@
 
 backdrop_ref: "space/systems/home"
 
-ground_size: 160
+# Endless ground: 5 x 5 chunks of 48 m follow you (haze hides the far edge).
 ground_height: 7
 ground_noise_scale: 0.018
-ground_resolution: 96
+chunk_size: 48
+chunk_resolution: 33
+view_chunks: 2
 surface_noise_scale: 0.12
 
 walk_speed: 4.5
@@ -29,6 +31,6 @@ wake_seconds: 3.2
 wreck_distance: 9
 wreck_length: 11
 
-haze: 0.55
+haze: 0.6
 sun_elevation_degrees: 38
 hint: "Click to look around - WASD to move - Shift to run - Space to jump"

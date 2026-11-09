@@ -96,8 +96,10 @@ namespace LuckyNumbers.Planet
             }
             m.SetFloat("_SurfaceScale", _config.SurfaceNoiseScale);
             m.SetFloat("_Haze", _config.Haze);
-            _ground.Build(_config.GroundSize, _config.GroundHeight, _config.GroundNoiseScale, _config.GroundResolution,
-                          rng.NextFloat2(0f, 100f), _config.WreckDistance + 6f);
+            m.SetFloat("_HazeDistance", _config.ChunkSize * math.max(1, _config.ViewChunks) * 1.1f);   // thick before the last chunks
+            _ground.Configure(_config.ChunkSize, _config.ChunkResolution, _config.ViewChunks, _config.GroundHeight,
+                              _config.GroundNoiseScale, rng.NextFloat2(0f, 100f), _config.WreckDistance + 6f);
+            _ground.Stream(Vector3.zero, int.MaxValue);   // everything around the spawn, now
 
             // Sky: the roll's nebula sky, hazed by this planet's atmosphere near the horizon.
             var sky = UniverseGenerator.Sky(rules, roll);
@@ -162,6 +164,19 @@ namespace LuckyNumbers.Planet
 
         public void Tick()
         {
+            if (_built)
+            {
+                var body = _player.Body.transform;
+                _ground.Stream(body.position, 2);   // a couple of chunks per frame as you walk
+                // Safety net: never end up under the world (e.g. a chunk collider not baked yet).
+                var floor = _ground.HeightAt(body.position);
+                if (body.position.y < floor - 2f)
+                {
+                    _player.Body.enabled = false;
+                    body.position = new Vector3(body.position.x, floor + 0.2f, body.position.z);
+                    _player.Body.enabled = true;
+                }
+            }
             // Sun at "infinity": a fixed direction from wherever the player is.
             var eye = _player.Camera.transform.position;
             var sun = eye + _sunDirection * 900f;

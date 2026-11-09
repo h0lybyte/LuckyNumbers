@@ -87,14 +87,9 @@ namespace LuckyNumbers.Editor
             Sky(rig.Starfield);
             var ui = Document("UI", rig.Panel, "Planet");
 
-            // Ground (mesh generated at runtime).
-            var groundGo = new GameObject("Ground");
-            var ground = groundGo.AddComponent<GroundView>();
-            var mf = groundGo.AddComponent<MeshFilter>();
-            var mr = groundGo.AddComponent<MeshRenderer>();
-            mr.sharedMaterial = MaterialAsset("Ground", "LuckyNumbers/Ground");
-            var mc = groundGo.AddComponent<MeshCollider>();
-            Assign(ground, ("meshFilter", mf), ("meshCollider", mc), ("meshRenderer", mr));
+            // Ground: endless chunks streamed at runtime.
+            var ground = new GameObject("Ground").AddComponent<GroundView>();
+            Assign(ground, ("material", MaterialAsset("Ground", "LuckyNumbers/Ground")));
 
             // Player: body (CharacterController) > head > camera > arms pivot > arms rig (eye at the rig origin).
             var playerGo = new GameObject("Player");
