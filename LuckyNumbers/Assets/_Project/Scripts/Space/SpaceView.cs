@@ -10,6 +10,7 @@ namespace LuckyNumbers.Space
         [SerializeField] Camera viewCamera;
         [SerializeField] MeshRenderer planetTemplate;
         [SerializeField] MeshRenderer starTemplate;
+        [SerializeField] MeshRenderer galaxyTemplate;
         [SerializeField] UIDocument ui; // optional: drags don't start on its interactive elements
         Material _sky;
 
@@ -27,9 +28,10 @@ namespace LuckyNumbers.Space
         }
 
         /// <summary>New body (inactive template cloned, own material instance).</summary>
-        public MeshRenderer SpawnBody(string id, bool star)
+        public MeshRenderer SpawnBody(string id, BodyKind kind)
         {
-            var r = Instantiate(star ? starTemplate : planetTemplate, transform);
+            var template = kind switch { BodyKind.Star => starTemplate, BodyKind.Galaxy => galaxyTemplate, _ => planetTemplate };
+            var r = Instantiate(template, transform);
             r.name = id;
             r.gameObject.SetActive(true);
             return r;

@@ -16,10 +16,80 @@ namespace LuckyNumbers.Model
     {
         public StarfieldLook Stars { get; set; }
         /// <summary>
-        /// Planets and stars. The first star lights every planet (point light at its position).
+        /// Hand-placed bodies. The first star lights every planet (point light at its position).
         /// </summary>
         public List<CelestialBody> Bodies { get; } = new List<CelestialBody>();
         public CameraOrbit Camera { get; set; }
+        /// <summary>
+        /// When set, each UniverseSeedChanged replaces the bodies with a generated system (big-bang transition).
+        /// </summary>
+        public SystemGenerator Generator { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public SpaceBackdrop Clone() => (SpaceBackdrop)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// The dice roll's lucky number: Space regenerates the universe from it.
+    /// </summary>
+    public readonly struct UniverseSeedChanged
+    {
+        public readonly uint Seed;
+
+        public UniverseSeedChanged(uint seed)
+        {
+            Seed = seed;
+        }
+    }
+
+    /// <summary>
+    /// Rules for seed -&gt; solar system. Palettes are lists of library looks (refs append).
+    /// </summary>
+    public sealed class SystemGenerator
+    {
+        public List<StarLook> Stars { get; } = new List<StarLook>();
+        public List<PlanetLook> Planets { get; } = new List<PlanetLook>();
+        public List<GalaxyLook> Galaxies { get; } = new List<GalaxyLook>();
+        public int MinPlanets { get; set; }
+        public int MaxPlanets { get; set; }
+        public float FirstOrbitRadius { get; set; }
+        /// <summary>
+        /// Each next orbit is the previous radius times a factor in this range.
+        /// </summary>
+        public float OrbitSpacingMin { get; set; }
+        public float OrbitSpacingMax { get; set; }
+        public float PlanetScaleMin { get; set; }
+        public float PlanetScaleMax { get; set; }
+        public float StarScaleMin { get; set; }
+        public float StarScaleMax { get; set; }
+        /// <summary>
+        /// Chance (0..1) that a planet has moons, and the most it can have.
+        /// </summary>
+        public float MoonChance { get; set; }
+        public int MaxMoons { get; set; }
+        /// <summary>
+        /// Moon diameter as a share of its planet's.
+        /// </summary>
+        public float MoonScaleRatio { get; set; }
+        /// <summary>
+        /// Orbital period = this * radius^1.5 (Kepler's third law shape).
+        /// </summary>
+        public float SecondsPerOrbitUnit { get; set; }
+        public float MaxEccentricity { get; set; }
+        public float MaxInclinationDegrees { get; set; }
+        public int GalaxyCount { get; set; }
+        public float GalaxyDistance { get; set; }
+        public float GalaxyScaleMin { get; set; }
+        public float GalaxyScaleMax { get; set; }
+        /// <summary>
+        /// Big bang: old system collapses into the centre, new one expands out.
+        /// </summary>
+        public float CollapseSeconds { get; set; }
+        public float ExpandSeconds { get; set; }
+        public List<PlanetLook> Moons { get; } = new List<PlanetLook>();
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public SystemGenerator Clone() => (SystemGenerator)MemberwiseClone();
     }
 
     /// <summary>
@@ -39,21 +109,30 @@ namespace LuckyNumbers.Model
         public PlanetLook Planet { get; set; }
         public StarLook Star { get; set; }
         /// <summary>
+        /// Far-away spiral/elliptical galaxy billboard.
+        /// </summary>
+        public GalaxyLook Galaxy { get; set; }
+        /// <summary>
         /// Optional: orbit another body (listed earlier). radius 0 = static at `position`.
         /// </summary>
         public Orbit Orbit { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public CelestialBody Clone() => (CelestialBody)MemberwiseClone();
 
         public enum AppearanceCase
         {
             None = 0,
             Planet = 4,
             Star = 6,
+            Galaxy = 9,
         }
 
         /// <summary>Which <c>appearance</c> case is set.</summary>
         public AppearanceCase Appearance =>
             Planet != null ? AppearanceCase.Planet :
             Star != null ? AppearanceCase.Star :
+            Galaxy != null ? AppearanceCase.Galaxy :
             AppearanceCase.None;
     }
 
@@ -81,6 +160,9 @@ namespace LuckyNumbers.Model
         /// Direction (around Y) of the line where the tilted plane crosses XZ.
         /// </summary>
         public float NodeDegrees { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public Orbit Clone() => (Orbit)MemberwiseClone();
     }
 
     /// <summary>
@@ -116,6 +198,9 @@ namespace LuckyNumbers.Model
         /// </summary>
         public Vec2 FrameOffset { get; set; }
         public float FieldOfViewDegrees { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public CameraOrbit Clone() => (CameraOrbit)MemberwiseClone();
     }
 
     /// <summary>
@@ -136,6 +221,9 @@ namespace LuckyNumbers.Model
         /// </summary>
         public Vec2 Drift { get; set; }
         public float Seed { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public StarfieldLook Clone() => (StarfieldLook)MemberwiseClone();
     }
 
     /// <summary>
@@ -161,6 +249,41 @@ namespace LuckyNumbers.Model
         /// Surface churn speed.
         /// </summary>
         public float BoilSpeed { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public StarLook Clone() => (StarLook)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// Shader properties of LuckyNumbers/Galaxy (camera-facing billboard, additive).
+    /// </summary>
+    public sealed class GalaxyLook
+    {
+        public Rgba CoreColor { get; set; }
+        public Rgba ArmColor { get; set; }
+        /// <summary>
+        /// 0 = elliptical (no arms).
+        /// </summary>
+        public float ArmCount { get; set; }
+        /// <summary>
+        /// How tightly the arms wind.
+        /// </summary>
+        public float Twist { get; set; }
+        public float Brightness { get; set; }
+        public float CoreSize { get; set; }
+        /// <summary>
+        /// 0 = seen face-on, towards 1 = seen edge-on.
+        /// </summary>
+        public float Squash { get; set; }
+        public float RollDegrees { get; set; }
+        /// <summary>
+        /// Dust lane strength along the arms.
+        /// </summary>
+        public float Dust { get; set; }
+        public float Seed { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public GalaxyLook Clone() => (GalaxyLook)MemberwiseClone();
     }
 
     /// <summary>
@@ -200,5 +323,8 @@ namespace LuckyNumbers.Model
         /// </summary>
         public float TerminatorSoftness { get; set; }
         public float AxialTiltDegrees { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public PlanetLook Clone() => (PlanetLook)MemberwiseClone();
     }
 }

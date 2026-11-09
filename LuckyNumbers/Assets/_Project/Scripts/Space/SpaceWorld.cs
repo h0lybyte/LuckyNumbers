@@ -9,7 +9,7 @@ namespace LuckyNumbers.Space
     /// Celestial bodies as entities: parallel arrays indexed by entity, built from content
     /// (or later from a dice-seeded generator). Systems read/write these arrays; views mirror them.
     /// </summary>
-    public enum BodyKind { Planet, Star }
+    public enum BodyKind { Planet, Star, Galaxy }
 
     public sealed class SpaceWorld
     {
@@ -25,6 +25,7 @@ namespace LuckyNumbers.Space
         public readonly quaternion[] OrbitPlane;   // inclination + node, rotates the XZ ellipse
         public readonly PlanetLook[] Planet;   // set when Kind == Planet
         public readonly StarLook[] Star;       // set when Kind == Star
+        public readonly GalaxyLook[] Galaxy;   // set when Kind == Galaxy
         public readonly float3[] Position;     // output of OrbitSystem
 
         public int Count => Ids.Length;
@@ -44,6 +45,7 @@ namespace LuckyNumbers.Space
             OrbitPlane = new quaternion[n];
             Planet = new PlanetLook[n];
             Star = new StarLook[n];
+            Galaxy = new GalaxyLook[n];
             Position = new float3[n];
 
             var index = new Dictionary<string, int>(n);
@@ -59,7 +61,8 @@ namespace LuckyNumbers.Space
                 {
                     case CelestialBody.AppearanceCase.Planet: Kind[i] = BodyKind.Planet; Planet[i] = b.Planet; break;
                     case CelestialBody.AppearanceCase.Star: Kind[i] = BodyKind.Star; Star[i] = b.Star; break;
-                    default: throw new ArgumentException($"'{b.Id}' needs a planet {{ }} or star {{ }} appearance");
+                    case CelestialBody.AppearanceCase.Galaxy: Kind[i] = BodyKind.Galaxy; Galaxy[i] = b.Galaxy; break;
+                    default: throw new ArgumentException($"'{b.Id}' needs a planet {{ }}, star {{ }} or galaxy {{ }} appearance");
                 }
                 OrbitParent[i] = -1;
                 if (b.Orbit != null && b.Orbit.Radius > 0f)

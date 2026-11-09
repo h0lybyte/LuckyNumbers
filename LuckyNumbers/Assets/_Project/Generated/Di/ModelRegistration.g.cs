@@ -20,6 +20,7 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<PlayerDamaged>(options);
             builder.RegisterMessageBroker<PlayerHealed>(options);
             builder.RegisterMessageBroker<PlayerDied>(options);
+            builder.RegisterMessageBroker<UniverseSeedChanged>(options);
             builder.RegisterMessageBroker<MenuItemSelected>(options);
         }
 
@@ -30,6 +31,7 @@ namespace LuckyNumbers.Model
             builder.Register<LoadingState>(Lifetime.Singleton);
             builder.Register<PlayerInput>(Lifetime.Singleton);
             builder.Register<PlayerHealth>(Lifetime.Singleton);
+            builder.Register<DiceState>(Lifetime.Singleton);
         }
     }
 }

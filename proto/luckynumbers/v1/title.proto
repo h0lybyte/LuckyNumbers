@@ -3,6 +3,7 @@ syntax = "proto3";
 package luckynumbers.v1;
 
 import "ln/options.proto";
+import "luckynumbers/v1/common.proto";
 import "luckynumbers/v1/flow.proto";
 import "luckynumbers/v1/space.proto";
 
@@ -25,6 +26,31 @@ message TitleScreen {
   // Buttons, left to right.
   repeated MenuItem menu = 7;
   SettingsPanel settings = 8;
+  DiceRoller dice = 10;
+}
+
+// The dice that create the universe: their faces become the seed ("lucky number").
+message DiceRoller {
+  repeated Die dice = 1;
+  string roll_label = 2;
+  float roll_seconds = 3;
+  // Shown under the dice; {0} = the lucky number.
+  string seed_format = 4;
+}
+
+message Die {
+  string id = 1;
+  int32 sides = 2;
+  Rgba color = 3;
+  // Face shown (and seeding the universe) before the first roll.
+  int32 initial_face = 4;
+}
+
+message DiceState {
+  option (ln.state) = true;
+  repeated int32 faces = 1;
+  bool rolling = 2;
+  uint32 seed = 3;
 }
 
 enum MenuAction {

@@ -1,7 +1,6 @@
 # proto-file: luckynumbers/v1/space.proto
 # proto-message: luckynumbers.v1.SpaceBackdrop
-# The home system: one sun, three planets, a moon. Bodies are listed parents-first.
-# Looks come from space/looks/*; add inline planet { } / star { } fields to override a preset.
+# The title universe: camera + sky; bodies come from the generator.
 
 stars_ref: "space/skies/default"
 
@@ -21,42 +20,6 @@ camera {
   field_of_view_degrees: 45
 }
 
-# The sun at the centre: first star = light source for every planet.
-bodies {
-  id: "sun"
-  position { x: 0 y: 0 z: 0 }
-  scale: 9
-  star_ref: "space/looks/stars/yellow_dwarf"
-}
-
-bodies {
-  id: "home"
-  position { x: 0 y: 0 z: 0 }
-  orbit { around: "sun" radius: 48 period_seconds: 900 phase: 0.41 eccentricity: 0.05 inclination_degrees: 17 node_degrees: 0 }
-  scale: 2.4
-  planet_ref: "space/looks/planets/home"
-}
-
-bodies {
-  id: "moon"
-  position { x: 0 y: 0 z: 0 }
-  orbit { around: "home" radius: 2.6 period_seconds: 45 phase: 0.15 inclination_degrees: 8 }
-  scale: 0.6
-  planet_ref: "space/looks/planets/moon"
-}
-
-bodies {
-  id: "ice"
-  position { x: 0 y: 0 z: 0 }
-  orbit { around: "sun" radius: 72 period_seconds: 2400 phase: 0.47 eccentricity: 0.12 inclination_degrees: -6 node_degrees: 40 }
-  scale: 1.6
-  planet_ref: "space/looks/planets/ice"
-}
-
-bodies {
-  id: "giant"
-  position { x: 0 y: 0 z: 0 }
-  orbit { around: "sun" radius: 115 period_seconds: 5200 phase: 0.3 eccentricity: 0.06 inclination_degrees: 4 node_degrees: 120 }
-  scale: 6
-  planet_ref: "space/looks/planets/giant"
-}
+# Bodies are generated from the dice's lucky number (see space/generators/default).
+# The first generated planet is called "home" so the camera can follow it.
+generator_ref: "space/generators/default"

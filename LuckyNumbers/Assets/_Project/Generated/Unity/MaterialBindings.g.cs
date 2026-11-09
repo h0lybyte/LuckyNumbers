@@ -64,6 +64,33 @@ namespace LuckyNumbers.Model
             material.SetFloat(StarLook_BoilSpeed, look.BoilSpeed);
         }
 
+        public const string GalaxyLookShader = "LuckyNumbers/Galaxy";
+        static readonly int GalaxyLook_CoreColor = Shader.PropertyToID("_CoreColor");
+        static readonly int GalaxyLook_ArmColor = Shader.PropertyToID("_ArmColor");
+        static readonly int GalaxyLook_ArmCount = Shader.PropertyToID("_ArmCount");
+        static readonly int GalaxyLook_Twist = Shader.PropertyToID("_Twist");
+        static readonly int GalaxyLook_Brightness = Shader.PropertyToID("_Brightness");
+        static readonly int GalaxyLook_CoreSize = Shader.PropertyToID("_CoreSize");
+        static readonly int GalaxyLook_Squash = Shader.PropertyToID("_Squash");
+        static readonly int GalaxyLook_RollDegrees = Shader.PropertyToID("_RollDegrees");
+        static readonly int GalaxyLook_Dust = Shader.PropertyToID("_Dust");
+        static readonly int GalaxyLook_Seed = Shader.PropertyToID("_Seed");
+
+        /// <summary>Copies every field to the matching LuckyNumbers/Galaxy property.</summary>
+        public static void ApplyTo(this GalaxyLook look, Material material)
+        {
+            material.SetColor(GalaxyLook_CoreColor, look.CoreColor.ToColor());
+            material.SetColor(GalaxyLook_ArmColor, look.ArmColor.ToColor());
+            material.SetFloat(GalaxyLook_ArmCount, look.ArmCount);
+            material.SetFloat(GalaxyLook_Twist, look.Twist);
+            material.SetFloat(GalaxyLook_Brightness, look.Brightness);
+            material.SetFloat(GalaxyLook_CoreSize, look.CoreSize);
+            material.SetFloat(GalaxyLook_Squash, look.Squash);
+            material.SetFloat(GalaxyLook_RollDegrees, look.RollDegrees);
+            material.SetFloat(GalaxyLook_Dust, look.Dust);
+            material.SetFloat(GalaxyLook_Seed, look.Seed);
+        }
+
         public const string PlanetLookShader = "LuckyNumbers/Planet3D";
         static readonly int PlanetLook_PlanetColor = Shader.PropertyToID("_PlanetColor");
         static readonly int PlanetLook_AtmosphereColor = Shader.PropertyToID("_AtmosphereColor");

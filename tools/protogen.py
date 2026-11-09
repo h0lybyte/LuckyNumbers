@@ -356,6 +356,8 @@ class Emitter:
                 lines.append(f"        public List<{t}> {p} {{ get; }} = new List<{t}>();")
             else:
                 lines.append(f"        public {t} {p} {{ get; set; }}")
+        lines += ["", "        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>",
+                  f"        public {m.name} Clone() => ({m.name})MemberwiseClone();"]
         for oi, oname in enumerate(m.oneofs):
             cases = [f for f in m.fields if f.oneof == oi]
             enum_name = f"{pascal(oname)}Case"

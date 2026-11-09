@@ -1,0 +1,14 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.GalaxyLook
+# Three-armed golden spiral.
+
+core_color { r: 1 g: 0.85 b: 0.6 a: 1 }
+arm_color { r: 1 g: 0.7 b: 0.4 a: 1 }
+arm_count: 3
+twist: 2.4
+brightness: 0.8
+core_size: 0.12
+squash: 0.2
+roll_degrees: 0
+dust: 0.5
+seed: 2

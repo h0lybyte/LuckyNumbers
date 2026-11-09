@@ -16,5 +16,15 @@ settings {
   back_label: "Back"
 }
 
+# The dice that create the universe: faces -> lucky number -> generated solar system.
+dice {
+  roll_label: "Roll"
+  roll_seconds: 1.2
+  seed_format: "Lucky number {0}"
+  dice { id: "red" sides: 6 color { r: 0.85 g: 0.2 b: 0.25 a: 1 } initial_face: 6 }
+  dice { id: "white" sides: 6 color { r: 0.95 g: 0.95 b: 0.95 a: 1 } initial_face: 6 }
+  dice { id: "gold" sides: 6 color { r: 0.95 g: 0.75 b: 0.2 a: 1 } initial_face: 6 }
+}
+
 # The universe behind the title: see content/space/.
 backdrop_ref: "space/systems/home"

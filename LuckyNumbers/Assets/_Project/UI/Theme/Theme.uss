@@ -94,6 +94,74 @@
     -unity-text-align: middle-center;
 }
 
+.ln-button--small {
+    width: 140px;
+    height: 44px;
+    margin: 10px 0 6px 0;
+    font-size: 22px;
+}
+
+/* Dice panel: bottom-left. */
+.ln-dice-panel {
+    position: absolute;
+    left: 28px;
+    bottom: 24px;
+    align-items: flex-start;
+    padding: 12px;
+    background-color: rgba(8, 8, 20, 0.55);
+    border-radius: 10px;
+}
+
+.ln-dice-row {
+    flex-direction: row;
+}
+
+.ln-die {
+    width: 58px;
+    height: 58px;
+    margin-right: 10px;
+    padding: 6px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-radius: 11px;
+    border-width: 2px;
+    border-color: rgba(0, 0, 0, 0.35);
+}
+
+.ln-pip-cell {
+    width: 33.33%;
+    height: 33.33%;
+    align-items: center;
+    justify-content: center;
+}
+
+.ln-pip {
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+}
+
+.ln-pip--off {
+    visibility: hidden;
+}
+
+.ln-die-number {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    font-size: 26px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.ln-lucky {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.85);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+
 .ln-hidden {
     display: none;
 }

@@ -7,7 +7,9 @@
         "LuckyNumbers.Model.Unity",
         "VContainer",
         "R3.Unity",
-        "Unity.Mathematics"
+        "Unity.Mathematics",
+        "MessagePipe",
+        "UniTask"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

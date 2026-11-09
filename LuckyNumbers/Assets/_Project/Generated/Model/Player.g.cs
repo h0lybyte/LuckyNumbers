@@ -12,6 +12,9 @@ namespace LuckyNumbers.Model
     public sealed class PlayerConfig
     {
         public int MaxHealth { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public PlayerConfig Clone() => (PlayerConfig)MemberwiseClone();
     }
 
     public sealed class PlayerHealth : IDisposable

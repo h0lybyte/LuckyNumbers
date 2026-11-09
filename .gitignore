@@ -2,6 +2,9 @@
 # Unity project lives in /LuckyNumbers
 # =============================================================
 
+# -- Dist
+/dist
+
 # --- Unity generated folders (regenerated on open) ---
 /LuckyNumbers/[Ll]ibrary/
 /LuckyNumbers/[Tt]emp/

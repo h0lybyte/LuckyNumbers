@@ -16,6 +16,9 @@ namespace LuckyNumbers.Model
     {
         public string Id { get; set; }
         public List<CutsceneStep> Steps { get; } = new List<CutsceneStep>();
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public Cutscene Clone() => (Cutscene)MemberwiseClone();
     }
 
     public sealed class CutsceneStep
@@ -25,6 +28,9 @@ namespace LuckyNumbers.Model
         public CrashLanding CrashLanding { get; set; }
         public Dialogue Dialogue { get; set; }
         public GoTo GoTo { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public CutsceneStep Clone() => (CutsceneStep)MemberwiseClone();
 
         public enum StepCase
         {
@@ -53,6 +59,9 @@ namespace LuckyNumbers.Model
     {
         public List<int> Faces { get; } = new List<int>();
         public float DurationSeconds { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public DiceRoll Clone() => (DiceRoll)MemberwiseClone();
     }
 
     /// <summary>
@@ -61,6 +70,9 @@ namespace LuckyNumbers.Model
     public sealed class ShipPulledIn
     {
         public float DurationSeconds { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public ShipPulledIn Clone() => (ShipPulledIn)MemberwiseClone();
     }
 
     public sealed class CrashLanding
@@ -70,6 +82,9 @@ namespace LuckyNumbers.Model
         /// 0..1 camera shake strength.
         /// </summary>
         public float CameraShake { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public CrashLanding Clone() => (CrashLanding)MemberwiseClone();
     }
 
     public sealed class Dialogue
@@ -77,11 +92,17 @@ namespace LuckyNumbers.Model
         public string Speaker { get; set; }
         public string Text { get; set; }
         public float DurationSeconds { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public Dialogue Clone() => (Dialogue)MemberwiseClone();
     }
 
     public sealed class GoTo
     {
         public GameScene Scene { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public GoTo Clone() => (GoTo)MemberwiseClone();
     }
 
     public readonly struct CutsceneStepStarted

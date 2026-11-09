@@ -91,14 +91,27 @@ namespace LuckyNumbers.Model
                     Drift = new Vec2(0.003f, default(float)),
                     Seed = 7.0f,
                 },
-                Bodies =
+                Camera = new CameraOrbit
                 {
-                    new CelestialBody
+                    Target = "home",
+                    Distance = 6.0f,
+                    MinDistance = 3.0f,
+                    MaxDistance = 14.0f,
+                    YawDegrees = 20.0f,
+                    PitchDegrees = 8.0f,
+                    MinPitchDegrees = -60.0f,
+                    MaxPitchDegrees = 60.0f,
+                    DragDegreesPerScreen = 200.0f,
+                    Glide = 0.92f,
+                    ZoomStep = 0.12f,
+                    FrameOffset = new Vec2(-1.6f, 0.2f),
+                    FieldOfViewDegrees = 45.0f,
+                },
+                Generator = new SystemGenerator
+                {
+                    Stars =
                     {
-                        Id = "sun",
-                        Position = new Vec3(default(float), default(float), default(float)),
-                        Scale = 9.0f,
-                        Star = new StarLook
+                        new StarLook
                         {
                             CoreColor = new Rgba(1.0f, 0.78f, 0.42f, 1.0f),
                             CoronaColor = new Rgba(1.0f, 0.55f, 0.2f, 1.0f),
@@ -110,13 +123,34 @@ namespace LuckyNumbers.Model
                             NoiseScale = 3.0f,
                             BoilSpeed = 0.05f,
                         },
+                        new StarLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.45f, 0.25f, 1.0f),
+                            CoronaColor = new Rgba(1.0f, 0.25f, 0.1f, 1.0f),
+                            LightColor = new Rgba(1.0f, 0.7f, 0.55f, 1.0f),
+                            Intensity = 1.4f,
+                            CoronaSize = 1.6f,
+                            CoronaPower = 5.0f,
+                            CoronaIntensity = 1.6f,
+                            NoiseScale = 3.5f,
+                            BoilSpeed = 0.04f,
+                        },
+                        new StarLook
+                        {
+                            CoreColor = new Rgba(0.75f, 0.85f, 1.0f, 1.0f),
+                            CoronaColor = new Rgba(0.45f, 0.6f, 1.0f, 1.0f),
+                            LightColor = new Rgba(0.85f, 0.92f, 1.0f, 1.0f),
+                            Intensity = 1.8f,
+                            CoronaSize = 2.0f,
+                            CoronaPower = 4.5f,
+                            CoronaIntensity = 2.0f,
+                            NoiseScale = 2.5f,
+                            BoilSpeed = 0.07f,
+                        },
                     },
-                    new CelestialBody
+                    Planets =
                     {
-                        Id = "home",
-                        Position = new Vec3(default(float), default(float), default(float)),
-                        Scale = 2.4f,
-                        Planet = new PlanetLook
+                        new PlanetLook
                         {
                             PlanetColor = new Rgba(1.0f, 0.34f, default(float), 1.0f),
                             AtmosphereColor = new Rgba(0.41f, 0.6f, 1.0f, 1.0f),
@@ -133,53 +167,7 @@ namespace LuckyNumbers.Model
                             TerminatorSoftness = 0.15f,
                             AxialTiltDegrees = -12.0f,
                         },
-                        Orbit = new Orbit
-                        {
-                            Around = "sun",
-                            Radius = 48.0f,
-                            PeriodSeconds = 900.0f,
-                            Phase = 0.41f,
-                            Eccentricity = 0.05f,
-                            InclinationDegrees = 17.0f,
-                        },
-                    },
-                    new CelestialBody
-                    {
-                        Id = "moon",
-                        Position = new Vec3(default(float), default(float), default(float)),
-                        Scale = 0.6f,
-                        Planet = new PlanetLook
-                        {
-                            PlanetColor = new Rgba(0.6f, 0.6f, 0.65f, 1.0f),
-                            AtmosphereColor = new Rgba(0.7f, 0.7f, 0.8f, 1.0f),
-                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
-                            AtmosphereThickness = 0.04f,
-                            RotationSpeed = 0.02f,
-                            LightIntensity = 0.6f,
-                            ShadowIntensity = 1.0f,
-                            NoiseOffset = new Vec3(13.0f, 5.0f, 2.0f),
-                            NoiseScale = 2.2f,
-                            NoiseRemap = 1.0f,
-                            AtmosphereIntensity = 0.5f,
-                            AtmospherePower = 4.0f,
-                            TerminatorSoftness = 0.15f,
-                            AxialTiltDegrees = 8.0f,
-                        },
-                        Orbit = new Orbit
-                        {
-                            Around = "home",
-                            Radius = 2.6f,
-                            PeriodSeconds = 45.0f,
-                            Phase = 0.15f,
-                            InclinationDegrees = 8.0f,
-                        },
-                    },
-                    new CelestialBody
-                    {
-                        Id = "ice",
-                        Position = new Vec3(default(float), default(float), default(float)),
-                        Scale = 1.6f,
-                        Planet = new PlanetLook
+                        new PlanetLook
                         {
                             PlanetColor = new Rgba(0.3f, 0.75f, 1.0f, 1.0f),
                             AtmosphereColor = new Rgba(0.8f, 0.95f, 1.0f, 1.0f),
@@ -196,23 +184,7 @@ namespace LuckyNumbers.Model
                             TerminatorSoftness = 0.15f,
                             AxialTiltDegrees = 20.0f,
                         },
-                        Orbit = new Orbit
-                        {
-                            Around = "sun",
-                            Radius = 72.0f,
-                            PeriodSeconds = 2400.0f,
-                            Phase = 0.47f,
-                            Eccentricity = 0.12f,
-                            InclinationDegrees = -6.0f,
-                            NodeDegrees = 40.0f,
-                        },
-                    },
-                    new CelestialBody
-                    {
-                        Id = "giant",
-                        Position = new Vec3(default(float), default(float), default(float)),
-                        Scale = 6.0f,
-                        Planet = new PlanetLook
+                        new PlanetLook
                         {
                             PlanetColor = new Rgba(0.55f, 0.2f, 0.85f, 1.0f),
                             AtmosphereColor = new Rgba(0.9f, 0.5f, 1.0f, 1.0f),
@@ -229,33 +201,141 @@ namespace LuckyNumbers.Model
                             TerminatorSoftness = 0.15f,
                             AxialTiltDegrees = -25.0f,
                         },
-                        Orbit = new Orbit
+                        new PlanetLook
                         {
-                            Around = "sun",
-                            Radius = 115.0f,
-                            PeriodSeconds = 5200.0f,
-                            Phase = 0.3f,
-                            Eccentricity = 0.06f,
-                            InclinationDegrees = 4.0f,
-                            NodeDegrees = 120.0f,
+                            PlanetColor = new Rgba(1.0f, 0.28f, 0.05f, 1.0f),
+                            AtmosphereColor = new Rgba(1.0f, 0.45f, 0.2f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.08f,
+                            RotationSpeed = 0.01f,
+                            LightIntensity = 0.7f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(default(float), default(float), default(float)),
+                            NoiseScale = 2.4f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 0.9f,
+                            AtmospherePower = 2.5f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 0.0f,
+                        },
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.9f, 0.68f, 0.38f, 1.0f),
+                            AtmosphereColor = new Rgba(1.0f, 0.8f, 0.55f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.06f,
+                            RotationSpeed = 0.01f,
+                            LightIntensity = 0.8f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(default(float), default(float), default(float)),
+                            NoiseScale = 1.3f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 1.2f,
+                            AtmospherePower = 2.5f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 0.0f,
+                        },
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.25f, 0.7f, 0.4f, 1.0f),
+                            AtmosphereColor = new Rgba(0.45f, 0.7f, 1.0f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.08f,
+                            RotationSpeed = 0.01f,
+                            LightIntensity = 0.8f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(default(float), default(float), default(float)),
+                            NoiseScale = 1.8f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 1.5f,
+                            AtmospherePower = 2.5f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 0.0f,
                         },
                     },
-                },
-                Camera = new CameraOrbit
-                {
-                    Target = "home",
-                    Distance = 6.0f,
-                    MinDistance = 3.0f,
-                    MaxDistance = 14.0f,
-                    YawDegrees = 20.0f,
-                    PitchDegrees = 8.0f,
-                    MinPitchDegrees = -60.0f,
-                    MaxPitchDegrees = 60.0f,
-                    DragDegreesPerScreen = 200.0f,
-                    Glide = 0.92f,
-                    ZoomStep = 0.12f,
-                    FrameOffset = new Vec2(-1.6f, 0.2f),
-                    FieldOfViewDegrees = 45.0f,
+                    Galaxies =
+                    {
+                        new GalaxyLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.92f, 0.75f, 1.0f),
+                            ArmColor = new Rgba(0.45f, 0.6f, 1.0f, 1.0f),
+                            ArmCount = 2.0f,
+                            Twist = 3.0f,
+                            Brightness = 0.9f,
+                            CoreSize = 0.14f,
+                            Squash = 0.3f,
+                            RollDegrees = 0.0f,
+                            Dust = 0.6f,
+                            Seed = 1.0f,
+                        },
+                        new GalaxyLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.85f, 0.6f, 1.0f),
+                            ArmColor = new Rgba(1.0f, 0.7f, 0.4f, 1.0f),
+                            ArmCount = 3.0f,
+                            Twist = 2.4f,
+                            Brightness = 0.8f,
+                            CoreSize = 0.12f,
+                            Squash = 0.2f,
+                            RollDegrees = 0.0f,
+                            Dust = 0.5f,
+                            Seed = 2.0f,
+                        },
+                        new GalaxyLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.8f, 0.6f, 1.0f),
+                            ArmColor = new Rgba(0.9f, 0.65f, 0.5f, 1.0f),
+                            ArmCount = 0.0f,
+                            Twist = 0.0f,
+                            Brightness = 0.7f,
+                            CoreSize = 0.3f,
+                            Squash = 0.4f,
+                            RollDegrees = 0.0f,
+                            Dust = 0.0f,
+                            Seed = 3.0f,
+                        },
+                    },
+                    MinPlanets = 3,
+                    MaxPlanets = 6,
+                    FirstOrbitRadius = 30.0f,
+                    OrbitSpacingMin = 1.35f,
+                    OrbitSpacingMax = 1.7f,
+                    PlanetScaleMin = 1.2f,
+                    PlanetScaleMax = 4.5f,
+                    StarScaleMin = 7.0f,
+                    StarScaleMax = 12.0f,
+                    MoonChance = 0.55f,
+                    MaxMoons = 2,
+                    MoonScaleRatio = 0.25f,
+                    SecondsPerOrbitUnit = 2.7f,
+                    MaxEccentricity = 0.12f,
+                    MaxInclinationDegrees = 12.0f,
+                    GalaxyCount = 5,
+                    GalaxyDistance = 380.0f,
+                    GalaxyScaleMin = 50.0f,
+                    GalaxyScaleMax = 110.0f,
+                    CollapseSeconds = 0.5f,
+                    ExpandSeconds = 1.6f,
+                    Moons =
+                    {
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.6f, 0.6f, 0.65f, 1.0f),
+                            AtmosphereColor = new Rgba(0.7f, 0.7f, 0.8f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.04f,
+                            RotationSpeed = 0.02f,
+                            LightIntensity = 0.6f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(13.0f, 5.0f, 2.0f),
+                            NoiseScale = 2.2f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 0.5f,
+                            AtmospherePower = 4.0f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 8.0f,
+                        },
+                    },
                 },
             },
             PromptPulseSeconds = 1.6f,
@@ -278,6 +358,36 @@ namespace LuckyNumbers.Model
                 Title = "Settings",
                 Body = "Coming soon.",
                 BackLabel = "Back",
+            },
+            Dice = new DiceRoller
+            {
+                Dice =
+                {
+                    new Die
+                    {
+                        Id = "red",
+                        Sides = 6,
+                        Color = new Rgba(0.85f, 0.2f, 0.25f, 1.0f),
+                        InitialFace = 6,
+                    },
+                    new Die
+                    {
+                        Id = "white",
+                        Sides = 6,
+                        Color = new Rgba(0.95f, 0.95f, 0.95f, 1.0f),
+                        InitialFace = 6,
+                    },
+                    new Die
+                    {
+                        Id = "gold",
+                        Sides = 6,
+                        Color = new Rgba(0.95f, 0.75f, 0.2f, 1.0f),
+                        InitialFace = 6,
+                    },
+                },
+                RollLabel = "Roll",
+                RollSeconds = 1.2f,
+                SeedFormat = "Lucky number {0}",
             },
         };
     }

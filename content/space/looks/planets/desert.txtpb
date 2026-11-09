@@ -1,0 +1,9 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.PlanetLook
+# proto-extends: space/looks/planet_base
+# Dry dune world, warm haze.
+
+planet_color { r: 0.9 g: 0.68 b: 0.38 a: 1 }
+atmosphere_color { r: 1 g: 0.8 b: 0.55 a: 1 }
+noise_scale: 1.3
+atmosphere_thickness: 0.06

@@ -26,9 +26,10 @@ namespace LuckyNumbers.Editor
             var starfield = MaterialAsset("Starfield", "LuckyNumbers/Starfield");
             var planet = MaterialAsset("Planet3D", "LuckyNumbers/Planet3D");
             var star = MaterialAsset("Star", "LuckyNumbers/Star");
+            var galaxy = MaterialAsset("Galaxy", "LuckyNumbers/Galaxy");
 
             var panel = PanelSettingsAsset();
-            BuildTitle(starfield, planet, star, panel);
+            BuildTitle(starfield, planet, star, galaxy, panel);
             BuildIntroPlaceholder(starfield, panel);
 
             EditorBuildSettings.scenes = new[]
@@ -42,7 +43,7 @@ namespace LuckyNumbers.Editor
             Debug.Log("[SceneBuilder] built Title, Intro; build settings = [Title, Intro]");
         }
 
-        static void BuildTitle(Material starfieldMat, Material planetMat, Material starMat, PanelSettings panel)
+        static void BuildTitle(Material starfieldMat, Material planetMat, Material starMat, Material galaxyMat, PanelSettings panel)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -52,13 +53,18 @@ namespace LuckyNumbers.Editor
             var space = new GameObject("Space").AddComponent<SpaceView>();
             var planetTemplate = Sphere("PlanetTemplate", planetMat, space.transform);
             var starTemplate = Sphere("StarTemplate", starMat, space.transform);
+            var galaxyTemplate = QuadMesh("GalaxyTemplate", galaxyMat, space.transform);
             planetTemplate.gameObject.SetActive(false);
             starTemplate.gameObject.SetActive(false);
+            galaxyTemplate.gameObject.SetActive(false);
             // UI Toolkit: UI/Screens/Title.uxml styled by UI/Theme; TitleView binds it ([Ui] fields, Roslyn).
             var ui = Document("UI", panel, "Title");
-            Assign(space, ("viewCamera", cam), ("planetTemplate", planetTemplate), ("starTemplate", starTemplate), ("ui", ui));
+            Assign(space, ("viewCamera", cam), ("planetTemplate", planetTemplate), ("starTemplate", starTemplate),
+                   ("galaxyTemplate", galaxyTemplate), ("ui", ui));
             var view = new GameObject("TitleView").AddComponent<TitleView>();
             Assign(view, ("document", ui));
+            var dice = new GameObject("DiceView").AddComponent<DiceView>();
+            Assign(dice, ("document", ui));
 
             Scopes<TitleScope>();
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Title.unity");
@@ -123,6 +129,19 @@ namespace LuckyNumbers.Editor
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
             RenderSettings.ambientLight = Color.black; // all shaders are unlit; no baked/ambient lighting
             RenderSettings.fog = false;
+        }
+
+        static MeshRenderer QuadMesh(string name, Material material, Transform parent)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Quad); // billboarded in the shader
+            go.name = name;
+            Object.DestroyImmediate(go.GetComponent<Collider>());
+            go.transform.SetParent(parent, false);
+            var r = go.GetComponent<MeshRenderer>();
+            r.sharedMaterial = material;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            return r;
         }
 
         static MeshRenderer Sphere(string name, Material material, Transform parent)

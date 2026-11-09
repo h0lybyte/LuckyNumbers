@@ -1,0 +1,34 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.SystemGenerator
+# Seed -> solar system. Palettes come from the looks library; add a preset file and list it here.
+
+star_refs: ["space/looks/stars/yellow_dwarf", "space/looks/stars/red_dwarf", "space/looks/stars/blue_giant"]
+planet_refs: ["space/looks/planets/home", "space/looks/planets/ice", "space/looks/planets/giant",
+              "space/looks/planets/lava", "space/looks/planets/desert", "space/looks/planets/verdant"]
+moon_refs: ["space/looks/planets/moon"]
+galaxy_refs: ["space/looks/galaxies/spiral_blue", "space/looks/galaxies/spiral_gold", "space/looks/galaxies/elliptical"]
+
+min_planets: 3
+max_planets: 6
+first_orbit_radius: 30
+orbit_spacing_min: 1.35
+orbit_spacing_max: 1.7
+planet_scale_min: 1.2
+planet_scale_max: 4.5
+star_scale_min: 7
+star_scale_max: 12
+moon_chance: 0.55
+max_moons: 2
+moon_scale_ratio: 0.25
+# 48 units -> ~900 s, like the hand-made home planet.
+seconds_per_orbit_unit: 2.7
+max_eccentricity: 0.12
+max_inclination_degrees: 12
+
+galaxy_count: 5
+galaxy_distance: 380
+galaxy_scale_min: 50
+galaxy_scale_max: 110
+
+collapse_seconds: 0.5
+expand_seconds: 1.6

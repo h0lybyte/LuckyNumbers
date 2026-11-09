@@ -12,9 +12,56 @@ message SpaceBackdrop {
   reserved 2, 3, 4, 6, 8; // planet, planet_position, planet_scale, pan, sun_direction (now a star body)
   StarfieldLook stars = 1;
   string stars_ref = 10 [(ln.ref) = "stars"];
-  // Planets and stars. The first star lights every planet (point light at its position).
+  // Hand-placed bodies. The first star lights every planet (point light at its position).
   repeated CelestialBody bodies = 5;
   CameraOrbit camera = 7;
+  // When set, each UniverseSeedChanged replaces the bodies with a generated system (big-bang transition).
+  SystemGenerator generator = 11;
+  string generator_ref = 12 [(ln.ref) = "generator"];
+}
+
+// The dice roll's lucky number: Space regenerates the universe from it.
+message UniverseSeedChanged {
+  option (ln.event) = true;
+  uint32 seed = 1;
+}
+
+// Rules for seed -> solar system. Palettes are lists of library looks (refs append).
+message SystemGenerator {
+  repeated StarLook stars = 1;
+  repeated string star_refs = 2 [(ln.ref) = "stars"];
+  repeated PlanetLook planets = 3;
+  repeated string planet_refs = 4 [(ln.ref) = "planets"];
+  repeated GalaxyLook galaxies = 5;
+  repeated string galaxy_refs = 6 [(ln.ref) = "galaxies"];
+  int32 min_planets = 7;
+  int32 max_planets = 8;
+  float first_orbit_radius = 9;
+  // Each next orbit is the previous radius times a factor in this range.
+  float orbit_spacing_min = 10;
+  float orbit_spacing_max = 11;
+  float planet_scale_min = 12;
+  float planet_scale_max = 13;
+  float star_scale_min = 14;
+  float star_scale_max = 15;
+  // Chance (0..1) that a planet has moons, and the most it can have.
+  float moon_chance = 16;
+  int32 max_moons = 17;
+  // Moon diameter as a share of its planet's.
+  float moon_scale_ratio = 18;
+  // Orbital period = this * radius^1.5 (Kepler's third law shape).
+  float seconds_per_orbit_unit = 19;
+  float max_eccentricity = 20;
+  float max_inclination_degrees = 21;
+  int32 galaxy_count = 22;
+  float galaxy_distance = 23;
+  float galaxy_scale_min = 24;
+  float galaxy_scale_max = 25;
+  // Big bang: old system collapses into the centre, new one expands out.
+  float collapse_seconds = 26;
+  float expand_seconds = 27;
+  repeated PlanetLook moons = 28;
+  repeated string moon_refs = 29 [(ln.ref) = "moons"];
 }
 
 // One entity of the universe: a planet or a star sphere.
@@ -27,10 +74,13 @@ message CelestialBody {
   oneof appearance {
     PlanetLook planet = 4;
     StarLook star = 6;
+    // Far-away spiral/elliptical galaxy billboard.
+    GalaxyLook galaxy = 9;
   }
-  // Look presets from the content library; inline planet/star fields override them.
+  // Look presets from the content library; inline planet/star/galaxy fields override them.
   string planet_ref = 7 [(ln.ref) = "planet"];
   string star_ref = 8 [(ln.ref) = "star"];
+  string galaxy_ref = 10 [(ln.ref) = "galaxy"];
   // Optional: orbit another body (listed earlier). radius 0 = static at `position`.
   Orbit orbit = 5;
 }
@@ -104,6 +154,25 @@ message StarLook {
   optional float noise_scale = 8;
   // Surface churn speed.
   optional float boil_speed = 9;
+}
+
+// Shader properties of LuckyNumbers/Galaxy (camera-facing billboard, additive).
+message GalaxyLook {
+  option (ln.material) = "LuckyNumbers/Galaxy";
+  Rgba core_color = 1;
+  Rgba arm_color = 2;
+  // 0 = elliptical (no arms).
+  optional float arm_count = 3;
+  // How tightly the arms wind.
+  optional float twist = 4;
+  optional float brightness = 5;
+  optional float core_size = 6;
+  // 0 = seen face-on, towards 1 = seen edge-on.
+  optional float squash = 7;
+  optional float roll_degrees = 8;
+  // Dust lane strength along the arms.
+  optional float dust = 9;
+  optional float seed = 10;
 }
 
 // Shader properties of LuckyNumbers/Planet3D.

@@ -39,12 +39,63 @@ namespace LuckyNumbers.Model
         /// </summary>
         public List<MenuItem> Menu { get; } = new List<MenuItem>();
         public SettingsPanel Settings { get; set; }
+        public DiceRoller Dice { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public TitleScreen Clone() => (TitleScreen)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// The dice that create the universe: their faces become the seed ("lucky number").
+    /// </summary>
+    public sealed class DiceRoller
+    {
+        public List<Die> Dice { get; } = new List<Die>();
+        public string RollLabel { get; set; }
+        public float RollSeconds { get; set; }
+        /// <summary>
+        /// Shown under the dice; {0} = the lucky number.
+        /// </summary>
+        public string SeedFormat { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public DiceRoller Clone() => (DiceRoller)MemberwiseClone();
+    }
+
+    public sealed class Die
+    {
+        public string Id { get; set; }
+        public int Sides { get; set; }
+        public Rgba Color { get; set; }
+        /// <summary>
+        /// Face shown (and seeding the universe) before the first roll.
+        /// </summary>
+        public int InitialFace { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public Die Clone() => (Die)MemberwiseClone();
+    }
+
+    public sealed class DiceState : IDisposable
+    {
+        public readonly ObservableList<int> Faces = new ObservableList<int>();
+        public readonly ReactiveProperty<bool> Rolling = new ReactiveProperty<bool>();
+        public readonly ReactiveProperty<uint> Seed = new ReactiveProperty<uint>();
+
+        public void Dispose()
+        {
+            Rolling.Dispose();
+            Seed.Dispose();
+        }
     }
 
     public sealed class MenuItem
     {
         public string Label { get; set; }
         public MenuAction Action { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public MenuItem Clone() => (MenuItem)MemberwiseClone();
     }
 
     /// <summary>
@@ -55,6 +106,9 @@ namespace LuckyNumbers.Model
         public string Title { get; set; }
         public string Body { get; set; }
         public string BackLabel { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public SettingsPanel Clone() => (SettingsPanel)MemberwiseClone();
     }
 
     public readonly struct MenuItemSelected

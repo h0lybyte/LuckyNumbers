@@ -1,0 +1,13 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.StarLook
+# Small cool red star.
+
+core_color { r: 1 g: 0.45 b: 0.25 a: 1 }
+corona_color { r: 1 g: 0.25 b: 0.1 a: 1 }
+light_color { r: 1 g: 0.7 b: 0.55 a: 1 }
+intensity: 1.4
+corona_size: 1.6
+corona_power: 5
+corona_intensity: 1.6
+noise_scale: 3.5
+boil_speed: 0.04
