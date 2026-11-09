@@ -25,6 +25,10 @@ namespace LuckyNumbers.Model
         /// Any key/button on any device ("Press any key").
         /// </summary>
         AnyButton = 7,
+        /// <summary>
+        /// Open/close the planet map.
+        /// </summary>
+        Map = 8,
     }
 
     /// <summary>

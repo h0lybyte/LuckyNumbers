@@ -12,6 +12,8 @@ namespace LuckyNumbers.Planet
 
         [Ui("flash")] VisualElement _flash;
         [Ui("hint")] Label _hint;
+        [Ui("map-hint")] Label _mapHint;
+        [Ui("crosshair")] VisualElement _crosshair;
         [Ui("dialogue")] VisualElement _dialogue;
         [Ui("speaker")] Label _speaker;
         [Ui("line")] Label _line;
@@ -28,6 +30,15 @@ namespace LuckyNumbers.Planet
             if (text == null) return;
             _speaker.text = speaker;
             _line.text = text.Substring(0, Mathf.Clamp(visibleChars, 0, text.Length));
+        }
+
+        /// <summary>Map controls line (null = map closed: hide it, show the crosshair).</summary>
+        public void MapHint(string text)
+        {
+            _mapHint.text = text ?? "";
+            _mapHint.EnableInClassList("ln-hidden", text == null);
+            _crosshair.EnableInClassList("ln-hidden", text != null);
+            _hint.EnableInClassList("ln-hidden", text != null);
         }
 
         public void Hint(string text, float alpha)

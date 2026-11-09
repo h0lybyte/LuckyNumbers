@@ -173,6 +173,46 @@ namespace LuckyNumbers.Editor
             var view = new GameObject("PlanetView").AddComponent<PlanetView>();
             Assign(view, ("document", ui), ("sun", sun));
 
+            // Map (M): a hex globe on its own layer, far from the world, with its own camera (off until opened).
+            var mapLayer = LayerMask.NameToLayer("Map");
+            if (mapLayer < 0) throw new System.Exception("layer Map missing (ProjectSettings/TagManager)");
+            cam.cullingMask &= ~(1 << mapLayer);
+            var mapGo = new GameObject("Map");
+            mapGo.transform.position = new Vector3(0f, 5000f, 0f);
+            var globe = new GameObject("Globe");
+            globe.transform.SetParent(mapGo.transform, false);
+            var globeFilter = globe.AddComponent<MeshFilter>();
+            var globeRenderer = globe.AddComponent<MeshRenderer>();
+            globeRenderer.sharedMaterial = MaterialAsset("HexMap", "LuckyNumbers/HexMap");
+            globeRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            var marker = MaterialAsset("MapMarker", "Universal Render Pipeline/Unlit");
+            Transform Marker(string name, PrimitiveType type, Vector3 scale)
+            {
+                var m = GameObject.CreatePrimitive(type);
+                m.name = name;
+                Object.DestroyImmediate(m.GetComponent<Collider>());
+                m.transform.SetParent(globe.transform, false);
+                m.transform.localScale = scale;
+                m.GetComponent<MeshRenderer>().sharedMaterial = marker;
+                return m.transform;
+            }
+            var crashMarker = Marker("Crash", PrimitiveType.Cylinder, new Vector3(0.02f, 0.04f, 0.02f));
+            var pinMarker = Marker("You", PrimitiveType.Sphere, Vector3.one * 0.022f);
+            var mapCamGo = new GameObject("MapCamera");
+            mapCamGo.transform.SetParent(mapGo.transform, false);
+            mapCamGo.transform.localPosition = new Vector3(0f, 0f, -3f);
+            var mapCam = mapCamGo.AddComponent<Camera>();
+            mapCam.clearFlags = CameraClearFlags.SolidColor;
+            mapCam.cullingMask = 1 << mapLayer;
+            mapCam.fieldOfView = 40f;
+            mapCam.nearClipPlane = 0.05f;
+            mapCam.farClipPlane = 20f;
+            ArmsView.SetLayer(mapGo.transform, mapLayer);
+            var mapView = mapGo.AddComponent<MapView>();
+            Assign(mapView, ("mapCamera", mapCam), ("globe", globe.transform), ("globeMesh", globeFilter), ("globeRenderer", globeRenderer),
+                   ("crash", crashMarker), ("pin", pinMarker));
+            mapCamGo.SetActive(false);
+
             ShipRig(collide: true);   // the wreck: solid, so you walk around (and onto) it
             Scopes<PlanetScope>();
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Planet.unity");

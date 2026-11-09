@@ -86,6 +86,32 @@ message PlanetScene {
   // the controls hint waits until they're done.
   repeated Dialogue wake_lines = 50;
   float wake_lines_delay = 51;
+  // The planet map (M): a hex globe of the planet you're on.
+  PlanetMap map = 52;
+}
+
+// A Goldberg globe: hexagons plus exactly 12 pentagons (Euler), 10 * frequency^2 + 2 cells, each coloured
+// and raised by the planet's own terrain noise.
+message PlanetMap {
+  int32 frequency = 1;
+  // Gap between cells (share of a cell), relief height (share of the radius), terrain noise scale and octaves.
+  float gap = 2;
+  float relief = 3;
+  float noise_scale = 4;
+  int32 octaves = 5;
+  // Cells below this terrain height (0..1) are flat sea (0 = no sea).
+  float sea_level = 6;
+  // How far you walk (metres) to cross one radian of the globe: sets how far the pin moves as you walk.
+  float walk_radius_metres = 7;
+  Rgba crash_color = 8;
+  Rgba pin_color = 9;
+  Rgba background = 10;
+  // Camera distance in globe radii (start, nearest, farthest), drag speed (degrees per pixel).
+  float distance = 11;
+  float zoom_min = 12;
+  float zoom_max = 13;
+  float drag_degrees_per_pixel = 14;
+  string hint = 15;
 }
 
 // Where the intro's ship came down: read by the Planet scene (and later a save file).

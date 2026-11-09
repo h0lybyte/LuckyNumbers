@@ -4,6 +4,7 @@
         <ui:VisualElement name="flash" class="ln-flash ln-flash--black" picking-mode="Ignore" />
         <ui:Label name="hint" class="ln-hint" picking-mode="Ignore" />
         <ui:VisualElement name="crosshair" class="ln-crosshair" picking-mode="Ignore" />
+        <ui:Label name="map-hint" class="ln-hint ln-map-hint ln-hidden" picking-mode="Ignore" />
         <ui:VisualElement name="dialogue" class="ln-dialogue ln-hidden" picking-mode="Ignore">
             <ui:Label name="speaker" class="ln-dialogue-speaker" picking-mode="Ignore" />
             <ui:Label name="line" class="ln-dialogue-line" picking-mode="Ignore" />

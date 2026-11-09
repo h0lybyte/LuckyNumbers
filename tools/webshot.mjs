@@ -102,7 +102,7 @@ for (const step of steps) {
   }
   if (step.key) { // ["KeyW", seconds] or ["ShiftLeft+KeyW", seconds]: hold key(s) (code + key name for the Input System)
     const [combo, seconds] = step.key, codes = combo.split("+");
-    const vk = { KeyW: 87, KeyA: 65, KeyS: 83, KeyD: 68, KeyE: 69, Space: 32, ShiftLeft: 16 };
+    const vk = { KeyW: 87, KeyA: 65, KeyS: 83, KeyD: 68, KeyE: 69, KeyM: 77, Space: 32, ShiftLeft: 16 };
     const ev = (type, code) => send("Input.dispatchKeyEvent",
       { type, code, key: code.startsWith("Key") ? code.slice(3).toLowerCase() : code, windowsVirtualKeyCode: vk[code] ?? 0 });
     for (const c of codes) await ev("keyDown", c);

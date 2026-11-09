@@ -19,8 +19,17 @@ namespace LuckyNumbers.Planet
     /// the wreck (their ship, PlayerShip) lies nose-down nearby. Then the wake-up: lying on the ground, fade in, stand,
     /// face the wreck, hand control to the player.
     /// </summary>
+    /// <summary>What the crash site was built from (for the map).</summary>
+    public interface ICrashSite
+    {
+        bool Built { get; }
+        uint Seed { get; }
+        string Body { get; }
+        PlanetLook Look { get; }
+    }
+
     [Presenter]
-    public sealed class CrashSitePresenter : IStartable, ITickable, IDisposable
+    public sealed class CrashSitePresenter : IStartable, ITickable, IDisposable, ICrashSite
     {
         static readonly int SunPosition = Shader.PropertyToID("_LnSunPosition");
         static readonly int SunColor = Shader.PropertyToID("_LnSunColor");
@@ -38,6 +47,11 @@ namespace LuckyNumbers.Planet
         IDisposable _subscription;
         Vector3 _sunDirection = new(0.4f, 0.6f, 0.3f);
         bool _built;
+
+        public bool Built => _built;
+        public uint Seed { get; private set; }
+        public string Body { get; private set; }
+        public PlanetLook Look { get; private set; }
 
         [Inject]
         public CrashSitePresenter(PlanetScene config, GroundView ground, PlanetView view, PlayerView player, ShipView wreck,
@@ -81,6 +95,9 @@ namespace LuckyNumbers.Planet
                 if (b.Star != null && star == null) star = b;
             }
             Debug.Log($"[Planet] crash site on {bodyId} (lucky number {roll.Seed})");
+            Seed = roll.Seed;
+            Body = bodyId;
+            Look = planet?.Planet;
             var rng = new Random(roll.Seed | 1u);
 
             // Ground: the planet's colours and noise, at walking scale.

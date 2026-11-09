@@ -54,3 +54,7 @@ Arms (`ArmsView`), built up each frame: clips (base layer for both arms + one ma
 one-shots), procedural life (breath, stride swing, run pump, arms up in the air, post-crash tremor), IK
 (touch, grab, carry), finger poses from `content/hands/poses/*`. Drawn by an overlay camera on the
 `Viewmodel` layer (same FOV, cleared depth), so they and what they hold never clip into the world.
+
+Map (M, `MapPresenter`): the planet as a hex globe (`HexSphere`: a Goldberg polyhedron, hexagons plus the
+12 pentagons Euler requires), coloured and raised by the planet's terrain noise; crash cell marked, a pin
+for where you've walked. Own camera and `Map` layer; first-person control pauses while it's open.

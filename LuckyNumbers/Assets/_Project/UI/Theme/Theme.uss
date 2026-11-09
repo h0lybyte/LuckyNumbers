@@ -256,6 +256,12 @@
     background-color: rgba(255, 255, 255, 0.7);
 }
 
+/* Planet map: controls line at the top. */
+.ln-map-hint {
+    top: 5%;
+    bottom: auto;
+}
+
 .ln-hidden {
     display: none;
 }

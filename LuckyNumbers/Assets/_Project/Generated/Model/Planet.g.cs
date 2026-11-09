@@ -124,9 +124,51 @@ namespace LuckyNumbers.Model
         /// </summary>
         public List<Dialogue> WakeLines { get; } = new List<Dialogue>();
         public float WakeLinesDelay { get; set; }
+        /// <summary>
+        /// The planet map (M): a hex globe of the planet you're on.
+        /// </summary>
+        public PlanetMap Map { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public PlanetScene Clone() => (PlanetScene)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// A Goldberg globe: hexagons plus exactly 12 pentagons (Euler), 10 * frequency^2 + 2 cells, each coloured
+    /// and raised by the planet's own terrain noise.
+    /// </summary>
+    public sealed class PlanetMap
+    {
+        public int Frequency { get; set; }
+        /// <summary>
+        /// Gap between cells (share of a cell), relief height (share of the radius), terrain noise scale and octaves.
+        /// </summary>
+        public float Gap { get; set; }
+        public float Relief { get; set; }
+        public float NoiseScale { get; set; }
+        public int Octaves { get; set; }
+        /// <summary>
+        /// Cells below this terrain height (0..1) are flat sea (0 = no sea).
+        /// </summary>
+        public float SeaLevel { get; set; }
+        /// <summary>
+        /// How far you walk (metres) to cross one radian of the globe: sets how far the pin moves as you walk.
+        /// </summary>
+        public float WalkRadiusMetres { get; set; }
+        public Rgba CrashColor { get; set; }
+        public Rgba PinColor { get; set; }
+        public Rgba Background { get; set; }
+        /// <summary>
+        /// Camera distance in globe radii (start, nearest, farthest), drag speed (degrees per pixel).
+        /// </summary>
+        public float Distance { get; set; }
+        public float ZoomMin { get; set; }
+        public float ZoomMax { get; set; }
+        public float DragDegreesPerPixel { get; set; }
+        public string Hint { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public PlanetMap Clone() => (PlanetMap)MemberwiseClone();
     }
 
     /// <summary>
