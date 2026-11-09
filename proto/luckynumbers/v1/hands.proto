@@ -2,10 +2,12 @@ syntax = "proto3";
 
 package luckynumbers.v1;
 
+import "ln/options.proto";
+
 option csharp_namespace = "LuckyNumbers.Model";
 
 // Bone map of a first-person arms rig, so code never hard-codes bone names. Names may contain "{side}",
-// replaced by each entry of `sides` (e.g. "upper_arm.{side}" -> upper_arm.L, upper_arm.R).
+// replaced by each entry of `sides`, left hand first (e.g. "upper_arm.{side}" -> upper_arm.L, upper_arm.R).
 message HandRig {
   repeated string sides = 1;
   ArmChain arm = 2;
@@ -15,6 +17,26 @@ message HandRig {
   // IK: max shoulder lift (degrees) to stretch toward far targets; share of full reach the arm may straighten to.
   float shrug_degrees = 5;
   float max_reach = 6;
+  // Finger poses the hands blend between (content/hands/poses/*), and how fast (blend per second).
+  repeated HandPose poses = 7;
+  repeated string pose_refs = 8 [(ln.ref) = "poses"];
+  float pose_speed = 9;
+}
+
+// A hand shape: how far each finger curls at each joint (degrees, knuckle to tip; toward the palm).
+// Fingers not listed stay straight. A shorter curl list repeats its last value.
+message HandPose {
+  string name = 1;
+  repeated FingerPose fingers = 2;
+  // How much the idle finger fidget still shows through (0 = held still, 1 = full).
+  float fidget = 3;
+}
+
+message FingerPose {
+  string finger = 1;
+  repeated float curl = 2;
+  // Fan out from the middle finger at the knuckle (degrees).
+  float spread = 3;
 }
 
 // Two-bone IK chain: upper -> lower -> hand, aimed at `target` with the elbow bent toward `pole`.
@@ -27,7 +49,7 @@ message ArmChain {
   string pole = 6;
 }
 
-// One finger: its palm (metacarpal) bone and joints from knuckle to tip.
+// One finger: its palm (metacarpal) bone, if it has its own, and joints from knuckle to tip.
 message FingerChain {
   string name = 1;
   string palm = 2;

@@ -17,7 +17,7 @@ LuckyNumbers/            Unity project
                          disk), SpaceView, SpacePresenter (orbit camera, big bang, ISpaceDirector for cutscenes)
     Scripts/Title/       TitleView, TitlePresenter (Play transition), DiceView, DicePresenter, TitleScope
     Scripts/Intro/       IntroPresenter (cutscene player), IntroView, ShipView, IntroScope
-    Scripts/Hands/       HandRigMap (bone map from content/hands/*), TwoBoneIK (reach, elbow pole, shrug, palm, flatten)
+    Scripts/Hands/       HandRigMap (bone map, palm + finger axes), TwoBoneIK (reach, elbow pole, shrug, palm), HandPoser (finger poses)
     Scripts/Planet/      CrashSitePresenter (ground, sky, sun, wreck, wake-up), FirstPersonPresenter (walk/look),
                          GroundView, ArmsView, PlayerView, PlanetView, PlanetScope
     Scripts/Rendering/   RenderResolutionCap
@@ -49,3 +49,8 @@ starts from that pose; `IntroPresenter` plays `content/intro.txtpb` through `ISp
 saves `LandingSite`. Planet: regenerates that planet from the same seed for the ground colours, sky and sun,
 puts the wreck there, wakes you up in first person (`content/planet.txtpb`). Root scope (brokers, states)
 survives scene loads.
+
+Arms (`ArmsView`), built up each frame: clips (base layer for both arms + one masked layer per arm for
+one-shots), procedural life (breath, stride swing, run pump, arms up in the air, post-crash tremor), IK
+(touch, grab, carry), finger poses from `content/hands/poses/*`. Drawn by an overlay camera on the
+`Viewmodel` layer (same FOV, cleared depth), so they and what they hold never clip into the world.

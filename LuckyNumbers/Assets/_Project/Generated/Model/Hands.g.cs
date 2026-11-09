@@ -11,7 +11,7 @@ namespace LuckyNumbers.Model
 {
     /// <summary>
     /// Bone map of a first-person arms rig, so code never hard-codes bone names. Names may contain "{side}",
-    /// replaced by each entry of `sides` (e.g. "upper_arm.{side}" -&gt; upper_arm.L, upper_arm.R).
+    /// replaced by each entry of `sides`, left hand first (e.g. "upper_arm.{side}" -&gt; upper_arm.L, upper_arm.R).
     /// </summary>
     public sealed class HandRig
     {
@@ -27,9 +27,44 @@ namespace LuckyNumbers.Model
         /// </summary>
         public float ShrugDegrees { get; set; }
         public float MaxReach { get; set; }
+        /// <summary>
+        /// Finger poses the hands blend between (content/hands/poses/*), and how fast (blend per second).
+        /// </summary>
+        public List<HandPose> Poses { get; } = new List<HandPose>();
+        public float PoseSpeed { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public HandRig Clone() => (HandRig)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// A hand shape: how far each finger curls at each joint (degrees, knuckle to tip; toward the palm).
+    /// Fingers not listed stay straight. A shorter curl list repeats its last value.
+    /// </summary>
+    public sealed class HandPose
+    {
+        public string Name { get; set; }
+        public List<FingerPose> Fingers { get; } = new List<FingerPose>();
+        /// <summary>
+        /// How much the idle finger fidget still shows through (0 = held still, 1 = full).
+        /// </summary>
+        public float Fidget { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public HandPose Clone() => (HandPose)MemberwiseClone();
+    }
+
+    public sealed class FingerPose
+    {
+        public string Finger { get; set; }
+        public List<float> Curl { get; } = new List<float>();
+        /// <summary>
+        /// Fan out from the middle finger at the knuckle (degrees).
+        /// </summary>
+        public float Spread { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public FingerPose Clone() => (FingerPose)MemberwiseClone();
     }
 
     /// <summary>
@@ -49,7 +84,7 @@ namespace LuckyNumbers.Model
     }
 
     /// <summary>
-    /// One finger: its palm (metacarpal) bone and joints from knuckle to tip.
+    /// One finger: its palm (metacarpal) bone, if it has its own, and joints from knuckle to tip.
     /// </summary>
     public sealed class FingerChain
     {

@@ -6,6 +6,7 @@ namespace LuckyNumbers.Hands
     /// Analytic two-bone IK (upper -> lower -> end) in world space: law of cosines for the elbow, then aim the
     /// chain at the target, then twist about the shoulder->target axis so the elbow bends toward the pole.
     /// Optional shoulder shrug for targets just out of reach. Blends with the animated pose by weight.
+    /// Finger shapes are separate (HandPoses).
     /// </summary>
     public static class TwoBoneIK
     {
@@ -77,15 +78,6 @@ namespace LuckyNumbers.Hands
             var current = Quaternion.LookRotation(arm.Hand.TransformDirection(arm.FingerAxis), arm.Hand.TransformDirection(arm.PalmAxis));
             var wanted = Quaternion.LookRotation(Vector3.ProjectOnPlane(fingersAlong, palmFacing).normalized, palmFacing);
             arm.Hand.rotation = Quaternion.Slerp(arm.Hand.rotation, wanted * Quaternion.Inverse(current) * arm.Hand.rotation, weight);
-        }
-
-        /// <summary>Blend the fingers toward their bind pose (open, flat hand).</summary>
-        public static void Flatten(Arm arm, float weight)
-        {
-            if (weight <= 0f) return;
-            foreach (var f in arm.Fingers)
-                for (var j = 0; j < f.Joints.Length; j++)
-                    if (f.Joints[j] != null) f.Joints[j].localRotation = Quaternion.Slerp(f.Joints[j].localRotation, f.BindJoints[j], weight);
         }
 
         static float Angle(Vector3 x, Vector3 y) => Mathf.Acos(Mathf.Clamp(Vector3.Dot(x.normalized, y.normalized), -1f, 1f));

@@ -27,12 +27,29 @@ arm_breath_degrees: 2.5
 arm_swing_degrees: 7
 finger_fidget_degrees: 9
 
+# Arm clips from the rig ("{side}" = L/R).
+idle_clip: "relax"
+sprint_clip: "guard_idle"
+throw_clip: "jab.{side}"
+# Body feel: running pumps the swing, arms rise in the air, hands shake for a while after the crash.
+sprint_pump: 1.8
+air_raise_degrees: 14
+crash_tremor_degrees: 2.2
+tremor_seconds: 40
+
 # Hands: rig bone map, touching nearby surfaces, IK self-test.
 hands_ref: "hands/rig"
 # Reach out to touch things you look at within this distance of your eyes (metres).
 touch_distance: 1.4
 debug_reach: false
 # debug_spawn { x: 0.9 y: 0 z: 0.1 }   # in front of the standing stone, facing it
+
+# Pebbles to pick up (E), drop (E) or throw (click). You crouch for ones on the ground.
+pebbles: 10
+pebble_size: 0.11
+grab_distance: 2.6
+crouch_depth: 0.85
+throw_speed: 13
 
 wake_seconds: 3.2
 wreck_distance: 9
@@ -46,4 +63,4 @@ boulder_spread: 45
 boulder_size_min: 1.2
 boulder_size_max: 3.5
 sun_elevation_degrees: 38
-hint: "Click to look around - WASD to move - Shift to run - Space to jump"
+hint: "Click to look around - WASD to move - Shift to run - Space to jump - E to pick up, click to throw"

@@ -5,7 +5,7 @@
 //
 // --steps: JSON list run after --wait, coordinates are fractions of the game canvas (0..1, top-left):
 //   [{"drag":[x1,y1,x2,y2]}, {"scroll":[x,y,notches]}, {"sleep":1}, {"shot":"a.png"}, {"click":[x,y]}, {"wait":"text"},
-//    {"fps":5}, {"key":["KeyW",2]}]  (fps: measure 5 s; key: hold for 2 s; sleep is in seconds)
+//    {"fps":5}, {"key":["KeyW",2]}, {"key":["ShiftLeft+KeyW",2]}]  (fps: measure 5 s; key: hold for 2 s; sleep is in seconds)
 // Prints the page's console lines. Without --steps it takes one screenshot to <out.png>.
 import { spawn } from "node:child_process";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
@@ -100,12 +100,14 @@ for (const step of steps) {
     for (let i = 1; i <= n; i++) { await mouse("mouseMoved", px([x1 + (x2 - x1) * i / n, y1 + (y2 - y1) * i / n]), 1); await sleep(25); }
     await mouse("mouseReleased", px([x2, y2])); await sleep(200);
   }
-  if (step.key) { // ["KeyW", seconds]: hold a key (code + key name for the Input System)
-    const [code, seconds] = step.key, key = code.startsWith("Key") ? code.slice(3).toLowerCase() : code;
-    const vk = { KeyW: 87, KeyA: 65, KeyS: 83, KeyD: 68, Space: 32, ShiftLeft: 16 }[code] ?? 0;
-    await send("Input.dispatchKeyEvent", { type: "keyDown", code, key, windowsVirtualKeyCode: vk });
+  if (step.key) { // ["KeyW", seconds] or ["ShiftLeft+KeyW", seconds]: hold key(s) (code + key name for the Input System)
+    const [combo, seconds] = step.key, codes = combo.split("+");
+    const vk = { KeyW: 87, KeyA: 65, KeyS: 83, KeyD: 68, KeyE: 69, Space: 32, ShiftLeft: 16 };
+    const ev = (type, code) => send("Input.dispatchKeyEvent",
+      { type, code, key: code.startsWith("Key") ? code.slice(3).toLowerCase() : code, windowsVirtualKeyCode: vk[code] ?? 0 });
+    for (const c of codes) await ev("keyDown", c);
     await sleep((seconds ?? 0.1) * 1000);
-    await send("Input.dispatchKeyEvent", { type: "keyUp", code, key, windowsVirtualKeyCode: vk });
+    for (const c of codes.reverse()) await ev("keyUp", c);
   }
   if (step.fps) { // seconds: browser frame rate (Unity renders once per animation frame) + min/max frame time
     const r = await send("Runtime.evaluate", { awaitPromise: true, returnByValue: true, expression: `new Promise((done) => {

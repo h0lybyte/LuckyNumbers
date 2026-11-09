@@ -77,7 +77,7 @@ namespace LuckyNumbers.Model
         /// </summary>
         public HandRig Hands { get; set; }
         /// <summary>
-        /// Debug: hands trace circles in front of you and the IK error is logged (checks the rig map + solver).
+        /// Debug: hands trace circles in front of you cycling every pose; the IK error is logged (checks the rig map + solver).
         /// </summary>
         public bool DebugReach { get; set; }
         /// <summary>
@@ -95,6 +95,29 @@ namespace LuckyNumbers.Model
         /// Debug: after waking, stand at (x, z) facing `y` degrees (all 0 = off). For testing spots, e.g. touch.
         /// </summary>
         public Vec3 DebugSpawn { get; set; }
+        /// <summary>
+        /// Arm clips (from the rig; "{side}" = L/R): standing, running, and the one-arm throw.
+        /// </summary>
+        public string IdleClip { get; set; }
+        public string SprintClip { get; set; }
+        public string ThrowClip { get; set; }
+        /// <summary>
+        /// Body feel: running pumps the arm swing (x walk), arms rise when airborne (degrees), shaky hands after
+        /// the crash (degrees, fading over tremor_seconds).
+        /// </summary>
+        public float SprintPump { get; set; }
+        public float AirRaiseDegrees { get; set; }
+        public float CrashTremorDegrees { get; set; }
+        public float TremorSeconds { get; set; }
+        /// <summary>
+        /// Pebbles near the wreck you can pick up (Interact), drop (Interact) or throw (click): count, size (m),
+        /// how far you can grab from your eyes (m), how low you'll crouch for one (m), throw speed (m/s).
+        /// </summary>
+        public int Pebbles { get; set; }
+        public float PebbleSize { get; set; }
+        public float GrabDistance { get; set; }
+        public float CrouchDepth { get; set; }
+        public float ThrowSpeed { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public PlanetScene Clone() => (PlanetScene)MemberwiseClone();

@@ -53,7 +53,7 @@ message PlanetScene {
   // The arms rig's bone map (content/hands/*).
   HandRig hands = 29;
   string hands_ref = 30 [(ln.ref) = "hands"];
-  // Debug: hands trace circles in front of you and the IK error is logged (checks the rig map + solver).
+  // Debug: hands trace circles in front of you cycling every pose; the IK error is logged (checks the rig map + solver).
   bool debug_reach = 31;
   // Reach out and touch surfaces (e.g. the wreck) closer than this (metres from the shoulder).
   float touch_distance = 32;
@@ -64,6 +64,23 @@ message PlanetScene {
   float boulder_size_max = 36;
   // Debug: after waking, stand at (x, z) facing `y` degrees (all 0 = off). For testing spots, e.g. touch.
   Vec3 debug_spawn = 37;
+  // Arm clips (from the rig; "{side}" = L/R): standing, running, and the one-arm throw.
+  string idle_clip = 38;
+  string sprint_clip = 39;
+  string throw_clip = 40;
+  // Body feel: running pumps the arm swing (x walk), arms rise when airborne (degrees), shaky hands after
+  // the crash (degrees, fading over tremor_seconds).
+  float sprint_pump = 41;
+  float air_raise_degrees = 42;
+  float crash_tremor_degrees = 43;
+  float tremor_seconds = 44;
+  // Pebbles near the wreck you can pick up (Interact), drop (Interact) or throw (click): count, size (m),
+  // how far you can grab from your eyes (m), how low you'll crouch for one (m), throw speed (m/s).
+  int32 pebbles = 45;
+  float pebble_size = 46;
+  float grab_distance = 47;
+  float crouch_depth = 48;
+  float throw_speed = 49;
 }
 
 // Where the intro's ship came down: read by the Planet scene (and later a save file).

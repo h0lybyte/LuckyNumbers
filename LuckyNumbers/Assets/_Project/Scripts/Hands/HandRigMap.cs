@@ -22,7 +22,12 @@ namespace LuckyNumbers.Hands
         public string Name;
         public Transform Palm;
         public Transform[] Joints;
-        public Quaternion[] BindJoints;   // straight-ish bind pose, for flattening the hand on a surface
+        public Quaternion[] BindJoints;   // the straightened finger (MeasureFingers): poses curl from here
+        /// <summary>Per joint (its local space): rotating +degrees about CurlAxes[j] bends toward the palm;
+        /// about SpreadAxis (knuckle) by +degrees * SpreadSign fans away from the middle finger.</summary>
+        public Vector3[] CurlAxes;
+        public Vector3 SpreadAxis;
+        public float SpreadSign;
     }
 
     /// <summary>Resolves bone names (with "{side}") to transforms, measures lengths and the palm frame.</summary>
@@ -35,6 +40,7 @@ namespace LuckyNumbers.Hands
             var miss = new List<string>();
             Transform Get(string pattern, string side)
             {
+                if (string.IsNullOrEmpty(pattern)) return null;   // optional bone left out
                 var name = pattern.Replace("{side}", side);
                 if (byName.TryGetValue(name, out var t)) return t;
                 miss.Add(name);
@@ -76,24 +82,86 @@ namespace LuckyNumbers.Hands
                 }
                 arms[s] = a;
             }
-            // Palm frames need both hands (palms face roughly toward each other and down in the bind pose).
-            for (var s = 0; s < arms.Length; s++) MeasurePalm(arms[s], arms[(s + 1) % arms.Length]);
+            // Palm side from anatomy, not the pose: with fingers along `along` and the index side `across`, a left
+            // palm faces -(along x across) and a right palm +(along x across). Sides are listed left hand first.
+            var normals = new Vector3[arms.Length];
+            for (var s = 0; s < arms.Length; s++) normals[s] = PalmNormal(arms[s]) * (s == 0 ? -1f : 1f);
+            for (var s = 0; s < arms.Length; s++)
+            {
+                if (normals[s] == Vector3.zero) continue;
+                var a = arms[s];
+                a.FingerAxis = a.Hand.InverseTransformDirection(FingerDirection(a));
+                a.PalmAxis = a.Hand.InverseTransformDirection(normals[s]);
+            }
             missing = miss;
             return arms;
         }
 
-        static void MeasurePalm(Arm a, Arm other)
+        /// <summary>
+        /// Straighten each finger (every joint in line with the bone before it: the palm bone for the knuckle,
+        /// unless the finger has none, like the thumb) and keep that as the reference pose curls start from; then
+        /// the curl and spread axes per joint. Call with the fingers in their bind pose; returns the most a
+        /// finger was bent in it (degrees).
+        /// </summary>
+        public static float MeasureFingers(Arm a)
         {
-            Transform F(string n) { foreach (var f in a.Fingers) if (f.Name == n) return f.Joints.Length > 0 ? f.Joints[0] : null; return null; }
-            var middle = F("middle"); var index = F("index"); var pinky = F("pinky");
-            if (a.Hand == null || middle == null || index == null || pinky == null) return;
-            var along = (middle.position - a.Hand.position).normalized;
-            var across = (index.position - pinky.position).normalized;
-            var normal = Vector3.Cross(along, across).normalized;
-            var inward = other.Hand != null ? (other.Hand.position - a.Hand.position).normalized : Vector3.zero;
-            if (Vector3.Dot(normal, inward + Vector3.down) < 0f) normal = -normal;   // the palm side, not the back
-            a.FingerAxis = a.Hand.InverseTransformDirection(along);
-            a.PalmAxis = a.Hand.InverseTransformDirection(normal);
+            if (a.Hand == null || a.PalmAxis == Vector3.zero) return 0f;
+            var bent = 0f;
+            foreach (var f in a.Fingers)
+            {
+                var bend = 0f;
+                for (var j = f.Palm != null ? 0 : 1; j < f.Joints.Length; j++)
+                {
+                    var joint = f.Joints[j];
+                    var next = j + 1 < f.Joints.Length ? f.Joints[j + 1] : joint.childCount > 0 ? joint.GetChild(0) : null;
+                    if (next == null) continue;
+                    var before = joint.position - (j == 0 ? f.Palm.position : f.Joints[j - 1].position);
+                    var rotate = Quaternion.FromToRotation(next.position - joint.position, before);
+                    rotate.ToAngleAxis(out var angle, out _);
+                    bend += angle;
+                    joint.rotation = rotate * joint.rotation;
+                }
+                for (var j = 0; j < f.Joints.Length; j++) f.BindJoints[j] = f.Joints[j].localRotation;
+                bent = Mathf.Max(bent, bend);
+            }
+            var palm = a.Hand.TransformDirection(a.PalmAxis);
+            Transform middle = null;
+            foreach (var f in a.Fingers) if (f.Name == "middle" && f.Joints.Length > 0) middle = f.Joints[0];
+            foreach (var f in a.Fingers)
+            {
+                f.CurlAxes = new Vector3[f.Joints.Length];
+                for (var j = 0; j < f.Joints.Length; j++)
+                {
+                    var joint = f.Joints[j];
+                    if (joint == null) continue;
+                    // Bone direction: toward the next joint (or the tip bone; else continue the previous bone).
+                    var next = j + 1 < f.Joints.Length ? f.Joints[j + 1] : joint.childCount > 0 ? joint.GetChild(0) : null;
+                    var along = next != null ? next.position - joint.position : joint.position - joint.parent.position;
+                    // Rotating `along` about (along x palm) moves it toward the palm.
+                    f.CurlAxes[j] = joint.InverseTransformDirection(Vector3.Cross(along, palm).normalized);
+                    if (j > 0) continue;
+                    f.SpreadAxis = joint.InverseTransformDirection(palm);
+                    var away = middle != null ? Vector3.ProjectOnPlane(joint.position - middle.position, palm) : Vector3.zero;
+                    f.SpreadSign = away.sqrMagnitude < 1e-8f ? 0f : Mathf.Sign(Vector3.Dot(Vector3.Cross(palm, along), away));
+                }
+            }
+            return bent;
+        }
+
+        static Transform Knuckle(Arm a, string finger)
+        {
+            foreach (var f in a.Fingers) if (f.Name == finger) return f.Joints.Length > 0 ? f.Joints[0] : null;
+            return null;
+        }
+
+        static Vector3 FingerDirection(Arm a) => (Knuckle(a, "middle").position - a.Hand.position).normalized;
+
+        /// <summary>Palm plane normal from wrist, middle, index and pinky knuckles (sign not yet decided).</summary>
+        static Vector3 PalmNormal(Arm a)
+        {
+            Transform middle = Knuckle(a, "middle"), index = Knuckle(a, "index"), pinky = Knuckle(a, "pinky");
+            if (a.Hand == null || middle == null || index == null || pinky == null) return Vector3.zero;
+            return Vector3.Cross(FingerDirection(a), (index.position - pinky.position).normalized).normalized;
         }
     }
 }

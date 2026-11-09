@@ -6,6 +6,7 @@ using LuckyNumbers.Title;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.UIElements;
 
 namespace LuckyNumbers.Editor
@@ -110,6 +111,20 @@ namespace LuckyNumbers.Editor
             cam.nearClipPlane = 0.02f;
             cam.farClipPlane = 3000f;
             camGo.tag = "MainCamera";
+            // Viewmodel: the arms (and what they hold) on their own layer, drawn by an overlay camera after the
+            // world with a cleared depth, so they never clip into walls or the wreck. Same FOV: IK aims in world space.
+            var viewmodel = LayerMask.NameToLayer("Viewmodel");
+            if (viewmodel < 0) throw new System.Exception("layer Viewmodel missing (ProjectSettings/TagManager)");
+            cam.cullingMask &= ~(1 << viewmodel);
+            var vmGo = new GameObject("ViewmodelEyes");
+            vmGo.transform.SetParent(camGo.transform, false);
+            var vm = vmGo.AddComponent<Camera>();
+            vm.fieldOfView = cam.fieldOfView;
+            vm.nearClipPlane = 0.01f;
+            vm.farClipPlane = 5f;
+            vm.cullingMask = 1 << viewmodel;
+            vm.GetUniversalAdditionalCameraData().renderType = CameraRenderType.Overlay;
+            cam.GetUniversalAdditionalCameraData().cameraStack.Add(vm);
             var player = playerGo.AddComponent<PlayerView>();
             Assign(player, ("body", cc), ("head", head), ("eyes", cam));
 
@@ -127,6 +142,7 @@ namespace LuckyNumbers.Editor
             armsMat.SetFloat("_Glow", 0f);
             armsMat.SetFloat("_Rim", 0.15f);
             EditorUtility.SetDirty(armsMat);
+            ArmsView.SetLayer(arms.transform, viewmodel);
             foreach (var r in arms.GetComponentsInChildren<Renderer>())
             {
                 r.sharedMaterial = armsMat;

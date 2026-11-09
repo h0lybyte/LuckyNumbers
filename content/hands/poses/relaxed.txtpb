@@ -1,0 +1,10 @@
+# proto-file: luckynumbers/v1/hands.proto
+# proto-message: luckynumbers.v1.HandPose
+# Hanging loose: a natural slight curl, more toward the pinky.
+name: "relaxed"
+fidget: 1
+fingers { finger: "thumb"  curl: [5, 10, 8] }
+fingers { finger: "index"  curl: [12, 16, 10] spread: 2 }
+fingers { finger: "middle" curl: [16, 20, 12] }
+fingers { finger: "ring"   curl: [20, 24, 14] spread: 2 }
+fingers { finger: "pinky"  curl: [24, 26, 16] spread: 4 }

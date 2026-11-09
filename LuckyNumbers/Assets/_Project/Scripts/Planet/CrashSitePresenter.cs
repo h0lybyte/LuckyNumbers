@@ -121,6 +121,26 @@ namespace LuckyNumbers.Planet
                 if (!rock.TryGetComponent<SphereCollider>(out _)) rock.AddComponent<SphereCollider>();
             }
 
+            // Pebbles: loose stones you can pick up and throw; the first just ahead of where you wake.
+            var stone = new Material(_ground.Material);   // the ground's rock, darker, so loose stones stand out
+            if (look != null) stone.SetColor("_PlanetColor", look.PlanetColor.ToColor() * 0.45f);
+            for (var i = 0; i < _config.Pebbles; i++)
+            {
+                var p = i == 0 ? new float2(0.35f, -0.6f) : rng.NextFloat2Direction() * rng.NextFloat(1.5f, 7f) + new float2(0f, -1.5f);
+                var pebble = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                pebble.name = $"Pebble {i}";
+                var size = _config.PebbleSize * rng.NextFloat(0.8f, 1.25f);
+                pebble.transform.localScale = new Vector3(size, size * rng.NextFloat(0.6f, 0.85f), size * rng.NextFloat(0.85f, 1.15f));
+                pebble.transform.SetPositionAndRotation(new Vector3(p.x, _ground.HeightAt(new Vector3(p.x, 0f, p.y)) + size * 0.5f, p.y),
+                                                        Quaternion.Euler(0f, rng.NextFloat(0f, 360f), 0f));
+                pebble.GetComponent<MeshRenderer>().sharedMaterial = stone;
+                if (!pebble.TryGetComponent<SphereCollider>(out _)) pebble.AddComponent<SphereCollider>();
+                var body = pebble.AddComponent<Rigidbody>();   // a rigidbody marks it as something you can carry
+                body.mass = 0.4f;
+                body.interpolation = RigidbodyInterpolation.Interpolate;
+                body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;   // thrown fast
+            }
+
             // Sky: the roll's nebula sky, hazed by this planet's atmosphere near the horizon.
             var sky = UniverseGenerator.Sky(rules, roll);
             if (RenderSettings.skybox != null)

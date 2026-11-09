@@ -881,7 +881,7 @@ namespace LuckyNumbers.Model
             WreckLength = 11.0f,
             Haze = 0.6f,
             SunElevationDegrees = 38.0f,
-            Hint = "Click to look around - WASD to move - Shift to run - Space to jump",
+            Hint = "Click to look around - WASD to move - Shift to run - Space to jump - E to pick up, click to throw",
             ArmBreathDegrees = 2.5f,
             ArmSwingDegrees = 7.0f,
             FingerFidgetDegrees = 9.0f,
@@ -906,7 +906,6 @@ namespace LuckyNumbers.Model
                     new FingerChain
                     {
                         Name = "thumb",
-                        Palm = "palm.01.{side}",
                         Joints =
                         {
                             "thumb.01.{side}",
@@ -962,12 +961,371 @@ namespace LuckyNumbers.Model
                 Eye = "camera",
                 ShrugDegrees = 12.0f,
                 MaxReach = 0.985f,
+                Poses =
+                {
+                    new HandPose
+                    {
+                        Name = "relaxed",
+                        Fingers =
+                        {
+                            new FingerPose
+                            {
+                                Finger = "thumb",
+                                Curl =
+                                {
+                                    5.0f,
+                                    10.0f,
+                                    8.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "index",
+                                Curl =
+                                {
+                                    12.0f,
+                                    16.0f,
+                                    10.0f,
+                                },
+                                Spread = 2.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "middle",
+                                Curl =
+                                {
+                                    16.0f,
+                                    20.0f,
+                                    12.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "ring",
+                                Curl =
+                                {
+                                    20.0f,
+                                    24.0f,
+                                    14.0f,
+                                },
+                                Spread = 2.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "pinky",
+                                Curl =
+                                {
+                                    24.0f,
+                                    26.0f,
+                                    16.0f,
+                                },
+                                Spread = 4.0f,
+                            },
+                        },
+                        Fidget = 1.0f,
+                    },
+                    new HandPose
+                    {
+                        Name = "open",
+                        Fingers =
+                        {
+                            new FingerPose
+                            {
+                                Finger = "thumb",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                                Spread = 12.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "index",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                                Spread = 6.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "middle",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "ring",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                                Spread = 5.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "pinky",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                                Spread = 10.0f,
+                            },
+                        },
+                        Fidget = 0.3f,
+                    },
+                    new HandPose
+                    {
+                        Name = "flat",
+                        Fingers =
+                        {
+                            new FingerPose
+                            {
+                                Finger = "thumb",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                                Spread = 8.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "index",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                                Spread = 4.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "middle",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "ring",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                                Spread = 3.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "pinky",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                                Spread = 6.0f,
+                            },
+                        },
+                    },
+                    new HandPose
+                    {
+                        Name = "grip",
+                        Fingers =
+                        {
+                            new FingerPose
+                            {
+                                Finger = "thumb",
+                                Curl =
+                                {
+                                    25.0f,
+                                    40.0f,
+                                    30.0f,
+                                },
+                                Spread = -8.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "index",
+                                Curl =
+                                {
+                                    45.0f,
+                                    50.0f,
+                                    35.0f,
+                                },
+                                Spread = 2.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "middle",
+                                Curl =
+                                {
+                                    48.0f,
+                                    52.0f,
+                                    36.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "ring",
+                                Curl =
+                                {
+                                    50.0f,
+                                    55.0f,
+                                    38.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "pinky",
+                                Curl =
+                                {
+                                    52.0f,
+                                    58.0f,
+                                    40.0f,
+                                },
+                                Spread = 2.0f,
+                            },
+                        },
+                        Fidget = 0.1f,
+                    },
+                    new HandPose
+                    {
+                        Name = "fist",
+                        Fingers =
+                        {
+                            new FingerPose
+                            {
+                                Finger = "thumb",
+                                Curl =
+                                {
+                                    40.0f,
+                                    60.0f,
+                                    45.0f,
+                                },
+                                Spread = -15.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "index",
+                                Curl =
+                                {
+                                    85.0f,
+                                    95.0f,
+                                    70.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "middle",
+                                Curl =
+                                {
+                                    85.0f,
+                                    95.0f,
+                                    70.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "ring",
+                                Curl =
+                                {
+                                    85.0f,
+                                    95.0f,
+                                    70.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "pinky",
+                                Curl =
+                                {
+                                    85.0f,
+                                    95.0f,
+                                    70.0f,
+                                },
+                            },
+                        },
+                        Fidget = 0.05f,
+                    },
+                    new HandPose
+                    {
+                        Name = "point",
+                        Fingers =
+                        {
+                            new FingerPose
+                            {
+                                Finger = "thumb",
+                                Curl =
+                                {
+                                    35.0f,
+                                    55.0f,
+                                    40.0f,
+                                },
+                                Spread = -12.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "index",
+                                Curl =
+                                {
+                                    0.0f,
+                                    5.0f,
+                                    0.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "middle",
+                                Curl =
+                                {
+                                    80.0f,
+                                    95.0f,
+                                    70.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "ring",
+                                Curl =
+                                {
+                                    85.0f,
+                                    95.0f,
+                                    70.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "pinky",
+                                Curl =
+                                {
+                                    85.0f,
+                                    95.0f,
+                                    70.0f,
+                                },
+                            },
+                        },
+                        Fidget = 0.1f,
+                    },
+                },
+                PoseSpeed = 8.0f,
             },
             TouchDistance = 1.4f,
             Boulders = 14,
             BoulderSpread = 45.0f,
             BoulderSizeMin = 1.2f,
             BoulderSizeMax = 3.5f,
+            IdleClip = "relax",
+            SprintClip = "guard_idle",
+            ThrowClip = "jab.{side}",
+            SprintPump = 1.8f,
+            AirRaiseDegrees = 14.0f,
+            CrashTremorDegrees = 2.2f,
+            TremorSeconds = 40.0f,
+            Pebbles = 10,
+            PebbleSize = 0.11f,
+            GrabDistance = 2.6f,
+            CrouchDepth = 0.85f,
+            ThrowSpeed = 13.0f,
         };
 
         /// <summary>From <c>content/player.txtpb</c>.</summary>
