@@ -54,6 +54,7 @@ message SystemGenerator {
   float max_eccentricity = 20;
   float max_inclination_degrees = 21;
   int32 galaxy_count = 22;
+  // Galaxies are pinned to the sky: this far from the camera wherever it goes (no parallax).
   float galaxy_distance = 23;
   float galaxy_scale_min = 24;
   float galaxy_scale_max = 25;
@@ -62,6 +63,15 @@ message SystemGenerator {
   float expand_seconds = 27;
   repeated PlanetLook moons = 28;
   repeated string moon_refs = 29 [(ln.ref) = "moons"];
+  // First moon's orbit radius, in parent diameters; each further moon is 1.6x farther out.
+  float moon_orbit_min = 30;
+  float moon_orbit_max = 31;
+  // Moons must stay inside this share of the parent's Hill sphere, a(1-e)*(m/3M)^(1/3); ~0.5 is stable.
+  float moon_hill_fraction = 32;
+  // Planet density / star density, for the mass ratio m/M = ratio * (d_planet/d_star)^3 (Earth/Sun ~ 4).
+  float planet_star_density_ratio = 33;
+  // Empty space between neighbouring orbits (inner apoapsis + moons .. outer periapsis - moons), world units.
+  float min_orbit_gap = 34;
 }
 
 // One entity of the universe: a planet or a star sphere.
@@ -104,6 +114,7 @@ message Orbit {
 message CameraOrbit {
   // Body id to orbit around.
   string target = 1;
+  // Distances and frame_offset are in target diameters, so any planet size frames the same.
   float distance = 2;
   float min_distance = 3;
   float max_distance = 4;
@@ -117,7 +128,7 @@ message CameraOrbit {
   float glide = 10;
   // Distance change per scroll notch, as a share of the current distance.
   float zoom_step = 11;
-  // Shifts the framing (camera-space x/y, world units) so the target can sit off-centre.
+  // Shifts the framing (camera-space x/y, target diameters) so the target can sit off-centre.
   Vec2 frame_offset = 12;
   float field_of_view_degrees = 13;
 }

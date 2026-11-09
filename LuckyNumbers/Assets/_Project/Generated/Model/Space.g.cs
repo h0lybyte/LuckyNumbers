@@ -78,6 +78,9 @@ namespace LuckyNumbers.Model
         public float MaxEccentricity { get; set; }
         public float MaxInclinationDegrees { get; set; }
         public int GalaxyCount { get; set; }
+        /// <summary>
+        /// Galaxies are pinned to the sky: this far from the camera wherever it goes (no parallax).
+        /// </summary>
         public float GalaxyDistance { get; set; }
         public float GalaxyScaleMin { get; set; }
         public float GalaxyScaleMax { get; set; }
@@ -87,6 +90,23 @@ namespace LuckyNumbers.Model
         public float CollapseSeconds { get; set; }
         public float ExpandSeconds { get; set; }
         public List<PlanetLook> Moons { get; } = new List<PlanetLook>();
+        /// <summary>
+        /// First moon's orbit radius, in parent diameters; each further moon is 1.6x farther out.
+        /// </summary>
+        public float MoonOrbitMin { get; set; }
+        public float MoonOrbitMax { get; set; }
+        /// <summary>
+        /// Moons must stay inside this share of the parent's Hill sphere, a(1-e)*(m/3M)^(1/3); ~0.5 is stable.
+        /// </summary>
+        public float MoonHillFraction { get; set; }
+        /// <summary>
+        /// Planet density / star density, for the mass ratio m/M = ratio * (d_planet/d_star)^3 (Earth/Sun ~ 4).
+        /// </summary>
+        public float PlanetStarDensityRatio { get; set; }
+        /// <summary>
+        /// Empty space between neighbouring orbits (inner apoapsis + moons .. outer periapsis - moons), world units.
+        /// </summary>
+        public float MinOrbitGap { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public SystemGenerator Clone() => (SystemGenerator)MemberwiseClone();
@@ -174,6 +194,9 @@ namespace LuckyNumbers.Model
         /// Body id to orbit around.
         /// </summary>
         public string Target { get; set; }
+        /// <summary>
+        /// Distances and frame_offset are in target diameters, so any planet size frames the same.
+        /// </summary>
         public float Distance { get; set; }
         public float MinDistance { get; set; }
         public float MaxDistance { get; set; }
@@ -194,7 +217,7 @@ namespace LuckyNumbers.Model
         /// </summary>
         public float ZoomStep { get; set; }
         /// <summary>
-        /// Shifts the framing (camera-space x/y, world units) so the target can sit off-centre.
+        /// Shifts the framing (camera-space x/y, target diameters) so the target can sit off-centre.
         /// </summary>
         public Vec2 FrameOffset { get; set; }
         public float FieldOfViewDegrees { get; set; }

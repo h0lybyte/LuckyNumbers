@@ -10,25 +10,36 @@ galaxy_refs: ["space/looks/galaxies/spiral_blue", "space/looks/galaxies/spiral_g
 
 min_planets: 3
 max_planets: 6
-first_orbit_radius: 30
-orbit_spacing_min: 1.35
-orbit_spacing_max: 1.7
-planet_scale_min: 1.2
+# Compressed real proportions: the Sun is ~11,700 Earth diameters from Earth; here ~60.
+# Far enough that home's Hill sphere holds moons a few diameters out.
+first_orbit_radius: 170
+# Titius-Bode-like: each orbit 1.4-1.8x the last, and never closer than min_orbit_gap.
+orbit_spacing_min: 1.4
+orbit_spacing_max: 1.8
+min_orbit_gap: 20
+planet_scale_min: 1.5
 planet_scale_max: 4.5
 star_scale_min: 7
 star_scale_max: 12
-moon_chance: 0.55
-max_moons: 2
-moon_scale_ratio: 0.25
-# 48 units -> ~900 s, like the hand-made home planet.
-seconds_per_orbit_unit: 2.7
-max_eccentricity: 0.12
-max_inclination_degrees: 12
+planet_star_density_ratio: 4
 
+moon_chance: 0.6
+max_moons: 2
+moon_scale_ratio: 0.27
+moon_orbit_min: 3
+moon_orbit_max: 6
+moon_hill_fraction: 0.5
+
+# Period = k * radius^1.5: home (~170) takes ~15 min, like the old hand-made one.
+seconds_per_orbit_unit: 0.4
+max_eccentricity: 0.1
+max_inclination_degrees: 7
+
+# Pinned to the sky. 2000 away, 60-160 wide = 1.7-4.6 degrees (Andromeda is ~3 degrees).
 galaxy_count: 5
-galaxy_distance: 380
-galaxy_scale_min: 50
-galaxy_scale_max: 110
+galaxy_distance: 2000
+galaxy_scale_min: 60
+galaxy_scale_max: 160
 
 collapse_seconds: 0.5
 expand_seconds: 1.6

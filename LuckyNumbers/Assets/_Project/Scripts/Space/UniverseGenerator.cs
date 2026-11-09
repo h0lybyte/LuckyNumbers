@@ -28,41 +28,63 @@ namespace LuckyNumbers.Space
                 Star = Pick(rules.Stars, ref rng).Clone(),
             });
 
+            var star = bodies[0];
             var planetCount = rng.NextInt(rules.MinPlanets, rules.MaxPlanets + 1);
             var radius = rules.FirstOrbitRadius;
+            var prevOuter = star.Scale * 0.5f;   // inner edge for the next orbit: star surface, then each system's apoapsis
             for (var i = 0; i < planetCount; i++)
             {
                 var id = i == 0 ? "home" : $"planet-{i + 1}";
                 var scale = rng.NextFloat(rules.PlanetScaleMin, rules.PlanetScaleMax);
+                var orbit = OrbitAround("sun", radius, rules, ref rng);
+                var e = orbit.Eccentricity;
+
+                // Moons first: they decide how much room this planet's system needs.
+                var moons = new List<CelestialBody>();
+                var wantMoons = rules.Moons.Count > 0 && rng.NextFloat() < rules.MoonChance ? rng.NextInt(1, rules.MaxMoons + 1) : 0;
+                var extent = scale * 0.5f;
+                for (var m = 0; m < wantMoons; m++)
+                {
+                    var moonScale = scale * rules.MoonScaleRatio * rng.NextFloat(0.7f, 1.3f);
+                    var moonRadius = scale * rng.NextFloat(rules.MoonOrbitMin, rules.MoonOrbitMax) * math.pow(1.6f, m);
+                    moons.Add(new CelestialBody
+                    {
+                        Id = $"{id}-moon-{m + 1}",
+                        Position = new Vec3(0, 0, 0),
+                        Scale = moonScale,
+                        Planet = Vary(Pick(rules.Moons, ref rng), ref rng),
+                        Orbit = new Orbit
+                        {
+                            Around = id,
+                            Radius = moonRadius,
+                            PeriodSeconds = 24f * math.pow(moonRadius / scale, 1.5f), // Kepler shape, in parent diameters
+                            Phase = rng.NextFloat(),
+                            InclinationDegrees = rng.NextFloat(-15f, 15f),
+                        },
+                    });
+                    extent = math.max(extent, moonRadius + moonScale * 0.5f);
+                }
+
+                // Clearance: periapsis minus this system's extent must clear the previous system's apoapsis.
+                radius = math.max(radius, (prevOuter + rules.MinOrbitGap + extent) / (1f - e));
+                // Hill sphere: moons stay inside a stable share of it, so push the orbit out until they fit.
+                var massRatio = rules.PlanetStarDensityRatio * math.pow(scale / star.Scale, 3f);
+                var hillPerA = (1f - e) * math.pow(massRatio / 3f, 1f / 3f);
+                if (moons.Count > 0 && rules.MoonHillFraction > 0f)
+                    radius = math.max(radius, extent / (rules.MoonHillFraction * hillPerA));
+                orbit.Radius = radius;
+                orbit.PeriodSeconds = rules.SecondsPerOrbitUnit * math.pow(radius, 1.5f); // Kepler's third law shape
+
                 bodies.Add(new CelestialBody
                 {
                     Id = id,
                     Position = new Vec3(0, 0, 0),
                     Scale = scale,
                     Planet = Vary(Pick(rules.Planets, ref rng), ref rng),
-                    Orbit = OrbitAround("sun", radius, rules, ref rng),
+                    Orbit = orbit,
                 });
-
-                var moons = rules.Moons.Count > 0 && rng.NextFloat() < rules.MoonChance ? rng.NextInt(1, rules.MaxMoons + 1) : 0;
-                for (var m = 0; m < moons; m++)
-                {
-                    var moonRadius = scale * (1.1f + 0.7f * m) + rng.NextFloat(0.3f, 1f);
-                    bodies.Add(new CelestialBody
-                    {
-                        Id = $"{id}-moon-{m + 1}",
-                        Position = new Vec3(0, 0, 0),
-                        Scale = scale * rules.MoonScaleRatio * rng.NextFloat(0.7f, 1.3f),
-                        Planet = Vary(Pick(rules.Moons, ref rng), ref rng),
-                        Orbit = new Orbit
-                        {
-                            Around = id,
-                            Radius = moonRadius,
-                            PeriodSeconds = 8f + moonRadius * 6f,
-                            Phase = rng.NextFloat(),
-                            InclinationDegrees = rng.NextFloat(-20f, 20f),
-                        },
-                    });
-                }
+                bodies.AddRange(moons);
+                prevOuter = radius * (1f + e) + extent;
                 radius *= rng.NextFloat(rules.OrbitSpacingMin, rules.OrbitSpacingMax);
             }
 

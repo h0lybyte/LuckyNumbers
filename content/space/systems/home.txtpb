@@ -6,9 +6,10 @@ stars_ref: "space/skies/default"
 
 camera {
   target: "home"
-  distance: 6
-  min_distance: 3
-  max_distance: 14
+  # In home-planet diameters.
+  distance: 2.5
+  min_distance: 1
+  max_distance: 10
   yaw_degrees: 20
   pitch_degrees: 8
   min_pitch_degrees: -60
@@ -16,7 +17,7 @@ camera {
   drag_degrees_per_screen: 200
   glide: 0.92
   zoom_step: 0.12
-  frame_offset { x: -1.6 y: 0.2 }
+  frame_offset { x: -0.65 y: 0.08 }
   field_of_view_degrees: 45
 }
 

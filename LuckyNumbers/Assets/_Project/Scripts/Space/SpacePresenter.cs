@@ -76,7 +76,12 @@ namespace LuckyNumbers.Space
 
         void Expand()
         {
-            Build(UniverseGenerator.Generate(_backdrop.Generator, _pendingSeed ?? 1u));
+            var bodies = UniverseGenerator.Generate(_backdrop.Generator, _pendingSeed ?? 1u);
+            Build(bodies);
+            var layout = new System.Text.StringBuilder();
+            foreach (var b in bodies)
+                if (b.Orbit != null) layout.Append($" {b.Id}@{b.Orbit.Radius:0.#}(d{b.Scale:0.#})");
+            Debug.Log($"[Space] system:{layout}");
             _pendingSeed = null;
             _phase = Phase.Expanding;
             _phaseTime = 0f;
@@ -114,9 +119,9 @@ namespace LuckyNumbers.Space
             var centre = _sun >= 0 ? _world.Position[_sun] : float3.zero;
             for (var i = 0; i < _world.Count; i++)
             {
-                var galaxy = _world.Kind[i] == BodyKind.Galaxy;
-                _bodies[i].localPosition = galaxy ? _world.Position[i] : math.lerp(centre, _world.Position[i], bang);
-                _bodies[i].localScale = Vector3.one * (_world.Scale[i] * (galaxy ? 1f : bang));
+                if (_world.Kind[i] == BodyKind.Galaxy) continue;
+                _bodies[i].localPosition = math.lerp(centre, _world.Position[i], bang);
+                _bodies[i].localScale = Vector3.one * (_world.Scale[i] * bang);
             }
             if (_sun >= 0)
             {
@@ -124,6 +129,10 @@ namespace LuckyNumbers.Space
                 Shader.SetGlobalVector(SunPosition, new Vector4(s.x, s.y, s.z, 1f)); // w = 1: point light set
             }
             OrbitCamera(dt);
+            // Galaxies are sky objects: Position is an offset from the camera, so they never come closer.
+            var eye = (float3)_view.Camera.transform.position;
+            for (var i = 0; i < _world.Count; i++)
+                if (_world.Kind[i] == BodyKind.Galaxy) _bodies[i].localPosition = eye + _world.Position[i];
         }
 
         float BigBang(float dt)
@@ -174,11 +183,12 @@ namespace LuckyNumbers.Space
 
             if (_world.Count == 0) return;
             var target = (Vector3)_world.Position[_target];
-            var distance = math.max(_distance, _world.Scale[_target] * 1.25f); // never inside a big planet
+            var size = math.max(0.01f, _world.Scale[_target]);
+            var distance = math.max(_distance, 0.6f) * size;   // content distances are in target diameters
             var rotation = Quaternion.Euler(_pitch, _yaw, 0f);
             var t = _view.Camera.transform;
             t.SetPositionAndRotation(target - rotation * Vector3.forward * distance, rotation);
-            t.position += t.right * c.FrameOffset.X + t.up * c.FrameOffset.Y; // off-centre framing
+            t.position += (t.right * c.FrameOffset.X + t.up * c.FrameOffset.Y) * size; // off-centre framing
         }
 
         public void Dispose() => _subscription?.Dispose();

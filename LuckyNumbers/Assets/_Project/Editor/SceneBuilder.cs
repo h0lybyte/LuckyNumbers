@@ -117,7 +117,7 @@ namespace LuckyNumbers.Editor
             cam.orthographic = false;
             cam.fieldOfView = 45f;
             cam.nearClipPlane = 0.1f;
-            cam.farClipPlane = 500f;
+            cam.farClipPlane = 5000f; // outer orbits ~2500, sky galaxies at 2000
             cam.clearFlags = CameraClearFlags.Skybox;
             cam.transform.position = new Vector3(0, 0, -6);
             return cam;
