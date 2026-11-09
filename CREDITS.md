@@ -10,7 +10,8 @@
 
 ## Models
 
-- Fighter ship "fighter1" by **Psionic** (http://www.psionic3d.co.uk), free for freeware, shareware and commercial games;
+- Fighter ship "fighter1" by **RetroVandal** (formerly Psionic Games), "FREE Low Poly Space ship pack",
+  https://retrovandal.itch.io/low-poly-space-ship-pack; free for freeware, shareware and commercial games;
   from a 2005 3D Game Resources skinning competition. Skins (`Art/Models/Fighter/Skins/`, named after their authors):
   IdolKnight (1st), Krulspeld (2nd), Kaos Kiwi (3rd), Lordshadow (4th), Wilko, Cinfa, Crono782, Cubik, Freelancer,
   Jodomatis, NMT3000, Psychic Parrot, Robin, Shadee, Snaz, Thor and Psionic.
