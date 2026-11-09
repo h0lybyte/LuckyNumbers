@@ -6,6 +6,11 @@
 - Noise and fBm techniques: **The Book of Shaders** by Patricio Gonzalez Vivo and Jen Lowe, https://thebookofshaders.com
 - 3D simplex noise: **webgl-noise** by Ian McEwan, Stefan Gustavson and Ashima Arts (MIT), https://github.com/ashima/webgl-noise
 
+## Fonts
+
+- **Exo 2** by Natanael Gama / The Exo 2 Project Authors (SIL Open Font License 1.1), https://github.com/googlefonts/Exo-2.0
+  (licence: `LuckyNumbers/Assets/_Project/Art/Fonts/Exo2/OFL.txt`)
+
 ## Libraries
 
 | Library | License | Source |

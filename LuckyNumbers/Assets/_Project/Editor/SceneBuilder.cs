@@ -22,6 +22,7 @@ namespace LuckyNumbers.Editor
         [MenuItem("LuckyNumbers/Scenes/Rebuild All")]
         public static void BuildAll()
         {
+            FontSetup.Build();
             var starfield = MaterialAsset("Starfield", "LuckyNumbers/Starfield");
             var planet = MaterialAsset("Planet3D", "LuckyNumbers/Planet3D");
             var star = MaterialAsset("Star", "LuckyNumbers/Star");

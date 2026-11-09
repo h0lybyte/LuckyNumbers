@@ -158,7 +158,7 @@ def summarize_log(log: Path) -> int:
     for line in shader_errors[:20]:
         print(f"  {line}")
     errors += shader_errors
-    for line in re.findall(r"^\[(?:WebBuild|ShaderPreview|SceneBuilder)\].*$", text, re.M):
+    for line in re.findall(r"^\[(?:WebBuild|ShaderPreview|SceneBuilder|FontSetup)\].*$", text, re.M):
         print(f"  {line}")
     for marker in ("Scripts have compiler errors.", "Aborting batchmode due to failure:"):
         if marker in text:

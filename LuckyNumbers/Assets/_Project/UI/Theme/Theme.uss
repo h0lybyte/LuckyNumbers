@@ -1,5 +1,10 @@
 /* Lucky Numbers UI theme: every screen shares these classes. */
 
+/* Exo 2 (OFL, see CREDITS.md); Bold/Italic are linked weight variants of this asset. */
+:root {
+    -unity-font-definition: url("../../Art/Fonts/Exo2/Exo2-Regular-SDF.asset");
+}
+
 .ln-screen {
     flex-grow: 1;
     align-items: center;
