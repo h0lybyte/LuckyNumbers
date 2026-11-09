@@ -215,10 +215,11 @@ def web_build_dir(gfx: str) -> Path:
 
 
 def cmd_preview(args) -> int:
-    code, log = run_unity(["-executeMethod", "LuckyNumbers.Editor.ShaderPreview.RenderSpace"],
+    method, png = ("RenderShip", "preview-ship.png") if args.what == "ship" else ("RenderSpace", "preview-space.png")
+    code, log = run_unity(["-executeMethod", f"LuckyNumbers.Editor.ShaderPreview.{method}"],
                           "ln-preview.log", args.force, graphics=True)
     errors = summarize_log(log)
-    out = PROJECT / "Logs" / "preview-space.png"
+    out = PROJECT / "Logs" / png
     if code != 0 or errors or not out.is_file():
         return fail("preview failed, see log above")
     print(f"Preview: {out}")
@@ -612,7 +613,8 @@ def main(argv=None) -> int:
     s.add_argument("--steps", help='JSON steps, e.g. [{"drag":[.3,.4,.7,.8]},{"shot":"a.png"},{"click":[.4,.83]}]')
     s.set_defaults(func=cmd_webshot)
 
-    s = sub.add_parser("preview", help="render the space background to LuckyNumbers/Logs/preview-space.png")
+    s = sub.add_parser("preview", help="render shaders to LuckyNumbers/Logs/preview-<what>.png")
+    s.add_argument("what", nargs="?", choices=["space", "ship"], default="space")
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
     s.set_defaults(func=cmd_preview)
 

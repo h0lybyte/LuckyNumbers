@@ -8,6 +8,14 @@
 - Noise and fBm techniques: **The Book of Shaders** by Patricio Gonzalez Vivo and Jen Lowe, https://thebookofshaders.com
 - 3D simplex noise: **webgl-noise** by Ian McEwan, Stefan Gustavson and Ashima Arts (MIT), https://github.com/ashima/webgl-noise
 
+## Models
+
+- Fighter ship "fighter1" by **Psionic** (http://www.psionic3d.co.uk), free for freeware, shareware and commercial games;
+  from a 2005 3D Game Resources skinning competition. Skins (`Art/Models/Fighter/Skins/`, named after their authors):
+  IdolKnight (1st), Krulspeld (2nd), Kaos Kiwi (3rd), Lordshadow (4th), Wilko, Cinfa, Crono782, Cubik, Freelancer,
+  Jodomatis, NMT3000, Psychic Parrot, Robin, Shadee, Snaz, Thor and Psionic.
+  (readme: `LuckyNumbers/Assets/_Project/Art/Models/Fighter/README-psionic.txt`)
+
 ## Fonts
 
 - **Exo 2** by Natanael Gama / The Exo 2 Project Authors (SIL Open Font License 1.1), https://github.com/googlefonts/Exo-2.0
