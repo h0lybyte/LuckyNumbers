@@ -5,6 +5,7 @@ using MessagePipe;
 using ObservableCollections;
 using R3;
 using UnityEngine;
+using VContainer;
 
 namespace LuckyNumbers.Spikes.LibsSmokeTest
 {
@@ -66,6 +67,26 @@ namespace LuckyNumbers.Spikes.LibsSmokeTest
             });
 
             Line($"INFO R3 default frame provider: {ObservableSystem.DefaultFrameProvider.GetType().Name}");
+
+            // VContainer (+ MessagePipe.VContainer). Separate checks so a stripped
+            // constructor shows up as its own failure.
+            VContainer.Unity.LifetimeScope scope = null;
+            Check("VContainer scope build", () => (scope = VContainerProbe.CreateScope()) != null);
+            if (scope != null)
+            {
+                Check("VContainer resolve ([Inject] ctor)", () => scope.Container.Resolve<InjectedService>() != null);
+                Check("VContainer resolve (plain ctor)", () => scope.Container.Resolve<PlainService>().Answer == 42);
+                Check("MessagePipe via VContainer", () =>
+                {
+                    var got = 0;
+                    using var _ = scope.Container.Resolve<ISubscriber<ScoreChanged>>().Subscribe(e => got = e.Value);
+                    scope.Container.Resolve<InjectedService>().Raise(9);
+                    return got == 9;
+                });
+                await UniTask.DelayFrame(2); // entry points start from VContainer's PlayerLoop
+                Check("VContainer entry point (IStartable)", () => StartProbe.Started);
+                scope.Dispose();
+            }
 
             await CheckAsync("UniTask.DelayFrame(3)", async () =>
             {

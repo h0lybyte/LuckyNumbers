@@ -4,7 +4,9 @@
     "references": [
         "UniTask",
         "R3.Unity",
-        "MessagePipe"
+        "MessagePipe",
+        "VContainer",
+        "MessagePipe.VContainer"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
