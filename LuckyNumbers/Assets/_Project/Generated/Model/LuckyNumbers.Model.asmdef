@@ -1,0 +1,7 @@
+{
+    "name": "LuckyNumbers.Model",
+    "rootNamespace": "LuckyNumbers.Model",
+    "references": [],
+    "autoReferenced": true,
+    "noEngineReferences": true
+}

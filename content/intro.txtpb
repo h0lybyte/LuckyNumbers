@@ -1,0 +1,17 @@
+# proto-file: luckynumbers/v1/cutscene.proto
+# proto-message: luckynumbers.v1.Cutscene
+# Durations are placeholders; tune once the scene exists.
+
+id: "intro"
+
+# Dice tumble in space and land on 6 6 6.
+steps { dice_roll { faces: [6, 6, 6] duration_seconds: 3 } }
+
+# The ship gets dragged into the planet.
+steps { ship_pulled_in { duration_seconds: 4 } }
+
+steps { crash_landing { duration_seconds: 2 camera_shake: 1 } }
+
+steps { dialogue { speaker: "Player" text: "Uhh... how did I live through that?!" duration_seconds: 3 } }
+
+steps { go_to { scene: GAME_SCENE_PLANET } }

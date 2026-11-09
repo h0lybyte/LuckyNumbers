@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+message PlayerConfig {
+  option (ln.config) = true;
+  int32 max_health = 1;
+}
+
+message PlayerHealth {
+  option (ln.state) = true;
+  int32 current = 1;
+  int32 max = 2;
+}
+
+message PlayerDamaged {
+  option (ln.event) = true;
+  int32 amount = 1;
+  string source = 2;
+}
+
+message PlayerHealed {
+  option (ln.event) = true;
+  int32 amount = 1;
+}
+
+message PlayerDied {
+  option (ln.event) = true;
+  string cause = 1;
+}

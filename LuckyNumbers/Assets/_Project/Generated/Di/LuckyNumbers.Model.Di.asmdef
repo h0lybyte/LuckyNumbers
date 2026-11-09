@@ -1,0 +1,11 @@
+{
+    "name": "LuckyNumbers.Model.Di",
+    "rootNamespace": "LuckyNumbers.Model",
+    "references": [
+        "LuckyNumbers.Model",
+        "VContainer",
+        "MessagePipe",
+        "MessagePipe.VContainer"
+    ],
+    "autoReferenced": true
+}

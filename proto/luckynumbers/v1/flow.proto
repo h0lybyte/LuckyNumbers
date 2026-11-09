@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Top-level game flow: Title -> Intro (cutscene) -> Planet.
+enum GameScene {
+  GAME_SCENE_UNSPECIFIED = 0;
+  GAME_SCENE_TITLE = 1;
+  GAME_SCENE_INTRO = 2;
+  GAME_SCENE_PLANET = 3;
+}
+
+message FlowState {
+  option (ln.state) = true;
+  GameScene scene = 1;
+}
+
+message SceneChangeRequested {
+  option (ln.event) = true;
+  GameScene target = 1;
+}
+
+message SceneEntered {
+  option (ln.event) = true;
+  GameScene scene = 1;
+}

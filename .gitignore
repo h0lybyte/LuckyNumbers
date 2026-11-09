@@ -112,3 +112,6 @@ $RECYCLE.BIN/
 *.blend2
 *.swp
 *~
+
+# Tool downloads (pinned protoc etc.), recreated by tools/ln.py
+/.cache/

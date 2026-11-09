@@ -65,6 +65,12 @@ jobs:
         with:
           lfs: true
 
+      # Fail fast if proto/ or content/ changed without regenerating the C#.
+      - name: Generated code up to date
+        run: |
+          python3 tools/ln.py proto
+          python3 tools/ln.py gen --check
+
       # Unity's Library folder is a big import cache; restoring it turns a
       # ~10+ min cold import into a few minutes.
       - uses: actions/cache@v4

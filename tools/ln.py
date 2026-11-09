@@ -301,6 +301,120 @@ def cmd_deploy(args) -> int:
     return subprocess.call(cmd)
 
 
+PROTO_DIR = ROOT / "proto"
+CONTENT_DIR = ROOT / "content"
+CONTENT_HEADER = re.compile(r"^#\s*proto-(file|message):\s*(\S+)\s*$", re.M)
+
+
+# Pinned official protoc release; downloaded once into .cache/ and verified by SHA-256
+# (digests from the GitHub release assets), so every machine and CI uses the same binary.
+PROTOC_VERSION = "36.2"
+PROTOC_ASSETS = {
+    ("Darwin", "arm64"): ("osx-aarch_64", "9cd98a532c5c5e0c4161314de0225de27e4c8a323917b6ea7b1b714d3ae23466"),
+    ("Darwin", "x86_64"): ("osx-x86_64", "228cc7add4616cc14ca5e80dee83209d44449a7aee95a914ae748fa374efb078"),
+    ("Linux", "x86_64"): ("linux-x86_64", "121f6c7afe1d4d0e3ea6aab9432038599250134cbf4474cb1167d2c7decd4278"),
+    ("Linux", "aarch64"): ("linux-aarch_64", "8b8f18bd2b30346efbc698dd5a73dd7c805f3ef8380f6dfc95c768f3f1852f6a"),
+    ("Windows", "AMD64"): ("win64", "f0c128dc0d8492eceece83bb459a4c0e316764b929ffbf1aa416357fd644edd3"),
+}
+CACHE_DIR = ROOT / ".cache"
+
+
+def ensure_protoc() -> tuple[Path, Path]:
+    """Return (protoc binary, its include dir), downloading the pinned release if needed."""
+    import hashlib, io, urllib.request, zipfile
+    key = (SYSTEM, platform.machine())
+    if key not in PROTOC_ASSETS:
+        raise RuntimeError(f"no pinned protoc for {key}")
+    suffix, sha = PROTOC_ASSETS[key]
+    home = CACHE_DIR / "protoc" / f"{PROTOC_VERSION}-{suffix}"
+    exe = home / "bin" / ("protoc.exe" if SYSTEM == "Windows" else "protoc")
+    if not exe.is_file():
+        url = (f"https://github.com/protocolbuffers/protobuf/releases/download/"
+               f"v{PROTOC_VERSION}/protoc-{PROTOC_VERSION}-{suffix}.zip")
+        print(f"  downloading protoc {PROTOC_VERSION} ({suffix}) ...")
+        data = urllib.request.urlopen(url, timeout=60).read()
+        got = hashlib.sha256(data).hexdigest()
+        if got != sha:
+            raise RuntimeError(f"protoc checksum mismatch: expected {sha}, got {got}")
+        zipfile.ZipFile(io.BytesIO(data)).extractall(home)
+        exe.chmod(0o755)
+    return exe, home / "include"
+
+
+def cmd_proto(args) -> int:
+    """Compile all .proto schemas, then encode every content/*.txtpb against its schema."""
+    protoc_exe, protoc_include = ensure_protoc()
+    protoc = str(protoc_exe)
+    includes = [f"-I{PROTO_DIR}", f"-I{protoc_include}"]
+    protos = sorted(str(p.relative_to(PROTO_DIR)) for p in PROTO_DIR.rglob("*.proto"))
+    r = subprocess.run([protoc, *includes, f"--descriptor_set_out={os.devnull}", *protos],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        print(r.stderr.strip())
+        return fail("schema compile failed")
+    print(f"  schemas OK ({len(protos)} files)")
+
+    bad = 0
+    for txt in sorted(CONTENT_DIR.rglob("*.txtpb")):
+        header = dict(CONTENT_HEADER.findall(txt.read_text(encoding="utf-8")))
+        rel = txt.relative_to(ROOT)
+        if "file" not in header or "message" not in header:
+            print(f"  FAIL {rel}: needs '# proto-file:' and '# proto-message:' header lines")
+            bad += 1
+            continue
+        with open(txt, "rb") as f:
+            r = subprocess.run([protoc, *includes, f"--encode={header['message']}", header["file"]],
+                               stdin=f, capture_output=True)
+        if r.returncode != 0:
+            print(f"  FAIL {rel} ({header['message']}): {r.stderr.decode(errors='replace').strip()}")
+            bad += 1
+        else:
+            print(f"  ok   {rel} -> {header['message']} ({len(r.stdout)} bytes)")
+    return 1 if bad else 0
+
+
+GENERATED_DIR = PROJECT / "Assets" / "_Project" / "Generated"
+
+
+def cmd_gen(args) -> int:
+    """proto/ + content/ -> C# under Assets/_Project/Generated (see tools/protogen.py)."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import protogen
+    protoc, include = ensure_protoc()
+    try:
+        files = protogen.run(str(protoc), include, PROTO_DIR, CONTENT_DIR, CONTENT_HEADER)
+    except subprocess.CalledProcessError as e:
+        print((e.stderr or b"").decode(errors="replace").strip())
+        return fail("protoc failed; run `ln.py proto` for details")
+    except ValueError as e:
+        return fail(str(e))
+
+    wanted = {GENERATED_DIR / rel: text for rel, text in files.items()}
+    existing = {p for p in GENERATED_DIR.rglob("*") if p.is_file() and not p.name.endswith(".meta")} \
+        if GENERATED_DIR.exists() else set()
+    changed = [p for p, t in wanted.items() if not p.is_file() or p.read_text(encoding="utf-8") != t]
+    stale = sorted(existing - set(wanted))
+
+    if args.check:
+        for p in changed + stale:
+            print(f"  out of date: {p.relative_to(ROOT)}")
+        if changed or stale:
+            return fail("generated code is stale; run `python3 tools/ln.py gen` and commit")
+        print(f"  up to date ({len(wanted)} files)")
+        return 0
+
+    for p in changed:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(wanted[p], encoding="utf-8", newline="\n")
+        print(f"  wrote   {p.relative_to(ROOT)}")
+    for p in stale:
+        p.unlink()
+        Path(str(p) + ".meta").unlink(missing_ok=True)
+        print(f"  removed {p.relative_to(ROOT)}")
+    print(f"  {len(changed)} written, {len(stale)} removed, {len(wanted) - len(changed)} unchanged")
+    return 0
+
+
 ENV_FILE = ROOT / ".env"
 SECRET_KEYS = ("UNITY_EMAIL", "UNITY_PASSWORD", "UNITY_LICENSE", "BUTLER_API_KEY")
 VARIABLE_KEYS = ("ITCH_TARGET",)
@@ -393,6 +507,13 @@ def main(argv=None) -> int:
     s.add_argument("--version", help="itch user version (default: top entry of CHANGELOG.md)")
     s.add_argument("--dry-run", action="store_true")
     s.set_defaults(func=cmd_deploy)
+
+    s = sub.add_parser("proto", help="validate proto schemas and content/*.txtpb (pinned protoc)")
+    s.set_defaults(func=cmd_proto)
+
+    s = sub.add_parser("gen", help="generate C# from proto/ + content/ into Assets/_Project/Generated")
+    s.add_argument("--check", action="store_true", help="only verify the committed output is up to date")
+    s.set_defaults(func=cmd_gen)
 
     s = sub.add_parser("version", help="print the game version from CHANGELOG.md")
     s.add_argument("--notes", action="store_true", help="print that entry's release notes instead")

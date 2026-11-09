@@ -1,0 +1,6 @@
+# proto-file: luckynumbers/v1/title.proto
+# proto-message: luckynumbers.v1.TitleScreen
+
+title: "Lucky Numbers"
+start_prompt: "Press any key to start"
+next: GAME_SCENE_INTRO
