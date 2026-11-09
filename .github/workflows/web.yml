@@ -1,0 +1,143 @@
+# Release pipeline: CHANGELOG.md drives Web builds and itch.io deploys.
+#
+#   push to main touching CHANGELOG.md
+#     -> read version from the top "## x.y.z" entry
+#     -> if tag vx.y.z already exists: stop (notes-only edit, nothing to release)
+#     -> else: build WebGL (WebGPU + WebGL 2), push to itch.io as x.y.z, tag + GitHub release vx.y.z
+#   manual run (Actions -> Web release -> Run workflow)
+#     -> build the current version; deploy only if "deploy" is ticked
+#
+# Repository secrets: UNITY_LICENSE, UNITY_EMAIL, UNITY_PASSWORD, BUTLER_API_KEY
+# Repository variable: ITCH_TARGET (itch.io "user/game")
+# Set them from .env with: python3 tools/ln.py secrets
+name: Web release
+
+on:
+  push:
+    branches: [main]
+    paths: ["CHANGELOG.md"]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Deploy to itch.io (and tag/release if this version is new)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: web-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  PROJECT_PATH: LuckyNumbers
+  BUILD_DIR: LuckyNumbers/Builds/WebGL
+
+jobs:
+  version:
+    name: Read version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      released: ${{ steps.v.outputs.released }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # tags, to detect already-released versions
+
+      - id: v
+        run: |
+          version="$(python3 tools/ln.py version)"
+          if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then released=true; else released=false; fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "released=$released" >> "$GITHUB_OUTPUT"
+          echo "### Version $version (already released: $released)" >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: Build WebGL ${{ needs.version.outputs.version }}
+    needs: version
+    if: needs.version.outputs.released == 'false' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      # Unity's Library folder is a big import cache; restoring it turns a
+      # ~10+ min cold import into a few minutes.
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.PROJECT_PATH }}/Library
+          key: Library-WebGL-${{ hashFiles('LuckyNumbers/Assets/**', 'LuckyNumbers/Packages/**', 'LuckyNumbers/ProjectSettings/**') }}
+          restore-keys: |
+            Library-WebGL-
+
+      # Same entry point as `tools/ln.py build-web`: threads, gzip + decompression
+      # fallback, 720p, WebGPU + WebGL 2, version stamped from CHANGELOG.md.
+      - uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: ${{ env.PROJECT_PATH }}
+          targetPlatform: WebGL
+          buildMethod: LuckyNumbers.Editor.WebBuild.Build
+          customParameters: -lnGfx both -lnVersion ${{ needs.version.outputs.version }}
+          versioning: None
+
+      - name: Check build output
+        run: |
+          test -f "$BUILD_DIR/index.html" || { echo "::error::no index.html in $BUILD_DIR"; exit 1; }
+          du -sh "$BUILD_DIR"
+          ls -la "$BUILD_DIR/Build"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-build-${{ needs.version.outputs.version }}
+          path: ${{ env.BUILD_DIR }}
+          retention-days: 30
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy ${{ needs.version.outputs.version }} to itch.io
+    needs: [version, build]
+    if: (github.event_name == 'push' && needs.version.outputs.released == 'false') || (github.event_name == 'workflow_dispatch' && inputs.deploy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: itch
+    permissions:
+      contents: write # create the vx.y.z tag + GitHub release
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-build-${{ needs.version.outputs.version }}
+          path: ${{ env.BUILD_DIR }}
+
+      - name: Install butler
+        run: |
+          curl -fsSL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d "$HOME/butler"
+          chmod +x "$HOME/butler/butler"
+          echo "$HOME/butler" >> "$GITHUB_PATH"
+          "$HOME/butler/butler" -V
+
+      - name: Push to itch.io
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_TARGET: ${{ vars.ITCH_TARGET }}
+        run: python3 tools/ln.py deploy --version "$VERSION"
+
+      - name: Tag and GitHub release
+        if: needs.version.outputs.released == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/ln.py version --notes > notes.md
+          gh release create "v$VERSION" --target "$GITHUB_SHA" --title "v$VERSION" --notes-file notes.md
