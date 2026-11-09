@@ -241,6 +241,8 @@ def cmd_webshot(args) -> int:
     cmd = [node, str(ROOT / "tools" / "webshot.mjs"), args.url, str(out), "--timeout", str(args.timeout)]
     if args.wait:
         cmd += ["--wait", args.wait]
+    if args.steps:
+        cmd += ["--steps", args.steps]
     return subprocess.call(cmd)
 
 
@@ -607,6 +609,7 @@ def main(argv=None) -> int:
     s.add_argument("--out", default=str(PROJECT / "Logs" / "webshot.png"))
     s.add_argument("--wait", default="[Title] ready", help="console text to wait for ('' = don't wait)")
     s.add_argument("--timeout", type=int, default=90)
+    s.add_argument("--steps", help='JSON steps, e.g. [{"drag":[.3,.4,.7,.8]},{"shot":"a.png"},{"click":[.4,.83]}]')
     s.set_defaults(func=cmd_webshot)
 
     s = sub.add_parser("preview", help="render the space background to LuckyNumbers/Logs/preview-space.png")

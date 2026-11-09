@@ -8,12 +8,42 @@ import "luckynumbers/v1/common.proto";
 option csharp_namespace = "LuckyNumbers.Model";
 
 // Space background shown on the title (and reused by the intro).
+// World units: orthographic camera, 1 unit = half the screen height.
 message SpaceBackdrop {
+  reserved 2, 3, 4; // old single planet (planet, planet_position, planet_scale)
   StarfieldLook stars = 1;
-  PlanetLook planet = 2;
-  // Planet quad centre in camera units (orthographic size 1 = half screen height).
-  Vec2 planet_position = 3;
-  float planet_scale = 4;
+  // Drawn in list order (later = in front).
+  repeated CelestialBody bodies = 5;
+  CameraPan pan = 6;
+}
+
+// A planet/moon quad using LuckyNumbers/Planet2D with its own look.
+message CelestialBody {
+  string id = 1;
+  // World position; for orbiting bodies, the orbit centre offset (usually 0,0).
+  Vec2 position = 2;
+  float scale = 3;
+  PlanetLook look = 4;
+  // Optional: circle another body (by id). radius 0 = static.
+  Orbit orbit = 5;
+}
+
+message Orbit {
+  string around = 1;
+  float radius = 2;
+  float period_seconds = 3;
+  // Starting angle, 0..1 of a full turn.
+  float phase = 4;
+}
+
+// Click-drag to look around the universe.
+message CameraPan {
+  // 1 = the universe follows the pointer exactly.
+  float drag_speed = 1;
+  // Camera may move within +-bounds of the start position.
+  Vec2 bounds = 2;
+  // Inertia after release: velocity kept per second (0 = stop instantly, 0.9 = long glide).
+  float glide = 3;
 }
 
 // Shader properties of LuckyNumbers/Starfield.
@@ -29,6 +59,8 @@ message StarfieldLook {
   float twinkle_speed = 8;
   Vec2 drift = 9;
   float seed = 10;
+  // How far each layer moves when the camera pans (0 = fixed to screen, 1 = world-locked).
+  float parallax = 11;
 }
 
 // Shader properties of LuckyNumbers/Planet2D.

@@ -9,6 +9,7 @@ LuckyNumbers/            Unity project
     Generated/           C# generated from proto/ + content/ (do not edit)
     Scenes/              Title, Intro (built by SceneBuilder)
     Scripts/Core/        RootLifetimeScope, SceneFlow, InputBridge
+    Scripts/Space/       SpaceWorld + OrbitSystem (bodies as entities), SpaceView, SpacePresenter (pan)
     Scripts/Title/       TitleView, TitlePresenter, TitleScope
     Scripts/Rendering/   RenderResolutionCap
     Settings/            URP assets, input actions

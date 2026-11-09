@@ -20,4 +20,30 @@ message TitleScreen {
   float prompt_pulse_seconds = 5;
   // Shown instead of start_prompt while `next` is still loading.
   string loading_prompt = 6;
+  // Buttons, left to right.
+  repeated MenuItem menu = 7;
+  SettingsPanel settings = 8;
+}
+
+enum MenuAction {
+  MENU_ACTION_UNSPECIFIED = 0;
+  MENU_ACTION_PLAY = 1;
+  MENU_ACTION_SETTINGS = 2;
+}
+
+message MenuItem {
+  string label = 1;
+  MenuAction action = 2;
+}
+
+// Placeholder until settings exist.
+message SettingsPanel {
+  string title = 1;
+  string body = 2;
+  string back_label = 3;
+}
+
+message MenuItemSelected {
+  option (ln.event) = true;
+  MenuAction action = 1;
 }

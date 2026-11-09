@@ -9,6 +9,13 @@ using R3;
 
 namespace LuckyNumbers.Model
 {
+    public enum MenuAction
+    {
+        Unspecified = 0,
+        Play = 1,
+        Settings = 2,
+    }
+
     /// <summary>
     /// Title screen; also the preloader: `next` loads in the background while it shows.
     /// Confirm (see input.proto) switches to `next` once loading is done.
@@ -27,5 +34,36 @@ namespace LuckyNumbers.Model
         /// Shown instead of start_prompt while `next` is still loading.
         /// </summary>
         public string LoadingPrompt { get; set; }
+        /// <summary>
+        /// Buttons, left to right.
+        /// </summary>
+        public List<MenuItem> Menu { get; } = new List<MenuItem>();
+        public SettingsPanel Settings { get; set; }
+    }
+
+    public sealed class MenuItem
+    {
+        public string Label { get; set; }
+        public MenuAction Action { get; set; }
+    }
+
+    /// <summary>
+    /// Placeholder until settings exist.
+    /// </summary>
+    public sealed class SettingsPanel
+    {
+        public string Title { get; set; }
+        public string Body { get; set; }
+        public string BackLabel { get; set; }
+    }
+
+    public readonly struct MenuItemSelected
+    {
+        public readonly MenuAction Action;
+
+        public MenuItemSelected(MenuAction action)
+        {
+            Action = action;
+        }
     }
 }

@@ -4,6 +4,7 @@
     "references": [
         "LuckyNumbers.Attributes",
         "LuckyNumbers.Core",
+        "LuckyNumbers.Space",
         "LuckyNumbers.Model",
         "LuckyNumbers.Model.Unity",
         "VContainer",

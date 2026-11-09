@@ -20,6 +20,7 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<PlayerDamaged>(options);
             builder.RegisterMessageBroker<PlayerHealed>(options);
             builder.RegisterMessageBroker<PlayerDied>(options);
+            builder.RegisterMessageBroker<MenuItemSelected>(options);
         }
 
         /// <summary>Registers every (ln.state) class as a singleton.</summary>

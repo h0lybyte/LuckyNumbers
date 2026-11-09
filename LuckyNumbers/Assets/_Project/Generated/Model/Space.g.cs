@@ -11,16 +11,64 @@ namespace LuckyNumbers.Model
 {
     /// <summary>
     /// Space background shown on the title (and reused by the intro).
+    /// World units: orthographic camera, 1 unit = half the screen height.
     /// </summary>
     public sealed class SpaceBackdrop
     {
         public StarfieldLook Stars { get; set; }
-        public PlanetLook Planet { get; set; }
         /// <summary>
-        /// Planet quad centre in camera units (orthographic size 1 = half screen height).
+        /// Drawn in list order (later = in front).
         /// </summary>
-        public Vec2 PlanetPosition { get; set; }
-        public float PlanetScale { get; set; }
+        public List<CelestialBody> Bodies { get; } = new List<CelestialBody>();
+        public CameraPan Pan { get; set; }
+    }
+
+    /// <summary>
+    /// A planet/moon quad using LuckyNumbers/Planet2D with its own look.
+    /// </summary>
+    public sealed class CelestialBody
+    {
+        public string Id { get; set; }
+        /// <summary>
+        /// World position; for orbiting bodies, the orbit centre offset (usually 0,0).
+        /// </summary>
+        public Vec2 Position { get; set; }
+        public float Scale { get; set; }
+        public PlanetLook Look { get; set; }
+        /// <summary>
+        /// Optional: circle another body (by id). radius 0 = static.
+        /// </summary>
+        public Orbit Orbit { get; set; }
+    }
+
+    public sealed class Orbit
+    {
+        public string Around { get; set; }
+        public float Radius { get; set; }
+        public float PeriodSeconds { get; set; }
+        /// <summary>
+        /// Starting angle, 0..1 of a full turn.
+        /// </summary>
+        public float Phase { get; set; }
+    }
+
+    /// <summary>
+    /// Click-drag to look around the universe.
+    /// </summary>
+    public sealed class CameraPan
+    {
+        /// <summary>
+        /// 1 = the universe follows the pointer exactly.
+        /// </summary>
+        public float DragSpeed { get; set; }
+        /// <summary>
+        /// Camera may move within +-bounds of the start position.
+        /// </summary>
+        public Vec2 Bounds { get; set; }
+        /// <summary>
+        /// Inertia after release: velocity kept per second (0 = stop instantly, 0.9 = long glide).
+        /// </summary>
+        public float Glide { get; set; }
     }
 
     /// <summary>
@@ -38,6 +86,10 @@ namespace LuckyNumbers.Model
         public float TwinkleSpeed { get; set; }
         public Vec2 Drift { get; set; }
         public float Seed { get; set; }
+        /// <summary>
+        /// How far each layer moves when the camera pans (0 = fixed to screen, 1 = world-locked).
+        /// </summary>
+        public float Parallax { get; set; }
     }
 
     /// <summary>

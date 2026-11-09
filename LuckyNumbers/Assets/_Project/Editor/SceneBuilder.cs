@@ -1,20 +1,25 @@
 using LuckyNumbers.Core;
+using LuckyNumbers.Space;
 using LuckyNumbers.Title;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
 namespace LuckyNumbers.Editor
 {
     /// <summary>
     /// Builds the game scenes from code (reproducible, reviewable): tools/ln.py scenes.
-    /// Look and text come from content/*.txtpb at runtime; scenes only hold structure.
+    /// Look, text, menu and bodies come from content/*.txtpb at runtime; scenes only hold structure.
     /// </summary>
     public static class SceneBuilder
     {
         const string ScenesDir = "Assets/_Project/Scenes";
         const string MaterialsDir = "Assets/_Project/Art/Materials";
+        static readonly Color ButtonColor = new(0.08f, 0.08f, 0.18f, 0.8f);
+        static readonly Color PanelColor = new(0.03f, 0.03f, 0.08f, 0.9f);
 
         [MenuItem("LuckyNumbers/Scenes/Rebuild All")]
         public static void BuildAll()
@@ -39,28 +44,55 @@ namespace LuckyNumbers.Editor
         static void BuildTitle(Material starfieldMat, Material planetMat)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            Camera();
-            var starfield = Quad("Starfield", starfieldMat, new Vector3(0, 0, 5), new Vector3(10, 10, 1));
-            var planet = Quad("Planet", planetMat, Vector3.zero, Vector3.one);
 
+            // Universe: camera (starfield rides on it), bodies spawned by SpacePresenter from content.
+            var cam = Camera();
+            var starfield = Quad("Starfield", starfieldMat, cam.transform, new Vector3(0, 0, 15), new Vector3(40, 40, 1));
+            var space = new GameObject("Space").AddComponent<SpaceView>();
+            var template = Quad("BodyTemplate", planetMat, space.transform, Vector3.zero, Vector3.one);
+            template.gameObject.SetActive(false);
+            Assign(space, ("viewCamera", cam), ("starfield", starfield), ("bodyTemplate", template));
+
+            // UI.
             var canvas = Canvas();
-            var title = Label(canvas, "Title", 72, new Vector2(0.5f, 0.72f), FontStyle.Bold);
-            var prompt = Label(canvas, "Prompt", 28, new Vector2(0.5f, 0.18f), FontStyle.Normal);
+            var title = Label(canvas, "Title", 72, new Vector2(0.5f, 0.78f), FontStyle.Bold);
+            var prompt = Label(canvas, "Prompt", 22, new Vector2(0.5f, 0.06f), FontStyle.Italic);
+
+            var menu = new GameObject("Menu", typeof(RectTransform), typeof(HorizontalLayoutGroup)).GetComponent<RectTransform>();
+            menu.SetParent(canvas, false);
+            menu.anchorMin = menu.anchorMax = new Vector2(0.5f, 0.17f);
+            menu.sizeDelta = new Vector2(600, 64);
+            var layout = menu.GetComponent<HorizontalLayoutGroup>();
+            layout.spacing = 24;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.childControlWidth = layout.childControlHeight = false;
+            layout.childForceExpandWidth = layout.childForceExpandHeight = false;
+
+            var buttonTemplate = Button(canvas, "ButtonTemplate", new Vector2(220, 56));
+            buttonTemplate.gameObject.SetActive(false);
+
+            var panel = new GameObject("SettingsPanel", typeof(RectTransform), typeof(Image));
+            panel.transform.SetParent(canvas, false);
+            var panelRt = (RectTransform)panel.transform;
+            panelRt.anchorMin = panelRt.anchorMax = new Vector2(0.5f, 0.45f);
+            panelRt.sizeDelta = new Vector2(560, 320);
+            panel.GetComponent<Image>().color = PanelColor;
+            var settingsTitle = Label(panelRt, "SettingsTitle", 40, new Vector2(0.5f, 0.82f), FontStyle.Bold);
+            var settingsBody = Label(panelRt, "SettingsBody", 24, new Vector2(0.5f, 0.5f), FontStyle.Normal);
+            var back = Button(panelRt, "Back", new Vector2(180, 52));
+            var backRt = (RectTransform)back.transform;
+            backRt.anchorMin = backRt.anchorMax = new Vector2(0.5f, 0.16f);
+            panel.SetActive(false);
 
             var view = new GameObject("TitleView").AddComponent<TitleView>();
-            var so = new SerializedObject(view);
-            so.FindProperty("starfield").objectReferenceValue = starfield;
-            so.FindProperty("planet").objectReferenceValue = planet;
-            so.FindProperty("title").objectReferenceValue = title;
-            so.FindProperty("prompt").objectReferenceValue = prompt;
-            so.ApplyModifiedPropertiesWithoutUndo();
+            Assign(view, ("title", title), ("prompt", prompt), ("menu", menu), ("buttonTemplate", buttonTemplate),
+                   ("settingsPanel", panel), ("settingsTitle", settingsTitle), ("settingsBody", settingsBody),
+                   ("settingsBack", back));
 
-            new GameObject("RootLifetimeScope").AddComponent<RootLifetimeScope>();
-            var titleScope = new GameObject("TitleScope").AddComponent<TitleScope>();
-            var scopeSo = new SerializedObject(titleScope);
-            scopeSo.FindProperty("parentReference.TypeName").stringValue = typeof(RootLifetimeScope).FullName;
-            scopeSo.ApplyModifiedPropertiesWithoutUndo();
+            var events = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+            events.transform.SetAsLastSibling();
 
+            Scopes<TitleScope>();
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Title.unity");
         }
 
@@ -68,10 +100,30 @@ namespace LuckyNumbers.Editor
         static void BuildIntroPlaceholder(Material starfieldMat)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            Camera();
-            Quad("Starfield", starfieldMat, new Vector3(0, 0, 5), new Vector3(10, 10, 1));
+            var cam = Camera();
+            Quad("Starfield", starfieldMat, cam.transform, new Vector3(0, 0, 15), new Vector3(40, 40, 1));
             Label(Canvas(), "Placeholder", 36, new Vector2(0.5f, 0.5f), FontStyle.Normal).text = "Intro (cutscene player next)";
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Intro.unity");
+        }
+
+        static void Scopes<TScene>() where TScene : Component
+        {
+            new GameObject("RootLifetimeScope").AddComponent<RootLifetimeScope>();
+            var sceneScope = new GameObject(typeof(TScene).Name).AddComponent<TScene>();
+            var so = new SerializedObject(sceneScope);
+            so.FindProperty("parentReference.TypeName").stringValue = typeof(RootLifetimeScope).FullName;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        static void Assign(Object target, params (string field, Object value)[] fields)
+        {
+            var so = new SerializedObject(target);
+            foreach (var (field, value) in fields)
+            {
+                var prop = so.FindProperty(field) ?? throw new System.Exception($"{target.GetType().Name}.{field} not found");
+                prop.objectReferenceValue = value;
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         static Material MaterialAsset(string name, string shaderName)
@@ -85,7 +137,7 @@ namespace LuckyNumbers.Editor
             return mat;
         }
 
-        static void Camera()
+        static UnityEngine.Camera Camera()
         {
             var cam = new GameObject("Main Camera") { tag = "MainCamera" }.AddComponent<UnityEngine.Camera>();
             cam.orthographic = true;
@@ -93,14 +145,16 @@ namespace LuckyNumbers.Editor
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = Color.black;
             cam.transform.position = new Vector3(0, 0, -10);
+            return cam;
         }
 
-        static MeshRenderer Quad(string name, Material material, Vector3 position, Vector3 scale)
+        static MeshRenderer Quad(string name, Material material, Transform parent, Vector3 localPosition, Vector3 scale)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
             go.name = name;
             Object.DestroyImmediate(go.GetComponent<Collider>());
-            go.transform.position = position;
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = localPosition;
             go.transform.localScale = scale;
             var r = go.GetComponent<MeshRenderer>();
             r.sharedMaterial = material;
@@ -109,7 +163,7 @@ namespace LuckyNumbers.Editor
 
         static Transform Canvas()
         {
-            var go = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler));
+            var go = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             go.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
             var scaler = go.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -118,10 +172,21 @@ namespace LuckyNumbers.Editor
             return go.transform;
         }
 
-        static Text Label(Transform canvas, string name, int size, Vector2 anchor, FontStyle style)
+        static Button Button(Transform parent, string name, Vector2 size)
+        {
+            var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+            go.transform.SetParent(parent, false);
+            ((RectTransform)go.transform).sizeDelta = size;
+            go.GetComponent<Image>().color = ButtonColor;
+            var label = Label(go.transform, "Label", 28, new Vector2(0.5f, 0.5f), FontStyle.Normal);
+            ((RectTransform)label.transform).sizeDelta = size;
+            return go.GetComponent<Button>();
+        }
+
+        static Text Label(Transform parent, string name, int size, Vector2 anchor, FontStyle style)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(Text));
-            go.transform.SetParent(canvas, false);
+            go.transform.SetParent(parent, false);
             var rt = (RectTransform)go.transform;
             rt.anchorMin = rt.anchorMax = anchor;
             rt.sizeDelta = new Vector2(1200, size * 1.6f);
@@ -131,6 +196,7 @@ namespace LuckyNumbers.Editor
             text.fontStyle = style;
             text.alignment = TextAnchor.MiddleCenter;
             text.color = Color.white;
+            text.raycastTarget = false; // labels never block drags/clicks
             return text;
         }
     }

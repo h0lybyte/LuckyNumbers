@@ -5,7 +5,9 @@
         "LuckyNumbers.Core",
         "LuckyNumbers.Title",
         "VContainer",
-        "UnityEngine.UI"
+        "UnityEngine.UI",
+        "LuckyNumbers.Space",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [
         "Editor"

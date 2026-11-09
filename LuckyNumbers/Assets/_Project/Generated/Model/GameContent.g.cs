@@ -74,7 +74,7 @@ namespace LuckyNumbers.Model
         public static readonly TitleScreen Title = new TitleScreen
         {
             Title = "Lucky Numbers",
-            StartPrompt = "Press any key to start",
+            StartPrompt = "Drag to explore",
             Next = GameScene.Intro,
             Backdrop = new SpaceBackdrop
             {
@@ -90,30 +90,142 @@ namespace LuckyNumbers.Model
                     TwinkleSpeed = 2.0f,
                     Drift = new Vec2(0.004f, 0.001f),
                     Seed = 7.0f,
+                    Parallax = 0.15f,
                 },
-                Planet = new PlanetLook
+                Bodies =
                 {
-                    PlanetColor = new Rgba(1.0f, 0.34f, default(float), 1.0f),
-                    AtmosphereColor = new Rgba(0.41f, 0.6f, 1.0f, 1.0f),
-                    LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
-                    PlanetSize = 0.9f,
-                    EdgeSmoothness = 0.02f,
-                    AtmosphereThickness = 0.01f,
-                    RotationSpeed = 0.03f,
-                    RotationAxis = -0.2f,
-                    LightOrigin = new Vec2(-0.1f, 0.1f),
-                    LightShadowHardness = 0.5f,
-                    LightSize = 2.0f,
-                    LightIntensity = 0.9f,
-                    ShadowSize = 1.8f,
-                    ShadowIntensity = 1.0f,
-                    NoiseOffset = new Vec2(default(float), default(float)),
+                    new CelestialBody
+                    {
+                        Id = "home",
+                        Position = new Vec2(1.0f, -0.2f),
+                        Scale = 1.4f,
+                        Look = new PlanetLook
+                        {
+                            PlanetColor = new Rgba(1.0f, 0.34f, default(float), 1.0f),
+                            AtmosphereColor = new Rgba(0.41f, 0.6f, 1.0f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            PlanetSize = 0.9f,
+                            EdgeSmoothness = 0.02f,
+                            AtmosphereThickness = 0.01f,
+                            RotationSpeed = 0.03f,
+                            RotationAxis = -0.2f,
+                            LightOrigin = new Vec2(-0.1f, 0.1f),
+                            LightShadowHardness = 0.5f,
+                            LightSize = 2.0f,
+                            LightIntensity = 0.9f,
+                            ShadowSize = 1.8f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec2(default(float), default(float)),
+                        },
+                    },
+                    new CelestialBody
+                    {
+                        Id = "moon",
+                        Position = new Vec2(default(float), default(float)),
+                        Scale = 0.35f,
+                        Look = new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.55f, 0.55f, 0.6f, 1.0f),
+                            AtmosphereColor = new Rgba(0.7f, 0.7f, 0.8f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            PlanetSize = 0.9f,
+                            EdgeSmoothness = 0.03f,
+                            AtmosphereThickness = 0.005f,
+                            RotationSpeed = 0.05f,
+                            RotationAxis = 0.3f,
+                            LightOrigin = new Vec2(-0.1f, 0.1f),
+                            LightShadowHardness = 0.5f,
+                            LightSize = 2.0f,
+                            LightIntensity = 0.6f,
+                            ShadowSize = 1.8f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec2(13.0f, 5.0f),
+                        },
+                        Orbit = new Orbit
+                        {
+                            Around = "home",
+                            Radius = 1.05f,
+                            PeriodSeconds = 45.0f,
+                            Phase = 0.15f,
+                        },
+                    },
+                    new CelestialBody
+                    {
+                        Id = "ice",
+                        Position = new Vec2(-2.6f, 1.4f),
+                        Scale = 0.6f,
+                        Look = new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.3f, 0.75f, 1.0f, 1.0f),
+                            AtmosphereColor = new Rgba(0.8f, 0.95f, 1.0f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            PlanetSize = 0.9f,
+                            EdgeSmoothness = 0.02f,
+                            AtmosphereThickness = 0.015f,
+                            RotationSpeed = 0.02f,
+                            RotationAxis = 0.5f,
+                            LightOrigin = new Vec2(-0.1f, 0.1f),
+                            LightShadowHardness = 0.5f,
+                            LightSize = 2.0f,
+                            LightIntensity = 0.8f,
+                            ShadowSize = 1.8f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec2(41.0f, 17.0f),
+                        },
+                    },
+                    new CelestialBody
+                    {
+                        Id = "giant",
+                        Position = new Vec2(-3.2f, -1.8f),
+                        Scale = 1.1f,
+                        Look = new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.55f, 0.2f, 0.85f, 1.0f),
+                            AtmosphereColor = new Rgba(0.9f, 0.5f, 1.0f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            PlanetSize = 0.9f,
+                            EdgeSmoothness = 0.02f,
+                            AtmosphereThickness = 0.02f,
+                            RotationSpeed = 0.01f,
+                            RotationAxis = -0.6f,
+                            LightOrigin = new Vec2(-0.1f, 0.1f),
+                            LightShadowHardness = 0.5f,
+                            LightSize = 2.0f,
+                            LightIntensity = 0.7f,
+                            ShadowSize = 1.8f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec2(77.0f, 3.0f),
+                        },
+                    },
                 },
-                PlanetPosition = new Vec2(1.0f, -0.2f),
-                PlanetScale = 1.4f,
+                Pan = new CameraPan
+                {
+                    DragSpeed = 1.0f,
+                    Bounds = new Vec2(4.0f, 2.5f),
+                    Glide = 0.92f,
+                },
             },
             PromptPulseSeconds = 1.6f,
             LoadingPrompt = "Loading...",
+            Menu =
+            {
+                new MenuItem
+                {
+                    Label = "Play",
+                    Action = MenuAction.Play,
+                },
+                new MenuItem
+                {
+                    Label = "Settings",
+                    Action = MenuAction.Settings,
+                },
+            },
+            Settings = new SettingsPanel
+            {
+                Title = "Settings",
+                Body = "Coming soon.",
+                BackLabel = "Back",
+            },
         };
     }
 }

@@ -1,5 +1,6 @@
 // Procedural space background: parallax star layers with twinkle + drift, faint fBm nebula.
-// Screen-space, so it fills any aspect ratio. Put it on a quad behind everything (Queue Background).
+// Screen-space (fills any aspect ratio); _PanOffset (camera world xy, set at runtime) scrolls each
+// layer by a different share of `_Parallax` for depth. Keep the quad parented to the camera.
 Shader "LuckyNumbers/Starfield"
 {
     Properties
@@ -14,6 +15,8 @@ Shader "LuckyNumbers/Starfield"
         _TwinkleSpeed ("Twinkle Speed", Float) = 2
         _Drift ("Drift (xy per second)", Vector) = (0.004, 0.001, 0, 0)
         _Seed ("Seed", Float) = 7
+        _Parallax ("Parallax (share of camera pan)", Float) = 0.15
+        _PanOffset ("Pan Offset (runtime: camera world xy)", Vector) = (0, 0, 0, 0)
     }
 
     SubShader
@@ -34,7 +37,8 @@ Shader "LuckyNumbers/Starfield"
                 float4 _SpaceColor, _NebulaColorA, _NebulaColorB;
                 float _NebulaIntensity, _NebulaScale, _StarDensity, _StarBrightness, _TwinkleSpeed;
                 float4 _Drift;
-                float _Seed;
+                float _Seed, _Parallax;
+                float4 _PanOffset;
             CBUFFER_END
 
             struct Attributes { float4 positionOS : POSITION; };
@@ -69,15 +73,18 @@ Shader "LuckyNumbers/Starfield"
                 float2 uv = i.screenPos.xy / i.screenPos.w;
                 uv.x *= _ScreenParams.x / _ScreenParams.y;      // square cells at any aspect
                 float t = _Time.y;
+                // Orthographic size 1: one world unit is half the screen height = 0.5 in uv.
+                float2 pan = _PanOffset.xy * 0.5 * _Parallax;
 
-                float n = ln_fbm(uv * _NebulaScale + _Seed + _Drift.xy * t * 0.5, 5, 0.5, 0.55, 2.0) * 0.5 + 0.5;
-                float n2 = ln_fbm(uv * _NebulaScale * 1.7 - _Seed + 3.1, 4, 0.5, 0.5, 2.0) * 0.5 + 0.5;
+                float2 nuv = uv + pan * 0.3;                    // nebula: farthest
+                float n = ln_fbm(nuv * _NebulaScale + _Seed + _Drift.xy * t * 0.5, 5, 0.5, 0.55, 2.0) * 0.5 + 0.5;
+                float n2 = ln_fbm(nuv * _NebulaScale * 1.7 - _Seed + 3.1, 4, 0.5, 0.5, 2.0) * 0.5 + 0.5;
                 float3 nebula = lerp(_NebulaColorA.rgb, _NebulaColorB.rgb, saturate(n2)) * pow(saturate(n), 3.0) * _NebulaIntensity;
 
                 float stars = 0.0;                              // far -> near: denser, slower
-                stars += StarLayer(uv + _Drift.xy * t * 0.3, _StarDensity,        _Seed,        t) * 0.6;
-                stars += StarLayer(uv + _Drift.xy * t * 0.6, _StarDensity * 0.6,  _Seed + 11.0, t) * 0.8;
-                stars += StarLayer(uv + _Drift.xy * t * 1.0, _StarDensity * 0.35, _Seed + 23.0, t);
+                stars += StarLayer(uv + pan * 0.4 + _Drift.xy * t * 0.3, _StarDensity,        _Seed,        t) * 0.6;
+                stars += StarLayer(uv + pan * 0.7 + _Drift.xy * t * 0.6, _StarDensity * 0.6,  _Seed + 11.0, t) * 0.8;
+                stars += StarLayer(uv + pan * 1.0 + _Drift.xy * t * 1.0, _StarDensity * 0.35, _Seed + 23.0, t);
 
                 return float4(_SpaceColor.rgb + nebula + stars * _StarBrightness, 1.0);
             }

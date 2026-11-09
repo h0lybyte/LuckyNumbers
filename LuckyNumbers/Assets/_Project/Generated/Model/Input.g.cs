@@ -34,11 +34,20 @@ namespace LuckyNumbers.Model
     {
         public readonly ReactiveProperty<Vec2> Move = new ReactiveProperty<Vec2>();
         public readonly ReactiveProperty<Vec2> Look = new ReactiveProperty<Vec2>();
+        /// <summary>
+        /// Pointer (mouse/touch): screen pixels, origin bottom-left.
+        /// </summary>
+        public readonly ReactiveProperty<Vec2> PointerPosition = new ReactiveProperty<Vec2>();
+        public readonly ReactiveProperty<Vec2> PointerDelta = new ReactiveProperty<Vec2>();
+        public readonly ReactiveProperty<bool> PointerPressed = new ReactiveProperty<bool>();
 
         public void Dispose()
         {
             Move.Dispose();
             Look.Dispose();
+            PointerPosition.Dispose();
+            PointerDelta.Dispose();
+            PointerPressed.Dispose();
         }
     }
 

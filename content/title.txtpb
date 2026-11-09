@@ -2,14 +2,26 @@
 # proto-message: luckynumbers.v1.TitleScreen
 
 title: "Lucky Numbers"
-start_prompt: "Press any key to start"
+start_prompt: "Drag to explore"
 loading_prompt: "Loading..."
 next: GAME_SCENE_INTRO
 prompt_pulse_seconds: 1.6
 
+menu { label: "Play" action: MENU_ACTION_PLAY }
+menu { label: "Settings" action: MENU_ACTION_SETTINGS }
+
+settings {
+  title: "Settings"
+  body: "Coming soon."
+  back_label: "Back"
+}
+
 backdrop {
-  planet_position { x: 1.0 y: -0.2 }
-  planet_scale: 1.4
+  pan {
+    drag_speed: 1
+    bounds { x: 4 y: 2.5 }
+    glide: 0.92
+  }
 
   stars {
     space_color { r: 0.01 g: 0.01 b: 0.03 a: 1 }
@@ -22,24 +34,103 @@ backdrop {
     twinkle_speed: 2
     drift { x: 0.004 y: 0.001 }
     seed: 7
+    parallax: 0.15
   }
 
-  # Defaults of Ikkemcwood's planet shader.
-  planet {
-    planet_color { r: 1 g: 0.34 b: 0 a: 1 }
-    atmosphere_color { r: 0.41 g: 0.6 b: 1 a: 1 }
-    light_color { r: 1 g: 1 b: 1 a: 1 }
-    planet_size: 0.9
-    edge_smoothness: 0.02
-    atmosphere_thickness: 0.01
-    rotation_speed: 0.03
-    rotation_axis: -0.2
-    light_origin { x: -0.1 y: 0.1 }
-    light_shadow_hardness: 0.5
-    light_size: 2
-    light_intensity: 0.9
-    shadow_size: 1.8
-    shadow_intensity: 1
-    noise_offset { x: 0 y: 0 }
+  # Home planet: defaults of Ikkemcwood's planet shader.
+  bodies {
+    id: "home"
+    position { x: 1.0 y: -0.2 }
+    scale: 1.4
+    look {
+      planet_color { r: 1 g: 0.34 b: 0 a: 1 }
+      atmosphere_color { r: 0.41 g: 0.6 b: 1 a: 1 }
+      light_color { r: 1 g: 1 b: 1 a: 1 }
+      planet_size: 0.9
+      edge_smoothness: 0.02
+      atmosphere_thickness: 0.01
+      rotation_speed: 0.03
+      rotation_axis: -0.2
+      light_origin { x: -0.1 y: 0.1 }
+      light_shadow_hardness: 0.5
+      light_size: 2
+      light_intensity: 0.9
+      shadow_size: 1.8
+      shadow_intensity: 1
+      noise_offset { x: 0 y: 0 }
+    }
+  }
+
+  # Grey moon circling the home planet.
+  bodies {
+    id: "moon"
+    position { x: 0 y: 0 }
+    scale: 0.35
+    orbit { around: "home" radius: 1.05 period_seconds: 45 phase: 0.15 }
+    look {
+      planet_color { r: 0.55 g: 0.55 b: 0.6 a: 1 }
+      atmosphere_color { r: 0.7 g: 0.7 b: 0.8 a: 1 }
+      light_color { r: 1 g: 1 b: 1 a: 1 }
+      planet_size: 0.9
+      edge_smoothness: 0.03
+      atmosphere_thickness: 0.005
+      rotation_speed: 0.05
+      rotation_axis: 0.3
+      light_origin { x: -0.1 y: 0.1 }
+      light_shadow_hardness: 0.5
+      light_size: 2
+      light_intensity: 0.6
+      shadow_size: 1.8
+      shadow_intensity: 1
+      noise_offset { x: 13 y: 5 }
+    }
+  }
+
+  # Distant ice world, up and to the left (drag to find it).
+  bodies {
+    id: "ice"
+    position { x: -2.6 y: 1.4 }
+    scale: 0.6
+    look {
+      planet_color { r: 0.3 g: 0.75 b: 1 a: 1 }
+      atmosphere_color { r: 0.8 g: 0.95 b: 1 a: 1 }
+      light_color { r: 1 g: 1 b: 1 a: 1 }
+      planet_size: 0.9
+      edge_smoothness: 0.02
+      atmosphere_thickness: 0.015
+      rotation_speed: 0.02
+      rotation_axis: 0.5
+      light_origin { x: -0.1 y: 0.1 }
+      light_shadow_hardness: 0.5
+      light_size: 2
+      light_intensity: 0.8
+      shadow_size: 1.8
+      shadow_intensity: 1
+      noise_offset { x: 41 y: 17 }
+    }
+  }
+
+  # Far purple giant, bottom left.
+  bodies {
+    id: "giant"
+    position { x: -3.2 y: -1.8 }
+    scale: 1.1
+    look {
+      planet_color { r: 0.55 g: 0.2 b: 0.85 a: 1 }
+      atmosphere_color { r: 0.9 g: 0.5 b: 1 a: 1 }
+      light_color { r: 1 g: 1 b: 1 a: 1 }
+      planet_size: 0.9
+      edge_smoothness: 0.02
+      atmosphere_thickness: 0.02
+      rotation_speed: 0.01
+      rotation_axis: -0.6
+      light_origin { x: -0.1 y: 0.1 }
+      light_shadow_hardness: 0.5
+      light_size: 2
+      light_intensity: 0.7
+      shadow_size: 1.8
+      shadow_intensity: 1
+      noise_offset { x: 77 y: 3 }
+    }
   }
 }

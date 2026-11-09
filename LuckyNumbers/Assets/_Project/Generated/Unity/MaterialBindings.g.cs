@@ -22,6 +22,7 @@ namespace LuckyNumbers.Model
         static readonly int StarfieldLook_TwinkleSpeed = Shader.PropertyToID("_TwinkleSpeed");
         static readonly int StarfieldLook_Drift = Shader.PropertyToID("_Drift");
         static readonly int StarfieldLook_Seed = Shader.PropertyToID("_Seed");
+        static readonly int StarfieldLook_Parallax = Shader.PropertyToID("_Parallax");
 
         /// <summary>Copies every field to the matching LuckyNumbers/Starfield property.</summary>
         public static void ApplyTo(this StarfieldLook look, Material material)
@@ -36,6 +37,7 @@ namespace LuckyNumbers.Model
             material.SetFloat(StarfieldLook_TwinkleSpeed, look.TwinkleSpeed);
             material.SetVector(StarfieldLook_Drift, look.Drift.ToVector2());
             material.SetFloat(StarfieldLook_Seed, look.Seed);
+            material.SetFloat(StarfieldLook_Parallax, look.Parallax);
         }
 
         public const string PlanetLookShader = "LuckyNumbers/Planet2D";

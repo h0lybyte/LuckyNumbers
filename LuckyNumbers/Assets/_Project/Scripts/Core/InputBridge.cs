@@ -65,6 +65,16 @@ namespace LuckyNumbers.Core
         {
             if (_move != null) { var v = _move.ReadValue<UnityEngine.Vector2>(); _input.Move.Value = new Vec2(v.x, v.y); }
             if (_look != null) { var v = _look.ReadValue<UnityEngine.Vector2>(); _input.Look.Value = new Vec2(v.x, v.y); }
+
+            var pointer = Pointer.current; // mouse, pen or touch
+            if (pointer != null)
+            {
+                var pos = pointer.position.ReadValue();
+                var delta = pointer.delta.ReadValue();
+                _input.PointerPosition.Value = new Vec2(pos.x, pos.y);
+                _input.PointerDelta.Value = new Vec2(delta.x, delta.y);
+                _input.PointerPressed.Value = pointer.press.isPressed;
+            }
         }
 
         public void Dispose()

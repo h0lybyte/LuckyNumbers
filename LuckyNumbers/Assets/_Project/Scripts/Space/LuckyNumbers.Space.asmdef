@@ -1,0 +1,22 @@
+{
+    "name": "LuckyNumbers.Space",
+    "rootNamespace": "LuckyNumbers.Space",
+    "references": [
+        "LuckyNumbers.Attributes",
+        "LuckyNumbers.Model",
+        "LuckyNumbers.Model.Unity",
+        "VContainer",
+        "R3.Unity",
+        "Unity.Mathematics",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,9 +1,11 @@
-// Screenshot a running Web build after the game reaches a state, via the Chrome DevTools Protocol.
-// No dependencies (Node 22+ global WebSocket). Used by: python3 tools/ln.py webshot
+// Drive a running Web build via the Chrome DevTools Protocol: wait for console markers, drag, click,
+// screenshot. No dependencies (Node 22+ global WebSocket). Used by: python3 tools/ln.py webshot
 //
-//   node tools/webshot.mjs <url> <out.png> [--wait "console text"] [--timeout 90] [--chrome path]
+//   node tools/webshot.mjs <url> <out.png> [--wait "console text"] [--timeout 90] [--steps JSON]
 //
-// Prints the page's console lines, waits for --wait to appear in the console, then captures.
+// --steps: JSON list run after --wait, coordinates are fractions of the game canvas (0..1, top-left):
+//   [{"drag":[x1,y1,x2,y2]}, {"sleep":1}, {"shot":"a.png"}, {"click":[x,y]}, {"wait":"text"}]
+// Prints the page's console lines. Without --steps it takes one screenshot to <out.png>.
 import { spawn } from "node:child_process";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -14,12 +16,13 @@ const opt = (name, def) => { const i = rest.indexOf(`--${name}`); return i >= 0 
 const waitFor = opt("wait", null);
 const timeoutMs = Number(opt("timeout", "90")) * 1000;
 const chrome = opt("chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome");
-if (!url || !out) { console.error("usage: webshot.mjs <url> <out.png> [--wait text] [--timeout s]"); process.exit(2); }
+const steps = JSON.parse(opt("steps", "null") ?? "null") ?? [{ sleep: 1.5 }, { shot: out }];
+if (!url || !out) { console.error("usage: webshot.mjs <url> <out.png> [--wait text] [--steps json]"); process.exit(2); }
 
 const port = 9300 + Math.floor(Math.random() * 500);
 const profile = mkdtempSync(join(tmpdir(), "webshot-"));
 const proc = spawn(chrome, ["--headless=new", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
-  "--no-first-run", "--enable-unsafe-swiftshader", "--enable-unsafe-webgpu", "--window-size=1280,720",
+  "--no-first-run", "--enable-unsafe-swiftshader", "--enable-unsafe-webgpu", "--window-size=1400,900",
   "--hide-scrollbars", "about:blank"], { stdio: "ignore" });
 const cleanup = (code) => { proc.kill(); try { rmSync(profile, { recursive: true, force: true }); } catch {} process.exit(code); };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -35,29 +38,62 @@ const ws = new WebSocket(target.webSocketDebuggerUrl);
 await new Promise((r) => ws.addEventListener("open", r, { once: true }));
 let nextId = 1;
 const pending = new Map();
-let seen = false;
+const consoleLines = [];
 ws.addEventListener("message", (ev) => {
   const msg = JSON.parse(ev.data);
   if (msg.id && pending.has(msg.id)) { pending.get(msg.id)(msg); pending.delete(msg.id); return; }
   if (msg.method === "Runtime.consoleAPICalled") {
     const text = msg.params.args.map((a) => a.value ?? a.description ?? "").join(" ");
+    consoleLines.push(text);
     if (!/memorysetup|Content-Encoding/.test(text)) console.log(`[console.${msg.params.type}] ${text}`.slice(0, 400));
-    if (waitFor && text.includes(waitFor)) seen = true;
   }
   if (msg.method === "Runtime.exceptionThrown") console.log(`[exception] ${msg.params.exceptionDetails.text}`);
 });
 const send = (method, params = {}) => new Promise((r) => { const id = nextId++; pending.set(id, r); ws.send(JSON.stringify({ id, method, params })); });
+const waitConsole = async (text) => {
+  const start = Date.now();
+  while (!consoleLines.some((l) => l.includes(text))) {
+    if (Date.now() - start > timeoutMs) { console.error(`timed out waiting for console text: ${text}`); cleanup(1); }
+    await sleep(200);
+  }
+};
 
 await send("Runtime.enable");
 await send("Page.enable");
 await send("Page.navigate", { url });
+const t0 = Date.now();
+if (waitFor) await waitConsole(waitFor);
 
-const start = Date.now();
-while (waitFor && !seen && Date.now() - start < timeoutMs) await sleep(250);
-if (waitFor && !seen) { console.error(`timed out waiting for console text: ${waitFor}`); cleanup(1); }
-await sleep(1500); // let a few frames render after the marker
+// Canvas rect, to turn fractions into page pixels.
+const rect = JSON.parse((await send("Runtime.evaluate", {
+  expression: "JSON.stringify((document.querySelector('canvas') || document.body).getBoundingClientRect())",
+  returnByValue: true,
+})).result.result.value);
+const px = ([fx, fy]) => ({ x: rect.left + fx * rect.width, y: rect.top + fy * rect.height });
+const mouse = (type, p, buttons = 0) => send("Input.dispatchMouseEvent",
+  { type, x: p.x, y: p.y, button: "left", buttons, clickCount: type === "mouseMoved" ? 0 : 1 });
 
-const shot = await send("Page.captureScreenshot", { format: "png" });
-writeFileSync(out, Buffer.from(shot.result.data, "base64"));
-console.log(`screenshot: ${out} (${((Date.now() - start) / 1000).toFixed(1)}s)`);
+for (const step of steps) {
+  if (step.sleep) await sleep(step.sleep * 1000);
+  if (step.wait) await waitConsole(step.wait);
+  if (step.click) {
+    const p = px(step.click);
+    await mouse("mouseMoved", p); await sleep(100);
+    await mouse("mousePressed", p, 1); await sleep(120);
+    await mouse("mouseReleased", p); await sleep(200);
+  }
+  if (step.drag) {
+    const [x1, y1, x2, y2] = step.drag, n = 30;
+    await mouse("mouseMoved", px([x1, y1])); await sleep(100);
+    await mouse("mousePressed", px([x1, y1]), 1);
+    for (let i = 1; i <= n; i++) { await mouse("mouseMoved", px([x1 + (x2 - x1) * i / n, y1 + (y2 - y1) * i / n]), 1); await sleep(25); }
+    await mouse("mouseReleased", px([x2, y2])); await sleep(200);
+  }
+  if (step.shot) {
+    const shot = await send("Page.captureScreenshot", {
+      format: "png", clip: { x: rect.left, y: rect.top, width: rect.width, height: rect.height, scale: 1 } });
+    writeFileSync(step.shot, Buffer.from(shot.result.data, "base64"));
+    console.log(`screenshot: ${step.shot} (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
+  }
+}
 cleanup(0);
