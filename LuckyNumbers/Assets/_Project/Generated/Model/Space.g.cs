@@ -104,6 +104,10 @@ namespace LuckyNumbers.Model
         /// </summary>
         public float PlanetStarDensityRatio { get; set; }
         /// <summary>
+        /// Sky presets; each roll picks one and randomises its seed, band and gas shape.
+        /// </summary>
+        public List<StarfieldLook> Skies { get; } = new List<StarfieldLook>();
+        /// <summary>
         /// Empty space between neighbouring orbits (inner apoapsis + moons .. outer periapsis - moons), world units.
         /// </summary>
         public float MinOrbitGap { get; set; }
@@ -244,6 +248,31 @@ namespace LuckyNumbers.Model
         /// </summary>
         public Vec2 Drift { get; set; }
         public float Seed { get; set; }
+        public Rgba NebulaColorC { get; set; }
+        /// <summary>
+        /// Domain warp of the gas (0 = plain fBm blobs, ~1-2 = swirling filaments).
+        /// </summary>
+        public float Warp { get; set; }
+        /// <summary>
+        /// Galactic band (Milky Way-like great circle): plane normal, angular half-width (radians-ish),
+        /// and how strongly gas and stars gather in it (0 = even sky).
+        /// </summary>
+        public Vec3 BandNormal { get; set; }
+        public float BandWidth { get; set; }
+        public float BandStrength { get; set; }
+        /// <summary>
+        /// Unresolved starlight glow along the band.
+        /// </summary>
+        public float Glow { get; set; }
+        /// <summary>
+        /// Dark dust lanes across the band (0..1).
+        /// </summary>
+        public float Dust { get; set; }
+        /// <summary>
+        /// Bright emission knots: grid density on the sphere and brightness.
+        /// </summary>
+        public float KnotDensity { get; set; }
+        public float KnotBrightness { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public StarfieldLook Clone() => (StarfieldLook)MemberwiseClone();

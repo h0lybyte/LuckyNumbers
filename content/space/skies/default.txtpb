@@ -1,14 +1,23 @@
 # proto-file: luckynumbers/v1/space.proto
 # proto-message: luckynumbers.v1.StarfieldLook
-# Dark violet sky with a faint nebula.
+# Violet and blue gas along a bright galactic band.
 
 space_color { r: 0.01 g: 0.01 b: 0.03 a: 1 }
-nebula_color_a { r: 0.25 g: 0.08 b: 0.35 a: 1 }
-nebula_color_b { r: 0.05 g: 0.15 b: 0.35 a: 1 }
-nebula_intensity: 0.35
+nebula_color_a { r: 0.3 g: 0.08 b: 0.4 a: 1 }
+nebula_color_b { r: 0.06 g: 0.18 b: 0.42 a: 1 }
+nebula_color_c { r: 0.7 g: 0.22 b: 0.3 a: 1 }
+nebula_intensity: 0.6
 nebula_scale: 1.2
+warp: 1.2
+band_width: 0.35
+band_strength: 0.8
+glow: 0.18
+dust: 0.6
+knot_brightness: 0.8
 star_density: 140
 star_brightness: 1.2
 twinkle_speed: 2
 drift { x: 0.003 y: 0 }
 seed: 7
+band_normal { x: 0.3 y: 1 z: 0.2 }
+knot_density: 6

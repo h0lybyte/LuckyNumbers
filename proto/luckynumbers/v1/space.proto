@@ -70,6 +70,9 @@ message SystemGenerator {
   float moon_hill_fraction = 32;
   // Planet density / star density, for the mass ratio m/M = ratio * (d_planet/d_star)^3 (Earth/Sun ~ 4).
   float planet_star_density_ratio = 33;
+  // Sky presets; each roll picks one and randomises its seed, band and gas shape.
+  repeated StarfieldLook skies = 35;
+  repeated string sky_refs = 36 [(ln.ref) = "skies"];
   // Empty space between neighbouring orbits (inner apoapsis + moons .. outer periapsis - moons), world units.
   float min_orbit_gap = 34;
 }
@@ -148,6 +151,21 @@ message StarfieldLook {
   // Slow sky rotation, radians per second around (y, x).
   Vec2 drift = 9;
   optional float seed = 10;
+  Rgba nebula_color_c = 12;
+  // Domain warp of the gas (0 = plain fBm blobs, ~1-2 = swirling filaments).
+  optional float warp = 13;
+  // Galactic band (Milky Way-like great circle): plane normal, angular half-width (radians-ish),
+  // and how strongly gas and stars gather in it (0 = even sky).
+  Vec3 band_normal = 14;
+  optional float band_width = 15;
+  optional float band_strength = 16;
+  // Unresolved starlight glow along the band.
+  optional float glow = 17;
+  // Dark dust lanes across the band (0..1).
+  optional float dust = 18;
+  // Bright emission knots: grid density on the sphere and brightness.
+  optional float knot_density = 19;
+  optional float knot_brightness = 20;
 }
 
 // Shader properties of LuckyNumbers/Star: glowing surface + corona. Its light_color lights the planets.

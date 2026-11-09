@@ -3,6 +3,7 @@
 ## Shaders
 
 - Planet shader look: "Simple 2D Planet shader" by **Ikkemcwood** on Shadertoy, https://www.shadertoy.com/view/Wcf3W7 (adapted to 3D spheres)
+- Seeded nebula sky (layered gas, dark dust, emission knots), inspired by "Nebula Background Shadertoy Study" by **guinetik**, https://github.com/guinetik (written fresh, no code copied)
 - Noise and fBm techniques: **The Book of Shaders** by Patricio Gonzalez Vivo and Jen Lowe, https://thebookofshaders.com
 - 3D simplex noise: **webgl-noise** by Ian McEwan, Stefan Gustavson and Ashima Arts (MIT), https://github.com/ashima/webgl-noise
 

@@ -76,8 +76,11 @@ namespace LuckyNumbers.Space
 
         void Expand()
         {
-            var bodies = UniverseGenerator.Generate(_backdrop.Generator, _pendingSeed ?? 1u);
+            var seed = _pendingSeed ?? 1u;
+            var bodies = UniverseGenerator.Generate(_backdrop.Generator, seed);
             Build(bodies);
+            var sky = UniverseGenerator.Sky(_backdrop.Generator, seed);
+            if (sky != null && _view.SkyboxMaterial != null) sky.ApplyTo(_view.SkyboxMaterial);
             var layout = new System.Text.StringBuilder();
             foreach (var b in bodies)
                 if (b.Orbit != null) layout.Append($" {b.Id}@{b.Orbit.Radius:0.#}(d{b.Scale:0.#})");

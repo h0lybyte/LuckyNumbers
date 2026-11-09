@@ -106,6 +106,22 @@ namespace LuckyNumbers.Space
             return bodies;
         }
 
+        /// <summary>The sky for a seed: a preset with its own seed, band direction and gas shape. Null if no presets.</summary>
+        public static StarfieldLook Sky(SystemGenerator rules, uint seed)
+        {
+            if (rules.Skies.Count == 0) return null;
+            var rng = new Random((seed ^ 0x5BD1E995u) | 1u);
+            var sky = Pick(rules.Skies, ref rng).Clone();
+            var n = rng.NextFloat3Direction();
+            sky.BandNormal = new Vec3(n.x, n.y, n.z);
+            sky.Seed = rng.NextFloat(0f, 500f);
+            sky.BandWidth = sky.BandWidth * rng.NextFloat(0.75f, 1.35f);
+            sky.NebulaScale = sky.NebulaScale * rng.NextFloat(0.8f, 1.3f);
+            sky.Warp = sky.Warp * rng.NextFloat(0.6f, 1.5f);
+            sky.Dust = math.saturate(sky.Dust * rng.NextFloat(0.6f, 1.3f));
+            return sky;
+        }
+
         static Orbit OrbitAround(string parent, float radius, SystemGenerator rules, ref Random rng) => new()
         {
             Around = parent,

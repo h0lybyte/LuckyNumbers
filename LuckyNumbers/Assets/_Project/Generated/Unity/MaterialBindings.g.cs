@@ -23,6 +23,15 @@ namespace LuckyNumbers.Model
         static readonly int StarfieldLook_TwinkleSpeed = Shader.PropertyToID("_TwinkleSpeed");
         static readonly int StarfieldLook_Drift = Shader.PropertyToID("_Drift");
         static readonly int StarfieldLook_Seed = Shader.PropertyToID("_Seed");
+        static readonly int StarfieldLook_NebulaColorC = Shader.PropertyToID("_NebulaColorC");
+        static readonly int StarfieldLook_Warp = Shader.PropertyToID("_Warp");
+        static readonly int StarfieldLook_BandNormal = Shader.PropertyToID("_BandNormal");
+        static readonly int StarfieldLook_BandWidth = Shader.PropertyToID("_BandWidth");
+        static readonly int StarfieldLook_BandStrength = Shader.PropertyToID("_BandStrength");
+        static readonly int StarfieldLook_Glow = Shader.PropertyToID("_Glow");
+        static readonly int StarfieldLook_Dust = Shader.PropertyToID("_Dust");
+        static readonly int StarfieldLook_KnotDensity = Shader.PropertyToID("_KnotDensity");
+        static readonly int StarfieldLook_KnotBrightness = Shader.PropertyToID("_KnotBrightness");
 
         /// <summary>Copies every field to the matching LuckyNumbers/Starfield property.</summary>
         public static void ApplyTo(this StarfieldLook look, Material material)
@@ -37,6 +46,15 @@ namespace LuckyNumbers.Model
             material.SetFloat(StarfieldLook_TwinkleSpeed, look.TwinkleSpeed);
             material.SetVector(StarfieldLook_Drift, look.Drift.ToVector2());
             material.SetFloat(StarfieldLook_Seed, look.Seed);
+            material.SetColor(StarfieldLook_NebulaColorC, look.NebulaColorC.ToColor());
+            material.SetFloat(StarfieldLook_Warp, look.Warp);
+            material.SetVector(StarfieldLook_BandNormal, look.BandNormal.ToVector3());
+            material.SetFloat(StarfieldLook_BandWidth, look.BandWidth);
+            material.SetFloat(StarfieldLook_BandStrength, look.BandStrength);
+            material.SetFloat(StarfieldLook_Glow, look.Glow);
+            material.SetFloat(StarfieldLook_Dust, look.Dust);
+            material.SetFloat(StarfieldLook_KnotDensity, look.KnotDensity);
+            material.SetFloat(StarfieldLook_KnotBrightness, look.KnotBrightness);
         }
 
         public const string StarLookShader = "LuckyNumbers/Star";
