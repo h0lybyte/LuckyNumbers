@@ -4,7 +4,8 @@
 //   node tools/webshot.mjs <url> <out.png> [--wait "console text"] [--timeout 90] [--steps JSON]
 //
 // --steps: JSON list run after --wait, coordinates are fractions of the game canvas (0..1, top-left):
-//   [{"drag":[x1,y1,x2,y2]}, {"scroll":[x,y,notches]}, {"sleep":1}, {"shot":"a.png"}, {"click":[x,y]}, {"wait":"text"}]
+//   [{"drag":[x1,y1,x2,y2]}, {"scroll":[x,y,notches]}, {"sleep":1}, {"shot":"a.png"}, {"click":[x,y]}, {"wait":"text"},
+//    {"fps":5}]  (fps: measure the frame rate for 5 s; sleep is in seconds)
 // Prints the page's console lines. Without --steps it takes one screenshot to <out.png>.
 import { spawn } from "node:child_process";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
@@ -23,7 +24,10 @@ const port = 9300 + Math.floor(Math.random() * 500);
 const profile = mkdtempSync(join(tmpdir(), "webshot-"));
 const proc = spawn(chrome, ["--headless=new", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
   "--no-first-run", "--enable-unsafe-swiftshader", "--enable-unsafe-webgpu", "--window-size=1400,900",
-  "--hide-scrollbars", "about:blank"], { stdio: "ignore" });
+  "--hide-scrollbars",
+  // LN_UNCAPPED=1: no vsync / frame limit, so {"fps"} shows real headroom instead of the display's 60.
+  ...(process.env.LN_UNCAPPED ? ["--disable-gpu-vsync", "--disable-frame-rate-limit"] : []),
+  "about:blank"], { stdio: "ignore" });
 const cleanup = (code) => { proc.kill(); try { rmSync(profile, { recursive: true, force: true }); } catch {} process.exit(code); };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -95,6 +99,15 @@ for (const step of steps) {
     await mouse("mousePressed", px([x1, y1]), 1);
     for (let i = 1; i <= n; i++) { await mouse("mouseMoved", px([x1 + (x2 - x1) * i / n, y1 + (y2 - y1) * i / n]), 1); await sleep(25); }
     await mouse("mouseReleased", px([x2, y2])); await sleep(200);
+  }
+  if (step.fps) { // seconds: browser frame rate (Unity renders once per animation frame) + min/max frame time
+    const r = await send("Runtime.evaluate", { awaitPromise: true, returnByValue: true, expression: `new Promise((done) => {
+      const ts = []; const end = performance.now() + ${step.fps * 1000};
+      const tick = (t) => { ts.push(t); if (t < end) requestAnimationFrame(tick); else done(ts); };
+      requestAnimationFrame(tick); })` });
+    const ts = r.result.result.value, dts = ts.slice(1).map((t, i) => t - ts[i]).sort((a, b) => a - b);
+    const p95 = dts[Math.floor(dts.length * 0.95)] ?? 0;
+    console.log(`fps: ${((ts.length - 1) / ((ts.at(-1) - ts[0]) / 1000)).toFixed(1)} avg, frame ms median ${dts[dts.length >> 1]?.toFixed(1)} p95 ${p95.toFixed(1)}`);
   }
   if (step.shot) {
     const shot = await send("Page.captureScreenshot", {

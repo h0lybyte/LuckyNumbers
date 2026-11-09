@@ -1,0 +1,16 @@
+<!-- Managed code stripping (Medium, see Editor/WebBuild.cs) keeps these assemblies whole: VContainer builds
+     presenters, (ln.state) singletons and MessagePipe brokers by reflection, which the stripper can't see.
+     Unity engine code and other libraries are still stripped. -->
+<linker>
+  <assembly fullname="LuckyNumbers.Model" preserve="all" />
+  <assembly fullname="LuckyNumbers.Model.Di" preserve="all" />
+  <assembly fullname="LuckyNumbers.Model.Unity" preserve="all" />
+  <assembly fullname="LuckyNumbers.Core" preserve="all" />
+  <assembly fullname="LuckyNumbers.Space" preserve="all" />
+  <assembly fullname="LuckyNumbers.Title" preserve="all" />
+  <assembly fullname="LuckyNumbers.Intro" preserve="all" />
+  <assembly fullname="LuckyNumbers.Rendering" preserve="all" />
+  <assembly fullname="MessagePipe" preserve="all" />
+  <assembly fullname="MessagePipe.VContainer" preserve="all" />
+  <assembly fullname="VContainer" preserve="all" />
+</linker>
