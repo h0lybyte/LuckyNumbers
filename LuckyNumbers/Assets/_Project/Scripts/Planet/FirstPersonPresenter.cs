@@ -26,6 +26,7 @@ namespace LuckyNumbers.Planet
     public sealed class FirstPersonPresenter : IStartable, ITickable, IDisposable, IFirstPerson
     {
         const int Right = 1;   // the carrying hand
+        const float MaxLean = 0.25f;   // metres the head (and arms with it) may lean toward a far reach
         readonly PlanetScene _config;
         readonly PlayerView _player;
         readonly ArmsView _arms;
@@ -35,7 +36,7 @@ namespace LuckyNumbers.Planet
 
         float _yaw, _pitch, _vertical, _stride, _moving, _landDip, _errorLogAt, _sprint, _air, _crouch, _awakeAt = -1f;
         bool _jump, _interact, _wasGrounded = true, _wasPressed, _lockSeen;
-        Vector3 _sway;
+        Vector3 _sway, _lean;
 
         // Touch: per hand, how far in (0..1) and where.
         readonly float[] _touch = new float[2];
@@ -129,7 +130,16 @@ namespace LuckyNumbers.Planet
             _stride += dt * _config.BobFrequency * 2f * math.PI * math.max(0.2f, planar / math.max(0.1f, _config.WalkSpeed));
             var bobY = math.abs(math.sin(_stride)) * _config.BobAmount * moving - _landDip * 0.08f;
             var bobX = math.sin(_stride) * _config.BobAmount * 0.5f * moving;
-            _player.Head.localPosition = new Vector3(0f, _config.EyeHeight + bobY - _crouch, 0f);
+            // Lean in toward far reaches (head and arms together, so the arm mesh's open ends stay out of view):
+            // integrate the overshoot the arms report, never leaning back past upright, ease out when not reaching.
+            if (_arms.IsReaching)
+            {
+                _lean = Vector3.ClampMagnitude(_lean + _arms.Reaching * (1f - math.exp(-8f * dt)), MaxLean);
+                var back = Vector3.Dot(_lean, body.transform.forward);
+                if (back < 0f) _lean -= body.transform.forward * back;
+            }
+            else _lean = Vector3.Lerp(_lean, Vector3.zero, 1f - math.exp(-6f * dt));
+            _player.Head.localPosition = new Vector3(0f, _config.EyeHeight + bobY - _crouch, 0f) + Quaternion.Inverse(body.transform.rotation) * _lean;
             _player.Head.localRotation = Quaternion.Euler(_pitch, 0f, 0f);
 
             // Body feel: running (pump + run clip), airborne (arms up), shaky hands after the crash.
@@ -322,16 +332,23 @@ namespace LuckyNumbers.Planet
         void Grab(Rigidbody rb)
         {
             rb.isKinematic = true;
+            // Interpolation would keep moving the transform to the body's smoothed physics pose, fighting the hand
+            // it's parented to (the stone lagged into the palm on the move). Off while held, back on when thrown.
+            rb.interpolation = RigidbodyInterpolation.None;
             if (rb.TryGetComponent<Collider>(out var c)) c.enabled = false;
             _arms.Hold(Right, rb.transform);
             Debug.Log($"[Hands] grabbed {rb.name}");
         }
 
-        /// <summary>Ease a held thing into the palm (it's parented to the hand, so it follows from there).</summary>
+        /// <summary>
+        /// Ease a held thing onto the palm in the hand's own space (it's parented to the hand bone). Easing toward a
+        /// world point instead lags a frame behind the hand's animation and IK, so it sank into the hand on the move.
+        /// </summary>
         void SnapToPalm(Rigidbody rb, float dt)
         {
-            var palm = _arms.PalmPoint(Right);
-            rb.transform.position = Vector3.Lerp(rb.transform.position, palm, 1f - math.exp(-25f * dt));
+            var t = rb.transform;
+            var radius = t.TryGetComponent<Renderer>(out var r) ? (r.bounds.extents.x + r.bounds.extents.y + r.bounds.extents.z) / 3f : 0.05f;
+            t.localPosition = Vector3.Lerp(t.localPosition, _arms.PalmRest(Right, radius), 1f - math.exp(-25f * dt));
         }
 
         void Release(Vector3 velocity)
@@ -343,6 +360,7 @@ namespace LuckyNumbers.Planet
             ArmsView.SetLayer(rb.transform, 0);
             if (rb.TryGetComponent<Collider>(out var c)) c.enabled = true;
             rb.isKinematic = false;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
             rb.linearVelocity = velocity + _player.Body.velocity;
             rb.angularVelocity = UnityEngine.Random.insideUnitSphere * 8f;
             if (velocity == Vector3.zero) _arms.SetPose(Right, null);

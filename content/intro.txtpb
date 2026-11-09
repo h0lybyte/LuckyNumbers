@@ -18,6 +18,5 @@ steps { ship_pulled_in { duration_seconds: 7 start_distance: 4 turns: 0.9 bank_d
 
 steps { crash_landing { duration_seconds: 2.5 camera_shake: 1 flash_seconds: 0.15 } }
 
-steps { dialogue { speaker: "You" text: "Uhh... how did I live through that?!" duration_seconds: 3.5 chars_per_second: 28 } }
-
+# (Your first words come as you wake up on the planet: content/planet.txtpb wake_lines.)
 steps { go_to { scene: GAME_SCENE_PLANET } }

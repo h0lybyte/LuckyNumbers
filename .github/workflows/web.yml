@@ -71,18 +71,27 @@ jobs:
           python3 tools/ln.py proto
           python3 tools/ln.py gen --check
 
-      # Unity's Library folder is a big import cache; restoring it turns a
-      # ~10+ min cold import into a few minutes.
+      # Unity's Library folder holds the import cache, compiled shaders (ShaderCache) and IL2CPP/emscripten
+      # objects (Bee): restoring it skips most of a ~14 min cold build. Keyed by editor version, so a Library
+      # from another Unity version is never restored; the content hash picks the closest match, the prefix
+      # falls back to the newest Library for this editor.
+      - id: unity
+        run: |
+          echo "version=$(sed -n 's/^m_EditorVersion: //p' "$PROJECT_PATH/ProjectSettings/ProjectVersion.txt")" >> "$GITHUB_OUTPUT"
+
       - uses: actions/cache@v4
+        id: library
         with:
           path: ${{ env.PROJECT_PATH }}/Library
-          key: Library-WebGL-${{ hashFiles('LuckyNumbers/Assets/**', 'LuckyNumbers/Packages/**', 'LuckyNumbers/ProjectSettings/**') }}
+          key: Library-WebGL-${{ steps.unity.outputs.version }}-${{ hashFiles('LuckyNumbers/Assets/**', 'LuckyNumbers/Packages/**', 'LuckyNumbers/ProjectSettings/**') }}
           restore-keys: |
-            Library-WebGL-
+            Library-WebGL-${{ steps.unity.outputs.version }}-
 
       # Same entry point as `tools/ln.py build-web`: threads, gzip + decompression
       # fallback, 720p, WebGPU + WebGL 2, version stamped from CHANGELOG.md.
       - uses: game-ci/unity-builder@v4
+        id: build
+        continue-on-error: ${{ steps.library.outputs.cache-matched-key != '' }} # a restored Library gets one retry, cold
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
@@ -93,6 +102,30 @@ jobs:
           buildMethod: LuckyNumbers.Editor.WebBuild.Build
           customParameters: -lnGfx both -lnVersion ${{ needs.version.outputs.version }}
           versioning: None
+          # Docker's default /dev/shm is 64 MB; Unity's licensing and import workers use shared memory.
+          dockerShmSize: 2g
+
+      # Self-heal: a stale or broken Library (e.g. the editor killed on start-up) must not block a release.
+      # Throw it away and build cold; the fresh Library is what gets cached.
+      - name: Discard restored Library after a failed build
+        if: steps.build.outcome == 'failure'
+        run: |
+          echo "::warning::Build with the restored Library (${{ steps.library.outputs.cache-matched-key }}) failed; retrying cold"
+          sudo rm -rf "$PROJECT_PATH/Library" "$BUILD_DIR"
+
+      - uses: game-ci/unity-builder@v4
+        if: steps.build.outcome == 'failure'
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: ${{ env.PROJECT_PATH }}
+          targetPlatform: WebGL
+          buildMethod: LuckyNumbers.Editor.WebBuild.Build
+          customParameters: -lnGfx both -lnVersion ${{ needs.version.outputs.version }}
+          versioning: None
+          dockerShmSize: 2g
 
       - name: Check build output
         run: |

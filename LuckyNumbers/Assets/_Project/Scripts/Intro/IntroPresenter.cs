@@ -264,20 +264,7 @@ namespace LuckyNumbers.Intro
         }
 
         /// <summary>On black: the line types out, holds, clears.</summary>
-        async UniTask DialogueAsync(Dialogue line, CancellationToken ct)
-        {
-            var text = line.Text ?? "";
-            var duration = math.max(0.5f, line.DurationSeconds);
-            var cps = line.CharsPerSecond;
-            for (var t = 0f; t < duration; t += Time.deltaTime)
-            {
-                _view.Dialogue(line.Speaker, text, cps > 0f ? (int)(t * cps) : text.Length);
-                await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, ct);
-            }
-            _view.Dialogue(line.Speaker, text, text.Length);
-            await UniTask.Delay(400, cancellationToken: ct);
-            _view.Dialogue(null, null, 0);
-        }
+        UniTask DialogueAsync(Dialogue line, CancellationToken ct) => DialogueLine.Play(line, _view.Dialogue, ct);
 
         // ---- Ship path ---------------------------------------------------------------------------------
 

@@ -1,18 +1,208 @@
-body { padding: 0; margin: 0 }
-#unity-container { position: absolute }
-#unity-container.unity-desktop { left: 50%; top: 50%; transform: translate(-50%, -50%) }
-#unity-container.unity-mobile { position: fixed; width: 100%; height: 100% }
-.unity-mobile #unity-fullscreen-container { width: 100%; height: 100% }
-#unity-fullscreen-container { position: relative; }
-#unity-canvas { position: absolute; width: 100%; height: 100%; background: {{{ BACKGROUND_COLOR }}} }
-#unity-loading-container { position: absolute; width: 100%; height: 100%; backdrop-filter: blur(5px); display: none; }
-#unity-loading-bar { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
-#unity-logo { width: 154px; height: 130px; background: url('unity-logo-{{{ SPLASH_SCREEN_STYLE.toLowerCase() }}}.png') no-repeat center }
-#unity-progress-bar-empty { width: 141px; height: 18px; margin-top: 10px; margin-left: 6.5px; background: url('progress-bar-empty-{{{ SPLASH_SCREEN_STYLE.toLowerCase() }}}.png') no-repeat center }
-#unity-progress-bar-full { width: 0%; height: 18px; margin-top: 10px; background: url('progress-bar-full-{{{ SPLASH_SCREEN_STYLE.toLowerCase() }}}.png') no-repeat center }
-#unity-footer { position: relative }
-.unity-mobile #unity-footer { display: none }
-#unity-logo-title-footer { float:left; width: 102px; height: 38px; background: url('unity-logo-title-footer.png') no-repeat center }
-#unity-build-title { float: right; margin-right: 10px; line-height: 38px; font-family: arial; font-size: 18px }
-#unity-fullscreen-button { cursor:pointer; float: right; width: 38px; height: 38px; background: url('fullscreen-button.png') no-repeat center }
-#unity-warning { position: absolute; left: 50%; top: 5%; transform: translate(-50%); background: white; padding: 10px; display: none }
+/* LuckyNumbers web shell.
+ *
+ *   #app       grid: [stage | dock]. The dock is hidden until something mounts in it,
+ *              so today the stage fills the whole viewport (or itch.io iframe).
+ *   #stage     fullscreen root. Holds the canvas plus every layer drawn over it, so
+ *              overlays survive fullscreen.
+ *   #overlay   HTML layer above the canvas. pointer-events pass through to the game
+ *              except on children that opt back in (.ui). Future React overlays mount here.
+ */
+
+:root {
+  --bg: {{{ BACKGROUND_COLOR }}};
+  --fg: #e8e6e1;
+  --muted: rgba(232, 230, 225, 0.6);
+  --panel: rgba(12, 14, 18, 0.72);
+  --edge: rgba(255, 255, 255, 0.12);
+  --gap: 12px;
+  --dock-width: clamp(240px, 22vw, 360px);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--bg);
+  color: var(--fg);
+  font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+  height: 100vh;
+  height: 100dvh; /* mobile: excludes the collapsing URL bar */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+/* ---- stage ---------------------------------------------------------------- */
+
+#stage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+#unity-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  outline: none;
+  touch-action: none;
+  background: var(--bg);
+}
+
+/* ---- overlay -------------------------------------------------------------- */
+
+#overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  padding:
+    max(var(--gap), env(safe-area-inset-top))
+    max(var(--gap), env(safe-area-inset-right))
+    max(var(--gap), env(safe-area-inset-bottom))
+    max(var(--gap), env(safe-area-inset-left));
+}
+
+#overlay .ui { pointer-events: auto; }
+
+#toolbar {
+  position: absolute;
+  top: max(var(--gap), env(safe-area-inset-top));
+  right: max(var(--gap), env(safe-area-inset-right));
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--fg);
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 120ms ease;
+  backdrop-filter: blur(6px);
+}
+.icon-button:hover, .icon-button:focus-visible { opacity: 1; }
+.icon-button[hidden] { display: none; }
+
+#toolbar button:not(.icon-button) {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--fg);
+  cursor: pointer;
+}
+
+/* ---- loading -------------------------------------------------------------- */
+
+#unity-loading-container {
+  position: absolute;
+  inset: 0;
+  display: none;
+  place-items: center;
+  backdrop-filter: blur(5px);
+}
+#unity-loading-container.visible { display: grid; }
+
+#unity-loading-bar {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
+
+#loading-title {
+  font-size: 15px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+#unity-progress-bar-empty {
+  width: min(240px, 60vw);
+  height: 4px;
+  border-radius: 2px;
+  background: var(--edge);
+  overflow: hidden;
+}
+
+#unity-progress-bar-full {
+  width: 0%;
+  height: 100%;
+  background: var(--fg);
+  transition: width 120ms linear;
+}
+
+/* ---- warnings ------------------------------------------------------------- */
+
+#unity-warning {
+  position: absolute;
+  left: 50%;
+  top: max(5%, env(safe-area-inset-top));
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 2 * var(--gap));
+  display: none;
+  pointer-events: auto;
+}
+#unity-warning > div {
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: #111;
+  background: #fff;
+}
+#unity-warning > div.warning { background: #f5d76e; }
+#unity-warning > div.error { background: #e5484d; color: #fff; }
+
+/* ---- dock (reserved) ------------------------------------------------------ */
+
+#dock {
+  width: var(--dock-width);
+  min-height: 0;
+  overflow: auto;
+  border-left: 1px solid var(--edge);
+  background: var(--panel);
+}
+#dock[hidden] { display: none; }
+
+/* Narrow screens: the dock becomes a bottom sheet under the stage. */
+@media (max-width: 720px) {
+  #app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  #dock {
+    width: auto;
+    max-height: 40dvh;
+    border-left: 0;
+    border-top: 1px solid var(--edge);
+  }
+}
+
+#diagnostics-icon {
+  pointer-events: auto;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+}

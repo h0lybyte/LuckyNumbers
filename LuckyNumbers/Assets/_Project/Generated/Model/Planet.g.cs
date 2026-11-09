@@ -118,9 +118,62 @@ namespace LuckyNumbers.Model
         public float GrabDistance { get; set; }
         public float CrouchDepth { get; set; }
         public float ThrowSpeed { get; set; }
+        /// <summary>
+        /// Lines you say as you come to, typed out over the wake-up (starting `wake_lines_delay` seconds in);
+        /// the controls hint waits until they're done.
+        /// </summary>
+        public List<Dialogue> WakeLines { get; } = new List<Dialogue>();
+        public float WakeLinesDelay { get; set; }
+        /// <summary>
+        /// The planet map (M): a hex globe of the planet you're on.
+        /// </summary>
+        public PlanetMap Map { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public PlanetScene Clone() => (PlanetScene)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// A Goldberg globe: hexagons plus exactly 12 pentagons (Euler), 10 * frequency^2 + 2 cells, each coloured by
+    /// the planet's own terrain noise (smooth: no relief), set in your real universe (its sky, star and moons).
+    /// </summary>
+    public sealed class PlanetMap
+    {
+        public int Frequency { get; set; }
+        /// <summary>
+        /// Grout between cells (share of a cell), terrain noise scale and octaves.
+        /// </summary>
+        public float Gap { get; set; }
+        public float NoiseScale { get; set; }
+        public int Octaves { get; set; }
+        /// <summary>
+        /// Cells below this terrain rank (0..1) are sea (0 = no sea).
+        /// </summary>
+        public float SeaLevel { get; set; }
+        /// <summary>
+        /// How far you walk (metres) to cross one radian of the globe: sets how far the pin moves as you walk.
+        /// </summary>
+        public float WalkRadiusMetres { get; set; }
+        public Rgba CrashColor { get; set; }
+        public Rgba PinColor { get; set; }
+        public Rgba Grout { get; set; }
+        /// <summary>
+        /// Camera distance in globe radii (overview, nearest, farthest), drag speed (degrees per pixel).
+        /// </summary>
+        public float Distance { get; set; }
+        public float ZoomMin { get; set; }
+        public float ZoomMax { get; set; }
+        public float DragDegreesPerPixel { get; set; }
+        public string Hint { get; set; }
+        /// <summary>
+        /// Opening: from straight above your own tile (this distance, globe radii) out to `distance`, and back on close.
+        /// </summary>
+        public float ZoomFrom { get; set; }
+        public float OpenSeconds { get; set; }
+        public float CloseSeconds { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public PlanetMap Clone() => (PlanetMap)MemberwiseClone();
     }
 
     /// <summary>

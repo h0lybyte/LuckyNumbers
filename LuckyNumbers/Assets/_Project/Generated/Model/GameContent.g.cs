@@ -46,16 +46,6 @@ namespace LuckyNumbers.Model
                 },
                 new CutsceneStep
                 {
-                    Dialogue = new Dialogue
-                    {
-                        Speaker = "You",
-                        Text = "Uhh... how did I live through that?!",
-                        DurationSeconds = 3.5f,
-                        CharsPerSecond = 28.0f,
-                    },
-                },
-                new CutsceneStep
-                {
                     GoTo = new GoTo
                     {
                         Scene = GameScene.Planet,
@@ -881,7 +871,7 @@ namespace LuckyNumbers.Model
             WreckLength = 11.0f,
             Haze = 0.6f,
             SunElevationDegrees = 38.0f,
-            Hint = "Click to look around - WASD to move - Shift to run - Space to jump - E to pick up, click to throw",
+            Hint = "Click to look around - WASD to move - Shift to run - Space to jump - E to pick up, click to throw - M for the map",
             ArmBreathDegrees = 2.5f,
             ArmSwingDegrees = 7.0f,
             FingerFidgetDegrees = 9.0f,
@@ -959,7 +949,7 @@ namespace LuckyNumbers.Model
                     },
                 },
                 Eye = "camera",
-                ShrugDegrees = 12.0f,
+                ShrugDegrees = 6.0f,
                 MaxReach = 0.985f,
                 Poses =
                 {
@@ -1326,6 +1316,37 @@ namespace LuckyNumbers.Model
             GrabDistance = 2.6f,
             CrouchDepth = 0.85f,
             ThrowSpeed = 13.0f,
+            WakeLines =
+            {
+                new Dialogue
+                {
+                    Speaker = "You",
+                    Text = "Uhh... how did I live through that?!",
+                    DurationSeconds = 3.5f,
+                    CharsPerSecond = 28.0f,
+                },
+            },
+            WakeLinesDelay = 0.8f,
+            Map = new PlanetMap
+            {
+                Frequency = 14,
+                Gap = 0.06f,
+                NoiseScale = 1.6f,
+                Octaves = 5,
+                SeaLevel = 0.45f,
+                WalkRadiusMetres = 3000.0f,
+                CrashColor = new Rgba(1.0f, 0.45f, 0.15f, 1.0f),
+                PinColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                Grout = new Rgba(0.05f, 0.05f, 0.08f, 1.0f),
+                Distance = 3.2f,
+                ZoomMin = 1.4f,
+                ZoomMax = 8.0f,
+                DragDegreesPerPixel = 0.25f,
+                Hint = "Drag to turn - scroll to zoom - M to close",
+                ZoomFrom = 1.06f,
+                OpenSeconds = 1.6f,
+                CloseSeconds = 0.8f,
+            },
         };
 
         /// <summary>From <c>content/player.txtpb</c>.</summary>
