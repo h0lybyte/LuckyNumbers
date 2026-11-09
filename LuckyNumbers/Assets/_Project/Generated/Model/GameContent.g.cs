@@ -46,16 +46,6 @@ namespace LuckyNumbers.Model
                 },
                 new CutsceneStep
                 {
-                    Dialogue = new Dialogue
-                    {
-                        Speaker = "You",
-                        Text = "Uhh... how did I live through that?!",
-                        DurationSeconds = 3.5f,
-                        CharsPerSecond = 28.0f,
-                    },
-                },
-                new CutsceneStep
-                {
                     GoTo = new GoTo
                     {
                         Scene = GameScene.Planet,
@@ -1326,6 +1316,17 @@ namespace LuckyNumbers.Model
             GrabDistance = 2.6f,
             CrouchDepth = 0.85f,
             ThrowSpeed = 13.0f,
+            WakeLines =
+            {
+                new Dialogue
+                {
+                    Speaker = "You",
+                    Text = "Uhh... how did I live through that?!",
+                    DurationSeconds = 3.5f,
+                    CharsPerSecond = 28.0f,
+                },
+            },
+            WakeLinesDelay = 0.8f,
         };
 
         /// <summary>From <c>content/player.txtpb</c>.</summary>

@@ -118,6 +118,12 @@ namespace LuckyNumbers.Model
         public float GrabDistance { get; set; }
         public float CrouchDepth { get; set; }
         public float ThrowSpeed { get; set; }
+        /// <summary>
+        /// Lines you say as you come to, typed out over the wake-up (starting `wake_lines_delay` seconds in);
+        /// the controls hint waits until they're done.
+        /// </summary>
+        public List<Dialogue> WakeLines { get; } = new List<Dialogue>();
+        public float WakeLinesDelay { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public PlanetScene Clone() => (PlanetScene)MemberwiseClone();

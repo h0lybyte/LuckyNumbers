@@ -4,6 +4,7 @@ package luckynumbers.v1;
 
 import "ln/options.proto";
 import "luckynumbers/v1/common.proto";
+import "luckynumbers/v1/cutscene.proto";
 import "luckynumbers/v1/hands.proto";
 import "luckynumbers/v1/space.proto";
 
@@ -81,6 +82,10 @@ message PlanetScene {
   float grab_distance = 47;
   float crouch_depth = 48;
   float throw_speed = 49;
+  // Lines you say as you come to, typed out over the wake-up (starting `wake_lines_delay` seconds in);
+  // the controls hint waits until they're done.
+  repeated Dialogue wake_lines = 50;
+  float wake_lines_delay = 51;
 }
 
 // Where the intro's ship came down: read by the Planet scene (and later a save file).

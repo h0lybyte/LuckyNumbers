@@ -71,13 +71,34 @@ namespace LuckyNumbers.Hands
             return Vector3.Distance(arm.Hand.position, target);
         }
 
-        /// <summary>Turn the hand so its palm faces `palmFacing` with the fingers along `fingersAlong` (blended).</summary>
-        public static void OrientHand(Arm arm, Vector3 palmFacing, Vector3 fingersAlong, float weight)
+        /// <summary>
+        /// Turn the hand so its palm faces `palmFacing` with the fingers along `fingersAlong` (blended). The
+        /// twist about the forearm (turning the palm over) is shared with the forearm bone, like a twist bone
+        /// would: all of it at the wrist pinches the skin there like a sweet wrapper.
+        /// </summary>
+        public static void OrientHand(Arm arm, Vector3 palmFacing, Vector3 fingersAlong, float weight, float forearmShare = 0.5f)
         {
             if (weight <= 0f || arm.Hand == null || arm.FingerAxis == Vector3.zero) return;
             var current = Quaternion.LookRotation(arm.Hand.TransformDirection(arm.FingerAxis), arm.Hand.TransformDirection(arm.PalmAxis));
             var wanted = Quaternion.LookRotation(Vector3.ProjectOnPlane(fingersAlong, palmFacing).normalized, palmFacing);
-            arm.Hand.rotation = Quaternion.Slerp(arm.Hand.rotation, wanted * Quaternion.Inverse(current) * arm.Hand.rotation, weight);
+            var target = Quaternion.Slerp(arm.Hand.rotation, wanted * Quaternion.Inverse(current) * arm.Hand.rotation, weight);
+            if (arm.Lower != null && forearmShare > 0f)
+            {
+                // The change, in world space, split into swing and twist about the forearm axis (elbow -> wrist).
+                var axis = (arm.Hand.position - arm.Lower.position).normalized;
+                var twist = Twist(target * Quaternion.Inverse(arm.Hand.rotation), axis);
+                arm.Lower.rotation = Quaternion.Slerp(Quaternion.identity, twist, forearmShare) * arm.Lower.rotation;   // wrist stays put
+            }
+            arm.Hand.rotation = target;
+        }
+
+        /// <summary>The twist part of a rotation about an axis (swing-twist decomposition).</summary>
+        public static Quaternion Twist(Quaternion q, Vector3 axis)
+        {
+            var along = Vector3.Project(new Vector3(q.x, q.y, q.z), axis);
+            var t = new Quaternion(along.x, along.y, along.z, q.w);
+            var length = Mathf.Sqrt(t.x * t.x + t.y * t.y + t.z * t.z + t.w * t.w);
+            return length < 1e-6f ? Quaternion.identity : new Quaternion(t.x / length, t.y / length, t.z / length, t.w / length);
         }
 
         static float Angle(Vector3 x, Vector3 y) => Mathf.Acos(Mathf.Clamp(Vector3.Dot(x.normalized, y.normalized), -1f, 1f));

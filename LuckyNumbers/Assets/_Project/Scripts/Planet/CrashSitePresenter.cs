@@ -178,6 +178,7 @@ namespace LuckyNumbers.Planet
             body.position = new Vector3(0f, _ground.HeightAt(Vector3.zero) + 0.05f, -1.5f);
             var toWreck = Quaternion.LookRotation(new Vector3(0f, 0f, _config.WreckDistance) - body.position).eulerAngles.y;
             var duration = math.max(0.5f, _config.WakeSeconds);
+            var talking = SayAsync(ct).Preserve();   // first words as you come to, alongside the wake-up
             for (var t = 0f; t < duration; t += Time.deltaTime)
             {
                 var x = t / duration;
@@ -204,10 +205,22 @@ namespace LuckyNumbers.Planet
             _firstPerson.Look(body.eulerAngles.y, 8f);
             _firstPerson.Active = true;
             Debug.Log("[Planet] awake");
+            await talking;   // the hint waits for the lines
             for (var t = 0f; t < 7f; t += Time.deltaTime)
             {
                 _view.Hint(_config.Hint, math.smoothstep(0f, 0.5f, t) * (1f - math.smoothstep(5.5f, 7f, t)));
                 await UniTask.Yield(ct);
+            }
+        }
+
+        async UniTask SayAsync(CancellationToken ct)
+        {
+            if (_config.WakeLines.Count == 0) return;
+            await UniTask.Delay(TimeSpan.FromSeconds(math.max(0f, _config.WakeLinesDelay)), cancellationToken: ct);
+            foreach (var line in _config.WakeLines)
+            {
+                Debug.Log($"[Planet] {line.Speaker}: {line.Text}");
+                await DialogueLine.Play(line, _view.Dialogue, ct);
             }
         }
 
