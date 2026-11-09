@@ -13,7 +13,8 @@ Python 3, standard library only, same commands on macOS and Windows. Run from an
 ```
 python3 tools/ln.py doctor       # what was detected: Unity path, editor open?, build present, butler
 python3 tools/ln.py check        # headless compile; prints C# errors, exit 1 on failure
-python3 tools/ln.py build-web    # headless Web build -> LuckyNumbers/Builds/WebGL
+python3 tools/ln.py build-web    # headless Web build (WebGPU + WebGL 2) -> LuckyNumbers/Builds/WebGL
+python3 tools/ln.py build-web --gfx webgl2   # WebGL 2 only -> Builds/WebGL-WebGL2 (serve --gfx webgl2)
 python3 tools/ln.py serve --open # serve it at http://localhost:8080 with COOP/COEP headers
 python3 tools/ln.py deploy --target user/game [--version 0.1.0] [--dry-run]   # butler push to itch
 ```
@@ -23,10 +24,40 @@ python3 tools/ln.py deploy --target user/game [--version 0.1.0] [--dry-run]   # 
 - Logs: `LuckyNumbers/Logs/ln-*.log`.
 - Windows: use `py tools/ln.py ...` if `python3` isn't on PATH.
 
+## CI/CD (`.github/workflows/web.yml`)
+
+GitHub Actions builds the Web player with [GameCI](https://game.ci) (`unityci/editor:ubuntu-6000.6.8f1-webgl-3`)
+using the same `WebBuild.Build` entry point as `ln.py build-web`, then pushes to itch.io with butler.
+
+| Trigger | Result |
+|---|---|
+| Pull request (Unity/tools changes) | build only, artifact `web-build` (14 days) |
+| Push to `main`, tag `v*` | build + deploy to itch.io channel `html5` (version = tag or short SHA) |
+| Manual (Actions tab → Run workflow) | build, deploy if "deploy" ticked |
+
+One-time setup (run these yourself; they prompt for the values):
+
+```
+gh secret set UNITY_EMAIL
+gh secret set UNITY_PASSWORD
+gh secret set UNITY_LICENSE        # license file contents, see GameCI activation guide below
+gh secret set BUTLER_API_KEY       # https://itch.io/user/settings/api-keys
+gh variable set ITCH_TARGET --body "<itch-user>/<game-slug>"
+```
+
+- Unity license: follow https://game.ci/docs/github/activation. Unity 6 Hub activations store an
+  entitlement license (`~/Library/Unity/licenses/`), not the classic `Unity_lic.ulf`, so check the guide
+  for the current way to obtain the license for CI.
+- Create the itch.io project first (Kind: **HTML**). After the first push, set the `html5` upload as
+  "played in the browser", embed size 1280×720, and tick **SharedArrayBuffer support** (needed for threads).
+- PRs from forks get no secrets, so their build job fails at license activation. Expected for a public repo.
+
 ## Web build settings
 
 Applied by `LuckyNumbers → Web → Apply Settings` (also run by every build), see `Assets/_Project/Editor/WebBuild.cs`:
-multithreading **on**, **Gzip + decompression fallback** (itch.io sends no `Content-Encoding`), 1280×720 canvas.
+multithreading **on**, **Gzip + decompression fallback** (itch.io sends no `Content-Encoding`), 1280×720 canvas,
+graphics **WebGPU with WebGL 2 fallback** (WebGL-2-only builds failed in Safari with a lost WebGL context;
+the WebGPU build works in Chrome and Safari, both multithreaded).
 Multithreading needs the page to be cross-origin isolated: `ln.py serve` sends the headers locally;
 on itch.io enable **SharedArrayBuffer support** in the game's embed options.
 

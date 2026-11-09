@@ -1,0 +1,120 @@
+# Builds the Unity Web (WebGL) player and deploys it to itch.io.
+#
+#   pull_request        -> build only (checks the project compiles and builds)
+#   push to main / v*   -> build + deploy to itch.io (channel: html5)
+#   manual run          -> build, deploy if "deploy" is ticked
+#
+# Required repository secrets (Settings -> Secrets and variables -> Actions):
+#   UNITY_LICENSE    contents of your Unity .ulf license file
+#   UNITY_EMAIL      Unity account email
+#   UNITY_PASSWORD   Unity account password
+#   BUTLER_API_KEY   itch.io API key (https://itch.io/user/settings/api-keys)
+# Required repository variable:
+#   ITCH_TARGET      itch.io "user/game", e.g. h0lybyte/lucky-numbers
+name: Web build & itch.io deploy
+
+on:
+  pull_request:
+    paths:
+      - "LuckyNumbers/Assets/**"
+      - "LuckyNumbers/Packages/**"
+      - "LuckyNumbers/ProjectSettings/**"
+      - "tools/**"
+      - ".github/workflows/web.yml"
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Deploy the build to itch.io"
+        type: boolean
+        default: false
+
+concurrency:
+  group: web-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PROJECT_PATH: LuckyNumbers
+  BUILD_DIR: LuckyNumbers/Builds/WebGL
+
+jobs:
+  build:
+    name: Build WebGL
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      # Unity's Library folder is a big import cache; restoring it turns a
+      # ~10+ min cold import into a few minutes.
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.PROJECT_PATH }}/Library
+          key: Library-WebGL-${{ hashFiles('LuckyNumbers/Assets/**', 'LuckyNumbers/Packages/**', 'LuckyNumbers/ProjectSettings/**') }}
+          restore-keys: |
+            Library-WebGL-
+
+      # Same entry point as `tools/ln.py build-web`, so CI and local builds
+      # use identical settings (threads, gzip + decompression fallback, 720p).
+      - uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: ${{ env.PROJECT_PATH }}
+          targetPlatform: WebGL
+          buildMethod: LuckyNumbers.Editor.WebBuild.Build
+          customParameters: -lnGfx both
+          versioning: None
+
+      - name: Check build output
+        run: |
+          test -f "$BUILD_DIR/index.html" || { echo "::error::no index.html in $BUILD_DIR"; exit 1; }
+          du -sh "$BUILD_DIR"
+          ls -la "$BUILD_DIR/Build"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: ${{ env.BUILD_DIR }}
+          retention-days: 14
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy to itch.io
+    needs: build
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.deploy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: itch
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-build
+          path: ${{ env.BUILD_DIR }}
+
+      - name: Install butler
+        run: |
+          curl -fsSL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d "$HOME/butler"
+          chmod +x "$HOME/butler/butler"
+          echo "$HOME/butler" >> "$GITHUB_PATH"
+          "$HOME/butler/butler" -V
+
+      - name: Push to itch.io
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_TARGET: ${{ vars.ITCH_TARGET }}
+          # Tag builds use the tag (v0.1.0), everything else the short commit.
+          VERSION: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || github.sha }}
+        run: python3 tools/ln.py deploy --version "${VERSION:0:12}"
