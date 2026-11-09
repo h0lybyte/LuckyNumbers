@@ -21,6 +21,10 @@ namespace LuckyNumbers.Model
         Jump = 4,
         Interact = 5,
         Sprint = 6,
+        /// <summary>
+        /// Any key/button on any device ("Press any key").
+        /// </summary>
+        AnyButton = 7,
     }
 
     /// <summary>

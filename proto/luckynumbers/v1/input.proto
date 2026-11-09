@@ -16,6 +16,8 @@ enum InputAction {
   INPUT_ACTION_JUMP = 4;
   INPUT_ACTION_INTERACT = 5;
   INPUT_ACTION_SPRINT = 6;
+  // Any key/button on any device ("Press any key").
+  INPUT_ACTION_ANY_BUTTON = 7;
 }
 
 // Continuous axes, sampled every frame.

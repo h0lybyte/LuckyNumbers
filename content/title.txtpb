@@ -8,8 +8,8 @@ next: GAME_SCENE_INTRO
 prompt_pulse_seconds: 1.6
 
 backdrop {
-  planet_position { x: 0.45 y: -0.1 }
-  planet_scale: 1.2
+  planet_position { x: 1.0 y: -0.2 }
+  planet_scale: 1.4
 
   stars {
     space_color { r: 0.01 g: 0.01 b: 0.03 a: 1 }
