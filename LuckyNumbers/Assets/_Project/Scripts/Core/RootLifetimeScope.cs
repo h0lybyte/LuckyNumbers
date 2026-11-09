@@ -12,8 +12,18 @@ namespace LuckyNumbers.Core
     /// </summary>
     public sealed class RootLifetimeScope : LifetimeScope
     {
+        static RootLifetimeScope _instance;
+
         protected override void Awake()
         {
+            // Every scene carries one (so any scene runs on its own in the editor); the first one wins, so
+            // brokers, buffered events (the lucky number) and (ln.state) singletons survive scene loads.
+            if (_instance != null && _instance != this)
+            {
+                DestroyImmediate(gameObject);
+                return;
+            }
+            _instance = this;
             DontDestroyOnLoad(gameObject);
             base.Awake();
         }

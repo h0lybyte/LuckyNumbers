@@ -4,6 +4,7 @@ package luckynumbers.v1;
 
 import "ln/options.proto";
 import "luckynumbers/v1/flow.proto";
+import "luckynumbers/v1/space.proto";
 
 option csharp_namespace = "LuckyNumbers.Model";
 
@@ -12,6 +13,9 @@ message Cutscene {
   option (ln.config) = true;
   string id = 1;
   repeated CutsceneStep steps = 2;
+  // The universe it plays in. Generated from the player's lucky number, so it is the title's world.
+  SpaceBackdrop backdrop = 3;
+  string backdrop_ref = 4 [(ln.ref) = "backdrop"];
 }
 
 message CutsceneStep {
@@ -24,7 +28,7 @@ message CutsceneStep {
   }
 }
 
-// Dice tumble, then land on `faces` (forced results, e.g. 6 6 6).
+// Dice tumble, then land on `faces`; empty = the player's own roll (keeps their universe).
 message DiceRoll {
   repeated int32 faces = 1;
   float duration_seconds = 2;

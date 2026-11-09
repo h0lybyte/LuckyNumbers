@@ -1,5 +1,6 @@
 using LuckyNumbers.Core;
 using LuckyNumbers.Space;
+using LuckyNumbers.Intro;
 using LuckyNumbers.Title;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -30,8 +31,9 @@ namespace LuckyNumbers.Editor
             var disk = MaterialAsset("Disk", "LuckyNumbers/Disk");
 
             var panel = PanelSettingsAsset();
-            BuildTitle(starfield, planet, star, galaxy, disk, panel);
-            BuildIntroPlaceholder(starfield, panel);
+            var rig = new Rig { Starfield = starfield, Planet = planet, Star = star, Galaxy = galaxy, Disk = disk, Panel = panel };
+            BuildTitle(rig);
+            BuildIntro(rig);
 
             EditorBuildSettings.scenes = new[]
             {
@@ -44,26 +46,12 @@ namespace LuckyNumbers.Editor
             Debug.Log("[SceneBuilder] built Title, Intro; build settings = [Title, Intro]");
         }
 
-        static void BuildTitle(Material starfieldMat, Material planetMat, Material starMat, Material galaxyMat, Material diskMat, PanelSettings panel)
+        static void BuildTitle(Rig rig)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-
-            // Universe: perspective camera + starfield skybox; bodies spawned by SpacePresenter from content.
-            var cam = Camera();
-            Sky(starfieldMat);
-            var space = new GameObject("Space").AddComponent<SpaceView>();
-            var planetTemplate = Sphere("PlanetTemplate", planetMat, space.transform);
-            var starTemplate = Sphere("StarTemplate", starMat, space.transform);
-            var galaxyTemplate = QuadMesh("GalaxyTemplate", galaxyMat, space.transform);
-            planetTemplate.gameObject.SetActive(false);
-            starTemplate.gameObject.SetActive(false);
-            galaxyTemplate.gameObject.SetActive(false);
-            var disk = QuadMesh("Disk", diskMat, space.transform);
-            disk.gameObject.SetActive(false);
             // UI Toolkit: UI/Screens/Title.uxml styled by UI/Theme; TitleView binds it ([Ui] fields, Roslyn).
-            var ui = Document("UI", panel, "Title");
-            Assign(space, ("viewCamera", cam), ("planetTemplate", planetTemplate), ("starTemplate", starTemplate),
-                   ("galaxyTemplate", galaxyTemplate), ("disk", disk), ("ui", ui));
+            var ui = Document("UI", rig.Panel, "Title");
+            SpaceRig(rig, ui);
             var view = new GameObject("TitleView").AddComponent<TitleView>();
             Assign(view, ("document", ui));
             var dice = new GameObject("DiceView").AddComponent<DiceView>();
@@ -73,14 +61,34 @@ namespace LuckyNumbers.Editor
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Title.unity");
         }
 
-        // Placeholder until the cutscene player exists: proves the title -> intro switch.
-        static void BuildIntroPlaceholder(Material starfieldMat, PanelSettings panel)
+        static void BuildIntro(Rig rig)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            Camera();
-            Sky(starfieldMat);
-            Document("UI", panel, "Intro");
+            var ui = Document("UI", rig.Panel, "Intro");
+            SpaceRig(rig, ui);   // same universe as the title (IntroScope registers the intro backdrop)
+            Scopes<IntroScope>();
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Intro.unity");
+        }
+
+        sealed class Rig
+        {
+            public Material Starfield, Planet, Star, Galaxy, Disk;
+            public PanelSettings Panel;
+        }
+
+        /// <summary>Universe: perspective camera + starfield skybox + body templates; SpacePresenter spawns from content.</summary>
+        static void SpaceRig(Rig rig, UIDocument ui)
+        {
+            var cam = Camera();
+            Sky(rig.Starfield);
+            var space = new GameObject("Space").AddComponent<SpaceView>();
+            var planetTemplate = Sphere("PlanetTemplate", rig.Planet, space.transform);
+            var starTemplate = Sphere("StarTemplate", rig.Star, space.transform);
+            var galaxyTemplate = QuadMesh("GalaxyTemplate", rig.Galaxy, space.transform);
+            var disk = QuadMesh("Disk", rig.Disk, space.transform);
+            foreach (var r in new[] { planetTemplate, starTemplate, galaxyTemplate, disk }) r.gameObject.SetActive(false);
+            Assign(space, ("viewCamera", cam), ("planetTemplate", planetTemplate), ("starTemplate", starTemplate),
+                   ("galaxyTemplate", galaxyTemplate), ("disk", disk), ("ui", ui));
         }
 
         static void Scopes<TScene>() where TScene : Component

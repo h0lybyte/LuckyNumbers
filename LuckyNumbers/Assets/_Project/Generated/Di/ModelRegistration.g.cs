@@ -14,13 +14,13 @@ namespace LuckyNumbers.Model
         {
             builder.RegisterMessageBroker<SceneChangeRequested>(options);
             builder.RegisterMessageBroker<SceneEntered>(options);
+            builder.RegisterMessageBroker<UniverseSeedChanged>(options);
             builder.RegisterMessageBroker<CutsceneStepStarted>(options);
             builder.RegisterMessageBroker<CutsceneFinished>(options);
             builder.RegisterMessageBroker<InputActionPerformed>(options);
             builder.RegisterMessageBroker<PlayerDamaged>(options);
             builder.RegisterMessageBroker<PlayerHealed>(options);
             builder.RegisterMessageBroker<PlayerDied>(options);
-            builder.RegisterMessageBroker<UniverseSeedChanged>(options);
             builder.RegisterMessageBroker<MenuItemSelected>(options);
         }
 

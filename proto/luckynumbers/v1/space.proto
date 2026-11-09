@@ -18,6 +18,8 @@ message SpaceBackdrop {
   // When set, each UniverseSeedChanged replaces the bodies with a generated system (big-bang transition).
   SystemGenerator generator = 11;
   string generator_ref = 12 [(ln.ref) = "generator"];
+  // Show the current roll's universe at once (no big bang), e.g. a cutscene continuing the title's world.
+  bool instant = 13;
 }
 
 // The dice roll's lucky number: Space regenerates the universe from it.

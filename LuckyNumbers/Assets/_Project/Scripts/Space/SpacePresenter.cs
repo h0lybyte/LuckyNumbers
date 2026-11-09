@@ -73,6 +73,12 @@ namespace LuckyNumbers.Space
             if (roll.Seed == 0) return; // buffered default before the first roll; lucky numbers are never 0
             Debug.Log($"[Space] lucky number {roll.Seed} (star {roll.Star:0.##}, worlds {roll.Worlds:0.##}, luck {roll.Luck:0.##})");
             _pendingRoll = roll;
+            if (_backdrop.Instant && (_world == null || _world.Count == 0))
+            {
+                Expand();
+                _phase = Phase.Idle;   // already formed: no big bang
+                return;
+            }
             if (_world == null || _world.Count == 0) { Expand(); return; }
             _phase = Phase.Collapsing;
             _phaseTime = 0f;

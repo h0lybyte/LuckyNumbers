@@ -4,8 +4,12 @@
 
 id: "intro"
 
-# Dice tumble in space and land on 6 6 6.
-steps { dice_roll { faces: [6, 6, 6] duration_seconds: 3 } }
+# Same universe as the title: the player's lucky number, shown as-is (no big bang).
+backdrop_ref: "space/systems/home"
+backdrop { instant: true }
+
+# Dice tumble in space and land on the player's roll (no faces = keep their universe).
+steps { dice_roll { duration_seconds: 3 } }
 
 # The ship gets dragged into the planet.
 steps { ship_pulled_in { duration_seconds: 4 } }

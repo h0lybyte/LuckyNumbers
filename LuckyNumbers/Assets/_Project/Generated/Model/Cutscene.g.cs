@@ -16,6 +16,10 @@ namespace LuckyNumbers.Model
     {
         public string Id { get; set; }
         public List<CutsceneStep> Steps { get; } = new List<CutsceneStep>();
+        /// <summary>
+        /// The universe it plays in. Generated from the player's lucky number, so it is the title's world.
+        /// </summary>
+        public SpaceBackdrop Backdrop { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public Cutscene Clone() => (Cutscene)MemberwiseClone();
@@ -53,7 +57,7 @@ namespace LuckyNumbers.Model
     }
 
     /// <summary>
-    /// Dice tumble, then land on `faces` (forced results, e.g. 6 6 6).
+    /// Dice tumble, then land on `faces`; empty = the player's own roll (keeps their universe).
     /// </summary>
     public sealed class DiceRoll
     {

@@ -24,6 +24,10 @@ namespace LuckyNumbers.Model
         /// When set, each UniverseSeedChanged replaces the bodies with a generated system (big-bang transition).
         /// </summary>
         public SystemGenerator Generator { get; set; }
+        /// <summary>
+        /// Show the current roll's universe at once (no big bang), e.g. a cutscene continuing the title's world.
+        /// </summary>
+        public bool Instant { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public SpaceBackdrop Clone() => (SpaceBackdrop)MemberwiseClone();
