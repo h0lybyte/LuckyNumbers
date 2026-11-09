@@ -76,6 +76,44 @@ namespace LuckyNumbers.Model
             Title = "Lucky Numbers",
             StartPrompt = "Press any key to start",
             Next = GameScene.Intro,
+            Backdrop = new SpaceBackdrop
+            {
+                Stars = new StarfieldLook
+                {
+                    SpaceColor = new Rgba(0.01f, 0.01f, 0.03f, 1.0f),
+                    NebulaColorA = new Rgba(0.25f, 0.08f, 0.35f, 1.0f),
+                    NebulaColorB = new Rgba(0.05f, 0.15f, 0.35f, 1.0f),
+                    NebulaIntensity = 0.35f,
+                    NebulaScale = 1.5f,
+                    StarDensity = 60.0f,
+                    StarBrightness = 1.2f,
+                    TwinkleSpeed = 2.0f,
+                    Drift = new Vec2(0.004f, 0.001f),
+                    Seed = 7.0f,
+                },
+                Planet = new PlanetLook
+                {
+                    PlanetColor = new Rgba(1.0f, 0.34f, default(float), 1.0f),
+                    AtmosphereColor = new Rgba(0.41f, 0.6f, 1.0f, 1.0f),
+                    LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                    PlanetSize = 0.9f,
+                    EdgeSmoothness = 0.02f,
+                    AtmosphereThickness = 0.01f,
+                    RotationSpeed = 0.03f,
+                    RotationAxis = -0.2f,
+                    LightOrigin = new Vec2(-0.1f, 0.1f),
+                    LightShadowHardness = 0.5f,
+                    LightSize = 2.0f,
+                    LightIntensity = 0.9f,
+                    ShadowSize = 1.8f,
+                    ShadowIntensity = 1.0f,
+                    NoiseOffset = new Vec2(default(float), default(float)),
+                },
+                PlanetPosition = new Vec2(0.45f, -0.1f),
+                PlanetScale = 1.2f,
+            },
+            PromptPulseSeconds = 1.6f,
+            LoadingPrompt = "Loading...",
         };
     }
 }

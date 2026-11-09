@@ -26,4 +26,29 @@ namespace LuckyNumbers.Model
         public static bool operator ==(Vec2 a, Vec2 b) => a.Equals(b);
         public static bool operator !=(Vec2 a, Vec2 b) => !a.Equals(b);
     }
+
+    /// <summary>
+    /// Linear 0..1 RGBA.
+    /// </summary>
+    public readonly struct Rgba : IEquatable<Rgba>
+    {
+        public readonly float R;
+        public readonly float G;
+        public readonly float B;
+        public readonly float A;
+
+        public Rgba(float r, float g, float b, float a)
+        {
+            R = r;
+            G = g;
+            B = b;
+            A = a;
+        }
+
+        public bool Equals(Rgba other) => R.Equals(other.R) && G.Equals(other.G) && B.Equals(other.B) && A.Equals(other.A);
+        public override bool Equals(object obj) => obj is Rgba other && Equals(other);
+        public override int GetHashCode() => HashCode.Combine(R, G, B, A);
+        public static bool operator ==(Rgba a, Rgba b) => a.Equals(b);
+        public static bool operator !=(Rgba a, Rgba b) => !a.Equals(b);
+    }
 }

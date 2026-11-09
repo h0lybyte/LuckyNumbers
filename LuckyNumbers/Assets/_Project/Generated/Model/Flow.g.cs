@@ -49,4 +49,19 @@ namespace LuckyNumbers.Model
             Scene = scene;
         }
     }
+
+    /// <summary>
+    /// Background loading of the next scene (title doubles as preloader).
+    /// </summary>
+    public sealed class LoadingState : IDisposable
+    {
+        public readonly ReactiveProperty<float> Progress = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<bool> Ready = new ReactiveProperty<bool>();
+
+        public void Dispose()
+        {
+            Progress.Dispose();
+            Ready.Dispose();
+        }
+    }
 }

@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+import "luckynumbers/v1/common.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Space background shown on the title (and reused by the intro).
+message SpaceBackdrop {
+  StarfieldLook stars = 1;
+  PlanetLook planet = 2;
+  // Planet quad centre in camera units (orthographic size 1 = half screen height).
+  Vec2 planet_position = 3;
+  float planet_scale = 4;
+}
+
+// Shader properties of LuckyNumbers/Starfield.
+message StarfieldLook {
+  option (ln.material) = "LuckyNumbers/Starfield";
+  Rgba space_color = 1;
+  Rgba nebula_color_a = 2;
+  Rgba nebula_color_b = 3;
+  float nebula_intensity = 4;
+  float nebula_scale = 5;
+  float star_density = 6;
+  float star_brightness = 7;
+  float twinkle_speed = 8;
+  Vec2 drift = 9;
+  float seed = 10;
+}
+
+// Shader properties of LuckyNumbers/Planet2D.
+message PlanetLook {
+  option (ln.material) = "LuckyNumbers/Planet2D";
+  Rgba planet_color = 1;
+  Rgba atmosphere_color = 2;
+  Rgba light_color = 3;
+  float planet_size = 4;
+  float edge_smoothness = 5;
+  float atmosphere_thickness = 6;
+  float rotation_speed = 7;
+  float rotation_axis = 8;
+  Vec2 light_origin = 9;
+  float light_shadow_hardness = 10;
+  float light_size = 11;
+  float light_intensity = 12;
+  float shadow_size = 13;
+  float shadow_intensity = 14;
+  Vec2 noise_offset = 15;
+}

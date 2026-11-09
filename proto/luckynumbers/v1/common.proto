@@ -11,3 +11,12 @@ message Vec2 {
   float x = 1;
   float y = 2;
 }
+
+// Linear 0..1 RGBA.
+message Rgba {
+  option (ln.value) = true;
+  float r = 1;
+  float g = 2;
+  float b = 3;
+  float a = 4;
+}

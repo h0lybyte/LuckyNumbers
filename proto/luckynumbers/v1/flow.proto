@@ -28,3 +28,10 @@ message SceneEntered {
   option (ln.event) = true;
   GameScene scene = 1;
 }
+
+// Background loading of the next scene (title doubles as preloader).
+message LoadingState {
+  option (ln.state) = true;
+  float progress = 1;
+  bool ready = 2;
+}

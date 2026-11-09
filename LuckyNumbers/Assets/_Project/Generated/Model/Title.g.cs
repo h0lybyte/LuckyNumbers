@@ -10,12 +10,22 @@ using R3;
 namespace LuckyNumbers.Model
 {
     /// <summary>
-    /// Title screen. Confirm (see input.proto) requests a change to `next`.
+    /// Title screen; also the preloader: `next` loads in the background while it shows.
+    /// Confirm (see input.proto) switches to `next` once loading is done.
     /// </summary>
     public sealed class TitleScreen
     {
         public string Title { get; set; }
         public string StartPrompt { get; set; }
         public GameScene Next { get; set; }
+        public SpaceBackdrop Backdrop { get; set; }
+        /// <summary>
+        /// Prompt pulse period while waiting for input.
+        /// </summary>
+        public float PromptPulseSeconds { get; set; }
+        /// <summary>
+        /// Shown instead of start_prompt while `next` is still loading.
+        /// </summary>
+        public string LoadingPrompt { get; set; }
     }
 }

@@ -26,6 +26,7 @@ namespace LuckyNumbers.Model
         public static void RegisterModelState(this IContainerBuilder builder)
         {
             builder.Register<FlowState>(Lifetime.Singleton);
+            builder.Register<LoadingState>(Lifetime.Singleton);
             builder.Register<PlayerInput>(Lifetime.Singleton);
             builder.Register<PlayerHealth>(Lifetime.Singleton);
         }

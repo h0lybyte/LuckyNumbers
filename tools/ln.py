@@ -397,7 +397,8 @@ def cmd_gen(args) -> int:
     import protogen
     protoc, include = ensure_protoc()
     try:
-        files = protogen.run(str(protoc), include, PROTO_DIR, CONTENT_DIR, CONTENT_HEADER)
+        files = protogen.run(str(protoc), include, PROTO_DIR, CONTENT_DIR, CONTENT_HEADER,
+                             shader_root=PROJECT / "Assets" / "_Project")
     except subprocess.CalledProcessError as e:
         print((e.stderr or b"").decode(errors="replace").strip())
         return fail("protoc failed; run `ln.py proto` for details")

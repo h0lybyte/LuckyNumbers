@@ -63,7 +63,7 @@ def _packed_varints(b: bytes):
 # FieldDescriptorProto.Type -> C# type for the scalar types we support.
 SCALARS = {1: "double", 2: "float", 3: "long", 5: "int", 8: "bool", 9: "string", 13: "uint"}
 T_MESSAGE, T_ENUM, LABEL_REPEATED = 11, 14, 3
-OPT_EVENT, OPT_STATE, OPT_CONFIG, OPT_VALUE = 50001, 50002, 50003, 50004
+OPT_EVENT, OPT_STATE, OPT_CONFIG, OPT_VALUE, OPT_MATERIAL = 50001, 50002, 50003, 50004, 50005
 
 
 @dataclass
@@ -86,6 +86,7 @@ class Message:
     options: set[int]
     file: str
     doc: str = ""
+    material: str = ""  # (ln.material) shader name
 
 
 @dataclass
@@ -173,7 +174,7 @@ def _load_enum(model, b, scope, fname, docs, path):
 
 
 def _load_message(model, b, scope, fname, docs, path):
-    name, fields, oneofs, options = "", [], [], set()
+    name, fields, oneofs, options, material = "", [], [], set(), ""
     nested = []
     for n, _, v in _fields(b):
         if n == 1:
@@ -200,12 +201,14 @@ def _load_message(model, b, scope, fname, docs, path):
             for on, _, ov in _fields(v):
                 if on in (OPT_EVENT, OPT_STATE, OPT_CONFIG, OPT_VALUE) and ov:
                     options.add(on)
+                elif on == OPT_MATERIAL:
+                    material = _str(ov)
         elif n == 8:
             oneofs.append(next(_str(x) for k, _, x in _fields(v) if k == 1))
     if nested:
         raise ValueError(f"{scope}.{name}: nested types aren't supported; declare them at file level")
     full = f"{scope}.{name}"
-    model.messages[full] = Message(full, name, fields, oneofs, options, fname, docs.get(path, ""))
+    model.messages[full] = Message(full, name, fields, oneofs, options, fname, docs.get(path, ""), material)
     model.order.append((fname, full))
 
 # ---------------------------------------------------------------------------- C# emit
@@ -358,6 +361,11 @@ class Emitter:
                 # Repeated items sit one level deeper (inside the collection braces).
                 item_indent = indent + ("        " if f.repeated else "    ")
                 values.setdefault(num, []).append(self.value(f, v, wt, item_indent))
+        if msg.material:
+            missing = [f.name for f in msg.fields if f.number not in values]
+            if missing:
+                raise ValueError(f"content for {msg.name} (material {msg.material}) must set every field; "
+                                 f"missing: {', '.join(missing)}")
         if OPT_VALUE in msg.options:
             args = ", ".join(values.get(f.number, [self.default(f)])[-1] for f in msg.fields)
             return f"new {msg.name}({args})"
@@ -410,6 +418,51 @@ class Emitter:
         return {"string": '""', "bool": "false"}.get(self.ctype(f), f"default({self.ctype(f)})")
 
 
+def material_bindings(model: Model, em: "Emitter", namespace: str) -> str:
+    """ApplyTo(Material) per (ln.material) message + value-type -> Unity conversions."""
+    lines = ["    public static class MaterialBindings", "    {"]
+    values = [m for _, full in model.order if (m := model.messages.get(full)) and OPT_VALUE in m.options]
+    for v in values:
+        floats = [f for f in v.fields if f.type == 2]
+        if v.name == "Rgba" and len(floats) == 4:
+            lines.append(f"        public static Color ToColor(this {v.name} c) => new Color(c.R, c.G, c.B, c.A);")
+        elif len(floats) == len(v.fields) and len(floats) in (2, 3, 4):
+            unity = {2: "Vector2", 3: "Vector3", 4: "Vector4"}[len(floats)]
+            args = ", ".join(f"v.{pascal(f.name)}" for f in floats)
+            lines.append(f"        public static {unity} To{unity}(this {v.name} v) => new {unity}({args});")
+    for _, full in model.order:
+        m = model.messages.get(full)
+        if not m or not m.material:
+            continue
+        lines += ["", f"        public const string {m.name}Shader = {json.dumps(m.material)};"]
+        for f in m.fields:
+            lines.append(f"        static readonly int {m.name}_{pascal(f.name)} = Shader.PropertyToID(\"_{pascal(f.name)}\");")
+        lines += ["", f"        /// <summary>Copies every field to the matching {m.material} property.</summary>",
+                  f"        public static void ApplyTo(this {m.name} look, Material material)", "        {"]
+        for f in m.fields:
+            pid, val = f"{m.name}_{pascal(f.name)}", f"look.{pascal(f.name)}"
+            if f.repeated:
+                raise ValueError(f"{m.full}.{f.name}: repeated fields can't bind to a material")
+            if f.type in (1, 2):
+                lines.append(f"            material.SetFloat({pid}, {val});")
+            elif f.type in (3, 5, 13):
+                lines.append(f"            material.SetInteger({pid}, (int){val});")
+            elif f.type == 8:
+                lines.append(f"            material.SetFloat({pid}, {val} ? 1f : 0f);")
+            elif f.type == T_MESSAGE and model.messages[f.type_name].name == "Rgba":
+                lines.append(f"            material.SetColor({pid}, {val}.ToColor());")
+            elif f.type == T_MESSAGE and OPT_VALUE in model.messages[f.type_name].options:
+                n = len(model.messages[f.type_name].fields)
+                conv = {2: "ToVector2()", 3: "ToVector3()", 4: "ToVector4()"}[n]
+                lines.append(f"            material.SetVector({pid}, {val}.{conv});")
+            else:
+                raise ValueError(f"{m.full}.{f.name}: type can't bind to a material property")
+        lines.append("        }")
+    lines.append("    }")
+    return (HEADER.format(src="proto/**/*.proto (ln.material)") + "\nusing UnityEngine;\n"
+            + f"\nnamespace {namespace}\n{{\n" + "\n".join(lines) + "\n}\n")
+
+
 HEADER = "// <auto-generated>\n// Generated by tools/ln.py gen from {src}. Do not edit; change the source and regenerate.\n// </auto-generated>\n"
 
 
@@ -452,6 +505,11 @@ def generate(model: Model, content: list[tuple[str, str, bytes]], namespace: str
     files["Di/ModelRegistration.g.cs"] = (HEADER.format(src="proto/**/*.proto") + "\nusing MessagePipe;\nusing VContainer;\n"
                                         + f"\nnamespace {namespace}\n{{\n" + "\n".join(di) + "\n}\n")
 
+    files["Unity/MaterialBindings.g.cs"] = material_bindings(model, em, namespace)
+    files["Unity/LuckyNumbers.Model.Unity.asmdef"] = json.dumps({
+        "name": "LuckyNumbers.Model.Unity", "rootNamespace": namespace,
+        "references": ["LuckyNumbers.Model"], "autoReferenced": True}, indent=4) + "\n"
+
     files["Model/LuckyNumbers.Model.asmdef"] = json.dumps({
         "name": "LuckyNumbers.Model", "rootNamespace": namespace, "references": [],
         "autoReferenced": True, "noEngineReferences": True}, indent=4) + "\n"
@@ -462,7 +520,27 @@ def generate(model: Model, content: list[tuple[str, str, bytes]], namespace: str
     return files
 
 
-def run(protoc: str, include: Path, proto_dir: Path, content_dir: Path, header_re) -> dict[str, str]:
+def check_materials(model: Model, shader_root: Path) -> None:
+    """Every (ln.material) field must match a property declared by that shader (silent no-op otherwise)."""
+    shaders = {}
+    for f in shader_root.rglob("*.shader"):
+        text = f.read_text(encoding="utf-8")
+        m = re.search(r'^\s*Shader\s+"([^"]+)"', text, re.M)
+        props = re.search(r"Properties\s*\{(.*?)\n\s*\}", text, re.S)
+        if m:
+            shaders[m.group(1)] = set(re.findall(r"^\s*(_\w+)\s*\(", props.group(1), re.M)) if props else set()
+    for msg in model.messages.values():
+        if not msg.material:
+            continue
+        if msg.material not in shaders:
+            raise ValueError(f"{msg.name}: (ln.material) shader '{msg.material}' not found under {shader_root}")
+        missing = [f"_{pascal(f.name)}" for f in msg.fields if f"_{pascal(f.name)}" not in shaders[msg.material]]
+        if missing:
+            raise ValueError(f"{msg.name}: shader '{msg.material}' has no properties {', '.join(missing)}")
+
+
+def run(protoc: str, include: Path, proto_dir: Path, content_dir: Path, header_re,
+        shader_root: Path | None = None) -> dict[str, str]:
     import tempfile
     protos = sorted(str(p.relative_to(proto_dir)) for p in proto_dir.rglob("*.proto"))
     with tempfile.TemporaryDirectory() as tmp:
@@ -472,6 +550,8 @@ def run(protoc: str, include: Path, proto_dir: Path, content_dir: Path, header_r
                        capture_output=True, check=True)
         desc = out.read_bytes()
     model = load_descriptors(desc)
+    if shader_root is not None:
+        check_materials(model, shader_root)
     namespace = "LuckyNumbers.Model"
     content = []
     for txt in sorted(content_dir.rglob("*.txtpb")):

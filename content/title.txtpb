@@ -3,4 +3,43 @@
 
 title: "Lucky Numbers"
 start_prompt: "Press any key to start"
+loading_prompt: "Loading..."
 next: GAME_SCENE_INTRO
+prompt_pulse_seconds: 1.6
+
+backdrop {
+  planet_position { x: 0.45 y: -0.1 }
+  planet_scale: 1.2
+
+  stars {
+    space_color { r: 0.01 g: 0.01 b: 0.03 a: 1 }
+    nebula_color_a { r: 0.25 g: 0.08 b: 0.35 a: 1 }
+    nebula_color_b { r: 0.05 g: 0.15 b: 0.35 a: 1 }
+    nebula_intensity: 0.35
+    nebula_scale: 1.5
+    star_density: 60
+    star_brightness: 1.2
+    twinkle_speed: 2
+    drift { x: 0.004 y: 0.001 }
+    seed: 7
+  }
+
+  # Defaults of Ikkemcwood's planet shader.
+  planet {
+    planet_color { r: 1 g: 0.34 b: 0 a: 1 }
+    atmosphere_color { r: 0.41 g: 0.6 b: 1 a: 1 }
+    light_color { r: 1 g: 1 b: 1 a: 1 }
+    planet_size: 0.9
+    edge_smoothness: 0.02
+    atmosphere_thickness: 0.01
+    rotation_speed: 0.03
+    rotation_axis: -0.2
+    light_origin { x: -0.1 y: 0.1 }
+    light_shadow_hardness: 0.5
+    light_size: 2
+    light_intensity: 0.9
+    shadow_size: 1.8
+    shadow_intensity: 1
+    noise_offset { x: 0 y: 0 }
+  }
+}

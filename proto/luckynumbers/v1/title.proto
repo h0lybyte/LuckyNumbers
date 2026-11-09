@@ -4,13 +4,20 @@ package luckynumbers.v1;
 
 import "ln/options.proto";
 import "luckynumbers/v1/flow.proto";
+import "luckynumbers/v1/space.proto";
 
 option csharp_namespace = "LuckyNumbers.Model";
 
-// Title screen. Confirm (see input.proto) requests a change to `next`.
+// Title screen; also the preloader: `next` loads in the background while it shows.
+// Confirm (see input.proto) switches to `next` once loading is done.
 message TitleScreen {
   option (ln.config) = true;
   string title = 1;
   string start_prompt = 2;
   GameScene next = 3;
+  SpaceBackdrop backdrop = 4;
+  // Prompt pulse period while waiting for input.
+  float prompt_pulse_seconds = 5;
+  // Shown instead of start_prompt while `next` is still loading.
+  string loading_prompt = 6;
 }
