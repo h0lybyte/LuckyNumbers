@@ -34,8 +34,8 @@ throw_clip: "jab.{side}"
 # Body feel: running pumps the swing, arms rise in the air, hands shake for a while after the crash.
 sprint_pump: 1.8
 air_raise_degrees: 14
-crash_tremor_degrees: 2.2
-tremor_seconds: 40
+crash_tremor_degrees: 0.8
+tremor_seconds: 10
 
 # Hands: rig bone map, touching nearby surfaces, IK self-test.
 hands_ref: "hands/rig"

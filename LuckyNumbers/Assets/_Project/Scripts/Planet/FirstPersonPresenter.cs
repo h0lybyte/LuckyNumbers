@@ -33,7 +33,7 @@ namespace LuckyNumbers.Planet
         readonly ISubscriber<InputActionPerformed> _actions;
         IDisposable _subscription;
 
-        float _yaw, _pitch, _vertical, _stride, _landDip, _errorLogAt, _sprint, _air, _crouch, _awakeAt = -1f;
+        float _yaw, _pitch, _vertical, _stride, _moving, _landDip, _errorLogAt, _sprint, _air, _crouch, _awakeAt = -1f;
         bool _jump, _interact, _wasGrounded = true, _wasPressed, _lockSeen;
         Vector3 _sway;
 
@@ -122,7 +122,10 @@ namespace LuckyNumbers.Planet
 
             // Head bob from stride, scaled by how fast we move over ground; crouch while grabbing.
             var planar = new Vector3(body.velocity.x, 0f, body.velocity.z).magnitude;
-            var moving = body.isGrounded ? math.saturate(planar / math.max(0.1f, _config.WalkSpeed)) : 0f;
+            // Eased: velocity stops dead when you let go of the keys, and swing/bob scaled by it would snap to rest.
+            var movingNow = body.isGrounded ? math.saturate(planar / math.max(0.1f, _config.WalkSpeed)) : 0f;
+            _moving = math.lerp(_moving, movingNow, 1f - math.exp(-(movingNow > _moving ? 8f : 5f) * dt));
+            var moving = _moving;
             _stride += dt * _config.BobFrequency * 2f * math.PI * math.max(0.2f, planar / math.max(0.1f, _config.WalkSpeed));
             var bobY = math.abs(math.sin(_stride)) * _config.BobAmount * moving - _landDip * 0.08f;
             var bobX = math.sin(_stride) * _config.BobAmount * 0.5f * moving;

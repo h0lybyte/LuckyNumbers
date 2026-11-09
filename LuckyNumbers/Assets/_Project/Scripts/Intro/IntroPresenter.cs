@@ -44,6 +44,8 @@ namespace LuckyNumbers.Intro
         float _sweep;                     // radians from spiral start to impact
         float _startDiameters;            // spiral start radius, in planet diameters
         bool _fromTitle;                  // continuing the title's camera (CameraHandoff)
+        const float MaxHandoffDiameters = 25f;   // title camera further than this from home (in its diameters): not continued
+        bool _fadeIn;                     // from the title but from black (its camera was too far away to continue)
         Vector3 _camPos;                  // chase camera, smoothed
         Quaternion _camRot;
         float _shake;
@@ -89,6 +91,22 @@ namespace LuckyNumbers.Intro
             _view.Flash(Color.black, _fromTitle ? 0f : 1f);
             // The universe arrives via the buffered lucky number (placed on its orbits as it is built).
             while (!_space.TryGetBody(Target, out _, out _)) await UniTask.Yield(ct);
+            // Play pressed mid big bang: the title camera is out in its system overview, far from home. Continuing
+            // from there would put the whole arrival out in empty space, so stand in for the title's settled view
+            // (a little off home, half lit, looking at it) and fade in from black.
+            if (_fromTitle && _space.TryGetBody(Target, out var homeAt, out var homeSize) &&
+                math.distance((float3)_camPos, homeAt) - homeSize * 0.5f > homeSize * MaxHandoffDiameters)
+            {
+                Debug.Log($"[Intro] title camera {math.distance((float3)_camPos, homeAt):0} away from {Target}: starting from a view of it");
+                var toSun = _space.TryGetBody("sun", out var sunAt, out _) ? math.normalizesafe(sunAt - homeAt, new float3(1, 0, 0)) : new float3(1, 0, 0);
+                var side = math.normalizesafe(math.cross(new float3(0, 1, 0), toSun), new float3(0, 0, 1));
+                var from = homeAt + math.normalize(toSun * 0.5f + side * 0.85f + new float3(0, 0.25f, 0)) * homeSize * 1.9f;
+                _camPos = from;
+                _camRot = Quaternion.LookRotation((Vector3)(homeAt - from), Vector3.up);
+                _space.Camera.transform.SetPositionAndRotation(_camPos, _camRot);
+                _fadeIn = true;
+                _view.Flash(Color.black, 1f);
+            }
 
             _rng = new Random(_space.Seed | 1u);
             _pull = FindPull() ?? new ShipPulledIn { DurationSeconds = 6, StartDistance = 4, Turns = 1, BankDegrees = 50, CameraRelease = 0.2f };
@@ -161,8 +179,9 @@ namespace LuckyNumbers.Intro
                 var blend = math.smoothstep(0.15f, 1f, x);
                 _camPos = Vector3.Lerp(fromPos, chasePos, blend);
                 _camRot = Quaternion.Slerp(fromRot, chaseRot, blend);
+                KeepHomeInFrame(math.smoothstep(0.1f, 0.6f, x));
                 if (x > 0.3f) KeepInFrame(pos, 20f);
-                if (!_fromTitle) _view.Flash(Color.black, 1f - math.smoothstep(0f, 0.25f, x));
+                if (!_fromTitle || _fadeIn) _view.Flash(Color.black, 1f - math.smoothstep(0f, 0.25f, x));
                 ApplyCamera(_camPos, _camRot);
                 await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, ct);
             }
@@ -356,6 +375,7 @@ namespace LuckyNumbers.Intro
             var k = 1f - math.exp(-8f * Time.deltaTime);
             _camPos = Vector3.Lerp(_camPos, wantPos, k);
             _camRot = Quaternion.Slerp(_camRot, wantRot, k);
+            KeepHomeInFrame();
             KeepInFrame(shipPos, 18f);
             ApplyCamera(_camPos, _camRot);
         }
@@ -382,6 +402,27 @@ namespace LuckyNumbers.Intro
             _camRot = Quaternion.Slerp(_camRot, Quaternion.LookRotation(shipPos - _camPos, _camRot * Vector3.up), k);
             KeepInFrame(shipPos, 15f);
             ApplyCamera(_camPos, _camRot);
+        }
+
+        /// <summary>
+        /// The planet's near edge stays well inside the frame (a third of the way in from the edge), so it is
+        /// always there to crash into, not a sliver of night side at the border. Runs before the ship's clamp,
+        /// which wins if both can't fit. `weight` eases it in.
+        /// </summary>
+        void KeepHomeInFrame(float weight = 1f)
+        {
+            if (weight <= 0f || !_space.TryGetBody(Target, out var home, out var diameter)) return;
+            var to = (Vector3)home - _camPos;
+            var distance = to.magnitude;
+            if (distance <= diameter * 0.5f) return;
+            var limb = math.degrees(math.asin(math.saturate(diameter * 0.5f / distance)));   // planet's angular radius
+            var forward = _camRot * Vector3.forward;
+            var edge = Vector3.Angle(forward, to) - limb;                                    // nearest edge, off centre
+            var allowed = _space.Camera.fieldOfView * 0.5f * 0.65f;
+            if (edge <= allowed) return;
+            var turn = (edge - allowed) * weight;
+            var fix = Quaternion.AngleAxis(turn, Vector3.Cross(forward, to).normalized);
+            _camRot = fix * _camRot;
         }
 
         /// <summary>Lag is nice until the subject leaves the frame: turn just enough to keep it within maxDegrees.</summary>

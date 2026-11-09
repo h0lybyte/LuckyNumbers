@@ -226,7 +226,7 @@ namespace LuckyNumbers.Planet
                 var arm = _arms[s];
                 var outward = s == 0 ? -1f : 1f;   // L, R
                 var swing = Mathf.Sin(_stride + s * Mathf.PI) * _moving * _swing * Mathf.Lerp(1f, _pump, _sprint);   // opposite arms
-                var shake = _tremor * (Mathf.PerlinNoise(t * 9f, s * 4.3f) - 0.5f) * 2f;
+                var shake = _tremor * (Mathf.PerlinNoise(t * 5f, s * 4.3f) - 0.5f) * 2f;
                 // Airborne: arms come up and out for balance.
                 var air = Quaternion.AngleAxis(-_air * _airRaise, pivot.right) * Quaternion.AngleAxis(outward * _air * _airRaise * 0.6f, pivot.up);
                 Offset(arm.Upper, World(arm.Upper, air) * Quaternion.Euler(breathe * _breath + swing + shake * 0.3f, 0f, 0f));
