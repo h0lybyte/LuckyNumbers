@@ -1,4 +1,4 @@
-# 0003: Releases are triggered by the version in `CHANGELOG.md`
+# 0002: Releases are triggered by the version in `CHANGELOG.md`
 
 - **Status:** accepted
 - **Date:** 2026-11-08

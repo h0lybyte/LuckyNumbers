@@ -27,7 +27,7 @@ CI builds, uploads to itch.io, and tags `vx.y.z`. See [Releasing](docs/releasing
 | [Dev tools](docs/dev-tools.md) | `tools/ln.py`: check, build, serve, deploy, secrets |
 | [Web build](docs/web-build.md) | threads, WebGPU, compression, 720p cap, verified browsers |
 | [Releasing](docs/releasing.md) | CHANGELOG-driven CI/CD, secrets, itch.io setup |
-| [Decisions](docs/README.md#decisions) | why: no ME.BECS, WebGPU fallback, CHANGELOG releases |
+| [Decisions](docs/README.md#decisions) | why: WebGPU fallback, CHANGELOG-driven releases |
 
 ## Ground rules
 

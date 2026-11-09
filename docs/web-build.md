@@ -5,7 +5,7 @@ every build), so local builds, the Unity menu and CI produce the same player.
 
 | Setting | Value | Why |
 |---|---|---|
-| Graphics | **WebGPU, WebGL 2 fallback** | WebGL-2-only failed in Safari; see [decision 0002](decisions/0002-webgpu-with-webgl2-fallback.md) |
+| Graphics | **WebGPU, WebGL 2 fallback** | WebGL-2-only failed in Safari; see [decision 0001](decisions/0001-webgpu-with-webgl2-fallback.md) |
 | Multithreading | **on** | Burst jobs run on worker threads in the browser |
 | Compression | **Gzip + decompression fallback** | itch.io sends no `Content-Encoding` header; the loader decompresses in JS |
 | Canvas / window | **1280×720** | matches the internal render cap |

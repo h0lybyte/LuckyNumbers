@@ -1,4 +1,4 @@
-# 0002: Web builds use WebGPU with WebGL 2 fallback
+# 0001: Web builds use WebGPU with WebGL 2 fallback
 
 - **Status:** accepted
 - **Date:** 2026-11-08

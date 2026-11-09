@@ -13,8 +13,7 @@
 
 | # | Decision |
 |---|---|
-| [0001](decisions/0001-drop-me-becs.md) | Plain Unity Jobs + Burst instead of ME.BECS |
-| [0002](decisions/0002-webgpu-with-webgl2-fallback.md) | Web builds use WebGPU with WebGL 2 fallback |
-| [0003](decisions/0003-changelog-driven-releases.md) | Releases are triggered by the version in `CHANGELOG.md` |
+| [0001](decisions/0001-webgpu-with-webgl2-fallback.md) | Web builds use WebGPU with WebGL 2 fallback |
+| [0002](decisions/0002-changelog-driven-releases.md) | Releases are triggered by the version in `CHANGELOG.md` |
 
 New decision: copy the format of an existing one, next number, add it to this table.

@@ -1,6 +1,6 @@
 # Releasing
 
-Releases are driven by **`CHANGELOG.md`** ([decision 0003](decisions/0003-changelog-driven-releases.md)).
+Releases are driven by **`CHANGELOG.md`** ([decision 0002](decisions/0002-changelog-driven-releases.md)).
 The top `## x.y.z` entry is the game version.
 
 ## Ship a new version
