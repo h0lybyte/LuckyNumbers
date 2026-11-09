@@ -27,10 +27,23 @@ arm_breath_degrees: 2.5
 arm_swing_degrees: 7
 finger_fidget_degrees: 9
 
+# Hands: rig bone map, touching nearby surfaces, IK self-test.
+hands_ref: "hands/rig"
+# Reach out to touch things you look at within this distance of your eyes (metres).
+touch_distance: 1.4
+debug_reach: false
+# debug_spawn { x: 0.9 y: 0 z: 0.1 }   # in front of the standing stone, facing it
+
 wake_seconds: 3.2
 wreck_distance: 9
 wreck_length: 11
 
 haze: 0.6
+
+# Boulders (seeded, in the ground's colours); the first sits beside where you wake.
+boulders: 14
+boulder_spread: 45
+boulder_size_min: 1.2
+boulder_size_max: 3.5
 sun_elevation_degrees: 38
 hint: "Click to look around - WASD to move - Shift to run - Space to jump"

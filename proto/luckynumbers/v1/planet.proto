@@ -3,6 +3,8 @@ syntax = "proto3";
 package luckynumbers.v1;
 
 import "ln/options.proto";
+import "luckynumbers/v1/common.proto";
+import "luckynumbers/v1/hands.proto";
 import "luckynumbers/v1/space.proto";
 
 option csharp_namespace = "LuckyNumbers.Model";
@@ -48,6 +50,20 @@ message PlanetScene {
   float arm_breath_degrees = 23;
   float arm_swing_degrees = 24;
   float finger_fidget_degrees = 25;
+  // The arms rig's bone map (content/hands/*).
+  HandRig hands = 29;
+  string hands_ref = 30 [(ln.ref) = "hands"];
+  // Debug: hands trace circles in front of you and the IK error is logged (checks the rig map + solver).
+  bool debug_reach = 31;
+  // Reach out and touch surfaces (e.g. the wreck) closer than this (metres from the shoulder).
+  float touch_distance = 32;
+  // Boulders scattered around the crash site (seeded): how many, how far out, size range (metres).
+  int32 boulders = 33;
+  float boulder_spread = 34;
+  float boulder_size_min = 35;
+  float boulder_size_max = 36;
+  // Debug: after waking, stand at (x, z) facing `y` degrees (all 0 = off). For testing spots, e.g. touch.
+  Vec3 debug_spawn = 37;
 }
 
 // Where the intro's ship came down: read by the Planet scene (and later a save file).

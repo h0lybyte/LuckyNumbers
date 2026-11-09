@@ -72,6 +72,29 @@ namespace LuckyNumbers.Model
         public float ArmBreathDegrees { get; set; }
         public float ArmSwingDegrees { get; set; }
         public float FingerFidgetDegrees { get; set; }
+        /// <summary>
+        /// The arms rig's bone map (content/hands/*).
+        /// </summary>
+        public HandRig Hands { get; set; }
+        /// <summary>
+        /// Debug: hands trace circles in front of you and the IK error is logged (checks the rig map + solver).
+        /// </summary>
+        public bool DebugReach { get; set; }
+        /// <summary>
+        /// Reach out and touch surfaces (e.g. the wreck) closer than this (metres from the shoulder).
+        /// </summary>
+        public float TouchDistance { get; set; }
+        /// <summary>
+        /// Boulders scattered around the crash site (seeded): how many, how far out, size range (metres).
+        /// </summary>
+        public int Boulders { get; set; }
+        public float BoulderSpread { get; set; }
+        public float BoulderSizeMin { get; set; }
+        public float BoulderSizeMax { get; set; }
+        /// <summary>
+        /// Debug: after waking, stand at (x, z) facing `y` degrees (all 0 = off). For testing spots, e.g. touch.
+        /// </summary>
+        public Vec3 DebugSpawn { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public PlanetScene Clone() => (PlanetScene)MemberwiseClone();

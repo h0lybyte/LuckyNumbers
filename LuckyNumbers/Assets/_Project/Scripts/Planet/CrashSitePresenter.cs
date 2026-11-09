@@ -101,6 +101,26 @@ namespace LuckyNumbers.Planet
                               _config.GroundNoiseScale, rng.NextFloat2(0f, 100f), _config.WreckDistance + 6f);
             _ground.Stream(Vector3.zero, int.MaxValue);   // everything around the spawn, now
 
+            // Boulders: squashed, tilted spheres half sunk into the ground; the first right beside your path.
+            for (var i = 0; i < _config.Boulders; i++)
+            {
+                var size = rng.NextFloat(_config.BoulderSizeMin, _config.BoulderSizeMax);
+                var p = i == 0 ? new float2(0.9f, 1.4f)    // a standing stone just ahead-right of where you wake
+                              : rng.NextFloat2Direction() * rng.NextFloat(6f, math.max(8f, _config.BoulderSpread));
+                if (i > 0 && math.distance(p, new float2(0f, _config.WreckDistance)) < 6f) continue;   // keep the wreck clear
+                var rock = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                rock.name = $"Boulder {i}";
+                var scale = i == 0 ? new Vector3(1.5f, 2.6f, 1.3f)
+                                   : new Vector3(size, size * rng.NextFloat(0.55f, 0.9f), size * rng.NextFloat(0.8f, 1.2f));
+                rock.transform.localScale = scale;
+                rock.transform.SetPositionAndRotation(new Vector3(p.x, _ground.HeightAt(new Vector3(p.x, 0f, p.y)) + scale.y * 0.32f, p.y),
+                                                      Quaternion.Euler(rng.NextFloat(-15f, 15f), rng.NextFloat(0f, 360f), rng.NextFloat(-15f, 15f)));
+                rock.GetComponent<MeshRenderer>().sharedMaterial = _ground.Material;   // same rock as the ground
+                // Name the collider type in code: otherwise build stripping drops SphereCollider (no scene uses it)
+                // and CreatePrimitive silently makes rocks you can walk and reach through.
+                if (!rock.TryGetComponent<SphereCollider>(out _)) rock.AddComponent<SphereCollider>();
+            }
+
             // Sky: the roll's nebula sky, hazed by this planet's atmosphere near the horizon.
             var sky = UniverseGenerator.Sky(rules, roll);
             if (RenderSettings.skybox != null)
@@ -152,6 +172,15 @@ namespace LuckyNumbers.Planet
                 await UniTask.Yield(ct);
             }
             _view.Fade(0f);
+            var dbg = _config.DebugSpawn;
+            if (dbg != null && (dbg.X != 0f || dbg.Y != 0f || dbg.Z != 0f))
+            {
+                _player.Body.enabled = false;
+                body.SetPositionAndRotation(new Vector3(dbg.X, _ground.HeightAt(new Vector3(dbg.X, 0f, dbg.Z)) + 0.05f, dbg.Z),
+                                            Quaternion.Euler(0f, dbg.Y, 0f));
+                _player.Body.enabled = true;
+                Debug.Log($"[Planet] debug spawn at ({dbg.X}, {dbg.Z}) facing {dbg.Y}");
+            }
             _firstPerson.Look(body.eulerAngles.y, 8f);
             _firstPerson.Active = true;
             Debug.Log("[Planet] awake");

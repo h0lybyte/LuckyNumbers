@@ -95,7 +95,7 @@ namespace LuckyNumbers.Editor
             var playerGo = new GameObject("Player");
             var cc = playerGo.AddComponent<CharacterController>();
             cc.height = 1.8f;
-            cc.radius = 0.35f;
+            cc.radius = 0.28f;
             cc.center = new Vector3(0f, 0.9f, 0f);
             cc.stepOffset = 0.4f;
             cc.slopeLimit = 50f;

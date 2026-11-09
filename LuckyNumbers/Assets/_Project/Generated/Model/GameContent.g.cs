@@ -885,6 +885,89 @@ namespace LuckyNumbers.Model
             ArmBreathDegrees = 2.5f,
             ArmSwingDegrees = 7.0f,
             FingerFidgetDegrees = 9.0f,
+            Hands = new HandRig
+            {
+                Sides =
+                {
+                    "L",
+                    "R",
+                },
+                Arm = new ArmChain
+                {
+                    Shoulder = "shoulder.{side}",
+                    Upper = "upper_arm.{side}",
+                    Lower = "forearm.{side}",
+                    Hand = "hand.{side}",
+                    Target = "handIK.{side}",
+                    Pole = "elbowIK.{side}",
+                },
+                Fingers =
+                {
+                    new FingerChain
+                    {
+                        Name = "thumb",
+                        Palm = "palm.01.{side}",
+                        Joints =
+                        {
+                            "thumb.01.{side}",
+                            "thumb.02.{side}",
+                            "thumb.03.{side}",
+                        },
+                    },
+                    new FingerChain
+                    {
+                        Name = "index",
+                        Palm = "palm.01.{side}",
+                        Joints =
+                        {
+                            "f_index.01.{side}",
+                            "f_index.02.{side}",
+                            "f_index.03.{side}",
+                        },
+                    },
+                    new FingerChain
+                    {
+                        Name = "middle",
+                        Palm = "palm.02.{side}",
+                        Joints =
+                        {
+                            "f_middle.01.{side}",
+                            "f_middle.02.{side}",
+                            "f_middle.03.{side}",
+                        },
+                    },
+                    new FingerChain
+                    {
+                        Name = "ring",
+                        Palm = "palm.03.{side}",
+                        Joints =
+                        {
+                            "f_ring.01.{side}",
+                            "f_ring.02.{side}",
+                            "f_ring.03.{side}",
+                        },
+                    },
+                    new FingerChain
+                    {
+                        Name = "pinky",
+                        Palm = "palm.04.{side}",
+                        Joints =
+                        {
+                            "f_pinky.01.{side}",
+                            "f_pinky.02.{side}",
+                            "f_pinky.03.{side}",
+                        },
+                    },
+                },
+                Eye = "camera",
+                ShrugDegrees = 12.0f,
+                MaxReach = 0.985f,
+            },
+            TouchDistance = 1.4f,
+            Boulders = 14,
+            BoulderSpread = 45.0f,
+            BoulderSizeMin = 1.2f,
+            BoulderSizeMax = 3.5f,
         };
 
         /// <summary>From <c>content/player.txtpb</c>.</summary>

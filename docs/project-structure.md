@@ -17,6 +17,7 @@ LuckyNumbers/            Unity project
                          disk), SpaceView, SpacePresenter (orbit camera, big bang, ISpaceDirector for cutscenes)
     Scripts/Title/       TitleView, TitlePresenter (Play transition), DiceView, DicePresenter, TitleScope
     Scripts/Intro/       IntroPresenter (cutscene player), IntroView, ShipView, IntroScope
+    Scripts/Hands/       HandRigMap (bone map from content/hands/*), TwoBoneIK (reach, elbow pole, shrug, palm, flatten)
     Scripts/Planet/      CrashSitePresenter (ground, sky, sun, wreck, wake-up), FirstPersonPresenter (walk/look),
                          GroundView, ArmsView, PlayerView, PlanetView, PlanetScope
     Scripts/Rendering/   RenderResolutionCap

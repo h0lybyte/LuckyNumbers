@@ -36,6 +36,7 @@ content/space/skies/*.txtpb                      library: skybox looks (nebula, 
 content/space/looks/galaxies/*.txtpb             library: distant galaxy presets
 content/space/looks/disks/*.txtpb                library: dust disk presets (big bang)
 content/space/generators/default.txtpb           library: seed -> solar system rules and palettes
+content/hands/rig.txtpb                          library: first-person arms bone map (IK chains, fingers)
 ```
 
 Text format has no includes; the generator adds two, using protobuf merge semantics

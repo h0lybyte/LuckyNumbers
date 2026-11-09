@@ -13,7 +13,8 @@
         "UniTask",
         "LuckyNumbers.Title",
         "Unity.Mathematics",
-        "LuckyNumbers.Intro"
+        "LuckyNumbers.Intro",
+        "LuckyNumbers.Hands"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

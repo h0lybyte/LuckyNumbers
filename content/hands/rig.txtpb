@@ -1,0 +1,26 @@
+# proto-file: luckynumbers/v1/hands.proto
+# proto-message: luckynumbers.v1.HandRig
+# PSX First Person Arms (DrillImpact): bone map. Mapped from arms_rig.glb: 52 joints, all 18 clips bake the
+# arm and finger bones (Blender's IK is pre-solved), and also key handIK/elbowIK (where each hand is meant to be).
+# Arm reach: upper arm 0.322 m + forearm 0.237 m = 0.56 m.
+
+sides: ["L", "R"]
+
+arm {
+  shoulder: "shoulder.{side}"
+  upper: "upper_arm.{side}"
+  lower: "forearm.{side}"
+  hand: "hand.{side}"
+  target: "handIK.{side}"   # parented to the rig root, so it can sit anywhere
+  pole: "elbowIK.{side}"    # behind/outside the elbow
+}
+
+fingers { name: "thumb"  palm: "palm.01.{side}" joints: ["thumb.01.{side}", "thumb.02.{side}", "thumb.03.{side}"] }
+fingers { name: "index"  palm: "palm.01.{side}" joints: ["f_index.01.{side}", "f_index.02.{side}", "f_index.03.{side}"] }
+fingers { name: "middle" palm: "palm.02.{side}" joints: ["f_middle.01.{side}", "f_middle.02.{side}", "f_middle.03.{side}"] }
+fingers { name: "ring"   palm: "palm.03.{side}" joints: ["f_ring.01.{side}", "f_ring.02.{side}", "f_ring.03.{side}"] }
+fingers { name: "pinky"  palm: "palm.04.{side}" joints: ["f_pinky.01.{side}", "f_pinky.02.{side}", "f_pinky.03.{side}"] }
+
+eye: "camera"
+shrug_degrees: 12
+max_reach: 0.985

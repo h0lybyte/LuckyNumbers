@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Bone map of a first-person arms rig, so code never hard-codes bone names. Names may contain "{side}",
+// replaced by each entry of `sides` (e.g. "upper_arm.{side}" -> upper_arm.L, upper_arm.R).
+message HandRig {
+  repeated string sides = 1;
+  ArmChain arm = 2;
+  repeated FingerChain fingers = 3;
+  // The rig's eye point (where the first-person camera sits).
+  string eye = 4;
+  // IK: max shoulder lift (degrees) to stretch toward far targets; share of full reach the arm may straighten to.
+  float shrug_degrees = 5;
+  float max_reach = 6;
+}
+
+// Two-bone IK chain: upper -> lower -> hand, aimed at `target` with the elbow bent toward `pole`.
+message ArmChain {
+  string shoulder = 1;
+  string upper = 2;
+  string lower = 3;
+  string hand = 4;
+  string target = 5;
+  string pole = 6;
+}
+
+// One finger: its palm (metacarpal) bone and joints from knuckle to tip.
+message FingerChain {
+  string name = 1;
+  string palm = 2;
+  repeated string joints = 3;
+}
