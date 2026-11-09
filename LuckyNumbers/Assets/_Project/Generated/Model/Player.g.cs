@@ -12,6 +12,26 @@ namespace LuckyNumbers.Model
     public sealed class PlayerConfig
     {
         public int MaxHealth { get; set; }
+        /// <summary>
+        /// Default ship skin (file name in Art/Models/Fighter/Skins); the player can change it later (PlayerShip).
+        /// </summary>
+        public string ShipSkin { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public PlayerConfig Clone() => (PlayerConfig)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// The player's ship as they've set it up (starts from PlayerConfig; a customise screen / save file sets it).
+    /// </summary>
+    public sealed class PlayerShip : IDisposable
+    {
+        public readonly ReactiveProperty<string> Skin = new ReactiveProperty<string>();
+
+        public void Dispose()
+        {
+            Skin.Dispose();
+        }
     }
 
     public sealed class PlayerHealth : IDisposable

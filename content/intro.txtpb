@@ -4,14 +4,20 @@
 
 id: "intro"
 
-# Dice tumble in space and land on 6 6 6.
-steps { dice_roll { faces: [6, 6, 6] duration_seconds: 3 } }
+# Same universe as the title: the player's lucky number, shown as-is (no big bang).
+backdrop_ref: "space/systems/home"
+backdrop { instant: true }
+
+ship_size: 0.05
+
+# Continues straight from the title's camera (the dice were rolled there): the ship streaks in past it.
+steps { ship_arrives { duration_seconds: 3 } }
 
 # The ship gets dragged into the planet.
-steps { ship_pulled_in { duration_seconds: 4 } }
+steps { ship_pulled_in { duration_seconds: 7 start_distance: 4 turns: 0.9 bank_degrees: 55 camera_release: 0.12 } }
 
-steps { crash_landing { duration_seconds: 2 camera_shake: 1 } }
+steps { crash_landing { duration_seconds: 2.5 camera_shake: 1 flash_seconds: 0.15 } }
 
-steps { dialogue { speaker: "Player" text: "Uhh... how did I live through that?!" duration_seconds: 3 } }
+steps { dialogue { speaker: "You" text: "Uhh... how did I live through that?!" duration_seconds: 3.5 chars_per_second: 28 } }
 
 steps { go_to { scene: GAME_SCENE_PLANET } }

@@ -1,0 +1,11 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.PlanetLook
+# proto-extends: space/looks/planet_base
+# Ikkemcwood's planet colours with the original noise look (complementary cyan patches).
+
+planet_color { r: 1 g: 0.34 b: 0 a: 1 }
+atmosphere_color { r: 0.41 g: 0.6 b: 1 a: 1 }
+light_intensity: 0.9
+noise_remap: 0
+axial_tilt_degrees: -12
+atmosphere_intensity: 1.4

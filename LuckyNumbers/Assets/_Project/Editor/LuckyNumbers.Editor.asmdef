@@ -1,7 +1,16 @@
 {
     "name": "LuckyNumbers.Editor",
     "rootNamespace": "LuckyNumbers.Editor",
-    "references": [],
+    "references": [
+        "LuckyNumbers.Core",
+        "LuckyNumbers.Title",
+        "VContainer",
+        "LuckyNumbers.Space",
+        "LuckyNumbers.Intro",
+        "LuckyNumbers.Planet",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "LuckyNumbers.Model"
+    ],
     "includePlatforms": [
         "Editor"
     ],

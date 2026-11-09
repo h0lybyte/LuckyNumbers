@@ -26,4 +26,49 @@ namespace LuckyNumbers.Model
         public static bool operator ==(Vec2 a, Vec2 b) => a.Equals(b);
         public static bool operator !=(Vec2 a, Vec2 b) => !a.Equals(b);
     }
+
+    public readonly struct Vec3 : IEquatable<Vec3>
+    {
+        public readonly float X;
+        public readonly float Y;
+        public readonly float Z;
+
+        public Vec3(float x, float y, float z)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+        }
+
+        public bool Equals(Vec3 other) => X.Equals(other.X) && Y.Equals(other.Y) && Z.Equals(other.Z);
+        public override bool Equals(object obj) => obj is Vec3 other && Equals(other);
+        public override int GetHashCode() => HashCode.Combine(X, Y, Z);
+        public static bool operator ==(Vec3 a, Vec3 b) => a.Equals(b);
+        public static bool operator !=(Vec3 a, Vec3 b) => !a.Equals(b);
+    }
+
+    /// <summary>
+    /// Linear 0..1 RGBA.
+    /// </summary>
+    public readonly struct Rgba : IEquatable<Rgba>
+    {
+        public readonly float R;
+        public readonly float G;
+        public readonly float B;
+        public readonly float A;
+
+        public Rgba(float r, float g, float b, float a)
+        {
+            R = r;
+            G = g;
+            B = b;
+            A = a;
+        }
+
+        public bool Equals(Rgba other) => R.Equals(other.R) && G.Equals(other.G) && B.Equals(other.B) && A.Equals(other.A);
+        public override bool Equals(object obj) => obj is Rgba other && Equals(other);
+        public override int GetHashCode() => HashCode.Combine(R, G, B, A);
+        public static bool operator ==(Rgba a, Rgba b) => a.Equals(b);
+        public static bool operator !=(Rgba a, Rgba b) => !a.Equals(b);
+    }
 }

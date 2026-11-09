@@ -1,0 +1,10 @@
+# proto-file: luckynumbers/v1/hands.proto
+# proto-message: luckynumbers.v1.HandPose
+# Holding a stone: fingers wrapped round, thumb over the top.
+name: "grip"
+fidget: 0.1
+fingers { finger: "thumb"  curl: [25, 40, 30] spread: -8 }
+fingers { finger: "index"  curl: [45, 50, 35] spread: 2 }
+fingers { finger: "middle" curl: [48, 52, 36] }
+fingers { finger: "ring"   curl: [50, 55, 38] }
+fingers { finger: "pinky"  curl: [52, 58, 40] spread: 2 }

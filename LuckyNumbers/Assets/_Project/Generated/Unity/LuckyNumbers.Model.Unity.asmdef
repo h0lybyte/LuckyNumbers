@@ -1,0 +1,8 @@
+{
+    "name": "LuckyNumbers.Model.Unity",
+    "rootNamespace": "LuckyNumbers.Model",
+    "references": [
+        "LuckyNumbers.Model"
+    ],
+    "autoReferenced": true
+}

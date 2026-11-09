@@ -1,0 +1,269 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+import "luckynumbers/v1/common.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// 3D universe shown on the title (and reused by the intro). World units: a scale-1 body is 1 unit across.
+message SpaceBackdrop {
+  reserved 2, 3, 4, 6, 8; // planet, planet_position, planet_scale, pan, sun_direction (now a star body)
+  StarfieldLook stars = 1;
+  string stars_ref = 10 [(ln.ref) = "stars"];
+  // Hand-placed bodies. The first star lights every planet (point light at its position).
+  repeated CelestialBody bodies = 5;
+  CameraOrbit camera = 7;
+  // When set, each UniverseSeedChanged replaces the bodies with a generated system (big-bang transition).
+  SystemGenerator generator = 11;
+  string generator_ref = 12 [(ln.ref) = "generator"];
+  // Show the current roll's universe at once (no big bang), e.g. a cutscene continuing the title's world.
+  bool instant = 13;
+}
+
+// The camera pose a scene ends on, so the next scene can start from it (seamless transitions).
+message CameraHandoff {
+  option (ln.state) = true;
+  bool valid = 1;
+  Vec3 position = 2;
+  Vec3 forward = 3;
+  Vec3 up = 4;
+}
+
+// The dice roll's lucky number: Space regenerates the universe from it.
+message UniverseSeedChanged {
+  option (ln.event) = true;
+  uint32 seed = 1;
+  // Dice roles as 0..1 (face low..high), or -1 when no die has that role (the seed decides).
+  float star = 2;
+  float worlds = 3;
+  float luck = 4;
+}
+
+// Rules for seed -> solar system. Palettes are lists of library looks (refs append).
+message SystemGenerator {
+  repeated StarLook stars = 1;
+  repeated string star_refs = 2 [(ln.ref) = "stars"];
+  repeated PlanetLook planets = 3;
+  repeated string planet_refs = 4 [(ln.ref) = "planets"];
+  repeated GalaxyLook galaxies = 5;
+  repeated string galaxy_refs = 6 [(ln.ref) = "galaxies"];
+  int32 min_planets = 7;
+  int32 max_planets = 8;
+  float first_orbit_radius = 9;
+  // Each next orbit is the previous radius times a factor in this range.
+  float orbit_spacing_min = 10;
+  float orbit_spacing_max = 11;
+  float planet_scale_min = 12;
+  float planet_scale_max = 13;
+  float star_scale_min = 14;
+  float star_scale_max = 15;
+  // Chance (0..1) that a planet has moons, and the most it can have.
+  float moon_chance = 16;
+  int32 max_moons = 17;
+  // Moon diameter as a share of its planet's.
+  float moon_scale_ratio = 18;
+  // Orbital period = this * radius^1.5 (Kepler's third law shape).
+  float seconds_per_orbit_unit = 19;
+  float max_eccentricity = 20;
+  float max_inclination_degrees = 21;
+  int32 galaxy_count = 22;
+  // Galaxies are pinned to the sky: this far from the camera wherever it goes (no parallax).
+  float galaxy_distance = 23;
+  float galaxy_scale_min = 24;
+  float galaxy_scale_max = 25;
+  // Big bang: old system collapses into the centre, new one expands out.
+  float collapse_seconds = 26;
+  float expand_seconds = 27;
+  repeated PlanetLook moons = 28;
+  repeated string moon_refs = 29 [(ln.ref) = "moons"];
+  // First moon's orbit radius, in parent diameters; each further moon is 1.6x farther out.
+  float moon_orbit_min = 30;
+  float moon_orbit_max = 31;
+  // Moons must stay inside this share of the parent's Hill sphere, a(1-e)*(m/3M)^(1/3); ~0.5 is stable.
+  float moon_hill_fraction = 32;
+  // Planet density / star density, for the mass ratio m/M = ratio * (d_planet/d_star)^3 (Earth/Sun ~ 4).
+  float planet_star_density_ratio = 33;
+  // Dust disk shown while a new system forms (big bang expand); one picked per roll.
+  repeated DiskLook disks = 37;
+  repeated string disk_refs = 38 [(ln.ref) = "disks"];
+  // Sky presets; each roll picks one and randomises its seed, band and gas shape.
+  repeated StarfieldLook skies = 35;
+  repeated string sky_refs = 36 [(ln.ref) = "skies"];
+  // Empty space between neighbouring orbits (inner apoapsis + moons .. outer periapsis - moons), world units.
+  float min_orbit_gap = 34;
+}
+
+// One entity of the universe: a planet or a star sphere.
+message CelestialBody {
+  string id = 1;
+  // World position; for orbiting bodies, an offset from the orbit centre (usually 0,0,0).
+  Vec3 position = 2;
+  // Diameter in world units.
+  float scale = 3;
+  oneof appearance {
+    PlanetLook planet = 4;
+    StarLook star = 6;
+    // Far-away spiral/elliptical galaxy billboard.
+    GalaxyLook galaxy = 9;
+  }
+  // Look presets from the content library; inline planet/star/galaxy fields override them.
+  string planet_ref = 7 [(ln.ref) = "planet"];
+  string star_ref = 8 [(ln.ref) = "star"];
+  string galaxy_ref = 10 [(ln.ref) = "galaxy"];
+  // Optional: orbit another body (listed earlier). radius 0 = static at `position`.
+  Orbit orbit = 5;
+}
+
+// Keplerian orbit around another body (listed earlier). radius = semi-major axis.
+message Orbit {
+  string around = 1;
+  float radius = 2;
+  float period_seconds = 3;
+  // Starting point along the orbit, 0..1 of a full period (mean anomaly).
+  float phase = 4;
+  // 0 = circle, up to <1 = increasingly stretched ellipse (parent at one focus).
+  float eccentricity = 5;
+  // Tilt of the orbit plane from the XZ plane.
+  float inclination_degrees = 6;
+  // Direction (around Y) of the line where the tilted plane crosses XZ.
+  float node_degrees = 7;
+}
+
+// Drag rotates the camera around `target`; scroll zooms.
+message CameraOrbit {
+  // Body id to orbit around.
+  string target = 1;
+  // Distances and frame_offset are in target diameters, so any planet size frames the same.
+  float distance = 2;
+  float min_distance = 3;
+  float max_distance = 4;
+  float yaw_degrees = 5;
+  float pitch_degrees = 6;
+  float min_pitch_degrees = 7;
+  float max_pitch_degrees = 8;
+  // Degrees of rotation for a drag across the full screen width.
+  float drag_degrees_per_screen = 9;
+  // Inertia after release: share of spin kept per 1/60 s (0 = stop, 0.95 = long glide).
+  float glide = 10;
+  // Distance change per scroll notch, as a share of the current distance.
+  float zoom_step = 11;
+  // Shifts the framing (camera-space x/y, target diameters) so the target can sit off-centre.
+  Vec2 frame_offset = 12;
+  float field_of_view_degrees = 13;
+}
+
+// Shader properties of LuckyNumbers/Starfield (skybox: stars + nebula on the celestial sphere).
+message StarfieldLook {
+  option (ln.material) = "LuckyNumbers/Starfield";
+  reserved 11; // 2D era: parallax
+  Rgba space_color = 1;
+  Rgba nebula_color_a = 2;
+  Rgba nebula_color_b = 3;
+  optional float nebula_intensity = 4;
+  optional float nebula_scale = 5;
+  optional float star_density = 6;
+  optional float star_brightness = 7;
+  optional float twinkle_speed = 8;
+  // Slow sky rotation, radians per second around (y, x).
+  Vec2 drift = 9;
+  optional float seed = 10;
+  Rgba nebula_color_c = 12;
+  // Domain warp of the gas (0 = plain fBm blobs, ~1-2 = swirling filaments).
+  optional float warp = 13;
+  // Galactic band (Milky Way-like great circle): plane normal, angular half-width (radians-ish),
+  // and how strongly gas and stars gather in it (0 = even sky).
+  Vec3 band_normal = 14;
+  optional float band_width = 15;
+  optional float band_strength = 16;
+  // Unresolved starlight glow along the band.
+  optional float glow = 17;
+  // Dark dust lanes across the band (0..1).
+  optional float dust = 18;
+  // Bright emission knots: grid density on the sphere and brightness.
+  optional float knot_density = 19;
+  optional float knot_brightness = 20;
+}
+
+// Shader properties of LuckyNumbers/Disk: a flat dust disk around a forming star. Inner gas orbits
+// faster (differential rotation) so clumps shear into spirals; planets clear dark gaps at their orbits.
+message DiskLook {
+  option (ln.material) = "LuckyNumbers/Disk";
+  Rgba inner_color = 1;
+  Rgba outer_color = 2;
+  optional float brightness = 3;
+  // Hole around the star, share of the disk radius.
+  optional float inner_radius = 4;
+  // Clump noise scale and contrast.
+  optional float clump_scale = 5;
+  optional float clumpiness = 6;
+  // Orbital shear speed (radians/s at the edge; faster inside).
+  optional float spin_speed = 7;
+  // How dark the planet gaps get (0..1) and their width (share of the radius).
+  optional float gap_depth = 8;
+  optional float gap_width = 9;
+  optional float seed = 10;
+}
+
+// Shader properties of LuckyNumbers/Star: glowing surface + corona. Its light_color lights the planets.
+message StarLook {
+  option (ln.material) = "LuckyNumbers/Star";
+  Rgba core_color = 1;
+  Rgba corona_color = 2;
+  Rgba light_color = 3;
+  optional float intensity = 4;
+  // Corona shell size, share of the radius.
+  optional float corona_size = 5;
+  // Higher = corona fades faster away from the surface.
+  optional float corona_power = 6;
+  optional float corona_intensity = 7;
+  optional float noise_scale = 8;
+  // Surface churn speed.
+  optional float boil_speed = 9;
+}
+
+// Shader properties of LuckyNumbers/Galaxy (camera-facing billboard, additive).
+message GalaxyLook {
+  option (ln.material) = "LuckyNumbers/Galaxy";
+  Rgba core_color = 1;
+  Rgba arm_color = 2;
+  // 0 = elliptical (no arms).
+  optional float arm_count = 3;
+  // How tightly the arms wind.
+  optional float twist = 4;
+  optional float brightness = 5;
+  optional float core_size = 6;
+  // 0 = seen face-on, towards 1 = seen edge-on.
+  optional float squash = 7;
+  optional float roll_degrees = 8;
+  // Dust lane strength along the arms.
+  optional float dust = 9;
+  optional float seed = 10;
+}
+
+// Shader properties of LuckyNumbers/Planet3D.
+message PlanetLook {
+  option (ln.material) = "LuckyNumbers/Planet3D";
+  reserved 4, 5, 8, 9, 10, 11, 13; // 2D era: planet_size, edge_smoothness, rotation_axis, light_origin,
+                                   // light_shadow_hardness, light_size, shadow_size
+  Rgba planet_color = 1;
+  Rgba atmosphere_color = 2;
+  Rgba light_color = 3;
+  // Glow shell thickness, share of the radius.
+  optional float atmosphere_thickness = 6;
+  // Turns per second around the (tilted) axis.
+  optional float rotation_speed = 7;
+  optional float light_intensity = 12;
+  optional float shadow_intensity = 14;
+  Vec3 noise_offset = 15;
+  optional float noise_scale = 16;
+  // 0 = original look (noise can go negative, giving complementary colours), 1 = true colour.
+  optional float noise_remap = 17;
+  optional float atmosphere_intensity = 18;
+  // Higher = glow hugs the surface more tightly.
+  optional float atmosphere_power = 19;
+  // Width of the day/night blend on the surface.
+  optional float terminator_softness = 20;
+  optional float axial_tilt_degrees = 21;
+}

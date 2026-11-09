@@ -4,6 +4,7 @@ package luckynumbers.v1;
 
 import "ln/options.proto";
 import "luckynumbers/v1/flow.proto";
+import "luckynumbers/v1/space.proto";
 
 option csharp_namespace = "LuckyNumbers.Model";
 
@@ -12,6 +13,12 @@ message Cutscene {
   option (ln.config) = true;
   string id = 1;
   repeated CutsceneStep steps = 2;
+  // The universe it plays in. Generated from the player's lucky number, so it is the title's world.
+  SpaceBackdrop backdrop = 3;
+  string backdrop_ref = 4 [(ln.ref) = "backdrop"];
+  reserved 5, 7; // ship_skin, ship_skins: the skin is the player's choice now (PlayerShip)
+  // Ship length, in target-planet diameters.
+  float ship_size = 6;
 }
 
 message CutsceneStep {
@@ -21,30 +28,50 @@ message CutsceneStep {
     CrashLanding crash_landing = 3;
     Dialogue dialogue = 4;
     GoTo go_to = 5;
+    ShipArrives ship_arrives = 6;
   }
 }
 
-// Dice tumble, then land on `faces` (forced results, e.g. 6 6 6).
+// Dice tumble, then land on `faces`; empty = the player's own roll (keeps their universe).
 message DiceRoll {
   repeated int32 faces = 1;
   float duration_seconds = 2;
 }
 
-// The ship is dragged toward the planet.
+// Opening shot: starts from the previous scene's camera (the title, via CameraHandoff); the ship streaks in
+// past the camera and the camera eases into the chase. Without a handoff it fades in from black.
+message ShipArrives {
+  float duration_seconds = 1;
+}
+
+// The ship is dragged toward the planet: a spiral that tightens and speeds up (gravity), banking into it.
 message ShipPulledIn {
   float duration_seconds = 1;
+  // Start distance from the planet's centre, in planet diameters.
+  float start_distance = 2;
+  // Minimum laps around the planet before impact (the spiral starts where the camera is and ends over
+  // the planet's lit side, so the exact sweep adapts).
+  float turns = 3;
+  // Bank angle reached at the end of the spiral.
+  float bank_degrees = 4;
+  // Share of the step (0..1, from the end) where the camera stops chasing and watches the ship fall in.
+  float camera_release = 5;
 }
 
 message CrashLanding {
   float duration_seconds = 1;
   // 0..1 camera shake strength.
   float camera_shake = 2;
+  // White flash on impact, then fade to black over the rest of the step.
+  float flash_seconds = 3;
 }
 
 message Dialogue {
   string speaker = 1;
   string text = 2;
   float duration_seconds = 3;
+  // Typewriter speed; 0 = show the whole line at once.
+  float chars_per_second = 4;
 }
 
 message GoTo {

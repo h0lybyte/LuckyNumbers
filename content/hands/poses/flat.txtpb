@@ -1,0 +1,10 @@
+# proto-file: luckynumbers/v1/hands.proto
+# proto-message: luckynumbers.v1.HandPose
+# Palm pressed on a surface: straight, a little spread, still.
+name: "flat"
+fidget: 0
+fingers { finger: "thumb"  curl: [0] spread: 8 }
+fingers { finger: "index"  curl: [0] spread: 4 }
+fingers { finger: "middle" curl: [0] }
+fingers { finger: "ring"   curl: [0] spread: 3 }
+fingers { finger: "pinky"  curl: [0] spread: 6 }

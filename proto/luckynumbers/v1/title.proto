@@ -3,14 +3,91 @@ syntax = "proto3";
 package luckynumbers.v1;
 
 import "ln/options.proto";
+import "luckynumbers/v1/common.proto";
 import "luckynumbers/v1/flow.proto";
+import "luckynumbers/v1/space.proto";
 
 option csharp_namespace = "LuckyNumbers.Model";
 
-// Title screen. Confirm (see input.proto) requests a change to `next`.
+// Title screen; also the preloader: `next` loads in the background while it shows.
+// Confirm (see input.proto) switches to `next` once loading is done.
 message TitleScreen {
   option (ln.config) = true;
   string title = 1;
   string start_prompt = 2;
   GameScene next = 3;
+  SpaceBackdrop backdrop = 4;
+  // Universe shown behind the title, from the content library (e.g. "space/systems/home").
+  string backdrop_ref = 9 [(ln.ref) = "backdrop"];
+  // Prompt pulse period while waiting for input.
+  float prompt_pulse_seconds = 5;
+  // Shown instead of start_prompt while `next` is still loading.
+  string loading_prompt = 6;
+  // Buttons, left to right.
+  repeated MenuItem menu = 7;
+  SettingsPanel settings = 8;
+  DiceRoller dice = 10;
+  // Play: the UI fades and the camera pushes toward the home planet, then hands over to `next`.
+  float play_transition_seconds = 11;
+  // Share of the distance to the home planet the camera closes during that push (0..1).
+  float play_push_in = 12;
+}
+
+// The dice that create the universe: their faces become the seed ("lucky number").
+message DiceRoller {
+  repeated Die dice = 1;
+  string roll_label = 2;
+  float roll_seconds = 3;
+  // Shown under the dice; {0} = the lucky number.
+  string seed_format = 4;
+}
+
+message Die {
+  string id = 1;
+  int32 sides = 2;
+  Rgba color = 3;
+  // Face shown (and seeding the universe) before the first roll.
+  int32 initial_face = 4;
+  // What this die decides (its face, low..high). Every die also feeds the lucky number.
+  DieRole role = 5;
+}
+
+enum DieRole {
+  DIE_ROLE_NONE = 0;
+  // Star type: low = cool red dwarf .. high = hot blue giant (order of the generator's star palette).
+  DIE_ROLE_STAR = 1;
+  // How many planets: low = min_planets .. high = max_planets.
+  DIE_ROLE_WORLDS = 2;
+  // Luck: more moons and galaxies, a brighter sky.
+  DIE_ROLE_LUCK = 3;
+}
+
+message DiceState {
+  option (ln.state) = true;
+  repeated int32 faces = 1;
+  bool rolling = 2;
+  uint32 seed = 3;
+}
+
+enum MenuAction {
+  MENU_ACTION_UNSPECIFIED = 0;
+  MENU_ACTION_PLAY = 1;
+  MENU_ACTION_SETTINGS = 2;
+}
+
+message MenuItem {
+  string label = 1;
+  MenuAction action = 2;
+}
+
+// Placeholder until settings exist.
+message SettingsPanel {
+  string title = 1;
+  string body = 2;
+  string back_label = 3;
+}
+
+message MenuItemSelected {
+  option (ln.event) = true;
+  MenuAction action = 1;
 }

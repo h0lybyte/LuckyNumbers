@@ -19,14 +19,8 @@ namespace LuckyNumbers.Model
             {
                 new CutsceneStep
                 {
-                    DiceRoll = new DiceRoll
+                    ShipArrives = new ShipArrives
                     {
-                        Faces =
-                        {
-                            6,
-                            6,
-                            6,
-                        },
                         DurationSeconds = 3.0f,
                     },
                 },
@@ -34,24 +28,30 @@ namespace LuckyNumbers.Model
                 {
                     ShipPulledIn = new ShipPulledIn
                     {
-                        DurationSeconds = 4.0f,
+                        DurationSeconds = 7.0f,
+                        StartDistance = 4.0f,
+                        Turns = 0.9f,
+                        BankDegrees = 55.0f,
+                        CameraRelease = 0.12f,
                     },
                 },
                 new CutsceneStep
                 {
                     CrashLanding = new CrashLanding
                     {
-                        DurationSeconds = 2.0f,
+                        DurationSeconds = 2.5f,
                         CameraShake = 1.0f,
+                        FlashSeconds = 0.15f,
                     },
                 },
                 new CutsceneStep
                 {
                     Dialogue = new Dialogue
                     {
-                        Speaker = "Player",
+                        Speaker = "You",
                         Text = "Uhh... how did I live through that?!",
-                        DurationSeconds = 3.0f,
+                        DurationSeconds = 3.5f,
+                        CharsPerSecond = 28.0f,
                     },
                 },
                 new CutsceneStep
@@ -62,20 +62,1737 @@ namespace LuckyNumbers.Model
                     },
                 },
             },
+            Backdrop = new SpaceBackdrop
+            {
+                Stars = new StarfieldLook
+                {
+                    SpaceColor = new Rgba(0.01f, 0.01f, 0.03f, 1.0f),
+                    NebulaColorA = new Rgba(0.3f, 0.08f, 0.4f, 1.0f),
+                    NebulaColorB = new Rgba(0.06f, 0.18f, 0.42f, 1.0f),
+                    NebulaIntensity = 0.6f,
+                    NebulaScale = 1.2f,
+                    StarDensity = 140.0f,
+                    StarBrightness = 1.2f,
+                    TwinkleSpeed = 2.0f,
+                    Drift = new Vec2(0.003f, default(float)),
+                    Seed = 7.0f,
+                    NebulaColorC = new Rgba(0.7f, 0.22f, 0.3f, 1.0f),
+                    Warp = 1.2f,
+                    BandNormal = new Vec3(0.3f, 1.0f, 0.2f),
+                    BandWidth = 0.35f,
+                    BandStrength = 0.8f,
+                    Glow = 0.18f,
+                    Dust = 0.6f,
+                    KnotDensity = 6.0f,
+                    KnotBrightness = 0.8f,
+                },
+                Camera = new CameraOrbit
+                {
+                    Target = "home",
+                    Distance = 2.5f,
+                    MinDistance = 1.0f,
+                    MaxDistance = 10.0f,
+                    YawDegrees = 20.0f,
+                    PitchDegrees = 8.0f,
+                    MinPitchDegrees = -60.0f,
+                    MaxPitchDegrees = 60.0f,
+                    DragDegreesPerScreen = 200.0f,
+                    Glide = 0.92f,
+                    ZoomStep = 0.12f,
+                    FrameOffset = new Vec2(-0.65f, 0.08f),
+                    FieldOfViewDegrees = 45.0f,
+                },
+                Generator = new SystemGenerator
+                {
+                    Stars =
+                    {
+                        new StarLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.45f, 0.25f, 1.0f),
+                            CoronaColor = new Rgba(1.0f, 0.25f, 0.1f, 1.0f),
+                            LightColor = new Rgba(1.0f, 0.7f, 0.55f, 1.0f),
+                            Intensity = 1.4f,
+                            CoronaSize = 1.6f,
+                            CoronaPower = 5.0f,
+                            CoronaIntensity = 1.6f,
+                            NoiseScale = 3.5f,
+                            BoilSpeed = 0.04f,
+                        },
+                        new StarLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.78f, 0.42f, 1.0f),
+                            CoronaColor = new Rgba(1.0f, 0.55f, 0.2f, 1.0f),
+                            LightColor = new Rgba(1.0f, 0.95f, 0.85f, 1.0f),
+                            Intensity = 1.6f,
+                            CoronaSize = 1.8f,
+                            CoronaPower = 5.0f,
+                            CoronaIntensity = 1.8f,
+                            NoiseScale = 3.0f,
+                            BoilSpeed = 0.05f,
+                        },
+                        new StarLook
+                        {
+                            CoreColor = new Rgba(0.75f, 0.85f, 1.0f, 1.0f),
+                            CoronaColor = new Rgba(0.45f, 0.6f, 1.0f, 1.0f),
+                            LightColor = new Rgba(0.85f, 0.92f, 1.0f, 1.0f),
+                            Intensity = 1.8f,
+                            CoronaSize = 2.0f,
+                            CoronaPower = 4.5f,
+                            CoronaIntensity = 2.0f,
+                            NoiseScale = 2.5f,
+                            BoilSpeed = 0.07f,
+                        },
+                    },
+                    Planets =
+                    {
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(1.0f, 0.34f, default(float), 1.0f),
+                            AtmosphereColor = new Rgba(0.41f, 0.6f, 1.0f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.08f,
+                            RotationSpeed = 0.01f,
+                            LightIntensity = 0.9f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(default(float), default(float), default(float)),
+                            NoiseScale = 1.6f,
+                            NoiseRemap = 0.0f,
+                            AtmosphereIntensity = 1.4f,
+                            AtmospherePower = 2.5f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = -12.0f,
+                        },
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.3f, 0.75f, 1.0f, 1.0f),
+                            AtmosphereColor = new Rgba(0.8f, 0.95f, 1.0f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.1f,
+                            RotationSpeed = 0.008f,
+                            LightIntensity = 0.8f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(41.0f, 17.0f, 9.0f),
+                            NoiseScale = 1.6f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 1.2f,
+                            AtmospherePower = 2.5f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 20.0f,
+                        },
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.55f, 0.2f, 0.85f, 1.0f),
+                            AtmosphereColor = new Rgba(0.9f, 0.5f, 1.0f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.12f,
+                            RotationSpeed = 0.004f,
+                            LightIntensity = 0.7f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(77.0f, 3.0f, 31.0f),
+                            NoiseScale = 1.1f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 1.0f,
+                            AtmospherePower = 2.0f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = -25.0f,
+                        },
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(1.0f, 0.28f, 0.05f, 1.0f),
+                            AtmosphereColor = new Rgba(1.0f, 0.45f, 0.2f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.08f,
+                            RotationSpeed = 0.01f,
+                            LightIntensity = 0.7f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(default(float), default(float), default(float)),
+                            NoiseScale = 2.4f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 0.9f,
+                            AtmospherePower = 2.5f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 0.0f,
+                        },
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.9f, 0.68f, 0.38f, 1.0f),
+                            AtmosphereColor = new Rgba(1.0f, 0.8f, 0.55f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.06f,
+                            RotationSpeed = 0.01f,
+                            LightIntensity = 0.8f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(default(float), default(float), default(float)),
+                            NoiseScale = 1.3f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 1.2f,
+                            AtmospherePower = 2.5f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 0.0f,
+                        },
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.25f, 0.7f, 0.4f, 1.0f),
+                            AtmosphereColor = new Rgba(0.45f, 0.7f, 1.0f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.08f,
+                            RotationSpeed = 0.01f,
+                            LightIntensity = 0.8f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(default(float), default(float), default(float)),
+                            NoiseScale = 1.8f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 1.5f,
+                            AtmospherePower = 2.5f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 0.0f,
+                        },
+                    },
+                    Galaxies =
+                    {
+                        new GalaxyLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.92f, 0.75f, 1.0f),
+                            ArmColor = new Rgba(0.45f, 0.6f, 1.0f, 1.0f),
+                            ArmCount = 2.0f,
+                            Twist = 3.0f,
+                            Brightness = 0.9f,
+                            CoreSize = 0.14f,
+                            Squash = 0.3f,
+                            RollDegrees = 0.0f,
+                            Dust = 0.6f,
+                            Seed = 1.0f,
+                        },
+                        new GalaxyLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.85f, 0.6f, 1.0f),
+                            ArmColor = new Rgba(1.0f, 0.7f, 0.4f, 1.0f),
+                            ArmCount = 3.0f,
+                            Twist = 2.4f,
+                            Brightness = 0.8f,
+                            CoreSize = 0.12f,
+                            Squash = 0.2f,
+                            RollDegrees = 0.0f,
+                            Dust = 0.5f,
+                            Seed = 2.0f,
+                        },
+                        new GalaxyLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.8f, 0.6f, 1.0f),
+                            ArmColor = new Rgba(0.9f, 0.65f, 0.5f, 1.0f),
+                            ArmCount = 0.0f,
+                            Twist = 0.0f,
+                            Brightness = 0.7f,
+                            CoreSize = 0.3f,
+                            Squash = 0.4f,
+                            RollDegrees = 0.0f,
+                            Dust = 0.0f,
+                            Seed = 3.0f,
+                        },
+                    },
+                    MinPlanets = 3,
+                    MaxPlanets = 6,
+                    FirstOrbitRadius = 170.0f,
+                    OrbitSpacingMin = 1.4f,
+                    OrbitSpacingMax = 1.8f,
+                    PlanetScaleMin = 1.5f,
+                    PlanetScaleMax = 4.5f,
+                    StarScaleMin = 7.0f,
+                    StarScaleMax = 12.0f,
+                    MoonChance = 0.6f,
+                    MaxMoons = 2,
+                    MoonScaleRatio = 0.27f,
+                    SecondsPerOrbitUnit = 0.4f,
+                    MaxEccentricity = 0.1f,
+                    MaxInclinationDegrees = 7.0f,
+                    GalaxyCount = 5,
+                    GalaxyDistance = 2000.0f,
+                    GalaxyScaleMin = 60.0f,
+                    GalaxyScaleMax = 160.0f,
+                    CollapseSeconds = 0.8f,
+                    ExpandSeconds = 4.0f,
+                    Moons =
+                    {
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.6f, 0.6f, 0.65f, 1.0f),
+                            AtmosphereColor = new Rgba(0.7f, 0.7f, 0.8f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.04f,
+                            RotationSpeed = 0.02f,
+                            LightIntensity = 0.6f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(13.0f, 5.0f, 2.0f),
+                            NoiseScale = 2.2f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 0.5f,
+                            AtmospherePower = 4.0f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 8.0f,
+                        },
+                    },
+                    MoonOrbitMin = 3.0f,
+                    MoonOrbitMax = 6.0f,
+                    MoonHillFraction = 0.5f,
+                    PlanetStarDensityRatio = 4.0f,
+                    Disks =
+                    {
+                        new DiskLook
+                        {
+                            InnerColor = new Rgba(1.0f, 0.85f, 0.6f, 1.0f),
+                            OuterColor = new Rgba(0.55f, 0.25f, 0.12f, 1.0f),
+                            Brightness = 1.2f,
+                            InnerRadius = 0.03f,
+                            ClumpScale = 6.0f,
+                            Clumpiness = 0.7f,
+                            SpinSpeed = 0.25f,
+                            GapDepth = 0.85f,
+                            GapWidth = 0.025f,
+                            Seed = 1.0f,
+                        },
+                        new DiskLook
+                        {
+                            InnerColor = new Rgba(0.85f, 0.92f, 1.0f, 1.0f),
+                            OuterColor = new Rgba(0.3f, 0.25f, 0.55f, 1.0f),
+                            Brightness = 1.0f,
+                            InnerRadius = 0.04f,
+                            ClumpScale = 8.0f,
+                            Clumpiness = 0.6f,
+                            SpinSpeed = 0.3f,
+                            GapDepth = 0.8f,
+                            GapWidth = 0.02f,
+                            Seed = 2.0f,
+                        },
+                    },
+                    Skies =
+                    {
+                        new StarfieldLook
+                        {
+                            SpaceColor = new Rgba(0.01f, 0.01f, 0.03f, 1.0f),
+                            NebulaColorA = new Rgba(0.3f, 0.08f, 0.4f, 1.0f),
+                            NebulaColorB = new Rgba(0.06f, 0.18f, 0.42f, 1.0f),
+                            NebulaIntensity = 0.6f,
+                            NebulaScale = 1.2f,
+                            StarDensity = 140.0f,
+                            StarBrightness = 1.2f,
+                            TwinkleSpeed = 2.0f,
+                            Drift = new Vec2(0.003f, default(float)),
+                            Seed = 7.0f,
+                            NebulaColorC = new Rgba(0.7f, 0.22f, 0.3f, 1.0f),
+                            Warp = 1.2f,
+                            BandNormal = new Vec3(0.3f, 1.0f, 0.2f),
+                            BandWidth = 0.35f,
+                            BandStrength = 0.8f,
+                            Glow = 0.18f,
+                            Dust = 0.6f,
+                            KnotDensity = 6.0f,
+                            KnotBrightness = 0.8f,
+                        },
+                        new StarfieldLook
+                        {
+                            SpaceColor = new Rgba(0.005f, 0.02f, 0.025f, 1.0f),
+                            NebulaColorA = new Rgba(0.05f, 0.35f, 0.3f, 1.0f),
+                            NebulaColorB = new Rgba(0.1f, 0.2f, 0.45f, 1.0f),
+                            NebulaIntensity = 0.55f,
+                            NebulaScale = 1.5f,
+                            StarDensity = 140.0f,
+                            StarBrightness = 1.2f,
+                            TwinkleSpeed = 2.0f,
+                            Drift = new Vec2(0.003f, default(float)),
+                            Seed = 7.0f,
+                            NebulaColorC = new Rgba(0.5f, 0.6f, 0.2f, 1.0f),
+                            Warp = 1.6f,
+                            BandNormal = new Vec3(0.3f, 1.0f, 0.2f),
+                            BandWidth = 0.25f,
+                            BandStrength = 0.9f,
+                            Glow = 0.22f,
+                            Dust = 0.8f,
+                            KnotDensity = 6.0f,
+                            KnotBrightness = 0.7f,
+                        },
+                        new StarfieldLook
+                        {
+                            SpaceColor = new Rgba(0.025f, 0.008f, 0.01f, 1.0f),
+                            NebulaColorA = new Rgba(0.55f, 0.12f, 0.1f, 1.0f),
+                            NebulaColorB = new Rgba(0.45f, 0.28f, 0.08f, 1.0f),
+                            NebulaIntensity = 0.7f,
+                            NebulaScale = 1.0f,
+                            StarDensity = 140.0f,
+                            StarBrightness = 1.2f,
+                            TwinkleSpeed = 2.0f,
+                            Drift = new Vec2(0.003f, default(float)),
+                            Seed = 7.0f,
+                            NebulaColorC = new Rgba(0.2f, 0.15f, 0.5f, 1.0f),
+                            Warp = 1.0f,
+                            BandNormal = new Vec3(0.3f, 1.0f, 0.2f),
+                            BandWidth = 0.5f,
+                            BandStrength = 0.7f,
+                            Glow = 0.15f,
+                            Dust = 0.5f,
+                            KnotDensity = 6.0f,
+                            KnotBrightness = 1.1f,
+                        },
+                        new StarfieldLook
+                        {
+                            SpaceColor = new Rgba(0.008f, 0.008f, 0.015f, 1.0f),
+                            NebulaColorA = new Rgba(0.15f, 0.1f, 0.3f, 1.0f),
+                            NebulaColorB = new Rgba(0.05f, 0.1f, 0.25f, 1.0f),
+                            NebulaIntensity = 0.35f,
+                            NebulaScale = 0.9f,
+                            StarDensity = 140.0f,
+                            StarBrightness = 1.2f,
+                            TwinkleSpeed = 2.0f,
+                            Drift = new Vec2(0.003f, default(float)),
+                            Seed = 7.0f,
+                            NebulaColorC = new Rgba(0.3f, 0.1f, 0.2f, 1.0f),
+                            Warp = 0.8f,
+                            BandNormal = new Vec3(0.3f, 1.0f, 0.2f),
+                            BandWidth = 0.6f,
+                            BandStrength = 0.25f,
+                            Glow = 0.07f,
+                            Dust = 0.3f,
+                            KnotDensity = 6.0f,
+                            KnotBrightness = 0.5f,
+                        },
+                    },
+                    MinOrbitGap = 20.0f,
+                },
+                Instant = true,
+            },
+            ShipSize = 0.05f,
+        };
+
+        /// <summary>From <c>content/planet.txtpb</c>.</summary>
+        public static readonly PlanetScene Planet = new PlanetScene
+        {
+            Backdrop = new SpaceBackdrop
+            {
+                Stars = new StarfieldLook
+                {
+                    SpaceColor = new Rgba(0.01f, 0.01f, 0.03f, 1.0f),
+                    NebulaColorA = new Rgba(0.3f, 0.08f, 0.4f, 1.0f),
+                    NebulaColorB = new Rgba(0.06f, 0.18f, 0.42f, 1.0f),
+                    NebulaIntensity = 0.6f,
+                    NebulaScale = 1.2f,
+                    StarDensity = 140.0f,
+                    StarBrightness = 1.2f,
+                    TwinkleSpeed = 2.0f,
+                    Drift = new Vec2(0.003f, default(float)),
+                    Seed = 7.0f,
+                    NebulaColorC = new Rgba(0.7f, 0.22f, 0.3f, 1.0f),
+                    Warp = 1.2f,
+                    BandNormal = new Vec3(0.3f, 1.0f, 0.2f),
+                    BandWidth = 0.35f,
+                    BandStrength = 0.8f,
+                    Glow = 0.18f,
+                    Dust = 0.6f,
+                    KnotDensity = 6.0f,
+                    KnotBrightness = 0.8f,
+                },
+                Camera = new CameraOrbit
+                {
+                    Target = "home",
+                    Distance = 2.5f,
+                    MinDistance = 1.0f,
+                    MaxDistance = 10.0f,
+                    YawDegrees = 20.0f,
+                    PitchDegrees = 8.0f,
+                    MinPitchDegrees = -60.0f,
+                    MaxPitchDegrees = 60.0f,
+                    DragDegreesPerScreen = 200.0f,
+                    Glide = 0.92f,
+                    ZoomStep = 0.12f,
+                    FrameOffset = new Vec2(-0.65f, 0.08f),
+                    FieldOfViewDegrees = 45.0f,
+                },
+                Generator = new SystemGenerator
+                {
+                    Stars =
+                    {
+                        new StarLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.45f, 0.25f, 1.0f),
+                            CoronaColor = new Rgba(1.0f, 0.25f, 0.1f, 1.0f),
+                            LightColor = new Rgba(1.0f, 0.7f, 0.55f, 1.0f),
+                            Intensity = 1.4f,
+                            CoronaSize = 1.6f,
+                            CoronaPower = 5.0f,
+                            CoronaIntensity = 1.6f,
+                            NoiseScale = 3.5f,
+                            BoilSpeed = 0.04f,
+                        },
+                        new StarLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.78f, 0.42f, 1.0f),
+                            CoronaColor = new Rgba(1.0f, 0.55f, 0.2f, 1.0f),
+                            LightColor = new Rgba(1.0f, 0.95f, 0.85f, 1.0f),
+                            Intensity = 1.6f,
+                            CoronaSize = 1.8f,
+                            CoronaPower = 5.0f,
+                            CoronaIntensity = 1.8f,
+                            NoiseScale = 3.0f,
+                            BoilSpeed = 0.05f,
+                        },
+                        new StarLook
+                        {
+                            CoreColor = new Rgba(0.75f, 0.85f, 1.0f, 1.0f),
+                            CoronaColor = new Rgba(0.45f, 0.6f, 1.0f, 1.0f),
+                            LightColor = new Rgba(0.85f, 0.92f, 1.0f, 1.0f),
+                            Intensity = 1.8f,
+                            CoronaSize = 2.0f,
+                            CoronaPower = 4.5f,
+                            CoronaIntensity = 2.0f,
+                            NoiseScale = 2.5f,
+                            BoilSpeed = 0.07f,
+                        },
+                    },
+                    Planets =
+                    {
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(1.0f, 0.34f, default(float), 1.0f),
+                            AtmosphereColor = new Rgba(0.41f, 0.6f, 1.0f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.08f,
+                            RotationSpeed = 0.01f,
+                            LightIntensity = 0.9f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(default(float), default(float), default(float)),
+                            NoiseScale = 1.6f,
+                            NoiseRemap = 0.0f,
+                            AtmosphereIntensity = 1.4f,
+                            AtmospherePower = 2.5f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = -12.0f,
+                        },
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.3f, 0.75f, 1.0f, 1.0f),
+                            AtmosphereColor = new Rgba(0.8f, 0.95f, 1.0f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.1f,
+                            RotationSpeed = 0.008f,
+                            LightIntensity = 0.8f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(41.0f, 17.0f, 9.0f),
+                            NoiseScale = 1.6f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 1.2f,
+                            AtmospherePower = 2.5f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 20.0f,
+                        },
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.55f, 0.2f, 0.85f, 1.0f),
+                            AtmosphereColor = new Rgba(0.9f, 0.5f, 1.0f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.12f,
+                            RotationSpeed = 0.004f,
+                            LightIntensity = 0.7f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(77.0f, 3.0f, 31.0f),
+                            NoiseScale = 1.1f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 1.0f,
+                            AtmospherePower = 2.0f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = -25.0f,
+                        },
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(1.0f, 0.28f, 0.05f, 1.0f),
+                            AtmosphereColor = new Rgba(1.0f, 0.45f, 0.2f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.08f,
+                            RotationSpeed = 0.01f,
+                            LightIntensity = 0.7f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(default(float), default(float), default(float)),
+                            NoiseScale = 2.4f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 0.9f,
+                            AtmospherePower = 2.5f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 0.0f,
+                        },
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.9f, 0.68f, 0.38f, 1.0f),
+                            AtmosphereColor = new Rgba(1.0f, 0.8f, 0.55f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.06f,
+                            RotationSpeed = 0.01f,
+                            LightIntensity = 0.8f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(default(float), default(float), default(float)),
+                            NoiseScale = 1.3f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 1.2f,
+                            AtmospherePower = 2.5f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 0.0f,
+                        },
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.25f, 0.7f, 0.4f, 1.0f),
+                            AtmosphereColor = new Rgba(0.45f, 0.7f, 1.0f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.08f,
+                            RotationSpeed = 0.01f,
+                            LightIntensity = 0.8f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(default(float), default(float), default(float)),
+                            NoiseScale = 1.8f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 1.5f,
+                            AtmospherePower = 2.5f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 0.0f,
+                        },
+                    },
+                    Galaxies =
+                    {
+                        new GalaxyLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.92f, 0.75f, 1.0f),
+                            ArmColor = new Rgba(0.45f, 0.6f, 1.0f, 1.0f),
+                            ArmCount = 2.0f,
+                            Twist = 3.0f,
+                            Brightness = 0.9f,
+                            CoreSize = 0.14f,
+                            Squash = 0.3f,
+                            RollDegrees = 0.0f,
+                            Dust = 0.6f,
+                            Seed = 1.0f,
+                        },
+                        new GalaxyLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.85f, 0.6f, 1.0f),
+                            ArmColor = new Rgba(1.0f, 0.7f, 0.4f, 1.0f),
+                            ArmCount = 3.0f,
+                            Twist = 2.4f,
+                            Brightness = 0.8f,
+                            CoreSize = 0.12f,
+                            Squash = 0.2f,
+                            RollDegrees = 0.0f,
+                            Dust = 0.5f,
+                            Seed = 2.0f,
+                        },
+                        new GalaxyLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.8f, 0.6f, 1.0f),
+                            ArmColor = new Rgba(0.9f, 0.65f, 0.5f, 1.0f),
+                            ArmCount = 0.0f,
+                            Twist = 0.0f,
+                            Brightness = 0.7f,
+                            CoreSize = 0.3f,
+                            Squash = 0.4f,
+                            RollDegrees = 0.0f,
+                            Dust = 0.0f,
+                            Seed = 3.0f,
+                        },
+                    },
+                    MinPlanets = 3,
+                    MaxPlanets = 6,
+                    FirstOrbitRadius = 170.0f,
+                    OrbitSpacingMin = 1.4f,
+                    OrbitSpacingMax = 1.8f,
+                    PlanetScaleMin = 1.5f,
+                    PlanetScaleMax = 4.5f,
+                    StarScaleMin = 7.0f,
+                    StarScaleMax = 12.0f,
+                    MoonChance = 0.6f,
+                    MaxMoons = 2,
+                    MoonScaleRatio = 0.27f,
+                    SecondsPerOrbitUnit = 0.4f,
+                    MaxEccentricity = 0.1f,
+                    MaxInclinationDegrees = 7.0f,
+                    GalaxyCount = 5,
+                    GalaxyDistance = 2000.0f,
+                    GalaxyScaleMin = 60.0f,
+                    GalaxyScaleMax = 160.0f,
+                    CollapseSeconds = 0.8f,
+                    ExpandSeconds = 4.0f,
+                    Moons =
+                    {
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.6f, 0.6f, 0.65f, 1.0f),
+                            AtmosphereColor = new Rgba(0.7f, 0.7f, 0.8f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.04f,
+                            RotationSpeed = 0.02f,
+                            LightIntensity = 0.6f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(13.0f, 5.0f, 2.0f),
+                            NoiseScale = 2.2f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 0.5f,
+                            AtmospherePower = 4.0f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 8.0f,
+                        },
+                    },
+                    MoonOrbitMin = 3.0f,
+                    MoonOrbitMax = 6.0f,
+                    MoonHillFraction = 0.5f,
+                    PlanetStarDensityRatio = 4.0f,
+                    Disks =
+                    {
+                        new DiskLook
+                        {
+                            InnerColor = new Rgba(1.0f, 0.85f, 0.6f, 1.0f),
+                            OuterColor = new Rgba(0.55f, 0.25f, 0.12f, 1.0f),
+                            Brightness = 1.2f,
+                            InnerRadius = 0.03f,
+                            ClumpScale = 6.0f,
+                            Clumpiness = 0.7f,
+                            SpinSpeed = 0.25f,
+                            GapDepth = 0.85f,
+                            GapWidth = 0.025f,
+                            Seed = 1.0f,
+                        },
+                        new DiskLook
+                        {
+                            InnerColor = new Rgba(0.85f, 0.92f, 1.0f, 1.0f),
+                            OuterColor = new Rgba(0.3f, 0.25f, 0.55f, 1.0f),
+                            Brightness = 1.0f,
+                            InnerRadius = 0.04f,
+                            ClumpScale = 8.0f,
+                            Clumpiness = 0.6f,
+                            SpinSpeed = 0.3f,
+                            GapDepth = 0.8f,
+                            GapWidth = 0.02f,
+                            Seed = 2.0f,
+                        },
+                    },
+                    Skies =
+                    {
+                        new StarfieldLook
+                        {
+                            SpaceColor = new Rgba(0.01f, 0.01f, 0.03f, 1.0f),
+                            NebulaColorA = new Rgba(0.3f, 0.08f, 0.4f, 1.0f),
+                            NebulaColorB = new Rgba(0.06f, 0.18f, 0.42f, 1.0f),
+                            NebulaIntensity = 0.6f,
+                            NebulaScale = 1.2f,
+                            StarDensity = 140.0f,
+                            StarBrightness = 1.2f,
+                            TwinkleSpeed = 2.0f,
+                            Drift = new Vec2(0.003f, default(float)),
+                            Seed = 7.0f,
+                            NebulaColorC = new Rgba(0.7f, 0.22f, 0.3f, 1.0f),
+                            Warp = 1.2f,
+                            BandNormal = new Vec3(0.3f, 1.0f, 0.2f),
+                            BandWidth = 0.35f,
+                            BandStrength = 0.8f,
+                            Glow = 0.18f,
+                            Dust = 0.6f,
+                            KnotDensity = 6.0f,
+                            KnotBrightness = 0.8f,
+                        },
+                        new StarfieldLook
+                        {
+                            SpaceColor = new Rgba(0.005f, 0.02f, 0.025f, 1.0f),
+                            NebulaColorA = new Rgba(0.05f, 0.35f, 0.3f, 1.0f),
+                            NebulaColorB = new Rgba(0.1f, 0.2f, 0.45f, 1.0f),
+                            NebulaIntensity = 0.55f,
+                            NebulaScale = 1.5f,
+                            StarDensity = 140.0f,
+                            StarBrightness = 1.2f,
+                            TwinkleSpeed = 2.0f,
+                            Drift = new Vec2(0.003f, default(float)),
+                            Seed = 7.0f,
+                            NebulaColorC = new Rgba(0.5f, 0.6f, 0.2f, 1.0f),
+                            Warp = 1.6f,
+                            BandNormal = new Vec3(0.3f, 1.0f, 0.2f),
+                            BandWidth = 0.25f,
+                            BandStrength = 0.9f,
+                            Glow = 0.22f,
+                            Dust = 0.8f,
+                            KnotDensity = 6.0f,
+                            KnotBrightness = 0.7f,
+                        },
+                        new StarfieldLook
+                        {
+                            SpaceColor = new Rgba(0.025f, 0.008f, 0.01f, 1.0f),
+                            NebulaColorA = new Rgba(0.55f, 0.12f, 0.1f, 1.0f),
+                            NebulaColorB = new Rgba(0.45f, 0.28f, 0.08f, 1.0f),
+                            NebulaIntensity = 0.7f,
+                            NebulaScale = 1.0f,
+                            StarDensity = 140.0f,
+                            StarBrightness = 1.2f,
+                            TwinkleSpeed = 2.0f,
+                            Drift = new Vec2(0.003f, default(float)),
+                            Seed = 7.0f,
+                            NebulaColorC = new Rgba(0.2f, 0.15f, 0.5f, 1.0f),
+                            Warp = 1.0f,
+                            BandNormal = new Vec3(0.3f, 1.0f, 0.2f),
+                            BandWidth = 0.5f,
+                            BandStrength = 0.7f,
+                            Glow = 0.15f,
+                            Dust = 0.5f,
+                            KnotDensity = 6.0f,
+                            KnotBrightness = 1.1f,
+                        },
+                        new StarfieldLook
+                        {
+                            SpaceColor = new Rgba(0.008f, 0.008f, 0.015f, 1.0f),
+                            NebulaColorA = new Rgba(0.15f, 0.1f, 0.3f, 1.0f),
+                            NebulaColorB = new Rgba(0.05f, 0.1f, 0.25f, 1.0f),
+                            NebulaIntensity = 0.35f,
+                            NebulaScale = 0.9f,
+                            StarDensity = 140.0f,
+                            StarBrightness = 1.2f,
+                            TwinkleSpeed = 2.0f,
+                            Drift = new Vec2(0.003f, default(float)),
+                            Seed = 7.0f,
+                            NebulaColorC = new Rgba(0.3f, 0.1f, 0.2f, 1.0f),
+                            Warp = 0.8f,
+                            BandNormal = new Vec3(0.3f, 1.0f, 0.2f),
+                            BandWidth = 0.6f,
+                            BandStrength = 0.25f,
+                            Glow = 0.07f,
+                            Dust = 0.3f,
+                            KnotDensity = 6.0f,
+                            KnotBrightness = 0.5f,
+                        },
+                    },
+                    MinOrbitGap = 20.0f,
+                },
+            },
+            GroundHeight = 7.0f,
+            GroundNoiseScale = 0.018f,
+            ChunkSize = 48.0f,
+            ChunkResolution = 33,
+            ViewChunks = 2,
+            SurfaceNoiseScale = 0.12f,
+            WalkSpeed = 4.5f,
+            SprintSpeed = 8.0f,
+            JumpSpeed = 5.0f,
+            Gravity = 14.0f,
+            EyeHeight = 1.7f,
+            LookDegreesPerPixel = 0.12f,
+            BobAmount = 0.045f,
+            BobFrequency = 1.9f,
+            Sway = 0.06f,
+            WakeSeconds = 3.2f,
+            WreckDistance = 9.0f,
+            WreckLength = 11.0f,
+            Haze = 0.6f,
+            SunElevationDegrees = 38.0f,
+            Hint = "Click to look around - WASD to move - Shift to run - Space to jump - E to pick up, click to throw",
+            ArmBreathDegrees = 2.5f,
+            ArmSwingDegrees = 7.0f,
+            FingerFidgetDegrees = 9.0f,
+            Hands = new HandRig
+            {
+                Sides =
+                {
+                    "L",
+                    "R",
+                },
+                Arm = new ArmChain
+                {
+                    Shoulder = "shoulder.{side}",
+                    Upper = "upper_arm.{side}",
+                    Lower = "forearm.{side}",
+                    Hand = "hand.{side}",
+                    Target = "handIK.{side}",
+                    Pole = "elbowIK.{side}",
+                },
+                Fingers =
+                {
+                    new FingerChain
+                    {
+                        Name = "thumb",
+                        Joints =
+                        {
+                            "thumb.01.{side}",
+                            "thumb.02.{side}",
+                            "thumb.03.{side}",
+                        },
+                    },
+                    new FingerChain
+                    {
+                        Name = "index",
+                        Palm = "palm.01.{side}",
+                        Joints =
+                        {
+                            "f_index.01.{side}",
+                            "f_index.02.{side}",
+                            "f_index.03.{side}",
+                        },
+                    },
+                    new FingerChain
+                    {
+                        Name = "middle",
+                        Palm = "palm.02.{side}",
+                        Joints =
+                        {
+                            "f_middle.01.{side}",
+                            "f_middle.02.{side}",
+                            "f_middle.03.{side}",
+                        },
+                    },
+                    new FingerChain
+                    {
+                        Name = "ring",
+                        Palm = "palm.03.{side}",
+                        Joints =
+                        {
+                            "f_ring.01.{side}",
+                            "f_ring.02.{side}",
+                            "f_ring.03.{side}",
+                        },
+                    },
+                    new FingerChain
+                    {
+                        Name = "pinky",
+                        Palm = "palm.04.{side}",
+                        Joints =
+                        {
+                            "f_pinky.01.{side}",
+                            "f_pinky.02.{side}",
+                            "f_pinky.03.{side}",
+                        },
+                    },
+                },
+                Eye = "camera",
+                ShrugDegrees = 12.0f,
+                MaxReach = 0.985f,
+                Poses =
+                {
+                    new HandPose
+                    {
+                        Name = "relaxed",
+                        Fingers =
+                        {
+                            new FingerPose
+                            {
+                                Finger = "thumb",
+                                Curl =
+                                {
+                                    5.0f,
+                                    10.0f,
+                                    8.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "index",
+                                Curl =
+                                {
+                                    12.0f,
+                                    16.0f,
+                                    10.0f,
+                                },
+                                Spread = 2.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "middle",
+                                Curl =
+                                {
+                                    16.0f,
+                                    20.0f,
+                                    12.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "ring",
+                                Curl =
+                                {
+                                    20.0f,
+                                    24.0f,
+                                    14.0f,
+                                },
+                                Spread = 2.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "pinky",
+                                Curl =
+                                {
+                                    24.0f,
+                                    26.0f,
+                                    16.0f,
+                                },
+                                Spread = 4.0f,
+                            },
+                        },
+                        Fidget = 1.0f,
+                    },
+                    new HandPose
+                    {
+                        Name = "open",
+                        Fingers =
+                        {
+                            new FingerPose
+                            {
+                                Finger = "thumb",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                                Spread = 12.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "index",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                                Spread = 6.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "middle",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "ring",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                                Spread = 5.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "pinky",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                                Spread = 10.0f,
+                            },
+                        },
+                        Fidget = 0.3f,
+                    },
+                    new HandPose
+                    {
+                        Name = "flat",
+                        Fingers =
+                        {
+                            new FingerPose
+                            {
+                                Finger = "thumb",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                                Spread = 8.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "index",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                                Spread = 4.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "middle",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "ring",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                                Spread = 3.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "pinky",
+                                Curl =
+                                {
+                                    0.0f,
+                                },
+                                Spread = 6.0f,
+                            },
+                        },
+                    },
+                    new HandPose
+                    {
+                        Name = "grip",
+                        Fingers =
+                        {
+                            new FingerPose
+                            {
+                                Finger = "thumb",
+                                Curl =
+                                {
+                                    25.0f,
+                                    40.0f,
+                                    30.0f,
+                                },
+                                Spread = -8.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "index",
+                                Curl =
+                                {
+                                    45.0f,
+                                    50.0f,
+                                    35.0f,
+                                },
+                                Spread = 2.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "middle",
+                                Curl =
+                                {
+                                    48.0f,
+                                    52.0f,
+                                    36.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "ring",
+                                Curl =
+                                {
+                                    50.0f,
+                                    55.0f,
+                                    38.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "pinky",
+                                Curl =
+                                {
+                                    52.0f,
+                                    58.0f,
+                                    40.0f,
+                                },
+                                Spread = 2.0f,
+                            },
+                        },
+                        Fidget = 0.1f,
+                    },
+                    new HandPose
+                    {
+                        Name = "fist",
+                        Fingers =
+                        {
+                            new FingerPose
+                            {
+                                Finger = "thumb",
+                                Curl =
+                                {
+                                    40.0f,
+                                    60.0f,
+                                    45.0f,
+                                },
+                                Spread = -15.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "index",
+                                Curl =
+                                {
+                                    85.0f,
+                                    95.0f,
+                                    70.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "middle",
+                                Curl =
+                                {
+                                    85.0f,
+                                    95.0f,
+                                    70.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "ring",
+                                Curl =
+                                {
+                                    85.0f,
+                                    95.0f,
+                                    70.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "pinky",
+                                Curl =
+                                {
+                                    85.0f,
+                                    95.0f,
+                                    70.0f,
+                                },
+                            },
+                        },
+                        Fidget = 0.05f,
+                    },
+                    new HandPose
+                    {
+                        Name = "point",
+                        Fingers =
+                        {
+                            new FingerPose
+                            {
+                                Finger = "thumb",
+                                Curl =
+                                {
+                                    35.0f,
+                                    55.0f,
+                                    40.0f,
+                                },
+                                Spread = -12.0f,
+                            },
+                            new FingerPose
+                            {
+                                Finger = "index",
+                                Curl =
+                                {
+                                    0.0f,
+                                    5.0f,
+                                    0.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "middle",
+                                Curl =
+                                {
+                                    80.0f,
+                                    95.0f,
+                                    70.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "ring",
+                                Curl =
+                                {
+                                    85.0f,
+                                    95.0f,
+                                    70.0f,
+                                },
+                            },
+                            new FingerPose
+                            {
+                                Finger = "pinky",
+                                Curl =
+                                {
+                                    85.0f,
+                                    95.0f,
+                                    70.0f,
+                                },
+                            },
+                        },
+                        Fidget = 0.1f,
+                    },
+                },
+                PoseSpeed = 8.0f,
+            },
+            TouchDistance = 1.4f,
+            Boulders = 14,
+            BoulderSpread = 45.0f,
+            BoulderSizeMin = 1.2f,
+            BoulderSizeMax = 3.5f,
+            IdleClip = "relax",
+            SprintClip = "guard_idle",
+            ThrowClip = "jab.{side}",
+            SprintPump = 1.8f,
+            AirRaiseDegrees = 14.0f,
+            CrashTremorDegrees = 0.8f,
+            TremorSeconds = 10.0f,
+            Pebbles = 10,
+            PebbleSize = 0.11f,
+            GrabDistance = 2.6f,
+            CrouchDepth = 0.85f,
+            ThrowSpeed = 13.0f,
         };
 
         /// <summary>From <c>content/player.txtpb</c>.</summary>
         public static readonly PlayerConfig Player = new PlayerConfig
         {
             MaxHealth = 100,
+            ShipSkin = "idolknight",
         };
 
         /// <summary>From <c>content/title.txtpb</c>.</summary>
         public static readonly TitleScreen Title = new TitleScreen
         {
             Title = "Lucky Numbers",
-            StartPrompt = "Press any key to start",
+            StartPrompt = "Drag to look around - scroll to zoom",
             Next = GameScene.Intro,
+            Backdrop = new SpaceBackdrop
+            {
+                Stars = new StarfieldLook
+                {
+                    SpaceColor = new Rgba(0.01f, 0.01f, 0.03f, 1.0f),
+                    NebulaColorA = new Rgba(0.3f, 0.08f, 0.4f, 1.0f),
+                    NebulaColorB = new Rgba(0.06f, 0.18f, 0.42f, 1.0f),
+                    NebulaIntensity = 0.6f,
+                    NebulaScale = 1.2f,
+                    StarDensity = 140.0f,
+                    StarBrightness = 1.2f,
+                    TwinkleSpeed = 2.0f,
+                    Drift = new Vec2(0.003f, default(float)),
+                    Seed = 7.0f,
+                    NebulaColorC = new Rgba(0.7f, 0.22f, 0.3f, 1.0f),
+                    Warp = 1.2f,
+                    BandNormal = new Vec3(0.3f, 1.0f, 0.2f),
+                    BandWidth = 0.35f,
+                    BandStrength = 0.8f,
+                    Glow = 0.18f,
+                    Dust = 0.6f,
+                    KnotDensity = 6.0f,
+                    KnotBrightness = 0.8f,
+                },
+                Camera = new CameraOrbit
+                {
+                    Target = "home",
+                    Distance = 2.5f,
+                    MinDistance = 1.0f,
+                    MaxDistance = 10.0f,
+                    YawDegrees = 20.0f,
+                    PitchDegrees = 8.0f,
+                    MinPitchDegrees = -60.0f,
+                    MaxPitchDegrees = 60.0f,
+                    DragDegreesPerScreen = 200.0f,
+                    Glide = 0.92f,
+                    ZoomStep = 0.12f,
+                    FrameOffset = new Vec2(-0.65f, 0.08f),
+                    FieldOfViewDegrees = 45.0f,
+                },
+                Generator = new SystemGenerator
+                {
+                    Stars =
+                    {
+                        new StarLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.45f, 0.25f, 1.0f),
+                            CoronaColor = new Rgba(1.0f, 0.25f, 0.1f, 1.0f),
+                            LightColor = new Rgba(1.0f, 0.7f, 0.55f, 1.0f),
+                            Intensity = 1.4f,
+                            CoronaSize = 1.6f,
+                            CoronaPower = 5.0f,
+                            CoronaIntensity = 1.6f,
+                            NoiseScale = 3.5f,
+                            BoilSpeed = 0.04f,
+                        },
+                        new StarLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.78f, 0.42f, 1.0f),
+                            CoronaColor = new Rgba(1.0f, 0.55f, 0.2f, 1.0f),
+                            LightColor = new Rgba(1.0f, 0.95f, 0.85f, 1.0f),
+                            Intensity = 1.6f,
+                            CoronaSize = 1.8f,
+                            CoronaPower = 5.0f,
+                            CoronaIntensity = 1.8f,
+                            NoiseScale = 3.0f,
+                            BoilSpeed = 0.05f,
+                        },
+                        new StarLook
+                        {
+                            CoreColor = new Rgba(0.75f, 0.85f, 1.0f, 1.0f),
+                            CoronaColor = new Rgba(0.45f, 0.6f, 1.0f, 1.0f),
+                            LightColor = new Rgba(0.85f, 0.92f, 1.0f, 1.0f),
+                            Intensity = 1.8f,
+                            CoronaSize = 2.0f,
+                            CoronaPower = 4.5f,
+                            CoronaIntensity = 2.0f,
+                            NoiseScale = 2.5f,
+                            BoilSpeed = 0.07f,
+                        },
+                    },
+                    Planets =
+                    {
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(1.0f, 0.34f, default(float), 1.0f),
+                            AtmosphereColor = new Rgba(0.41f, 0.6f, 1.0f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.08f,
+                            RotationSpeed = 0.01f,
+                            LightIntensity = 0.9f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(default(float), default(float), default(float)),
+                            NoiseScale = 1.6f,
+                            NoiseRemap = 0.0f,
+                            AtmosphereIntensity = 1.4f,
+                            AtmospherePower = 2.5f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = -12.0f,
+                        },
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.3f, 0.75f, 1.0f, 1.0f),
+                            AtmosphereColor = new Rgba(0.8f, 0.95f, 1.0f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.1f,
+                            RotationSpeed = 0.008f,
+                            LightIntensity = 0.8f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(41.0f, 17.0f, 9.0f),
+                            NoiseScale = 1.6f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 1.2f,
+                            AtmospherePower = 2.5f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 20.0f,
+                        },
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.55f, 0.2f, 0.85f, 1.0f),
+                            AtmosphereColor = new Rgba(0.9f, 0.5f, 1.0f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.12f,
+                            RotationSpeed = 0.004f,
+                            LightIntensity = 0.7f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(77.0f, 3.0f, 31.0f),
+                            NoiseScale = 1.1f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 1.0f,
+                            AtmospherePower = 2.0f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = -25.0f,
+                        },
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(1.0f, 0.28f, 0.05f, 1.0f),
+                            AtmosphereColor = new Rgba(1.0f, 0.45f, 0.2f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.08f,
+                            RotationSpeed = 0.01f,
+                            LightIntensity = 0.7f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(default(float), default(float), default(float)),
+                            NoiseScale = 2.4f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 0.9f,
+                            AtmospherePower = 2.5f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 0.0f,
+                        },
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.9f, 0.68f, 0.38f, 1.0f),
+                            AtmosphereColor = new Rgba(1.0f, 0.8f, 0.55f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.06f,
+                            RotationSpeed = 0.01f,
+                            LightIntensity = 0.8f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(default(float), default(float), default(float)),
+                            NoiseScale = 1.3f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 1.2f,
+                            AtmospherePower = 2.5f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 0.0f,
+                        },
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.25f, 0.7f, 0.4f, 1.0f),
+                            AtmosphereColor = new Rgba(0.45f, 0.7f, 1.0f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.08f,
+                            RotationSpeed = 0.01f,
+                            LightIntensity = 0.8f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(default(float), default(float), default(float)),
+                            NoiseScale = 1.8f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 1.5f,
+                            AtmospherePower = 2.5f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 0.0f,
+                        },
+                    },
+                    Galaxies =
+                    {
+                        new GalaxyLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.92f, 0.75f, 1.0f),
+                            ArmColor = new Rgba(0.45f, 0.6f, 1.0f, 1.0f),
+                            ArmCount = 2.0f,
+                            Twist = 3.0f,
+                            Brightness = 0.9f,
+                            CoreSize = 0.14f,
+                            Squash = 0.3f,
+                            RollDegrees = 0.0f,
+                            Dust = 0.6f,
+                            Seed = 1.0f,
+                        },
+                        new GalaxyLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.85f, 0.6f, 1.0f),
+                            ArmColor = new Rgba(1.0f, 0.7f, 0.4f, 1.0f),
+                            ArmCount = 3.0f,
+                            Twist = 2.4f,
+                            Brightness = 0.8f,
+                            CoreSize = 0.12f,
+                            Squash = 0.2f,
+                            RollDegrees = 0.0f,
+                            Dust = 0.5f,
+                            Seed = 2.0f,
+                        },
+                        new GalaxyLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.8f, 0.6f, 1.0f),
+                            ArmColor = new Rgba(0.9f, 0.65f, 0.5f, 1.0f),
+                            ArmCount = 0.0f,
+                            Twist = 0.0f,
+                            Brightness = 0.7f,
+                            CoreSize = 0.3f,
+                            Squash = 0.4f,
+                            RollDegrees = 0.0f,
+                            Dust = 0.0f,
+                            Seed = 3.0f,
+                        },
+                    },
+                    MinPlanets = 3,
+                    MaxPlanets = 6,
+                    FirstOrbitRadius = 170.0f,
+                    OrbitSpacingMin = 1.4f,
+                    OrbitSpacingMax = 1.8f,
+                    PlanetScaleMin = 1.5f,
+                    PlanetScaleMax = 4.5f,
+                    StarScaleMin = 7.0f,
+                    StarScaleMax = 12.0f,
+                    MoonChance = 0.6f,
+                    MaxMoons = 2,
+                    MoonScaleRatio = 0.27f,
+                    SecondsPerOrbitUnit = 0.4f,
+                    MaxEccentricity = 0.1f,
+                    MaxInclinationDegrees = 7.0f,
+                    GalaxyCount = 5,
+                    GalaxyDistance = 2000.0f,
+                    GalaxyScaleMin = 60.0f,
+                    GalaxyScaleMax = 160.0f,
+                    CollapseSeconds = 0.8f,
+                    ExpandSeconds = 4.0f,
+                    Moons =
+                    {
+                        new PlanetLook
+                        {
+                            PlanetColor = new Rgba(0.6f, 0.6f, 0.65f, 1.0f),
+                            AtmosphereColor = new Rgba(0.7f, 0.7f, 0.8f, 1.0f),
+                            LightColor = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                            AtmosphereThickness = 0.04f,
+                            RotationSpeed = 0.02f,
+                            LightIntensity = 0.6f,
+                            ShadowIntensity = 1.0f,
+                            NoiseOffset = new Vec3(13.0f, 5.0f, 2.0f),
+                            NoiseScale = 2.2f,
+                            NoiseRemap = 1.0f,
+                            AtmosphereIntensity = 0.5f,
+                            AtmospherePower = 4.0f,
+                            TerminatorSoftness = 0.15f,
+                            AxialTiltDegrees = 8.0f,
+                        },
+                    },
+                    MoonOrbitMin = 3.0f,
+                    MoonOrbitMax = 6.0f,
+                    MoonHillFraction = 0.5f,
+                    PlanetStarDensityRatio = 4.0f,
+                    Disks =
+                    {
+                        new DiskLook
+                        {
+                            InnerColor = new Rgba(1.0f, 0.85f, 0.6f, 1.0f),
+                            OuterColor = new Rgba(0.55f, 0.25f, 0.12f, 1.0f),
+                            Brightness = 1.2f,
+                            InnerRadius = 0.03f,
+                            ClumpScale = 6.0f,
+                            Clumpiness = 0.7f,
+                            SpinSpeed = 0.25f,
+                            GapDepth = 0.85f,
+                            GapWidth = 0.025f,
+                            Seed = 1.0f,
+                        },
+                        new DiskLook
+                        {
+                            InnerColor = new Rgba(0.85f, 0.92f, 1.0f, 1.0f),
+                            OuterColor = new Rgba(0.3f, 0.25f, 0.55f, 1.0f),
+                            Brightness = 1.0f,
+                            InnerRadius = 0.04f,
+                            ClumpScale = 8.0f,
+                            Clumpiness = 0.6f,
+                            SpinSpeed = 0.3f,
+                            GapDepth = 0.8f,
+                            GapWidth = 0.02f,
+                            Seed = 2.0f,
+                        },
+                    },
+                    Skies =
+                    {
+                        new StarfieldLook
+                        {
+                            SpaceColor = new Rgba(0.01f, 0.01f, 0.03f, 1.0f),
+                            NebulaColorA = new Rgba(0.3f, 0.08f, 0.4f, 1.0f),
+                            NebulaColorB = new Rgba(0.06f, 0.18f, 0.42f, 1.0f),
+                            NebulaIntensity = 0.6f,
+                            NebulaScale = 1.2f,
+                            StarDensity = 140.0f,
+                            StarBrightness = 1.2f,
+                            TwinkleSpeed = 2.0f,
+                            Drift = new Vec2(0.003f, default(float)),
+                            Seed = 7.0f,
+                            NebulaColorC = new Rgba(0.7f, 0.22f, 0.3f, 1.0f),
+                            Warp = 1.2f,
+                            BandNormal = new Vec3(0.3f, 1.0f, 0.2f),
+                            BandWidth = 0.35f,
+                            BandStrength = 0.8f,
+                            Glow = 0.18f,
+                            Dust = 0.6f,
+                            KnotDensity = 6.0f,
+                            KnotBrightness = 0.8f,
+                        },
+                        new StarfieldLook
+                        {
+                            SpaceColor = new Rgba(0.005f, 0.02f, 0.025f, 1.0f),
+                            NebulaColorA = new Rgba(0.05f, 0.35f, 0.3f, 1.0f),
+                            NebulaColorB = new Rgba(0.1f, 0.2f, 0.45f, 1.0f),
+                            NebulaIntensity = 0.55f,
+                            NebulaScale = 1.5f,
+                            StarDensity = 140.0f,
+                            StarBrightness = 1.2f,
+                            TwinkleSpeed = 2.0f,
+                            Drift = new Vec2(0.003f, default(float)),
+                            Seed = 7.0f,
+                            NebulaColorC = new Rgba(0.5f, 0.6f, 0.2f, 1.0f),
+                            Warp = 1.6f,
+                            BandNormal = new Vec3(0.3f, 1.0f, 0.2f),
+                            BandWidth = 0.25f,
+                            BandStrength = 0.9f,
+                            Glow = 0.22f,
+                            Dust = 0.8f,
+                            KnotDensity = 6.0f,
+                            KnotBrightness = 0.7f,
+                        },
+                        new StarfieldLook
+                        {
+                            SpaceColor = new Rgba(0.025f, 0.008f, 0.01f, 1.0f),
+                            NebulaColorA = new Rgba(0.55f, 0.12f, 0.1f, 1.0f),
+                            NebulaColorB = new Rgba(0.45f, 0.28f, 0.08f, 1.0f),
+                            NebulaIntensity = 0.7f,
+                            NebulaScale = 1.0f,
+                            StarDensity = 140.0f,
+                            StarBrightness = 1.2f,
+                            TwinkleSpeed = 2.0f,
+                            Drift = new Vec2(0.003f, default(float)),
+                            Seed = 7.0f,
+                            NebulaColorC = new Rgba(0.2f, 0.15f, 0.5f, 1.0f),
+                            Warp = 1.0f,
+                            BandNormal = new Vec3(0.3f, 1.0f, 0.2f),
+                            BandWidth = 0.5f,
+                            BandStrength = 0.7f,
+                            Glow = 0.15f,
+                            Dust = 0.5f,
+                            KnotDensity = 6.0f,
+                            KnotBrightness = 1.1f,
+                        },
+                        new StarfieldLook
+                        {
+                            SpaceColor = new Rgba(0.008f, 0.008f, 0.015f, 1.0f),
+                            NebulaColorA = new Rgba(0.15f, 0.1f, 0.3f, 1.0f),
+                            NebulaColorB = new Rgba(0.05f, 0.1f, 0.25f, 1.0f),
+                            NebulaIntensity = 0.35f,
+                            NebulaScale = 0.9f,
+                            StarDensity = 140.0f,
+                            StarBrightness = 1.2f,
+                            TwinkleSpeed = 2.0f,
+                            Drift = new Vec2(0.003f, default(float)),
+                            Seed = 7.0f,
+                            NebulaColorC = new Rgba(0.3f, 0.1f, 0.2f, 1.0f),
+                            Warp = 0.8f,
+                            BandNormal = new Vec3(0.3f, 1.0f, 0.2f),
+                            BandWidth = 0.6f,
+                            BandStrength = 0.25f,
+                            Glow = 0.07f,
+                            Dust = 0.3f,
+                            KnotDensity = 6.0f,
+                            KnotBrightness = 0.5f,
+                        },
+                    },
+                    MinOrbitGap = 20.0f,
+                },
+            },
+            PromptPulseSeconds = 1.6f,
+            LoadingPrompt = "Loading...",
+            Menu =
+            {
+                new MenuItem
+                {
+                    Label = "Play",
+                    Action = MenuAction.Play,
+                },
+                new MenuItem
+                {
+                    Label = "Settings",
+                    Action = MenuAction.Settings,
+                },
+            },
+            Settings = new SettingsPanel
+            {
+                Title = "Settings",
+                Body = "Coming soon.",
+                BackLabel = "Back",
+            },
+            Dice = new DiceRoller
+            {
+                Dice =
+                {
+                    new Die
+                    {
+                        Id = "red",
+                        Sides = 6,
+                        Color = new Rgba(0.85f, 0.2f, 0.25f, 1.0f),
+                        InitialFace = 6,
+                        Role = DieRole.Star,
+                    },
+                    new Die
+                    {
+                        Id = "white",
+                        Sides = 6,
+                        Color = new Rgba(0.95f, 0.95f, 0.95f, 1.0f),
+                        InitialFace = 6,
+                        Role = DieRole.Worlds,
+                    },
+                    new Die
+                    {
+                        Id = "gold",
+                        Sides = 6,
+                        Color = new Rgba(0.95f, 0.75f, 0.2f, 1.0f),
+                        InitialFace = 6,
+                        Role = DieRole.Luck,
+                    },
+                },
+                RollLabel = "Roll",
+                RollSeconds = 1.2f,
+                SeedFormat = "Lucky number {0}",
+            },
+            PlayTransitionSeconds = 1.4f,
+            PlayPushIn = 0.3f,
         };
     }
 }

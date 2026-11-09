@@ -1,0 +1,14 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.DiskLook
+# Cold icy disk: blue-white inside, violet haze outside.
+
+inner_color { r: 0.85 g: 0.92 b: 1 a: 1 }
+outer_color { r: 0.3 g: 0.25 b: 0.55 a: 1 }
+brightness: 1
+inner_radius: 0.04
+clump_scale: 8
+clumpiness: 0.6
+spin_speed: 0.3
+gap_depth: 0.8
+gap_width: 0.02
+seed: 2

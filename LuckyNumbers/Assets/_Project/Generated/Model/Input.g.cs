@@ -21,6 +21,10 @@ namespace LuckyNumbers.Model
         Jump = 4,
         Interact = 5,
         Sprint = 6,
+        /// <summary>
+        /// Any key/button on any device ("Press any key").
+        /// </summary>
+        AnyButton = 7,
     }
 
     /// <summary>
@@ -30,11 +34,30 @@ namespace LuckyNumbers.Model
     {
         public readonly ReactiveProperty<Vec2> Move = new ReactiveProperty<Vec2>();
         public readonly ReactiveProperty<Vec2> Look = new ReactiveProperty<Vec2>();
+        /// <summary>
+        /// Pointer (mouse/touch): screen pixels, origin bottom-left.
+        /// </summary>
+        public readonly ReactiveProperty<Vec2> PointerPosition = new ReactiveProperty<Vec2>();
+        public readonly ReactiveProperty<Vec2> PointerDelta = new ReactiveProperty<Vec2>();
+        public readonly ReactiveProperty<bool> PointerPressed = new ReactiveProperty<bool>();
+        /// <summary>
+        /// Mouse wheel / trackpad scroll this frame (positive = up/away).
+        /// </summary>
+        public readonly ReactiveProperty<float> PointerScroll = new ReactiveProperty<float>();
+        /// <summary>
+        /// Sprint held.
+        /// </summary>
+        public readonly ReactiveProperty<bool> Sprinting = new ReactiveProperty<bool>();
 
         public void Dispose()
         {
             Move.Dispose();
             Look.Dispose();
+            PointerPosition.Dispose();
+            PointerDelta.Dispose();
+            PointerPressed.Dispose();
+            PointerScroll.Dispose();
+            Sprinting.Dispose();
         }
     }
 

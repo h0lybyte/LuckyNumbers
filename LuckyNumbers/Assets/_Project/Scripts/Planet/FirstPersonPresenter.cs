@@ -1,0 +1,357 @@
+using System;
+using LuckyNumbers.Model;
+using MessagePipe;
+using Unity.Mathematics;
+using UnityEngine;
+using VContainer;
+using VContainer.Unity;
+
+namespace LuckyNumbers.Planet
+{
+    /// <summary>Lets the crash-site sequence hand control to the player (and set where they look).</summary>
+    public interface IFirstPerson
+    {
+        bool Active { get; set; }
+        /// <summary>Head yaw/pitch (degrees) the player takes over from.</summary>
+        void Look(float yawDegrees, float pitchDegrees);
+    }
+
+    /// <summary>
+    /// Walk + look on the ground (CharacterController): WASD, mouse (pointer lock on click), Shift to run,
+    /// Space to jump. Feel is procedural: head bob from stride, arms sway against the look, pump when running,
+    /// rise in the air, shake after the crash. Hands: palms go flat on things you face up close; E picks up a
+    /// pebble (crouching and stepping in for it), E drops it, click throws it.
+    /// </summary>
+    [Presenter]
+    public sealed class FirstPersonPresenter : IStartable, ITickable, IDisposable, IFirstPerson
+    {
+        const int Right = 1;   // the carrying hand
+        readonly PlanetScene _config;
+        readonly PlayerView _player;
+        readonly ArmsView _arms;
+        readonly PlayerInput _input;
+        readonly ISubscriber<InputActionPerformed> _actions;
+        IDisposable _subscription;
+
+        float _yaw, _pitch, _vertical, _stride, _moving, _landDip, _errorLogAt, _sprint, _air, _crouch, _awakeAt = -1f;
+        bool _jump, _interact, _wasGrounded = true, _wasPressed, _lockSeen;
+        Vector3 _sway;
+
+        // Touch: per hand, how far in (0..1) and where.
+        readonly float[] _touch = new float[2];
+        readonly bool[] _touching = new bool[2];
+        readonly (Vector3 wrist, Vector3 facing, Vector3 along)[] _lastTouch = new (Vector3, Vector3, Vector3)[2];
+        readonly RaycastHit[] _hits = new RaycastHit[8];
+
+        // Carry: reaching for (_reachT 0..1, grabbed at 0.5), holding, throwing (_throwT seconds).
+        Rigidbody _reaching, _held;
+        float _reachT, _crouchFor, _carry, _throwT = -1f, _throwAt;
+        Vector3 _reachFrom;
+
+        public bool Active { get; set; }
+
+        public void Look(float yawDegrees, float pitchDegrees)
+        {
+            _yaw = yawDegrees;
+            _pitch = pitchDegrees;
+        }
+
+        [Inject]
+        public FirstPersonPresenter(PlanetScene config, PlayerView player, ArmsView arms, PlayerInput input,
+                                    ISubscriber<InputActionPerformed> actions)
+        {
+            _config = config;
+            _player = player;
+            _arms = arms;
+            _input = input;
+            _actions = actions;
+        }
+
+        public void Start()
+        {
+            _subscription = _actions.Subscribe(e =>
+            {
+                if (e.Action == InputAction.Jump) _jump = true;
+                if (e.Action == InputAction.Interact) _interact = true;
+            });
+            if (_config.Hands != null) _arms.Init(_config.Hands);
+            _arms.Play(_config.IdleClip);
+            _arms.SetLife(_config.ArmBreathDegrees, _config.ArmSwingDegrees, _config.FingerFidgetDegrees);
+            _arms.SetFeel(_config.SprintPump, _config.AirRaiseDegrees);
+        }
+
+        public void Tick()
+        {
+            var dt = Time.deltaTime;
+            if (!Active || dt <= 0f) { _jump = _interact = false; return; }
+            if (_awakeAt < 0f) _awakeAt = Time.time;
+
+            // Pointer lock: browsers need a click; Esc releases it. A click while locked throws.
+            var locked = Cursor.lockState == CursorLockMode.Locked;
+            _lockSeen |= locked;
+            var pressed = _input.PointerPressed.Value;
+            var click = pressed && !_wasPressed && (locked || !_lockSeen);   // no pointer lock (headless): any click
+            _wasPressed = pressed;
+            if (pressed && !locked) Cursor.lockState = CursorLockMode.Locked;
+            var looking = locked || pressed;
+            var look = _input.Look.Value;
+            var lookDelta = looking ? new Vector2(look.X, look.Y) : Vector2.zero;
+            _yaw += lookDelta.x * _config.LookDegreesPerPixel;
+            _pitch = math.clamp(_pitch - lookDelta.y * _config.LookDegreesPerPixel, -85f, 85f);
+
+            var body = _player.Body;
+            var grounded = body.isGrounded;
+            var move = _input.Move.Value;
+            var running = _input.Sprinting.Value;
+            var speed = running ? _config.SprintSpeed : _config.WalkSpeed;
+            var yawRot = Quaternion.Euler(0f, _yaw, 0f);
+            var wish = yawRot * new Vector3(move.X, 0f, move.Y);
+            if (wish.sqrMagnitude > 1f) wish.Normalize();
+            if (_reaching != null && _reachT < 0.5f) wish += StepIn(_reaching.position) / math.max(0.1f, speed);   // step in to grab
+
+            if (grounded && _vertical < 0f) _vertical = -2f;                 // stick to slopes
+            if (_jump && grounded && _reaching == null) _vertical = _config.JumpSpeed;
+            _jump = false;
+            _vertical -= _config.Gravity * dt;
+            body.Move((wish * speed + Vector3.up * _vertical) * dt);
+            body.transform.rotation = yawRot;
+
+            if (!_wasGrounded && body.isGrounded) _landDip = 1f;              // landing thump
+            _wasGrounded = body.isGrounded;
+            _landDip = math.max(0f, _landDip - dt * 3f);
+
+            // Head bob from stride, scaled by how fast we move over ground; crouch while grabbing.
+            var planar = new Vector3(body.velocity.x, 0f, body.velocity.z).magnitude;
+            // Eased: velocity stops dead when you let go of the keys, and swing/bob scaled by it would snap to rest.
+            var movingNow = body.isGrounded ? math.saturate(planar / math.max(0.1f, _config.WalkSpeed)) : 0f;
+            _moving = math.lerp(_moving, movingNow, 1f - math.exp(-(movingNow > _moving ? 8f : 5f) * dt));
+            var moving = _moving;
+            _stride += dt * _config.BobFrequency * 2f * math.PI * math.max(0.2f, planar / math.max(0.1f, _config.WalkSpeed));
+            var bobY = math.abs(math.sin(_stride)) * _config.BobAmount * moving - _landDip * 0.08f;
+            var bobX = math.sin(_stride) * _config.BobAmount * 0.5f * moving;
+            _player.Head.localPosition = new Vector3(0f, _config.EyeHeight + bobY - _crouch, 0f);
+            _player.Head.localRotation = Quaternion.Euler(_pitch, 0f, 0f);
+
+            // Body feel: running (pump + run clip), airborne (arms up), shaky hands after the crash.
+            var ease = 1f - math.exp(-6f * dt);
+            _sprint = math.lerp(_sprint, running && moving > 0.5f ? 1f : 0f, ease);
+            _air = math.lerp(_air, grounded ? 0f : 1f, 1f - math.exp(-(grounded ? 10f : 4f) * dt));
+            var since = Time.time - _awakeAt;
+            var tremor = _config.CrashTremorDegrees * math.pow(math.saturate(1f - since / math.max(1f, _config.TremorSeconds)), 2f);
+            _arms.Play(_sprint > 0.5f ? _config.SprintClip : _config.IdleClip, 0.35f);
+            _arms.SetMotion(_stride, moving, _sprint, _air, tremor);
+
+            // Arms lag against the look and follow the stride.
+            var target = new Vector3(-lookDelta.y, lookDelta.x, 0f) * _config.Sway;
+            _sway = Vector3.Lerp(_sway, target, 1f - math.exp(-10f * dt));
+            _arms.Pose(new Vector3(bobX, bobY * 0.6f - _landDip * 0.04f, 0f),
+                       Quaternion.Euler(math.clamp(_sway.x, -6f, 6f), math.clamp(_sway.y, -6f, 6f), -bobX * 30f));
+            Hands(dt, click);
+            _interact = false;
+        }
+
+        /// <summary>Horizontal velocity (m/s) to close in until within arm's length of a point.</summary>
+        Vector3 StepIn(Vector3 point)
+        {
+            var to = point - _player.Body.transform.position;
+            to.y = 0f;
+            var gap = to.magnitude - 0.45f;
+            return gap > 0f ? to.normalized * math.min(gap * 5f, 2.5f) : Vector3.zero;
+        }
+
+        void Hands(float dt, bool click)
+        {
+            if (_arms.ArmCount < 2) return;
+            var eye = _player.Camera.transform;
+            if (_config.DebugReach) { DebugReach(eye); return; }
+            Carry(dt, eye, click);
+            for (var s = 0; s < 2; s++)
+                if (s != Right || (_reaching == null && _held == null && _throwT < 0f)) Touch(s, dt, eye);
+        }
+
+        /// <summary>IK self-test: hands trace circles in front of you, cycling every finger pose.</summary>
+        void DebugReach(Transform eye)
+        {
+            var t = Time.time;
+            var poses = _config.Hands.Poses;
+            var pose = poses.Count > 0 ? poses[(int)(t / 1.5f) % poses.Count].Name : null;
+            for (var s = 0; s < 2; s++)
+            {
+                var side = s == 0 ? -1f : 1f;   // L, R
+                var target = eye.position + eye.forward * 0.42f + eye.right * (side * 0.2f + 0.09f * math.cos(t * 1.7f + s))
+                           + eye.up * (-0.14f + 0.09f * math.sin(t * 2.3f + s * 2f));
+                _arms.ReachTo(s, target, 1f, eye.forward * -1f, eye.up);   // palms toward you: watch the fingers
+                if (_arms.CurrentPose(s) != pose && s == 1) Debug.Log($"[Hands] pose {pose}");
+                _arms.SetPose(s, pose);
+            }
+            if (t > _errorLogAt)
+            {
+                _errorLogAt = t + 2f;
+                Debug.Log($"[Hands] IK error L {_arms.LastError[0]:0.0000} m R {_arms.LastError[1]:0.0000} m");
+            }
+        }
+
+        /// <summary>A palm goes flat on walls/hulls/stones you're facing up close (not the ground).</summary>
+        void Touch(int s, float dt, Transform eye)
+        {
+            var side = s == 0 ? -1f : 1f;
+            // Where you look, a little toward each hand's side; only things you could touch.
+            var dir = Quaternion.AngleAxis(side * 9f, eye.up) * eye.forward;
+            var hit = false;
+            var best = new RaycastHit { distance = float.MaxValue };
+            var n = Physics.RaycastNonAlloc(eye.position, dir, _hits, _config.TouchDistance, ~0, QueryTriggerInteraction.Ignore);
+            for (var i = 0; i < n; i++)
+            {
+                var h = _hits[i];
+                if (h.collider.transform.IsChildOf(_player.Body.transform)) continue;                    // not ourselves
+                if (h.collider.GetComponentInParent<GroundView>() != null) continue;                     // not the ground
+                if (h.rigidbody != null) continue;                                                      // pebbles: pick up instead
+                if (Vector3.Distance(_arms.ShoulderPosition(s), h.point) > _arms.Reach(s) * 1.45f) continue; // reachable (small lean)
+                if (h.distance < best.distance) { best = h; hit = true; }
+            }
+            if (hit != _touching[s])
+            {
+                _touching[s] = hit;
+                Debug.Log(hit ? $"[Hands] {Name(s)} hand touches {best.collider.name} at {best.distance:0.00} m" : $"[Hands] {Name(s)} hand lets go");
+            }
+            _touch[s] = Mathf.MoveTowards(_touch[s], hit ? 1f : 0f, dt * (hit ? 4f : 3f));
+            if (_touch[s] <= 0f) { _arms.ReachTo(s, Vector3.zero, 0f); _arms.SetPose(s, null); return; }
+            if (hit)
+            {
+                var up = Vector3.ProjectOnPlane(eye.up + eye.right * side * 0.3f, best.normal).normalized;
+                // Wrist sits below the palm's centre and a hair off the surface.
+                _lastTouch[s] = (best.point + best.normal * 0.03f - up * 0.07f, -best.normal, up);
+            }
+            var (w, facing, along) = _lastTouch[s];
+            _arms.ReachTo(s, w, Smooth(_touch[s]), facing, along);
+            _arms.SetPose(s, hit ? "flat" : null);
+        }
+
+        /// <summary>Pick up (E), carry, drop (E) or throw (click) a pebble with the right hand.</summary>
+        void Carry(float dt, Transform eye, bool click)
+        {
+            var hold = eye.position + eye.forward * 0.42f + eye.right * 0.17f - eye.up * 0.19f;
+
+            if (_interact && _held != null && _throwT < 0f) { Release(Vector3.zero); _interact = false; }
+            if (_interact && _held == null && _reaching == null && _throwT < 0f)
+            {
+                if (!FindPebble(eye, out var pebble)) { Debug.Log($"[Hands] nothing to pick up there (looking {_pitch:0} deg down)"); return; }
+                _reaching = pebble;
+                _reachT = 0f;
+                // Crouch just enough for the shoulder to get within arm's length (with the step-in).
+                _crouchFor = math.clamp(_arms.ShoulderPosition(Right).y - pebble.position.y - _arms.Reach(Right) * 0.8f, 0f, _config.CrouchDepth);
+                Debug.Log($"[Hands] reaching for {pebble.name} (crouch {_crouchFor:0.00} m)");
+            }
+
+            if (_reaching != null)
+            {
+                _reachT = math.min(1f, _reachT + dt / 0.9f);
+                var down = math.sin(math.PI * math.saturate(_reachT * 1.15f));   // crouch down, grab at the bottom, stand back up
+                _crouch = _crouchFor * down;
+                if (_reachT < 0.5f)
+                {
+                    // Look at it, and reach a comfortable arm's length toward it (full stretch shows the mesh's cut
+                    // shoulder); the stone hops the last bit into the palm when grabbed.
+                    var to = _reaching.position - eye.position;
+                    var wantPitch = math.degrees(math.atan2(-to.y, new Vector2(to.x, to.z).magnitude));
+                    _pitch = math.lerp(_pitch, wantPitch, 1f - math.exp(-8f * dt));
+                    var shoulder = _arms.ShoulderPosition(Right);
+                    var reach = Vector3.ClampMagnitude(_reaching.position + Vector3.up * 0.06f - shoulder, _arms.Reach(Right) * 0.85f);
+                    _arms.SetPose(Right, "open");   // anticipation: fingers open on the way down
+                    _arms.ReachTo(Right, shoulder + reach, Smooth(_reachT * 2f), Vector3.down, eye.forward);
+                }
+                else
+                {
+                    if (_reaching.transform.parent != _arms.HandBone(Right)) Grab(_reaching);
+                    SnapToPalm(_reaching, dt);
+                    _arms.SetPose(Right, "grip");
+                    _reachFrom = Vector3.Lerp(_reachFrom == Vector3.zero ? _reaching.position : _reachFrom, hold, Smooth((_reachT - 0.5f) * 2f));
+                    _arms.ReachTo(Right, _reachFrom, 1f, Vector3.Lerp(Vector3.down, eye.up, Smooth((_reachT - 0.5f) * 2f)), eye.forward);
+                }
+                if (_reachT >= 1f) { _held = _reaching; _reaching = null; _reachFrom = Vector3.zero; _carry = 1f; }
+                return;
+            }
+            _crouch = math.max(0f, _crouch - dt * 2f);
+
+            if (_held != null && _throwT < 0f)
+            {
+                SnapToPalm(_held, dt);
+                _arms.ReachTo(Right, hold, 1f, eye.up, eye.forward);   // palm up, showing it
+                _arms.SetPose(Right, "grip");
+                if (click)
+                {
+                    _throwT = 0f;
+                    _throwAt = _arms.PlayOnce(Right, _config.ThrowClip) * 0.38f;   // let go near full extension
+                    Debug.Log("[Hands] throw");
+                }
+                return;
+            }
+
+            if (_throwT >= 0f)
+            {
+                _throwT += dt;
+                _carry = math.max(0f, _carry - dt * 8f);   // the throw clip takes the arm
+                _arms.ReachTo(Right, hold, _carry, eye.up, eye.forward);
+                if (_held != null && _throwT >= _throwAt)
+                {
+                    Release((eye.forward + eye.up * 0.15f).normalized * _config.ThrowSpeed);
+                    _arms.SetPose(Right, "open");
+                }
+                if (_throwT > _throwAt + 0.5f) { _throwT = -1f; _arms.SetPose(Right, null); }
+            }
+        }
+
+        /// <summary>The loose thing (a non-kinematic rigidbody) in reach closest to where you look, within a 15 degree cone.</summary>
+        bool FindPebble(Transform eye, out Rigidbody pebble)
+        {
+            pebble = null;
+            var best = 15f;
+            var n = Physics.OverlapSphereNonAlloc(eye.position, _config.GrabDistance, _near, ~0, QueryTriggerInteraction.Ignore);
+            for (var i = 0; i < n; i++)
+            {
+                var rb = _near[i].attachedRigidbody;
+                if (rb == null || rb.isKinematic) continue;
+                var angle = Vector3.Angle(eye.forward, rb.worldCenterOfMass - eye.position);
+                if (angle < best) { best = angle; pebble = rb; }
+            }
+            return pebble != null;
+        }
+
+        readonly Collider[] _near = new Collider[32];
+
+        void Grab(Rigidbody rb)
+        {
+            rb.isKinematic = true;
+            if (rb.TryGetComponent<Collider>(out var c)) c.enabled = false;
+            _arms.Hold(Right, rb.transform);
+            Debug.Log($"[Hands] grabbed {rb.name}");
+        }
+
+        /// <summary>Ease a held thing into the palm (it's parented to the hand, so it follows from there).</summary>
+        void SnapToPalm(Rigidbody rb, float dt)
+        {
+            var palm = _arms.PalmPoint(Right);
+            rb.transform.position = Vector3.Lerp(rb.transform.position, palm, 1f - math.exp(-25f * dt));
+        }
+
+        void Release(Vector3 velocity)
+        {
+            var rb = _held;
+            _held = null;
+            if (rb == null) return;
+            rb.transform.SetParent(null, true);
+            ArmsView.SetLayer(rb.transform, 0);
+            if (rb.TryGetComponent<Collider>(out var c)) c.enabled = true;
+            rb.isKinematic = false;
+            rb.linearVelocity = velocity + _player.Body.velocity;
+            rb.angularVelocity = UnityEngine.Random.insideUnitSphere * 8f;
+            if (velocity == Vector3.zero) _arms.SetPose(Right, null);
+            Debug.Log(velocity == Vector3.zero ? $"[Hands] dropped {rb.name}" : $"[Hands] threw {rb.name} at {velocity.magnitude:0.0} m/s");
+        }
+
+        static float Smooth(float x) { x = math.saturate(x); return x * x * (3f - 2f * x); }
+        static string Name(int s) => s == 0 ? "left" : "right";
+
+        public void Dispose() => _subscription?.Dispose();
+    }
+}

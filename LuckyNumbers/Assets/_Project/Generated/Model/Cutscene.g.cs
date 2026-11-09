@@ -16,6 +16,17 @@ namespace LuckyNumbers.Model
     {
         public string Id { get; set; }
         public List<CutsceneStep> Steps { get; } = new List<CutsceneStep>();
+        /// <summary>
+        /// The universe it plays in. Generated from the player's lucky number, so it is the title's world.
+        /// </summary>
+        public SpaceBackdrop Backdrop { get; set; }
+        /// <summary>
+        /// Ship length, in target-planet diameters.
+        /// </summary>
+        public float ShipSize { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public Cutscene Clone() => (Cutscene)MemberwiseClone();
     }
 
     public sealed class CutsceneStep
@@ -25,6 +36,10 @@ namespace LuckyNumbers.Model
         public CrashLanding CrashLanding { get; set; }
         public Dialogue Dialogue { get; set; }
         public GoTo GoTo { get; set; }
+        public ShipArrives ShipArrives { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public CutsceneStep Clone() => (CutsceneStep)MemberwiseClone();
 
         public enum StepCase
         {
@@ -34,6 +49,7 @@ namespace LuckyNumbers.Model
             CrashLanding = 3,
             Dialogue = 4,
             GoTo = 5,
+            ShipArrives = 6,
         }
 
         /// <summary>Which <c>step</c> case is set.</summary>
@@ -43,24 +59,60 @@ namespace LuckyNumbers.Model
             CrashLanding != null ? StepCase.CrashLanding :
             Dialogue != null ? StepCase.Dialogue :
             GoTo != null ? StepCase.GoTo :
+            ShipArrives != null ? StepCase.ShipArrives :
             StepCase.None;
     }
 
     /// <summary>
-    /// Dice tumble, then land on `faces` (forced results, e.g. 6 6 6).
+    /// Dice tumble, then land on `faces`; empty = the player's own roll (keeps their universe).
     /// </summary>
     public sealed class DiceRoll
     {
         public List<int> Faces { get; } = new List<int>();
         public float DurationSeconds { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public DiceRoll Clone() => (DiceRoll)MemberwiseClone();
     }
 
     /// <summary>
-    /// The ship is dragged toward the planet.
+    /// Opening shot: starts from the previous scene's camera (the title, via CameraHandoff); the ship streaks in
+    /// past the camera and the camera eases into the chase. Without a handoff it fades in from black.
+    /// </summary>
+    public sealed class ShipArrives
+    {
+        public float DurationSeconds { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public ShipArrives Clone() => (ShipArrives)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// The ship is dragged toward the planet: a spiral that tightens and speeds up (gravity), banking into it.
     /// </summary>
     public sealed class ShipPulledIn
     {
         public float DurationSeconds { get; set; }
+        /// <summary>
+        /// Start distance from the planet's centre, in planet diameters.
+        /// </summary>
+        public float StartDistance { get; set; }
+        /// <summary>
+        /// Minimum laps around the planet before impact (the spiral starts where the camera is and ends over
+        /// the planet's lit side, so the exact sweep adapts).
+        /// </summary>
+        public float Turns { get; set; }
+        /// <summary>
+        /// Bank angle reached at the end of the spiral.
+        /// </summary>
+        public float BankDegrees { get; set; }
+        /// <summary>
+        /// Share of the step (0..1, from the end) where the camera stops chasing and watches the ship fall in.
+        /// </summary>
+        public float CameraRelease { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public ShipPulledIn Clone() => (ShipPulledIn)MemberwiseClone();
     }
 
     public sealed class CrashLanding
@@ -70,6 +122,13 @@ namespace LuckyNumbers.Model
         /// 0..1 camera shake strength.
         /// </summary>
         public float CameraShake { get; set; }
+        /// <summary>
+        /// White flash on impact, then fade to black over the rest of the step.
+        /// </summary>
+        public float FlashSeconds { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public CrashLanding Clone() => (CrashLanding)MemberwiseClone();
     }
 
     public sealed class Dialogue
@@ -77,11 +136,21 @@ namespace LuckyNumbers.Model
         public string Speaker { get; set; }
         public string Text { get; set; }
         public float DurationSeconds { get; set; }
+        /// <summary>
+        /// Typewriter speed; 0 = show the whole line at once.
+        /// </summary>
+        public float CharsPerSecond { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public Dialogue Clone() => (Dialogue)MemberwiseClone();
     }
 
     public sealed class GoTo
     {
         public GameScene Scene { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public GoTo Clone() => (GoTo)MemberwiseClone();
     }
 
     public readonly struct CutsceneStepStarted

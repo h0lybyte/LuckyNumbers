@@ -1,0 +1,26 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.SpaceBackdrop
+# The title universe: camera + sky; bodies come from the generator.
+
+stars_ref: "space/skies/default"
+
+camera {
+  target: "home"
+  # In home-planet diameters.
+  distance: 2.5
+  min_distance: 1
+  max_distance: 10
+  yaw_degrees: 20
+  pitch_degrees: 8
+  min_pitch_degrees: -60
+  max_pitch_degrees: 60
+  drag_degrees_per_screen: 200
+  glide: 0.92
+  zoom_step: 0.12
+  frame_offset { x: -0.65 y: 0.08 }
+  field_of_view_degrees: 45
+}
+
+# Bodies are generated from the dice's lucky number (see space/generators/default).
+# The first generated planet is called "home" so the camera can follow it.
+generator_ref: "space/generators/default"

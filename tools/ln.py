@@ -117,14 +117,14 @@ def editor_is_open() -> bool:
         return True
 
 
-def run_unity(extra: list[str], log_name: str, force: bool) -> tuple[int, Path]:
+def run_unity(extra: list[str], log_name: str, force: bool, graphics: bool = False) -> tuple[int, Path]:
     if editor_is_open() and not force:
         raise RuntimeError("Unity has this project open. Close the editor first "
                            "(or pass --force if the lockfile is stale after a crash).")
     unity = find_unity()
     LOGS.mkdir(parents=True, exist_ok=True)
     log = LOGS / log_name
-    cmd = [str(unity), "-batchmode", "-quit", "-nographics",
+    cmd = [str(unity), "-batchmode", "-quit", *([] if graphics else ["-nographics"]),
            "-projectPath", str(PROJECT), "-logFile", str(log), *extra]
     print(f"Unity {unity_version()}: {' '.join(extra) or 'compile'}")
     print(f"  log: {log}")
@@ -154,7 +154,11 @@ def summarize_log(log: Path) -> int:
         print(f"  {line}")
     if len(errors) > 50:
         print(f"  ... and {len(errors) - 50} more")
-    for line in re.findall(r"^\[WebBuild\].*$", text, re.M):
+    shader_errors = sorted(set(re.findall(r"^Shader error in '.*$", text, re.M)))
+    for line in shader_errors[:20]:
+        print(f"  {line}")
+    errors += shader_errors
+    for line in re.findall(r"^\[(?:WebBuild|ShaderPreview|SceneBuilder|FontSetup)\].*$", text, re.M):
         print(f"  {line}")
     for marker in ("Scripts have compiler errors.", "Aborting batchmode due to failure:"):
         if marker in text:
@@ -208,6 +212,40 @@ def web_build_dir(gfx: str) -> Path:
     """Mirror of WebBuild.OutputDirFor: Both (default) -> Builds/WebGL, others -> Builds/WebGL-<Variant>."""
     suffix = {"both": "", "webgl2": "-WebGL2", "webgpu": "-WebGPU"}[gfx]
     return WEB_BUILD.with_name("WebGL" + suffix)
+
+
+def cmd_preview(args) -> int:
+    method, png = {"ship": ("RenderShip", "preview-ship.png"), "arms": ("RenderArms", "preview-arms.png")}.get(
+        args.what, ("RenderSpace", "preview-space.png"))
+    code, log = run_unity(["-executeMethod", f"LuckyNumbers.Editor.ShaderPreview.{method}"],
+                          "ln-preview.log", args.force, graphics=True)
+    errors = summarize_log(log)
+    out = PROJECT / "Logs" / png
+    if code != 0 or errors or not out.is_file():
+        return fail("preview failed, see log above")
+    print(f"Preview: {out}")
+    return 0
+
+
+def cmd_scenes(args) -> int:
+    code, log = run_unity(["-executeMethod", "LuckyNumbers.Editor.SceneBuilder.BuildAll"],
+                          "ln-scenes.log", args.force)
+    errors = summarize_log(log)
+    return 0 if code == 0 and not errors else fail("scene build failed, see log above")
+
+
+def cmd_webshot(args) -> int:
+    """Screenshot the served Web build once the console shows --wait (needs Node 22+ and Chrome)."""
+    node = shutil.which("node")
+    if not node:
+        return fail("node not found (Node 22+ needed for tools/webshot.mjs)")
+    out = Path(args.out).resolve()
+    cmd = [node, str(ROOT / "tools" / "webshot.mjs"), args.url, str(out), "--timeout", str(args.timeout)]
+    if args.wait:
+        cmd += ["--wait", args.wait]
+    if args.steps:
+        cmd += ["--steps", args.steps]
+    return subprocess.call(cmd)
 
 
 def cmd_build_web(args) -> int:
@@ -303,7 +341,7 @@ def cmd_deploy(args) -> int:
 
 PROTO_DIR = ROOT / "proto"
 CONTENT_DIR = ROOT / "content"
-CONTENT_HEADER = re.compile(r"^#\s*proto-(file|message):\s*(\S+)\s*$", re.M)
+CONTENT_HEADER = re.compile(r"^#\s*proto-(file|message|extends):\s*(\S+)\s*$", re.M)
 
 
 # Pinned official protoc release; downloaded once into .cache/ and verified by SHA-256
@@ -373,6 +411,75 @@ def cmd_proto(args) -> int:
     return 1 if bad else 0
 
 
+ROSLYN_PROJECT = ROOT / "tools" / "roslyn" / "LuckyNumbers.Generators" / "LuckyNumbers.Generators.csproj"
+ROSLYN_TARGET = PROJECT / "Assets" / "_Project" / "Generators" / "LuckyNumbers.Generators.dll"
+# Unity treats a DLL as a source generator via this label with every platform disabled.
+ROSLYN_META = """fileFormatVersion: 2
+guid: 6c1f0b3a9d2e4f7a8b5c3d1e2f4a6b8c
+labels:
+- RoslynAnalyzer
+PluginImporter:
+  externalObjects: {}
+  serializedVersion: 3
+  iconMap: {}
+  executionOrder: {}
+  defineConstraints: []
+  isPreloaded: 0
+  isOverridable: 0
+  isExplicitlyReferenced: 0
+  validateReferences: 1
+  platformData:
+    Any:
+      enabled: 0
+      settings: {}
+    Editor:
+      enabled: 0
+      settings:
+        CPU: AnyCPU
+        DefaultValueInitialized: true
+        OS: AnyOS
+  userData:
+  assetBundleName:
+  assetBundleVariant:
+"""
+
+
+def dotnet() -> Path:
+    """The .NET SDK bundled with the project's Unity editor (no separate install needed)."""
+    env = shutil.which("dotnet")
+    unity = find_unity()
+    bundled = {"Darwin": unity.parents[1] / "Resources" / "Scripting" / "DotNetSdk" / "dotnet",
+               "Windows": unity.parent / "Data" / "Resources" / "Scripting" / "DotNetSdk" / "dotnet.exe",
+               "Linux": unity.parent / "Data" / "Resources" / "Scripting" / "DotNetSdk" / "dotnet"}[SYSTEM]
+    if bundled.is_file():
+        return bundled
+    if env:
+        return Path(env)
+    raise RuntimeError(f"no .NET SDK found (looked for {bundled}); install one or set PATH")
+
+
+def cmd_roslyn(args) -> int:
+    """Build the Roslyn source generator and copy it into the Unity project."""
+    out = CACHE_DIR / "roslyn"
+    r = subprocess.run([str(dotnet()), "build", str(ROSLYN_PROJECT), "-c", "Release", "-nologo",
+                        "-v", "quiet", "-o", str(out)], capture_output=True, text=True)
+    if r.returncode != 0:
+        print(r.stdout[-4000:])
+        return fail("generator build failed")
+    built = out / ROSLYN_TARGET.name
+    data = built.read_bytes()
+    if ROSLYN_TARGET.is_file() and ROSLYN_TARGET.read_bytes() == data:
+        print(f"  unchanged {ROSLYN_TARGET.relative_to(ROOT)}")
+    else:
+        ROSLYN_TARGET.write_bytes(data)
+        print(f"  wrote {ROSLYN_TARGET.relative_to(ROOT)} ({len(data) // 1024} KB)")
+    meta = Path(str(ROSLYN_TARGET) + ".meta")
+    if not meta.is_file() or meta.read_text(encoding="utf-8") != ROSLYN_META:
+        meta.write_text(ROSLYN_META, encoding="utf-8", newline="\n")
+        print(f"  wrote {meta.relative_to(ROOT)} (RoslynAnalyzer label)")
+    return 0
+
+
 GENERATED_DIR = PROJECT / "Assets" / "_Project" / "Generated"
 
 
@@ -382,7 +489,8 @@ def cmd_gen(args) -> int:
     import protogen
     protoc, include = ensure_protoc()
     try:
-        files = protogen.run(str(protoc), include, PROTO_DIR, CONTENT_DIR, CONTENT_HEADER)
+        files = protogen.run(str(protoc), include, PROTO_DIR, CONTENT_DIR, CONTENT_HEADER,
+                             shader_root=PROJECT / "Assets" / "_Project")
     except subprocess.CalledProcessError as e:
         print((e.stderr or b"").decode(errors="replace").strip())
         return fail("protoc failed; run `ln.py proto` for details")
@@ -494,6 +602,23 @@ def main(argv=None) -> int:
     s.add_argument("--version", help="game version (default: top entry of CHANGELOG.md)")
     s.set_defaults(func=cmd_build_web)
 
+    s = sub.add_parser("scenes", help="rebuild game scenes from code (Editor/SceneBuilder.cs)")
+    s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
+    s.set_defaults(func=cmd_scenes)
+
+    s = sub.add_parser("webshot", help="screenshot the served Web build after a console marker (Node + Chrome)")
+    s.add_argument("--url", default="http://localhost:8080/")
+    s.add_argument("--out", default=str(PROJECT / "Logs" / "webshot.png"))
+    s.add_argument("--wait", default="[Title] ready", help="console text to wait for ('' = don't wait)")
+    s.add_argument("--timeout", type=int, default=90)
+    s.add_argument("--steps", help='JSON steps, e.g. [{"drag":[.3,.4,.7,.8]},{"shot":"a.png"},{"click":[.4,.83]}]')
+    s.set_defaults(func=cmd_webshot)
+
+    s = sub.add_parser("preview", help="render shaders to LuckyNumbers/Logs/preview-<what>.png")
+    s.add_argument("what", nargs="?", choices=["space", "ship", "arms"], default="space")
+    s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
+    s.set_defaults(func=cmd_preview)
+
     s = sub.add_parser("serve", aliases=["server"], help="serve the Web build with COOP/COEP headers")
     s.add_argument("--port", type=int, default=8080)
     s.add_argument("--dir", help=f"build folder (default {WEB_BUILD.relative_to(ROOT)})")
@@ -514,6 +639,9 @@ def main(argv=None) -> int:
     s = sub.add_parser("gen", help="generate C# from proto/ + content/ into Assets/_Project/Generated")
     s.add_argument("--check", action="store_true", help="only verify the committed output is up to date")
     s.set_defaults(func=cmd_gen)
+
+    s = sub.add_parser("roslyn", help="build the Roslyn source generator into Assets/_Project/Generators")
+    s.set_defaults(func=cmd_roslyn)
 
     s = sub.add_parser("version", help="print the game version from CHANGELOG.md")
     s.add_argument("--notes", action="store_true", help="print that entry's release notes instead")

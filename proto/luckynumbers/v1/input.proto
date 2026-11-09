@@ -16,6 +16,8 @@ enum InputAction {
   INPUT_ACTION_JUMP = 4;
   INPUT_ACTION_INTERACT = 5;
   INPUT_ACTION_SPRINT = 6;
+  // Any key/button on any device ("Press any key").
+  INPUT_ACTION_ANY_BUTTON = 7;
 }
 
 // Continuous axes, sampled every frame.
@@ -23,6 +25,14 @@ message PlayerInput {
   option (ln.state) = true;
   Vec2 move = 1;
   Vec2 look = 2;
+  // Pointer (mouse/touch): screen pixels, origin bottom-left.
+  Vec2 pointer_position = 3;
+  Vec2 pointer_delta = 4;
+  bool pointer_pressed = 5;
+  // Mouse wheel / trackpad scroll this frame (positive = up/away).
+  float pointer_scroll = 6;
+  // Sprint held.
+  bool sprinting = 7;
 }
 
 message InputActionPerformed {

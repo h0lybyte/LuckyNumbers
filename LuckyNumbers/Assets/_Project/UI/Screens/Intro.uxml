@@ -1,0 +1,16 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- Intro cutscene overlay (content/intro.txtpb drives it). -->
+    <ui:VisualElement name="screen" class="ln-screen" picking-mode="Ignore">
+        <ui:VisualElement name="dice-panel" class="ln-intro-dice" picking-mode="Ignore">
+            <ui:VisualElement name="dice" class="ln-dice-row" picking-mode="Ignore" />
+            <ui:Label name="lucky-number" class="ln-lucky" picking-mode="Ignore" />
+            <ui:Button name="roll" class="ln-hidden" />
+        </ui:VisualElement>
+        <!-- Flash/fade sits under the dialogue, so lines read on black. -->
+        <ui:VisualElement name="flash" class="ln-flash" picking-mode="Ignore" />
+        <ui:VisualElement name="dialogue" class="ln-dialogue ln-hidden" picking-mode="Ignore">
+            <ui:Label name="speaker" class="ln-dialogue-speaker" picking-mode="Ignore" />
+            <ui:Label name="line" class="ln-dialogue-line" picking-mode="Ignore" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

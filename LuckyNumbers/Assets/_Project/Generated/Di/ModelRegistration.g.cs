@@ -14,20 +14,27 @@ namespace LuckyNumbers.Model
         {
             builder.RegisterMessageBroker<SceneChangeRequested>(options);
             builder.RegisterMessageBroker<SceneEntered>(options);
+            builder.RegisterMessageBroker<UniverseSeedChanged>(options);
             builder.RegisterMessageBroker<CutsceneStepStarted>(options);
             builder.RegisterMessageBroker<CutsceneFinished>(options);
             builder.RegisterMessageBroker<InputActionPerformed>(options);
             builder.RegisterMessageBroker<PlayerDamaged>(options);
             builder.RegisterMessageBroker<PlayerHealed>(options);
             builder.RegisterMessageBroker<PlayerDied>(options);
+            builder.RegisterMessageBroker<MenuItemSelected>(options);
         }
 
         /// <summary>Registers every (ln.state) class as a singleton.</summary>
         public static void RegisterModelState(this IContainerBuilder builder)
         {
             builder.Register<FlowState>(Lifetime.Singleton);
+            builder.Register<LoadingState>(Lifetime.Singleton);
+            builder.Register<CameraHandoff>(Lifetime.Singleton);
             builder.Register<PlayerInput>(Lifetime.Singleton);
+            builder.Register<LandingSite>(Lifetime.Singleton);
+            builder.Register<PlayerShip>(Lifetime.Singleton);
             builder.Register<PlayerHealth>(Lifetime.Singleton);
+            builder.Register<DiceState>(Lifetime.Singleton);
         }
     }
 }

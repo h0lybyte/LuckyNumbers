@@ -1,0 +1,10 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.PlanetLook
+# proto-extends: space/looks/planet_base
+# Molten world: dark crust, glowing red-orange, hot haze.
+
+planet_color { r: 1 g: 0.28 b: 0.05 a: 1 }
+atmosphere_color { r: 1 g: 0.45 b: 0.2 a: 1 }
+noise_scale: 2.4
+light_intensity: 0.7
+atmosphere_intensity: 0.9

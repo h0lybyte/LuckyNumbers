@@ -2,5 +2,34 @@
 # proto-message: luckynumbers.v1.TitleScreen
 
 title: "Lucky Numbers"
-start_prompt: "Press any key to start"
+start_prompt: "Drag to look around - scroll to zoom"
+loading_prompt: "Loading..."
 next: GAME_SCENE_INTRO
+prompt_pulse_seconds: 1.6
+
+menu { label: "Play" action: MENU_ACTION_PLAY }
+menu { label: "Settings" action: MENU_ACTION_SETTINGS }
+
+settings {
+  title: "Settings"
+  body: "Coming soon."
+  back_label: "Back"
+}
+
+# The dice that create the universe: faces -> lucky number -> generated solar system.
+dice {
+  roll_label: "Roll"
+  roll_seconds: 1.2
+  seed_format: "Lucky number {0}"
+  # Red = the star (1 cool red dwarf .. 6 blue giant), white = how many worlds, gold = luck.
+  dice { id: "red" role: DIE_ROLE_STAR sides: 6 color { r: 0.85 g: 0.2 b: 0.25 a: 1 } initial_face: 6 }
+  dice { id: "white" role: DIE_ROLE_WORLDS sides: 6 color { r: 0.95 g: 0.95 b: 0.95 a: 1 } initial_face: 6 }
+  dice { id: "gold" role: DIE_ROLE_LUCK sides: 6 color { r: 0.95 g: 0.75 b: 0.2 a: 1 } initial_face: 6 }
+}
+
+# Play: UI fades, camera pushes toward home, then the intro continues from that exact view.
+play_transition_seconds: 1.4
+play_push_in: 0.3
+
+# The universe behind the title: see content/space/.
+backdrop_ref: "space/systems/home"

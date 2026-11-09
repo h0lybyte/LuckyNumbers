@@ -63,7 +63,8 @@ def _packed_varints(b: bytes):
 # FieldDescriptorProto.Type -> C# type for the scalar types we support.
 SCALARS = {1: "double", 2: "float", 3: "long", 5: "int", 8: "bool", 9: "string", 13: "uint"}
 T_MESSAGE, T_ENUM, LABEL_REPEATED = 11, 14, 3
-OPT_EVENT, OPT_STATE, OPT_CONFIG, OPT_VALUE = 50001, 50002, 50003, 50004
+OPT_EVENT, OPT_STATE, OPT_CONFIG, OPT_VALUE, OPT_MATERIAL = 50001, 50002, 50003, 50004, 50005
+FIELD_OPT_REF = 50101
 
 
 @dataclass
@@ -75,6 +76,8 @@ class Field:
     repeated: bool
     oneof: int | None
     doc: str = ""
+    optional: bool = False  # proto3 `optional` (explicit presence)
+    ref_target: str = ""    # (ln.ref): content path(s) merged into this sibling field
 
 
 @dataclass
@@ -86,6 +89,7 @@ class Message:
     options: set[int]
     file: str
     doc: str = ""
+    material: str = ""  # (ln.material) shader name
 
 
 @dataclass
@@ -173,13 +177,13 @@ def _load_enum(model, b, scope, fname, docs, path):
 
 
 def _load_message(model, b, scope, fname, docs, path):
-    name, fields, oneofs, options = "", [], [], set()
+    name, fields, oneofs, options, material = "", [], [], set(), ""
     nested = []
     for n, _, v in _fields(b):
         if n == 1:
             name = _str(v)
         elif n == 2:
-            f = dict(name="", number=0, type=0, type_name="", repeated=False, oneof=None)
+            f = dict(name="", number=0, type=0, type_name="", repeated=False, oneof=None, optional=False, ref_target="")
             for fn, _, fv in _fields(v):
                 if fn == 1:
                     f["name"] = _str(fv)
@@ -193,6 +197,12 @@ def _load_message(model, b, scope, fname, docs, path):
                     f["type_name"] = _str(fv)
                 elif fn == 9:
                     f["oneof"] = fv
+                elif fn == 17:
+                    f["optional"] = bool(fv)
+                elif fn == 8:  # FieldOptions
+                    for on, _, ov in _fields(fv):
+                        if on == FIELD_OPT_REF:
+                            f["ref_target"] = _str(ov)
             fields.append(Field(**f, doc=docs.get(path + (2, len(fields)), "")))
         elif n == 3:
             nested.append(v)
@@ -200,12 +210,20 @@ def _load_message(model, b, scope, fname, docs, path):
             for on, _, ov in _fields(v):
                 if on in (OPT_EVENT, OPT_STATE, OPT_CONFIG, OPT_VALUE) and ov:
                     options.add(on)
+                elif on == OPT_MATERIAL:
+                    material = _str(ov)
         elif n == 8:
             oneofs.append(next(_str(x) for k, _, x in _fields(v) if k == 1))
     if nested:
         raise ValueError(f"{scope}.{name}: nested types aren't supported; declare them at file level")
+    # proto3 `optional` is encoded as a synthetic one-field oneof (always after the real ones): drop it.
+    synthetic = {f.oneof for f in fields if f.optional}
+    for f in fields:
+        if f.optional:
+            f.oneof = None
+    oneofs = oneofs[:len(oneofs) - len(synthetic)]
     full = f"{scope}.{name}"
-    model.messages[full] = Message(full, name, fields, oneofs, options, fname, docs.get(path, ""))
+    model.messages[full] = Message(full, name, fields, oneofs, options, fname, docs.get(path, ""), material)
     model.order.append((fname, full))
 
 # ---------------------------------------------------------------------------- C# emit
@@ -241,6 +259,12 @@ class Emitter:
             for f in msg.fields:
                 if f.oneof is not None and f.type != T_MESSAGE:
                     raise ValueError(f"{msg.full}.{f.name}: oneof members must be messages")
+                if f.ref_target:
+                    target = next((t for t in msg.fields if t.name == f.ref_target), None)
+                    if f.type != 9 or target is None or target.type != T_MESSAGE or target.repeated != f.repeated:
+                        raise ValueError(f"{msg.full}.{f.name}: (ln.ref) must be a string field naming a sibling message "
+                                         f"field with the same repeated-ness ('{f.ref_target}')")
+        self.content: dict[str, tuple[str, bytes]] = {}  # library: path -> (message full name, merged payload)
 
     def ctype(self, f: Field) -> str:
         if f.type in SCALARS:
@@ -324,12 +348,16 @@ class Emitter:
     def data_class(self, m: Message) -> list[str]:
         lines = _doc(m.doc, "    ") + [f"    public sealed class {m.name}", "    {"]
         for f in m.fields:
+            if f.ref_target:
+                continue  # resolved at generation time; nothing at runtime
             t, p = self.ctype(f), pascal(f.name)
             lines += _doc(f.doc, "        ")
             if f.repeated:
                 lines.append(f"        public List<{t}> {p} {{ get; }} = new List<{t}>();")
             else:
                 lines.append(f"        public {t} {p} {{ get; set; }}")
+        lines += ["", "        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>",
+                  f"        public {m.name} Clone() => ({m.name})MemberwiseClone();"]
         for oi, oname in enumerate(m.oneofs):
             cases = [f for f in m.fields if f.oneof == oi]
             enum_name = f"{pascal(oname)}Case"
@@ -348,7 +376,7 @@ class Emitter:
         msg = self.m.messages[full]
         values: dict[int, list] = {}
         by_num = {f.number: f for f in msg.fields}
-        for num, wt, v in _fields(payload):
+        for num, wt, v in self._expand(msg, payload):
             f = by_num.get(num)
             if f is None:
                 raise ValueError(f"{msg.full}: unknown field {num} in content")
@@ -358,6 +386,11 @@ class Emitter:
                 # Repeated items sit one level deeper (inside the collection braces).
                 item_indent = indent + ("        " if f.repeated else "    ")
                 values.setdefault(num, []).append(self.value(f, v, wt, item_indent))
+        if msg.material:
+            missing = [f.name for f in msg.fields if f.number not in values]
+            if missing:
+                raise ValueError(f"content for {msg.name} (material {msg.material}) must set every field; "
+                                 f"missing: {', '.join(missing)}")
         if OPT_VALUE in msg.options:
             args = ", ".join(values.get(f.number, [self.default(f)])[-1] for f in msg.fields)
             return f"new {msg.name}({args})"
@@ -375,6 +408,35 @@ class Emitter:
         if not parts:
             return f"new {msg.name}()"
         return f"new {msg.name}\n{indent}{{\n" + "\n".join(parts) + f"\n{indent}}}"
+
+    def _expand(self, msg: Message, payload: bytes) -> list:
+        """Resolve (ln.ref) fields into entries of their target field (refs first, so inline values override),
+        then merge repeated occurrences of singular message fields: concatenating wire bytes is protobuf's merge."""
+        by_name = {f.name: f for f in msg.fields}
+        by_num = {f.number: f for f in msg.fields}
+        refs, rest = [], []
+        for num, wt, v in _fields(payload):
+            f = by_num.get(num)
+            if f is not None and f.ref_target:
+                target = by_name[f.ref_target]
+                path = _str(v)
+                if path not in self.content:
+                    raise ValueError(f"{msg.name}.{f.name}: reference '{path}' not found (content/{path}.txtpb)")
+                ref_full, ref_payload = self.content[path]
+                if ref_full != target.type_name:
+                    raise ValueError(f"{msg.name}.{f.name}: '{path}' is a {ref_full.split('.')[-1]}, "
+                                     f"expected {target.type_name.split('.')[-1]}")
+                refs.append((target.number, 2, ref_payload))
+            else:
+                rest.append((num, wt, v))
+        out, merged = [], {}
+        for num, wt, v in refs + rest:
+            f = by_num.get(num)
+            if f is not None and f.type == T_MESSAGE and not f.repeated:
+                merged[num] = merged.get(num, b"") + v
+            else:
+                out.append((num, wt, v))
+        return out + [(n, 2, b) for n, b in merged.items()]
 
     def _packed(self, f: Field, b: bytes):
         if f.type == 2:
@@ -410,12 +472,60 @@ class Emitter:
         return {"string": '""', "bool": "false"}.get(self.ctype(f), f"default({self.ctype(f)})")
 
 
+def material_bindings(model: Model, em: "Emitter", namespace: str) -> str:
+    """ApplyTo(Material) per (ln.material) message + value-type -> Unity conversions."""
+    lines = ["    public static class MaterialBindings", "    {"]
+    values = [m for _, full in model.order if (m := model.messages.get(full)) and OPT_VALUE in m.options]
+    for v in values:
+        floats = [f for f in v.fields if f.type == 2]
+        if v.name == "Rgba" and len(floats) == 4:
+            lines.append(f"        public static Color ToColor(this {v.name} c) => new Color(c.R, c.G, c.B, c.A);")
+        elif len(floats) == len(v.fields) and len(floats) in (2, 3, 4):
+            unity = {2: "Vector2", 3: "Vector3", 4: "Vector4"}[len(floats)]
+            args = ", ".join(f"v.{pascal(f.name)}" for f in floats)
+            lines.append(f"        public static {unity} To{unity}(this {v.name} v) => new {unity}({args});")
+    for _, full in model.order:
+        m = model.messages.get(full)
+        if not m or not m.material:
+            continue
+        lines += ["", f"        public const string {m.name}Shader = {json.dumps(m.material)};"]
+        for f in m.fields:
+            lines.append(f"        static readonly int {m.name}_{pascal(f.name)} = Shader.PropertyToID(\"_{pascal(f.name)}\");")
+        lines += ["", f"        /// <summary>Copies every field to the matching {m.material} property.</summary>",
+                  f"        public static void ApplyTo(this {m.name} look, Material material)", "        {"]
+        for f in m.fields:
+            pid, val = f"{m.name}_{pascal(f.name)}", f"look.{pascal(f.name)}"
+            if f.repeated:
+                raise ValueError(f"{m.full}.{f.name}: repeated fields can't bind to a material")
+            if f.type in (1, 2):
+                lines.append(f"            material.SetFloat({pid}, {val});")
+            elif f.type in (3, 5, 13):
+                lines.append(f"            material.SetInteger({pid}, (int){val});")
+            elif f.type == 8:
+                lines.append(f"            material.SetFloat({pid}, {val} ? 1f : 0f);")
+            elif f.type == T_MESSAGE and model.messages[f.type_name].name == "Rgba":
+                lines.append(f"            material.SetColor({pid}, {val}.ToColor());")
+            elif f.type == T_MESSAGE and OPT_VALUE in model.messages[f.type_name].options:
+                n = len(model.messages[f.type_name].fields)
+                conv = {2: "ToVector2()", 3: "ToVector3()", 4: "ToVector4()"}[n]
+                lines.append(f"            material.SetVector({pid}, {val}.{conv});")
+            else:
+                raise ValueError(f"{m.full}.{f.name}: type can't bind to a material property")
+        lines.append("        }")
+    lines.append("    }")
+    return (HEADER.format(src="proto/**/*.proto (ln.material)") + "\nusing UnityEngine;\n"
+            + f"\nnamespace {namespace}\n{{\n" + "\n".join(lines) + "\n}\n")
+
+
 HEADER = "// <auto-generated>\n// Generated by tools/ln.py gen from {src}. Do not edit; change the source and regenerate.\n// </auto-generated>\n"
 
 
-def generate(model: Model, content: list[tuple[str, str, bytes]], namespace: str) -> dict[str, str]:
-    """Return {relative path: text} for everything under Generated/."""
+def generate(model: Model, content: list[tuple[str, str, bytes]], namespace: str,
+             library: dict[str, tuple[str, bytes]] | None = None) -> dict[str, str]:
+    """Return {relative path: text} for everything under Generated/. `content` = baked top-level configs,
+    `library` = every content file by path (targets for (ln.ref))."""
     em = Emitter(model)
+    em.content = library or {}
     files: dict[str, str] = {}
     usings = "using System;\nusing System.Collections.Generic;\nusing ObservableCollections;\nusing R3;\n"
     for fname in sorted({f for f, _ in model.order}):
@@ -452,6 +562,11 @@ def generate(model: Model, content: list[tuple[str, str, bytes]], namespace: str
     files["Di/ModelRegistration.g.cs"] = (HEADER.format(src="proto/**/*.proto") + "\nusing MessagePipe;\nusing VContainer;\n"
                                         + f"\nnamespace {namespace}\n{{\n" + "\n".join(di) + "\n}\n")
 
+    files["Unity/MaterialBindings.g.cs"] = material_bindings(model, em, namespace)
+    files["Unity/LuckyNumbers.Model.Unity.asmdef"] = json.dumps({
+        "name": "LuckyNumbers.Model.Unity", "rootNamespace": namespace,
+        "references": ["LuckyNumbers.Model"], "autoReferenced": True}, indent=4) + "\n"
+
     files["Model/LuckyNumbers.Model.asmdef"] = json.dumps({
         "name": "LuckyNumbers.Model", "rootNamespace": namespace, "references": [],
         "autoReferenced": True, "noEngineReferences": True}, indent=4) + "\n"
@@ -462,7 +577,31 @@ def generate(model: Model, content: list[tuple[str, str, bytes]], namespace: str
     return files
 
 
-def run(protoc: str, include: Path, proto_dir: Path, content_dir: Path, header_re) -> dict[str, str]:
+def check_materials(model: Model, shader_root: Path) -> None:
+    """Every (ln.material) field must match a property declared by that shader (silent no-op otherwise)."""
+    shaders = {}
+    for f in shader_root.rglob("*.shader"):
+        text = f.read_text(encoding="utf-8")
+        m = re.search(r'^\s*Shader\s+"([^"]+)"', text, re.M)
+        props = re.search(r"Properties\s*\{(.*?)\n\s*\}", text, re.S)
+        if m:
+            shaders[m.group(1)] = set(re.findall(r"^\s*(_\w+)\s*\(", props.group(1), re.M)) if props else set()
+    for msg in model.messages.values():
+        if not msg.material:
+            continue
+        plain = [f.name for f in msg.fields if f.type != T_MESSAGE and not f.optional]
+        if plain:
+            raise ValueError(f"{msg.name}: declare scalar fields `optional` so an explicit 0 counts as set: "
+                             f"{', '.join(plain)}")
+        if msg.material not in shaders:
+            raise ValueError(f"{msg.name}: (ln.material) shader '{msg.material}' not found under {shader_root}")
+        missing = [f"_{pascal(f.name)}" for f in msg.fields if f"_{pascal(f.name)}" not in shaders[msg.material]]
+        if missing:
+            raise ValueError(f"{msg.name}: shader '{msg.material}' has no properties {', '.join(missing)}")
+
+
+def run(protoc: str, include: Path, proto_dir: Path, content_dir: Path, header_re,
+        shader_root: Path | None = None) -> dict[str, str]:
     import tempfile
     protos = sorted(str(p.relative_to(proto_dir)) for p in proto_dir.rglob("*.proto"))
     with tempfile.TemporaryDirectory() as tmp:
@@ -472,12 +611,41 @@ def run(protoc: str, include: Path, proto_dir: Path, content_dir: Path, header_r
                        capture_output=True, check=True)
         desc = out.read_bytes()
     model = load_descriptors(desc)
+    if shader_root is not None:
+        check_materials(model, shader_root)
     namespace = "LuckyNumbers.Model"
-    content = []
+
+    # Every content file by path ("space/looks/planets/ice"); `# proto-extends: <path>` merges a base first.
+    raw = {}
     for txt in sorted(content_dir.rglob("*.txtpb")):
+        key = txt.relative_to(content_dir).with_suffix("").as_posix()
         header = dict(header_re.findall(txt.read_text(encoding="utf-8")))
         with open(txt, "rb") as f:
             payload = subprocess.run([protoc, f"-I{proto_dir}", f"-I{include}", f"--encode={header['message']}",
                                       header["file"]], stdin=f, capture_output=True, check=True).stdout
-        content.append((str(txt.relative_to(content_dir.parent)), "." + header["message"], payload))
-    return generate(model, content, namespace)
+        raw[key] = ("." + header["message"], payload, header.get("extends"), str(txt.relative_to(content_dir.parent)))
+
+    resolved: dict[str, tuple[str, bytes]] = {}
+
+    def resolve(key: str, stack: tuple = ()) -> tuple[str, bytes]:
+        if key in resolved:
+            return resolved[key]
+        if key in stack:
+            raise ValueError(f"content extends cycle: {' -> '.join(stack + (key,))}")
+        if key not in raw:
+            raise ValueError(f"content/{stack[-1]}.txtpb extends '{key}', which doesn't exist")
+        full, payload, base, _ = raw[key]
+        if base:
+            base_full, base_payload = resolve(base, stack + (key,))
+            if base_full != full:
+                raise ValueError(f"content/{key}.txtpb ({full[1:]}) extends {base} ({base_full[1:]}): types differ")
+            payload = base_payload + payload  # base first: this file's fields override
+        resolved[key] = (full, payload)
+        return resolved[key]
+
+    for key in raw:
+        resolve(key)
+    # Top-level files are game configs (baked into GameContent); subfolders are a library for refs/extends.
+    content = [(raw[k][3], *resolved[k]) for k in raw if "/" not in k]
+    return generate(model, content, namespace, resolved)
+

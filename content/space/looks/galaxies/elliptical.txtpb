@@ -1,0 +1,14 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.GalaxyLook
+# Smooth elliptical galaxy, no arms.
+
+core_color { r: 1 g: 0.8 b: 0.6 a: 1 }
+arm_color { r: 0.9 g: 0.65 b: 0.5 a: 1 }
+arm_count: 0
+twist: 0
+brightness: 0.7
+core_size: 0.3
+squash: 0.4
+roll_degrees: 0
+dust: 0
+seed: 3

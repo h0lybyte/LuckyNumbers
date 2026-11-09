@@ -1,0 +1,49 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.SystemGenerator
+# Seed -> solar system. Palettes come from the looks library; add a preset file and list it here.
+
+# Cool -> hot: the red die picks along this list.
+star_refs: ["space/looks/stars/red_dwarf", "space/looks/stars/yellow_dwarf", "space/looks/stars/blue_giant"]
+planet_refs: ["space/looks/planets/home", "space/looks/planets/ice", "space/looks/planets/giant",
+              "space/looks/planets/lava", "space/looks/planets/desert", "space/looks/planets/verdant"]
+moon_refs: ["space/looks/planets/moon"]
+galaxy_refs: ["space/looks/galaxies/spiral_blue", "space/looks/galaxies/spiral_gold", "space/looks/galaxies/elliptical"]
+sky_refs: ["space/skies/default", "space/skies/emerald", "space/skies/ember", "space/skies/deep"]
+disk_refs: ["space/looks/disks/dusty", "space/looks/disks/icy"]
+
+min_planets: 3
+max_planets: 6
+# Compressed real proportions: the Sun is ~11,700 Earth diameters from Earth; here ~60.
+# Far enough that home's Hill sphere holds moons a few diameters out.
+first_orbit_radius: 170
+# Titius-Bode-like: each orbit 1.4-1.8x the last, and never closer than min_orbit_gap.
+orbit_spacing_min: 1.4
+orbit_spacing_max: 1.8
+min_orbit_gap: 20
+planet_scale_min: 1.5
+planet_scale_max: 4.5
+star_scale_min: 7
+star_scale_max: 12
+planet_star_density_ratio: 4
+
+moon_chance: 0.6
+max_moons: 2
+moon_scale_ratio: 0.27
+moon_orbit_min: 3
+moon_orbit_max: 6
+moon_hill_fraction: 0.5
+
+# Period = k * radius^1.5: home (~170) takes ~15 min, like the old hand-made one.
+seconds_per_orbit_unit: 0.4
+max_eccentricity: 0.1
+max_inclination_degrees: 7
+
+# Pinned to the sky. 2000 away, 60-160 wide = 1.7-4.6 degrees (Andromeda is ~3 degrees).
+galaxy_count: 5
+galaxy_distance: 2000
+galaxy_scale_min: 60
+galaxy_scale_max: 160
+
+collapse_seconds: 0.8
+# Expand also plays the dust disk: it brightens, the planets form out of it, it clears.
+expand_seconds: 4

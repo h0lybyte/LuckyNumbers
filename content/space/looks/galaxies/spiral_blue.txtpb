@@ -1,0 +1,14 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.GalaxyLook
+# Two-armed blue spiral.
+
+core_color { r: 1 g: 0.92 b: 0.75 a: 1 }
+arm_color { r: 0.45 g: 0.6 b: 1 a: 1 }
+arm_count: 2
+twist: 3
+brightness: 0.9
+core_size: 0.14
+squash: 0.3
+roll_degrees: 0
+dust: 0.6
+seed: 1

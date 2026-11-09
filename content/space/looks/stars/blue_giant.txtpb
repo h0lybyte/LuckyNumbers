@@ -1,0 +1,13 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.StarLook
+# Hot blue-white giant.
+
+core_color { r: 0.75 g: 0.85 b: 1 a: 1 }
+corona_color { r: 0.45 g: 0.6 b: 1 a: 1 }
+light_color { r: 0.85 g: 0.92 b: 1 a: 1 }
+intensity: 1.8
+corona_size: 2
+corona_power: 4.5
+corona_intensity: 2
+noise_scale: 2.5
+boil_speed: 0.07

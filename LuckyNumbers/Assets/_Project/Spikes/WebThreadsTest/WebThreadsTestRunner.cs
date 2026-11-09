@@ -47,6 +47,8 @@ namespace LuckyNumbers.Spikes.WebThreadsTest
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Bootstrap()
         {
+            // Opt-in: only when the page URL contains "tests" (e.g. http://localhost:8080/?tests).
+            if (!(Application.absoluteURL ?? "").Contains("tests")) return;
             var go = new GameObject(nameof(WebThreadsTestRunner));
             DontDestroyOnLoad(go);
             go.AddComponent<WebThreadsTestRunner>();

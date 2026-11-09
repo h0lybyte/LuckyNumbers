@@ -1,0 +1,26 @@
+{
+    "name": "LuckyNumbers.Intro",
+    "rootNamespace": "LuckyNumbers.Intro",
+    "references": [
+        "LuckyNumbers.Attributes",
+        "LuckyNumbers.Core",
+        "LuckyNumbers.Space",
+        "LuckyNumbers.Model",
+        "LuckyNumbers.Model.Unity",
+        "VContainer",
+        "MessagePipe",
+        "R3.Unity",
+        "UniTask",
+        "LuckyNumbers.Title",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

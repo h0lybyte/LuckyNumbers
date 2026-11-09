@@ -1,0 +1,261 @@
+/* Lucky Numbers UI theme: every screen shares these classes. */
+
+/* Exo 2 (OFL, see CREDITS.md); Bold/Italic are linked weight variants of this asset. */
+:root {
+    -unity-font-definition: url("../../Art/Fonts/Exo2/Exo2-Regular-SDF.asset");
+}
+
+.ln-screen {
+    flex-grow: 1;
+    align-items: center;
+    padding: 64px 0 28px 0;
+}
+
+.ln-spacer {
+    flex-grow: 1;
+}
+
+.ln-title {
+    font-size: 72px;
+    -unity-font-style: bold;
+    color: rgb(255, 255, 255);
+    /* Readable over bright sky (sun, corona). */
+    text-shadow: 0 3px 10px rgba(0, 0, 0, 0.9);
+    -unity-text-outline-width: 0.6px;
+    -unity-text-outline-color: rgba(0, 0, 0, 0.55);
+}
+
+.ln-menu {
+    flex-direction: row;
+    justify-content: center;
+    margin-bottom: 26px;
+}
+
+.ln-button {
+    width: 220px;
+    height: 56px;
+    margin: 0 12px;
+    font-size: 26px;
+    color: rgb(255, 255, 255);
+    background-color: rgba(20, 20, 46, 0.82);
+    border-width: 1px;
+    border-color: rgba(140, 160, 255, 0.35);
+    border-radius: 6px;
+    transition-duration: 0.12s;
+}
+
+.ln-button:hover {
+    background-color: rgba(48, 48, 110, 0.92);
+    border-color: rgba(170, 190, 255, 0.85);
+}
+
+.ln-button:active {
+    background-color: rgba(80, 80, 160, 0.96);
+}
+
+.ln-prompt {
+    font-size: 20px;
+    -unity-font-style: italic;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 1px 5px rgba(0, 0, 0, 0.95);
+}
+
+.ln-panel {
+    position: absolute;
+    left: 50%;
+    top: 45%;
+    width: 560px;
+    height: 320px;
+    translate: -50% -50%;
+    padding: 24px;
+    align-items: center;
+    justify-content: space-around;
+    background-color: rgba(8, 8, 20, 0.92);
+    border-width: 1px;
+    border-color: rgba(140, 160, 255, 0.3);
+    border-radius: 10px;
+}
+
+.ln-panel-title {
+    font-size: 40px;
+    -unity-font-style: bold;
+    color: rgb(255, 255, 255);
+}
+
+.ln-panel-body {
+    font-size: 24px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.ln-placeholder {
+    flex-grow: 1;
+    font-size: 36px;
+    color: rgb(255, 255, 255);
+    -unity-text-align: middle-center;
+}
+
+.ln-button--small {
+    width: 140px;
+    height: 44px;
+    margin: 10px 0 6px 0;
+    font-size: 22px;
+}
+
+/* Dice panel: bottom-left. */
+.ln-dice-panel {
+    position: absolute;
+    left: 28px;
+    bottom: 24px;
+    align-items: flex-start;
+    padding: 12px;
+    background-color: rgba(8, 8, 20, 0.55);
+    border-radius: 10px;
+}
+
+.ln-dice-row {
+    flex-direction: row;
+}
+
+.ln-die {
+    width: 58px;
+    height: 58px;
+    margin-right: 10px;
+    padding: 6px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-radius: 11px;
+    border-width: 2px;
+    border-color: rgba(0, 0, 0, 0.35);
+}
+
+.ln-pip-cell {
+    width: 33.33%;
+    height: 33.33%;
+    align-items: center;
+    justify-content: center;
+}
+
+.ln-pip {
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+}
+
+.ln-pip--off {
+    visibility: hidden;
+}
+
+.ln-die-number {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    font-size: 26px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.ln-lucky {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.85);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+
+/* Intro cutscene */
+.ln-intro-dice {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 38%;
+    align-items: center;
+    transition-property: opacity;
+    transition-duration: 0.6s;
+}
+
+.ln-intro-dice .ln-die {
+    width: 84px;
+    height: 84px;
+    margin: 0 9px;
+    padding: 9px;
+    border-radius: 16px;
+}
+
+.ln-intro-dice .ln-pip {
+    width: 15px;
+    height: 15px;
+    border-radius: 7.5px;
+}
+
+.ln-intro-dice .ln-lucky {
+    margin-top: 14px;
+    font-size: 22px;
+}
+
+.ln-dialogue {
+    position: absolute;
+    left: 15%;
+    right: 15%;
+    bottom: 9%;
+    padding: 16px 22px;
+    background-color: rgba(8, 8, 20, 0.7);
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgba(140, 150, 255, 0.35);
+}
+
+.ln-dialogue-speaker {
+    font-size: 18px;
+    -unity-font-style: bold;
+    color: rgb(150, 170, 255);
+    margin-bottom: 4px;
+}
+
+.ln-dialogue-line {
+    font-size: 26px;
+    color: white;
+    white-space: normal;
+}
+
+.ln-flash {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0;
+    background-color: white;
+}
+
+/* Crash site */
+.ln-flash--black {
+    background-color: black;
+    opacity: 1;
+}
+
+.ln-hint {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 7%;
+    -unity-text-align: middle-center;
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+
+.ln-crosshair {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    margin-left: -2px;
+    margin-top: -2px;
+    border-radius: 2px;
+    background-color: rgba(255, 255, 255, 0.7);
+}
+
+.ln-hidden {
+    display: none;
+}

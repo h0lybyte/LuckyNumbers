@@ -9,6 +9,14 @@ option csharp_namespace = "LuckyNumbers.Model";
 message PlayerConfig {
   option (ln.config) = true;
   int32 max_health = 1;
+  // Default ship skin (file name in Art/Models/Fighter/Skins); the player can change it later (PlayerShip).
+  string ship_skin = 2;
+}
+
+// The player's ship as they've set it up (starts from PlayerConfig; a customise screen / save file sets it).
+message PlayerShip {
+  option (ln.state) = true;
+  string skin = 1;
 }
 
 message PlayerHealth {

@@ -58,11 +58,21 @@ namespace LuckyNumbers.Editor
             PlayerSettings.defaultScreenWidth = Width;
             PlayerSettings.defaultScreenHeight = Height;
 
+            // Size: strip unused managed code (Medium: VContainer [Inject] ctors are [Preserve]d), IL2CPP
+            // optimised for size, wasm built for disk size with LTO.
+            PlayerSettings.SetManagedStrippingLevel(UnityEditor.Build.NamedBuildTarget.WebGL, ManagedStrippingLevel.Medium);
+            PlayerSettings.SetIl2CppCodeGeneration(UnityEditor.Build.NamedBuildTarget.WebGL, UnityEditor.Build.Il2CppCodeGeneration.OptimizeSize);
+            UnityEditor.WebGL.UserBuildSettings.codeOptimization = UnityEditor.WebGL.WasmCodeOptimization.DiskSizeLTO;
+
+            // Assets/WebGLTemplates/LuckyNumbers: Unity's Default template + an errorHandler that keeps a
+            // refused pointer lock from stopping the game.
+            PlayerSettings.WebGL.template = "PROJECT:LuckyNumbers";
+
             PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.WebGL, false);
             PlayerSettings.SetGraphicsAPIs(BuildTarget.WebGL, ApisFor(gfx));
 
             AssetDatabase.SaveAssets();
-            Debug.Log($"[WebBuild] Settings applied: threads=on, gzip + decompression fallback, 1280x720, " +
+            Debug.Log($"[WebBuild] Settings applied: threads=on, gzip + decompression fallback, 1280x720, strip=Medium, wasm=DiskSizeLTO, " +
                       $"graphics={string.Join("+", ApisFor(gfx))}");
         }
 

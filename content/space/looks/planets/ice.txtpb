@@ -1,0 +1,11 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.PlanetLook
+# proto-extends: space/looks/planet_base
+# Cold blue world with a bright haze.
+
+planet_color { r: 0.3 g: 0.75 b: 1 a: 1 }
+atmosphere_color { r: 0.8 g: 0.95 b: 1 a: 1 }
+noise_offset { x: 41 y: 17 z: 9 }
+rotation_speed: 0.008
+axial_tilt_degrees: 20
+atmosphere_thickness: 0.1

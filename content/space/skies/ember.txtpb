@@ -1,0 +1,23 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.StarfieldLook
+# Red and gold emission gas, wide band, bright knots.
+
+space_color { r: 0.025 g: 0.008 b: 0.01 a: 1 }
+nebula_color_a { r: 0.55 g: 0.12 b: 0.1 a: 1 }
+nebula_color_b { r: 0.45 g: 0.28 b: 0.08 a: 1 }
+nebula_color_c { r: 0.2 g: 0.15 b: 0.5 a: 1 }
+nebula_intensity: 0.7
+nebula_scale: 1.0
+warp: 1.0
+band_width: 0.5
+band_strength: 0.7
+glow: 0.15
+dust: 0.5
+knot_brightness: 1.1
+star_density: 140
+star_brightness: 1.2
+twinkle_speed: 2
+drift { x: 0.003 y: 0 }
+seed: 7
+band_normal { x: 0.3 y: 1 z: 0.2 }
+knot_density: 6

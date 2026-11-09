@@ -1,0 +1,9 @@
+# proto-file: luckynumbers/v1/hands.proto
+# proto-message: luckynumbers.v1.HandPose
+name: "fist"
+fidget: 0.05
+fingers { finger: "thumb"  curl: [40, 60, 45] spread: -15 }
+fingers { finger: "index"  curl: [85, 95, 70] }
+fingers { finger: "middle" curl: [85, 95, 70] }
+fingers { finger: "ring"   curl: [85, 95, 70] }
+fingers { finger: "pinky"  curl: [85, 95, 70] }

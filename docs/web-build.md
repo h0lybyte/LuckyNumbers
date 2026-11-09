@@ -8,6 +8,9 @@ Set by `Assets/_Project/Editor/WebBuild.cs` (applied on every build):
 | Multithreading | on |
 | Compression | Gzip + decompression fallback (itch.io sends no `Content-Encoding`) |
 | Canvas | 1280×720 |
+| Size | Managed stripping Medium, IL2CPP OptimizeSize, wasm DiskSizeLTO (~10 MB). `Assets/_Project/link.xml` keeps our assemblies, VContainer and MessagePipe whole (built by reflection) |
+| Template | `Assets/WebGLTemplates/LuckyNumbers`: Unity's Default + an `errorHandler` that keeps a refused pointer lock from stopping the game |
+| Model import | `Editor/ArtImport.cs`: anything in `Art/Models/` imports as a static mesh (no rig, animation or materials), skins capped at 512 px and crunched |
 | Version | `-lnVersion` from `CHANGELOG.md` → `Application.version` |
 
 `RenderResolutionCap` limits the internal 3D render resolution to 1280×720 via URP `renderScale`.

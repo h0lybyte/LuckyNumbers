@@ -1,0 +1,23 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.StarfieldLook
+# Sparse dark sky: faint gas everywhere, no strong band.
+
+space_color { r: 0.008 g: 0.008 b: 0.015 a: 1 }
+nebula_color_a { r: 0.15 g: 0.1 b: 0.3 a: 1 }
+nebula_color_b { r: 0.05 g: 0.1 b: 0.25 a: 1 }
+nebula_color_c { r: 0.3 g: 0.1 b: 0.2 a: 1 }
+nebula_intensity: 0.35
+nebula_scale: 0.9
+warp: 0.8
+band_width: 0.6
+band_strength: 0.25
+glow: 0.07
+dust: 0.3
+knot_brightness: 0.5
+star_density: 140
+star_brightness: 1.2
+twinkle_speed: 2
+drift { x: 0.003 y: 0 }
+seed: 7
+band_normal { x: 0.3 y: 1 z: 0.2 }
+knot_density: 6

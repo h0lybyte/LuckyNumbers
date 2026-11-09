@@ -1,0 +1,10 @@
+# proto-file: luckynumbers/v1/hands.proto
+# proto-message: luckynumbers.v1.HandPose
+# Reaching for something: fingers straight and fanned, ready to close.
+name: "open"
+fidget: 0.3
+fingers { finger: "thumb"  curl: [0] spread: 12 }
+fingers { finger: "index"  curl: [0] spread: 6 }
+fingers { finger: "middle" curl: [0] }
+fingers { finger: "ring"   curl: [0] spread: 5 }
+fingers { finger: "pinky"  curl: [0] spread: 10 }
