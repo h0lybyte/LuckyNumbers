@@ -32,6 +32,7 @@ namespace LuckyNumbers.Model
             builder.Register<CameraHandoff>(Lifetime.Singleton);
             builder.Register<PlayerInput>(Lifetime.Singleton);
             builder.Register<LandingSite>(Lifetime.Singleton);
+            builder.Register<PlayerShip>(Lifetime.Singleton);
             builder.Register<PlayerHealth>(Lifetime.Singleton);
             builder.Register<DiceState>(Lifetime.Singleton);
         }

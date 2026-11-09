@@ -21,17 +21,9 @@ namespace LuckyNumbers.Model
         /// </summary>
         public SpaceBackdrop Backdrop { get; set; }
         /// <summary>
-        /// Ship skin file name in Art/Models/Fighter/Skins (e.g. "idolknight"); empty = the lucky number picks one.
-        /// </summary>
-        public string ShipSkin { get; set; }
-        /// <summary>
         /// Ship length, in target-planet diameters.
         /// </summary>
         public float ShipSize { get; set; }
-        /// <summary>
-        /// Skins the lucky number picks from when ship_skin is empty (file names); empty = all skins.
-        /// </summary>
-        public List<string> ShipSkins { get; } = new List<string>();
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public Cutscene Clone() => (Cutscene)MemberwiseClone();

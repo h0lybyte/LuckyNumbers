@@ -83,13 +83,11 @@ namespace LuckyNumbers.Model
         /// Body id of the planet (e.g. "home") in the universe of the current lucky number.
         /// </summary>
         public readonly ReactiveProperty<string> Body = new ReactiveProperty<string>();
-        public readonly ReactiveProperty<string> ShipSkin = new ReactiveProperty<string>();
 
         public void Dispose()
         {
             Valid.Dispose();
             Body.Dispose();
-            ShipSkin.Dispose();
         }
     }
 }

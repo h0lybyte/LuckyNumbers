@@ -16,7 +16,7 @@ namespace LuckyNumbers.Planet
     /// <summary>
     /// Builds the crash site from the player's universe: the planet they hit (LandingSite.body, regenerated
     /// from the lucky number) colours the ground and haze, its star is the sun, the roll's sky is overhead,
-    /// the wreck (their skin) lies nose-down nearby. Then the wake-up: lying on the ground, fade in, stand,
+    /// the wreck (their ship, PlayerShip) lies nose-down nearby. Then the wake-up: lying on the ground, fade in, stand,
     /// face the wreck, hand control to the player.
     /// </summary>
     [Presenter]
@@ -32,6 +32,7 @@ namespace LuckyNumbers.Planet
         readonly ShipView _wreck;
         readonly IFirstPerson _firstPerson;
         readonly LandingSite _landing;
+        readonly PlayerShip _playerShip;
         readonly IBufferedSubscriber<UniverseSeedChanged> _seeds;
         readonly CancellationTokenSource _cts = new();
         IDisposable _subscription;
@@ -40,8 +41,10 @@ namespace LuckyNumbers.Planet
 
         [Inject]
         public CrashSitePresenter(PlanetScene config, GroundView ground, PlanetView view, PlayerView player, ShipView wreck,
-                                  IFirstPerson firstPerson, LandingSite landing, IBufferedSubscriber<UniverseSeedChanged> seeds)
+                                  IFirstPerson firstPerson, LandingSite landing, IBufferedSubscriber<UniverseSeedChanged> seeds,
+                                  PlayerShip playerShip)
         {
+            _playerShip = playerShip;
             _config = config;
             _ground = ground;
             _view = view;
@@ -118,8 +121,7 @@ namespace LuckyNumbers.Planet
             }
 
             // Wreck: nose-down in front of where you wake, half dug in, still smouldering.
-            var skin = _landing.Valid.Value ? _landing.ShipSkin.Value : "";
-            _wreck.Show(skin, (int)(roll.Seed % (uint)math.max(1, _wreck.SkinCount)), _config.WreckLength);
+            _wreck.Show(PlayerShipSkin.Current(_playerShip), _config.WreckLength);   // your ship
             var at = new Vector3(0f, 0f, _config.WreckDistance);
             at.y = _ground.HeightAt(at) + _config.WreckLength * 0.04f;            // nose dug in, hull above ground
             _wreck.Pose(at, Quaternion.Euler(14f, rng.NextFloat(-160f, -110f), rng.NextFloat(-18f, 18f)));

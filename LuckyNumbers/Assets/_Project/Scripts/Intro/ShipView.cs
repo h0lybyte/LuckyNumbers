@@ -20,12 +20,13 @@ namespace LuckyNumbers.Intro
         public int SkinCount => skins.Length;
         public string SkinName => _material != null && _material.mainTexture != null ? _material.mainTexture.name : "";
 
-        /// <summary>Show the ship with a skin (by file name, or by index when the name is empty) at a world length.</summary>
-        public void Show(string skin, int fallbackIndex, float length)
+        /// <summary>Show the ship with a skin (file name; unknown names fall back to the first skin) at a world length.</summary>
+        public void Show(string skin, float length)
         {
             _material ??= new Material(renderers[0].sharedMaterial);
-            var tex = skins[Mathf.Abs(fallbackIndex) % skins.Length];
+            var tex = skins[0];
             foreach (var s in skins) if (s.name == skin) tex = s;
+            if (tex.name != skin) Debug.LogWarning($"[Ship] no skin '{skin}', using {tex.name}");
             _material.mainTexture = tex;
             _baseGlow = _material.GetFloat(Glow);
             foreach (var r in renderers) r.sharedMaterial = _material;

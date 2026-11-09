@@ -3,3 +3,6 @@
 # Placeholder value; tune with gameplay.
 
 max_health: 100
+
+# Your ship's starting skin (any file name in Art/Models/Fighter/Skins). Customisable later.
+ship_skin: "idolknight"

@@ -34,6 +34,7 @@ namespace LuckyNumbers.Intro
         readonly IPublisher<CutsceneFinished> _finished;
         readonly CameraHandoff _handoff;
         readonly LandingSite _landing;
+        readonly PlayerShip _playerShip;
         readonly CancellationTokenSource _cts = new();
 
         Cutscene _cut;
@@ -50,8 +51,10 @@ namespace LuckyNumbers.Intro
         [Inject]
         public IntroPresenter(ISpaceDirector space, IntroView view, ShipView ship, DiceView dice, DiceState diceState,
                               IPublisher<SceneChangeRequested> scenes, IPublisher<CutsceneStepStarted> stepStarted,
-                              IPublisher<CutsceneFinished> finished, CameraHandoff handoff, LandingSite landing)
+                              IPublisher<CutsceneFinished> finished, CameraHandoff handoff, LandingSite landing,
+                              PlayerShip playerShip)
         {
+            _playerShip = playerShip;
             _landing = landing;
             _handoff = handoff;
             _space = space;
@@ -92,9 +95,7 @@ namespace LuckyNumbers.Intro
             SetupSpiral();
             _space.TryGetBody(Target, out _, out var diameter);
             var length = diameter * math.max(0.005f, _cut.ShipSize);
-            var skin = _cut.ShipSkin;
-            if (string.IsNullOrEmpty(skin) && _cut.ShipSkins.Count > 0) skin = _cut.ShipSkins[(int)(_space.Seed % (uint)_cut.ShipSkins.Count)];
-            _ship.Show(skin, (int)(_space.Seed % (uint)math.max(1, _ship.SkinCount)), length);
+            _ship.Show(PlayerShipSkin.Current(_playerShip), length);   // the player's ship, not the dice's
             _space.Camera.nearClipPlane = math.max(0.002f, length * 0.2f);   // the camera sits a few ship-lengths away
             PoseShip(0f, 0f, out var shipPos, out var shipRot);
             if (!_fromTitle) SnapCamera(shipPos, shipRot);
@@ -225,7 +226,6 @@ namespace LuckyNumbers.Intro
         {
             // Remember where we came down: the Planet scene rebuilds this planet and puts the wreck there.
             _landing.Body.Value = Target;
-            _landing.ShipSkin.Value = _ship.SkinName;
             _landing.Valid.Value = true;
             _ship.Hide();
             var duration = math.max(0.3f, crash.DurationSeconds);

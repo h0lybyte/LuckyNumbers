@@ -53,5 +53,5 @@ message LandingSite {
   bool valid = 1;
   // Body id of the planet (e.g. "home") in the universe of the current lucky number.
   string body = 2;
-  string ship_skin = 3;
+  reserved 3; // ship_skin: the wreck uses the player's ship (PlayerShip)
 }

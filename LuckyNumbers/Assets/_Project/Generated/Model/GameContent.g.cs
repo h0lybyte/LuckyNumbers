@@ -460,18 +460,6 @@ namespace LuckyNumbers.Model
                 Instant = true,
             },
             ShipSize = 0.05f,
-            ShipSkins =
-            {
-                "jodomatis",
-                "krulspeld3",
-                "krulspeld4",
-                "robin",
-                "cinfa",
-                "idolknight",
-                "kaoskiwi",
-                "krulspeld2",
-                "wilko",
-            },
         };
 
         /// <summary>From <c>content/planet.txtpb</c>.</summary>
@@ -902,6 +890,7 @@ namespace LuckyNumbers.Model
         public static readonly PlayerConfig Player = new PlayerConfig
         {
             MaxHealth = 100,
+            ShipSkin = "idolknight",
         };
 
         /// <summary>From <c>content/title.txtpb</c>.</summary>

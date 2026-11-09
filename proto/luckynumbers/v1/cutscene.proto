@@ -16,12 +16,9 @@ message Cutscene {
   // The universe it plays in. Generated from the player's lucky number, so it is the title's world.
   SpaceBackdrop backdrop = 3;
   string backdrop_ref = 4 [(ln.ref) = "backdrop"];
-  // Ship skin file name in Art/Models/Fighter/Skins (e.g. "idolknight"); empty = the lucky number picks one.
-  string ship_skin = 5;
+  reserved 5, 7; // ship_skin, ship_skins: the skin is the player's choice now (PlayerShip)
   // Ship length, in target-planet diameters.
   float ship_size = 6;
-  // Skins the lucky number picks from when ship_skin is empty (file names); empty = all skins.
-  repeated string ship_skins = 7;
 }
 
 message CutsceneStep {
