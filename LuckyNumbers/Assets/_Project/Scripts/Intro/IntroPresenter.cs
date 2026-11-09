@@ -32,12 +32,16 @@ namespace LuckyNumbers.Intro
         readonly IPublisher<SceneChangeRequested> _scenes;
         readonly IPublisher<CutsceneStepStarted> _stepStarted;
         readonly IPublisher<CutsceneFinished> _finished;
+        readonly CameraHandoff _handoff;
         readonly CancellationTokenSource _cts = new();
 
         Cutscene _cut;
         ShipPulledIn _pull;
         Random _rng;
         float3 _axisA, _axisB, _axisUp;   // spiral frame around the planet (fixed at start)
+        float _sweep;                     // radians from spiral start to impact
+        float _startDiameters;            // spiral start radius, in planet diameters
+        bool _fromTitle;                  // continuing the title's camera (CameraHandoff)
         Vector3 _camPos;                  // chase camera, smoothed
         Quaternion _camRot;
         float _shake;
@@ -45,8 +49,9 @@ namespace LuckyNumbers.Intro
         [Inject]
         public IntroPresenter(ISpaceDirector space, IntroView view, ShipView ship, DiceView dice, DiceState diceState,
                               IPublisher<SceneChangeRequested> scenes, IPublisher<CutsceneStepStarted> stepStarted,
-                              IPublisher<CutsceneFinished> finished)
+                              IPublisher<CutsceneFinished> finished, CameraHandoff handoff)
         {
+            _handoff = handoff;
             _space = space;
             _view = view;
             _ship = ship;
@@ -63,24 +68,32 @@ namespace LuckyNumbers.Intro
         {
             _cut = GameContent.Intro;
             _view.Bind();
-            _view.Flash(Color.black, 1f);
             _view.Dialogue(null, null, 0);
             _ship.Hide();
-            // The universe arrives via the buffered lucky number; wait until the home planet exists.
+            // Seamless from the title: the very first frame uses the pose the title ended on.
+            _space.TakeCamera();
+            _fromTitle = _handoff.Valid.Value;
+            if (_fromTitle)
+            {
+                var p = _handoff.Position.Value; var f = _handoff.Forward.Value; var u = _handoff.Up.Value;
+                _camPos = new Vector3(p.X, p.Y, p.Z);
+                _camRot = Quaternion.LookRotation(new Vector3(f.X, f.Y, f.Z), new Vector3(u.X, u.Y, u.Z));
+                _space.Camera.transform.SetPositionAndRotation(_camPos, _camRot);
+                _handoff.Valid.Value = false;   // consumed
+            }
+            _view.Flash(Color.black, _fromTitle ? 0f : 1f);
+            // The universe arrives via the buffered lucky number (placed on its orbits as it is built).
             while (!_space.TryGetBody(Target, out _, out _)) await UniTask.Yield(ct);
-            await UniTask.NextFrame(ct);   // let OrbitSystem place the bodies (they start at the origin)
-            await UniTask.NextFrame(ct);
 
             _rng = new Random(_space.Seed | 1u);
             _pull = FindPull() ?? new ShipPulledIn { DurationSeconds = 6, StartDistance = 4, Turns = 1, BankDegrees = 50, CameraRelease = 0.2f };
             SetupSpiral();
-            _space.TakeCamera();
             _space.TryGetBody(Target, out _, out var diameter);
             var length = diameter * math.max(0.005f, _cut.ShipSize);
             _ship.Show(_cut.ShipSkin, (int)(_space.Seed % (uint)math.max(1, _ship.SkinCount)), length);
             _space.Camera.nearClipPlane = math.max(0.002f, length * 0.2f);   // the camera sits a few ship-lengths away
             PoseShip(0f, 0f, out var shipPos, out var shipRot);
-            SnapCamera(shipPos, shipRot);
+            if (!_fromTitle) SnapCamera(shipPos, shipRot);
             _space.TryGetBody(Target, out var homePos, out _);
             var near = _space.Nearest(_camPos, out var gap);
             Debug.Log($"[Intro] home {homePos} d={diameter:0.##}, ship {shipPos}, camera {_camPos} (nearest {near}, {gap:0.##} from its surface)");
@@ -93,6 +106,7 @@ namespace LuckyNumbers.Intro
                 switch (step.Step)
                 {
                     case CutsceneStep.StepCase.DiceRoll: await DiceRollAsync(step.DiceRoll, ct); break;
+                    case CutsceneStep.StepCase.ShipArrives: await ArriveAsync(step.ShipArrives, ct); break;
                     case CutsceneStep.StepCase.ShipPulledIn: await PullInAsync(step.ShipPulledIn, ct); break;
                     case CutsceneStep.StepCase.CrashLanding: await CrashAsync(step.CrashLanding, ct); break;
                     case CutsceneStep.StepCase.Dialogue: await DialogueAsync(step.Dialogue, ct); break;
@@ -113,6 +127,41 @@ namespace LuckyNumbers.Intro
         }
 
         // ---- Steps -------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// Opening shot. From the title's camera: the ship streaks in from just behind the camera (engines
+        /// hot), decelerates into the spiral start, and the camera eases from the title view into the chase.
+        /// </summary>
+        async UniTask ArriveAsync(ShipArrives arrive, CancellationToken ct)
+        {
+            var duration = math.max(0.5f, arrive.DurationSeconds);
+            _space.TryGetBody(Target, out _, out var diameter);
+            var length = diameter * math.max(0.005f, _cut.ShipSize);
+            var fromPos = _camPos;
+            var fromRot = _camRot;
+            // Start beside and behind the camera, so it flies past into the frame.
+            var shipFromOffset = fromRot * new Vector3(length * 1.4f, -length * 0.7f, -length * 2.5f);
+            for (var t = 0f; t < duration; t += Time.deltaTime)
+            {
+                var x = t / duration;
+                var fly = 1f - math.pow(1f - math.saturate(x / 0.8f), 3f);          // fast in, settles by 80%
+                PoseShip(0f, t, out var pathPos, out var pathRot);
+                var start = fromPos + shipFromOffset;
+                var pos = Vector3.Lerp(start, pathPos, fly);
+                var heading = Quaternion.LookRotation(((Vector3)pathPos - start).normalized, pathRot * Vector3.up);
+                _ship.Pose(pos, Quaternion.Slerp(heading, pathRot, math.smoothstep(0.5f, 1f, fly)));
+                _ship.SetHeat(0f, math.lerp(2.6f, 1f, fly));                             // boosting in, then cruise
+
+                ChasePose(pathPos, pathRot, 1.15f, out var chasePos, out var chaseRot);
+                var blend = math.smoothstep(0.15f, 1f, x);
+                _camPos = Vector3.Lerp(fromPos, chasePos, blend);
+                _camRot = Quaternion.Slerp(fromRot, chaseRot, blend);
+                if (x > 0.3f) KeepInFrame(pos, 20f);
+                if (!_fromTitle) _view.Flash(Color.black, 1f - math.smoothstep(0f, 0.25f, x));
+                ApplyCamera(_camPos, _camRot);
+                await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate, ct);
+            }
+        }
 
         /// <summary>Fade in on the ship drifting toward the planet; the player's dice tumble and land on their roll.</summary>
         async UniTask DiceRollAsync(DiceRoll roll, CancellationToken ct)
@@ -206,38 +255,56 @@ namespace LuckyNumbers.Intro
         // ---- Ship path ---------------------------------------------------------------------------------
 
         /// <summary>
-        /// Spiral frame, solved backwards: the fall ends ~30 degrees from the sun-facing point, so the ship
-        /// stays over the lit side (visible against the planet) and crashes in daylight.
+        /// Spiral frame. Starts on the camera's side of the planet (so continuing the title's view never swings
+        /// through it) and ends ~30 degrees from the sun-facing point, so the ship stays over the lit side and
+        /// crashes in daylight. The sweep between the two is the one closest to `turns` laps.
         /// </summary>
         void SetupSpiral()
         {
-            _space.TryGetBody(Target, out var home, out _);
+            _space.TryGetBody(Target, out var home, out var diameter);
             var toSun = _space.TryGetBody("sun", out var sun, out _) ? math.normalizesafe(sun - home, new float3(1, 0, 0)) : new float3(1, 0, 0);
             var up = math.normalizesafe(new float3(0, 1, 0) - toSun * math.dot(toSun, new float3(0, 1, 0)), new float3(0, 0, 1));
             var end = (float3)(Quaternion.AngleAxis(30f, (Vector3)up) * (Vector3)toSun);
-            var sweep = _pull.Turns * 360f;
-            _axisUp = up;
-            var best = float.MinValue;
-            float3 bestA = end, bestB = math.cross(up, end);
-            foreach (var sign in new[] { 1f, -1f })   // pick the winding whose path ends on `end`
+
+            float3 start;
+            if (_fromTitle)
             {
-                _axisA = math.normalizesafe((float3)(Quaternion.AngleAxis(sign * sweep, (Vector3)up) * (Vector3)end));
-                _axisB = math.normalizesafe(math.cross(up, _axisA));
-                var score = math.dot(math.normalizesafe(Offset(1f, 1f)), end);
-                if (score > best) { best = score; bestA = _axisA; bestB = _axisB; }
+                var fromCam = (float3)_camPos - home;
+                start = math.normalizesafe(fromCam - up * math.dot(fromCam, up), end);
+                // A bit inside the camera's distance: the ship flies past the camera and settles in front of the planet.
+                _startDiameters = math.max(1.3f, 0.82f * math.length(fromCam) / math.max(diameter, 1e-3f));
             }
-            _axisA = bestA;
-            _axisB = bestB;
+            else
+            {
+                start = (float3)(Quaternion.AngleAxis(-_pull.Turns * 360f, (Vector3)up) * (Vector3)end);
+                _startDiameters = math.max(1.4f, _pull.StartDistance);
+            }
+
+            _axisUp = up;
+            _axisA = start;
+            var want = math.max(0.25f, _pull.Turns) * 2f * math.PI;
+            var bestCost = float.MaxValue;
+            foreach (var sign in new[] { 1f, -1f })          // either winding; pick the sweep closest to `turns`
+            {
+                var b = sign * math.normalizesafe(math.cross(up, start));
+                var theta = math.atan2(math.dot(end, b), math.dot(end, start));
+                if (theta < 0f) theta += 2f * math.PI;
+                foreach (var sweep in new[] { theta, theta + 2f * math.PI })
+                {
+                    var cost = math.abs(sweep - want);
+                    if (cost < bestCost) { bestCost = cost; _axisB = b; _sweep = sweep; }
+                }
+            }
         }
 
         /// <summary>Local offset from the planet centre at path progress u (0 start .. 1 surface).</summary>
         float3 Offset(float u, float diameter)
         {
-            var r0 = diameter * math.max(1f, _pull.StartDistance);
+            var r0 = diameter * _startDiameters;
             var surface = diameter * 0.5f;
             var fall = math.pow(math.saturate(u), 2.2f);                       // slow, then the plunge
             var r = math.lerp(r0, surface * 0.98f, fall);
-            var theta = _pull.Turns * 2f * math.PI * math.pow(math.saturate(u), 1.5f); // spins up as it falls
+            var theta = _sweep * math.pow(math.saturate(u), 1.5f);                   // spins up as it falls
             var height = r0 * 0.12f * (1f - fall);
             return _axisA * (r * math.cos(theta)) + _axisB * (r * math.sin(theta)) + _axisUp * height;
         }
@@ -277,22 +344,27 @@ namespace LuckyNumbers.Intro
         /// </summary>
         void Chase(Vector3 shipPos, Quaternion shipRot, float distanceScale)
         {
-            _space.TryGetBody(Target, out var home, out var diameter);
-            var length = diameter * math.max(0.005f, _cut.ShipSize);
-            var outward = ((Vector3)shipPos - (Vector3)home).normalized;
-            // Over the shoulder: out beyond the ship (planet behind it) and a little behind its heading.
-            var wantPos = shipPos + outward * (length * 3.6f * distanceScale)
-                        + shipRot * Vector3.back * (length * 1.6f * distanceScale) + (Vector3)_axisUp * (length * 0.9f);
-            var toShip = (shipPos + shipRot * Vector3.forward * length - wantPos).normalized;
-            var toHome = ((Vector3)home - wantPos).normalized;
-            var angle = Vector3.Angle(toShip, toHome);
-            var aim = Vector3.Slerp(toShip, toHome, angle > 0.01f ? math.min(0.6f, ShipMaxOffCentreDegrees / angle) : 0f);
-            var wantRot = Quaternion.LookRotation(aim, (Vector3)_axisUp);
+            ChasePose(shipPos, shipRot, distanceScale, out var wantPos, out var wantRot);
             var k = 1f - math.exp(-8f * Time.deltaTime);
             _camPos = Vector3.Lerp(_camPos, wantPos, k);
             _camRot = Quaternion.Slerp(_camRot, wantRot, k);
             KeepInFrame(shipPos, 18f);
             ApplyCamera(_camPos, _camRot);
+        }
+
+        void ChasePose(Vector3 shipPos, Quaternion shipRot, float distanceScale, out Vector3 wantPos, out Quaternion wantRot)
+        {
+            _space.TryGetBody(Target, out var home, out var diameter);
+            var length = diameter * math.max(0.005f, _cut.ShipSize);
+            var outward = ((Vector3)shipPos - (Vector3)home).normalized;
+            // Over the shoulder: out beyond the ship (planet behind it) and a little behind its heading.
+            wantPos = shipPos + outward * (length * 3.6f * distanceScale)
+                        + shipRot * Vector3.back * (length * 1.6f * distanceScale) + (Vector3)_axisUp * (length * 0.9f);
+            var toShip = (shipPos + shipRot * Vector3.forward * length - wantPos).normalized;
+            var toHome = ((Vector3)home - wantPos).normalized;
+            var angle = Vector3.Angle(toShip, toHome);
+            var aim = Vector3.Slerp(toShip, toHome, angle > 0.01f ? math.min(0.6f, ShipMaxOffCentreDegrees / angle) : 0f);
+            wantRot = Quaternion.LookRotation(aim, (Vector3)_axisUp);
         }
 
         /// <summary>Camera stops, keeps the ship in frame as it falls away into the planet.</summary>

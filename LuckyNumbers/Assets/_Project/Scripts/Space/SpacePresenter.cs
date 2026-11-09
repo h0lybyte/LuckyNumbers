@@ -105,6 +105,7 @@ namespace LuckyNumbers.Space
             {
                 Expand();
                 _phase = Phase.Idle;   // already formed: no big bang
+                Place(1f);
                 return;
             }
             if (_world == null || _world.Count == 0) { Expand(); return; }
@@ -160,21 +161,9 @@ namespace LuckyNumbers.Space
         public void Tick()
         {
             var dt = Time.deltaTime;
-            OrbitSystem.Update(_world, Time.time);
             var bang = BigBang(dt);   // 1 = normal; <1 pulls bodies to the centre and shrinks them
             UpdateDisk(bang);
-            var centre = _sun >= 0 ? _world.Position[_sun] : float3.zero;
-            for (var i = 0; i < _world.Count; i++)
-            {
-                if (_world.Kind[i] == BodyKind.Galaxy) continue;
-                _bodies[i].localPosition = math.lerp(centre, _world.Position[i], bang);
-                _bodies[i].localScale = Vector3.one * (_world.Scale[i] * bang);
-            }
-            if (_sun >= 0)
-            {
-                var s = _world.Position[_sun];
-                Shader.SetGlobalVector(SunPosition, new Vector4(s.x, s.y, s.z, 1f)); // w = 1: point light set
-            }
+            Place(bang);
             if (!_directed) OrbitCamera(dt);
             // Galaxies are sky objects: Position is an offset from the camera, so they never come closer.
             var eye = (float3)_view.Camera.transform.position;
@@ -229,6 +218,25 @@ namespace LuckyNumbers.Space
             if (_phase == Phase.Collapsing) return math.smoothstep(0f, 1f, math.saturate(_phaseTime / math.max(0.01f, g.CollapseSeconds)));
             var e = math.saturate(_phaseTime / math.max(0.01f, g.ExpandSeconds));
             return 1f - math.smoothstep(0.55f, 1f, e);
+        }
+
+        /// <summary>Orbits -> body transforms and the sun light. Also run right after a build, so the first
+        /// frame (e.g. a scene that continues the title's view) already shows bodies on their orbits.</summary>
+        void Place(float bang)
+        {
+            OrbitSystem.Update(_world, Time.time);
+            var centre = _sun >= 0 ? _world.Position[_sun] : float3.zero;
+            for (var i = 0; i < _world.Count; i++)
+            {
+                if (_world.Kind[i] == BodyKind.Galaxy) continue;
+                _bodies[i].localPosition = math.lerp(centre, _world.Position[i], bang);
+                _bodies[i].localScale = Vector3.one * (_world.Scale[i] * bang);
+            }
+            if (_sun >= 0)
+            {
+                var s = _world.Position[_sun];
+                Shader.SetGlobalVector(SunPosition, new Vector4(s.x, s.y, s.z, 1f)); // w = 1: point light set
+            }
         }
 
         float BigBang(float dt)

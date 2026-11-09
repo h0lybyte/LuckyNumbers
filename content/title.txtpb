@@ -27,5 +27,9 @@ dice {
   dice { id: "gold" role: DIE_ROLE_LUCK sides: 6 color { r: 0.95 g: 0.75 b: 0.2 a: 1 } initial_face: 6 }
 }
 
+# Play: UI fades, camera pushes toward home, then the intro continues from that exact view.
+play_transition_seconds: 1.4
+play_push_in: 0.3
+
 # The universe behind the title: see content/space/.
 backdrop_ref: "space/systems/home"

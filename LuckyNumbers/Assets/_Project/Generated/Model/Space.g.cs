@@ -34,6 +34,25 @@ namespace LuckyNumbers.Model
     }
 
     /// <summary>
+    /// The camera pose a scene ends on, so the next scene can start from it (seamless transitions).
+    /// </summary>
+    public sealed class CameraHandoff : IDisposable
+    {
+        public readonly ReactiveProperty<bool> Valid = new ReactiveProperty<bool>();
+        public readonly ReactiveProperty<Vec3> Position = new ReactiveProperty<Vec3>();
+        public readonly ReactiveProperty<Vec3> Forward = new ReactiveProperty<Vec3>();
+        public readonly ReactiveProperty<Vec3> Up = new ReactiveProperty<Vec3>();
+
+        public void Dispose()
+        {
+            Valid.Dispose();
+            Position.Dispose();
+            Forward.Dispose();
+            Up.Dispose();
+        }
+    }
+
+    /// <summary>
     /// The dice roll's lucky number: Space regenerates the universe from it.
     /// </summary>
     public readonly struct UniverseSeedChanged

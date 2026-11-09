@@ -31,6 +31,8 @@ namespace LuckyNumbers.Title
         public void SetTitle(string text) => _title.text = text;
         public void SetPrompt(string text) => _prompt.text = text;
         public void SetPromptAlpha(float alpha) => _prompt.style.opacity = alpha;
+        /// <summary>Whole title UI (menu, dice, prompt) opacity, for the Play transition.</summary>
+        public void SetUiAlpha(float alpha) => document.rootVisualElement.style.opacity = alpha;
 
         public void AddMenuButton(string label, Action onClick)
         {

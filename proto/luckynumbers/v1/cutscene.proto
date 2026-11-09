@@ -29,6 +29,7 @@ message CutsceneStep {
     CrashLanding crash_landing = 3;
     Dialogue dialogue = 4;
     GoTo go_to = 5;
+    ShipArrives ship_arrives = 6;
   }
 }
 
@@ -38,12 +39,19 @@ message DiceRoll {
   float duration_seconds = 2;
 }
 
+// Opening shot: starts from the previous scene's camera (the title, via CameraHandoff); the ship streaks in
+// past the camera and the camera eases into the chase. Without a handoff it fades in from black.
+message ShipArrives {
+  float duration_seconds = 1;
+}
+
 // The ship is dragged toward the planet: a spiral that tightens and speeds up (gravity), banking into it.
 message ShipPulledIn {
   float duration_seconds = 1;
   // Start distance from the planet's centre, in planet diameters.
   float start_distance = 2;
-  // Laps around the planet before impact.
+  // Minimum laps around the planet before impact (the spiral starts where the camera is and ends over
+  // the planet's lit side, so the exact sweep adapts).
   float turns = 3;
   // Bank angle reached at the end of the spiral.
   float bank_degrees = 4;

@@ -12,8 +12,8 @@ backdrop { instant: true }
 ship_skin: ""
 ship_size: 0.05
 
-# Dice tumble in space and land on the player's roll (no faces = keep their universe).
-steps { dice_roll { duration_seconds: 3 } }
+# Continues straight from the title's camera (the dice were rolled there): the ship streaks in past it.
+steps { ship_arrives { duration_seconds: 3 } }
 
 # The ship gets dragged into the planet.
 steps { ship_pulled_in { duration_seconds: 7 start_distance: 4 turns: 0.9 bank_degrees: 55 camera_release: 0.12 } }

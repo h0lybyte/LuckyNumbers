@@ -40,6 +40,7 @@ namespace LuckyNumbers.Model
         public CrashLanding CrashLanding { get; set; }
         public Dialogue Dialogue { get; set; }
         public GoTo GoTo { get; set; }
+        public ShipArrives ShipArrives { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public CutsceneStep Clone() => (CutsceneStep)MemberwiseClone();
@@ -52,6 +53,7 @@ namespace LuckyNumbers.Model
             CrashLanding = 3,
             Dialogue = 4,
             GoTo = 5,
+            ShipArrives = 6,
         }
 
         /// <summary>Which <c>step</c> case is set.</summary>
@@ -61,6 +63,7 @@ namespace LuckyNumbers.Model
             CrashLanding != null ? StepCase.CrashLanding :
             Dialogue != null ? StepCase.Dialogue :
             GoTo != null ? StepCase.GoTo :
+            ShipArrives != null ? StepCase.ShipArrives :
             StepCase.None;
     }
 
@@ -77,6 +80,18 @@ namespace LuckyNumbers.Model
     }
 
     /// <summary>
+    /// Opening shot: starts from the previous scene's camera (the title, via CameraHandoff); the ship streaks in
+    /// past the camera and the camera eases into the chase. Without a handoff it fades in from black.
+    /// </summary>
+    public sealed class ShipArrives
+    {
+        public float DurationSeconds { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public ShipArrives Clone() => (ShipArrives)MemberwiseClone();
+    }
+
+    /// <summary>
     /// The ship is dragged toward the planet: a spiral that tightens and speeds up (gravity), banking into it.
     /// </summary>
     public sealed class ShipPulledIn
@@ -87,7 +102,8 @@ namespace LuckyNumbers.Model
         /// </summary>
         public float StartDistance { get; set; }
         /// <summary>
-        /// Laps around the planet before impact.
+        /// Minimum laps around the planet before impact (the spiral starts where the camera is and ends over
+        /// the planet's lit side, so the exact sweep adapts).
         /// </summary>
         public float Turns { get; set; }
         /// <summary>

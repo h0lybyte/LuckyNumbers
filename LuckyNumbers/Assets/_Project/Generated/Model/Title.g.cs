@@ -57,6 +57,14 @@ namespace LuckyNumbers.Model
         public List<MenuItem> Menu { get; } = new List<MenuItem>();
         public SettingsPanel Settings { get; set; }
         public DiceRoller Dice { get; set; }
+        /// <summary>
+        /// Play: the UI fades and the camera pushes toward the home planet, then hands over to `next`.
+        /// </summary>
+        public float PlayTransitionSeconds { get; set; }
+        /// <summary>
+        /// Share of the distance to the home planet the camera closes during that push (0..1).
+        /// </summary>
+        public float PlayPushIn { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public TitleScreen Clone() => (TitleScreen)MemberwiseClone();

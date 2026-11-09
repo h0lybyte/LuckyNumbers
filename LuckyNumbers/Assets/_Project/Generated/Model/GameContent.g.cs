@@ -19,7 +19,7 @@ namespace LuckyNumbers.Model
             {
                 new CutsceneStep
                 {
-                    DiceRoll = new DiceRoll
+                    ShipArrives = new ShipArrives
                     {
                         DurationSeconds = 3.0f,
                     },
@@ -924,6 +924,8 @@ namespace LuckyNumbers.Model
                 RollSeconds = 1.2f,
                 SeedFormat = "Lucky number {0}",
             },
+            PlayTransitionSeconds = 1.4f,
+            PlayPushIn = 0.3f,
         };
     }
 }

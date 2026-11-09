@@ -27,6 +27,10 @@ message TitleScreen {
   repeated MenuItem menu = 7;
   SettingsPanel settings = 8;
   DiceRoller dice = 10;
+  // Play: the UI fades and the camera pushes toward the home planet, then hands over to `next`.
+  float play_transition_seconds = 11;
+  // Share of the distance to the home planet the camera closes during that push (0..1).
+  float play_push_in = 12;
 }
 
 // The dice that create the universe: their faces become the seed ("lucky number").
