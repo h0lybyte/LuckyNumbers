@@ -32,7 +32,10 @@ content/space/systems/home.txtpb                 library: a whole solar system (
 content/space/looks/planet_base.txtpb            library: defaults every planet look extends
 content/space/looks/planets/*.txtpb              library: planet presets
 content/space/looks/stars/*.txtpb                library: star presets
-content/space/skies/*.txtpb                      library: skybox looks
+content/space/skies/*.txtpb                      library: skybox looks (nebula, galactic band)
+content/space/looks/galaxies/*.txtpb             library: distant galaxy presets
+content/space/looks/disks/*.txtpb                library: dust disk presets (big bang)
+content/space/generators/default.txtpb           library: seed -> solar system rules and palettes
 ```
 
 Text format has no includes; the generator adds two, using protobuf merge semantics

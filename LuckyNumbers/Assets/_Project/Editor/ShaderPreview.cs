@@ -60,13 +60,16 @@ namespace LuckyNumbers.Editor
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             RenderSettings.skybox = new Material(Find("LuckyNumbers/Starfield"));
-            Shader.SetGlobalVector("_LnSunPosition", new Vector4(40f, 30f, -26f, 1f));
+            // LN_SHIP_BACKLIT=1: sun behind the ships (night-side check).
+            var backlit = System.Environment.GetEnvironmentVariable("LN_SHIP_BACKLIT") == "1";
+            Shader.SetGlobalVector("_LnSunPosition", backlit ? new Vector4(-10f, 20f, 80f, 1f) : new Vector4(40f, 30f, -26f, 1f));
             Shader.SetGlobalVector("_LnSunColor", new Color(1f, 0.95f, 0.85f));
             var model = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Art/Models/Fighter/fighter1.fbx")
                         ?? throw new System.Exception("fighter1.fbx not imported");
             var mat = new Material(Find("LuckyNumbers/Ship"))
             {
-                mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/_Project/Art/Models/Fighter/Skins/idolknight.jpg"),
+                mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                    $"Assets/_Project/Art/Models/Fighter/Skins/{System.Environment.GetEnvironmentVariable("LN_SHIP_SKIN") ?? "idolknight"}.jpg"),
             };
             var bounds = new Bounds();
             for (var k = 0; k < 3; k++)
