@@ -15,16 +15,15 @@ namespace LuckyNumbers.Model
     public sealed class SpaceBackdrop
     {
         public StarfieldLook Stars { get; set; }
+        /// <summary>
+        /// Planets and stars. The first star lights every planet (point light at its position).
+        /// </summary>
         public List<CelestialBody> Bodies { get; } = new List<CelestialBody>();
         public CameraOrbit Camera { get; set; }
-        /// <summary>
-        /// Direction towards the sun, shared by every planet's lighting (normalized at runtime).
-        /// </summary>
-        public Vec3 SunDirection { get; set; }
     }
 
     /// <summary>
-    /// A sphere using LuckyNumbers/Planet3D with its own look.
+    /// One entity of the universe: a planet or a star sphere.
     /// </summary>
     public sealed class CelestialBody
     {
@@ -37,11 +36,25 @@ namespace LuckyNumbers.Model
         /// Diameter in world units.
         /// </summary>
         public float Scale { get; set; }
-        public PlanetLook Look { get; set; }
+        public PlanetLook Planet { get; set; }
+        public StarLook Star { get; set; }
         /// <summary>
         /// Optional: circle another body (listed earlier) in the XZ plane. radius 0 = static.
         /// </summary>
         public Orbit Orbit { get; set; }
+
+        public enum AppearanceCase
+        {
+            None = 0,
+            Planet = 4,
+            Star = 6,
+        }
+
+        /// <summary>Which <c>appearance</c> case is set.</summary>
+        public AppearanceCase Appearance =>
+            Planet != null ? AppearanceCase.Planet :
+            Star != null ? AppearanceCase.Star :
+            AppearanceCase.None;
     }
 
     public sealed class Orbit
@@ -108,6 +121,31 @@ namespace LuckyNumbers.Model
         /// </summary>
         public Vec2 Drift { get; set; }
         public float Seed { get; set; }
+    }
+
+    /// <summary>
+    /// Shader properties of LuckyNumbers/Star: glowing surface + corona. Its light_color lights the planets.
+    /// </summary>
+    public sealed class StarLook
+    {
+        public Rgba CoreColor { get; set; }
+        public Rgba CoronaColor { get; set; }
+        public Rgba LightColor { get; set; }
+        public float Intensity { get; set; }
+        /// <summary>
+        /// Corona shell size, share of the radius.
+        /// </summary>
+        public float CoronaSize { get; set; }
+        /// <summary>
+        /// Higher = corona fades faster away from the surface.
+        /// </summary>
+        public float CoronaPower { get; set; }
+        public float CoronaIntensity { get; set; }
+        public float NoiseScale { get; set; }
+        /// <summary>
+        /// Surface churn speed.
+        /// </summary>
+        public float BoilSpeed { get; set; }
     }
 
     /// <summary>

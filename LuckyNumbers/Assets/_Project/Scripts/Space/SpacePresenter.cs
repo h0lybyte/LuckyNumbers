@@ -13,14 +13,15 @@ namespace LuckyNumbers.Space
     [Presenter]
     public sealed class SpacePresenter : IStartable, ITickable
     {
-        static readonly int SunDirection = Shader.PropertyToID("_LnSunDirection");
+        static readonly int SunPosition = Shader.PropertyToID("_LnSunPosition");
+        static readonly int SunColor = Shader.PropertyToID("_LnSunColor");
 
         readonly SpaceView _view;
         readonly SpaceBackdrop _backdrop;
         readonly PlayerInput _input;
         SpaceWorld _world;
         Transform[] _bodies;
-        int _target;
+        int _target, _sun;
         float _yaw, _pitch, _distance;
         float2 _spin;               // degrees per second (yaw, pitch)
         bool _dragging, _wasPressed;
@@ -36,18 +37,20 @@ namespace LuckyNumbers.Space
         public void Start()
         {
             if (_view.SkyboxMaterial != null) _backdrop.Stars.ApplyTo(_view.SkyboxMaterial);
-            var sun = _backdrop.SunDirection;
-            Shader.SetGlobalVector(SunDirection, ((Vector3)math.normalizesafe(new float3(sun.X, sun.Y, sun.Z), new float3(1, 0, 0))));
-
             _world = new SpaceWorld(_backdrop.Bodies);
             _bodies = new Transform[_world.Count];
             for (var i = 0; i < _world.Count; i++)
             {
-                var r = _view.SpawnBody(_world.Ids[i]);
-                _world.Look[i].ApplyTo(r.material);
+                var star = _world.Kind[i] == BodyKind.Star;
+                var r = _view.SpawnBody(_world.Ids[i], star);
+                if (star) _world.Star[i].ApplyTo(r.material);
+                else _world.Planet[i].ApplyTo(r.material);
                 r.transform.localScale = Vector3.one * _world.Scale[i];
                 _bodies[i] = r.transform;
             }
+            _sun = _world.FirstStar();
+            if (_sun >= 0) Shader.SetGlobalVector(SunColor, _world.Star[_sun].LightColor.ToColor());
+            else Shader.SetGlobalVector(SunPosition, Vector4.zero); // planets fall back to a fixed light direction
 
             var cam = _backdrop.Camera;
             _target = math.max(0, _world.IndexOf(cam.Target));
@@ -61,6 +64,11 @@ namespace LuckyNumbers.Space
         {
             OrbitSystem.Update(_world, Time.time);
             for (var i = 0; i < _world.Count; i++) _bodies[i].localPosition = _world.Position[i];
+            if (_sun >= 0)
+            {
+                var s = _world.Position[_sun];
+                Shader.SetGlobalVector(SunPosition, new Vector4(s.x, s.y, s.z, 1f)); // w = 1: point light set
+            }
             OrbitCamera(Time.deltaTime);
         }
 

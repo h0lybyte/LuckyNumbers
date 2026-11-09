@@ -1,7 +1,7 @@
 // 3D planet for a sphere mesh: fBm surface sampled on the sphere, spin around a tilted axis,
 // sun lighting with a soft terminator, plus an atmosphere glow shell around the silhouette.
 // Look based on "Simple 2D Planet shader" by Ikkemcwood (https://www.shadertoy.com/view/Wcf3W7), see CREDITS.md.
-// The sun direction is global: Shader.SetGlobalVector("_LnSunDirection", dir).
+// Lit by the universe's first star: globals _LnSunPosition (xyz, w=1 when set) and _LnSunColor.
 Shader "LuckyNumbers/Planet3D"
 {
     Properties
@@ -37,13 +37,15 @@ Shader "LuckyNumbers/Planet3D"
             float4 _NoiseOffset;
             float _NoiseRemap, _AtmosphereThickness, _AtmosphereIntensity, _AtmospherePower;
         CBUFFER_END
-        float4 _LnSunDirection; // global
+        float4 _LnSunPosition, _LnSunColor; // globals set by SpacePresenter
 
-        float3 SunDir()
+        // Point light at the sun; falls back to a fixed direction when no star exists.
+        float3 SunDir(float3 positionWS)
         {
-            float3 d = _LnSunDirection.xyz;
-            return dot(d, d) > 0 ? normalize(d) : float3(0.6, 0.3, -0.7);
+            return _LnSunPosition.w > 0.5 ? normalize(_LnSunPosition.xyz - positionWS) : normalize(float3(0.6, 0.3, -0.7));
         }
+
+        float3 SunColor() { return _LnSunPosition.w > 0.5 ? _LnSunColor.rgb : float3(1, 1, 1); }
 
         struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; };
         struct Varyings
@@ -52,6 +54,7 @@ Shader "LuckyNumbers/Planet3D"
             float3 normalOS   : TEXCOORD0;
             float3 normalWS   : TEXCOORD1;
             float3 viewWS     : TEXCOORD2;
+            float3 positionWS : TEXCOORD3;
         };
         ENDHLSL
 
@@ -77,6 +80,7 @@ Shader "LuckyNumbers/Planet3D"
                 o.normalOS = v.normalOS;
                 o.normalWS = TransformObjectToWorldNormal(v.normalOS);
                 o.viewWS = GetWorldSpaceViewDir(ws);
+                o.positionWS = ws;
                 return o;
             }
 
@@ -85,7 +89,7 @@ Shader "LuckyNumbers/Planet3D"
                 float3 n = normalize(i.normalWS);
                 float3 v = normalize(i.viewWS);
                 float rim = pow(saturate(abs(dot(n, v))), _AtmospherePower);   // 0 at the shell's outer edge
-                float lit = 0.25 + 0.75 * saturate(dot(n, SunDir()) * 0.5 + 0.5); // brighter on the day side
+                float lit = 0.25 + 0.75 * saturate(dot(n, SunDir(i.positionWS)) * 0.5 + 0.5); // brighter on the day side
                 return float4(_AtmosphereColor.rgb * rim * lit * _AtmosphereIntensity, 0);
             }
             ENDHLSL
@@ -111,6 +115,7 @@ Shader "LuckyNumbers/Planet3D"
                 o.normalOS = v.normalOS;
                 o.normalWS = TransformObjectToWorldNormal(v.normalOS);
                 o.viewWS = GetWorldSpaceViewDir(ws);
+                o.positionWS = ws;
                 return o;
             }
 
@@ -127,7 +132,7 @@ Shader "LuckyNumbers/Planet3D"
             {
                 float3 n = normalize(i.normalWS);
                 float3 v = normalize(i.viewWS);
-                float ndl = dot(n, SunDir());
+                float ndl = dot(n, SunDir(i.positionWS));
                 float day = smoothstep(-_TerminatorSoftness, _TerminatorSoftness, ndl);
 
                 float3 p = Spin(normalize(i.normalOS)) * _NoiseScale + _NoiseOffset.xyz;
@@ -135,7 +140,7 @@ Shader "LuckyNumbers/Planet3D"
                 h = lerp(h, saturate(h * 0.5 + 0.5), _NoiseRemap);
 
                 float3 color = _PlanetColor.rgb * h;
-                color += day * saturate(ndl) * _LightIntensity * _LightColor.rgb * 0.6;
+                color += day * saturate(ndl) * _LightIntensity * _LightColor.rgb * SunColor() * 0.6;
                 color = saturate(color) * lerp(1.0 - _ShadowIntensity, 1.0, day);
 
                 float fresnel = pow(1.0 - saturate(dot(n, v)), 3.0);           // thin rim on the disc itself

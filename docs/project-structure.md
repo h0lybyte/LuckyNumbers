@@ -3,7 +3,7 @@
 ```
 LuckyNumbers/            Unity project
   Assets/_Project/       all our assets and code
-    Art/Shaders/         Starfield (skybox), Planet3D, Include/Noise.hlsl; Art/Materials/
+    Art/Shaders/         Starfield (skybox), Planet3D, Star, Include/Noise.hlsl; Art/Materials/
     Editor/              WebBuild, SceneBuilder, ShaderPreview
     Generators/          Roslyn generator DLL + [Presenter]/[View] attributes
     Generated/           C# generated from proto/ + content/ (do not edit)

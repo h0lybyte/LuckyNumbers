@@ -8,7 +8,8 @@ namespace LuckyNumbers.Space
     public sealed class SpaceView : MonoBehaviour
     {
         [SerializeField] Camera viewCamera;
-        [SerializeField] MeshRenderer bodyTemplate;
+        [SerializeField] MeshRenderer planetTemplate;
+        [SerializeField] MeshRenderer starTemplate;
         Material _sky;
 
         public Camera Camera => viewCamera;
@@ -25,9 +26,9 @@ namespace LuckyNumbers.Space
         }
 
         /// <summary>New body (inactive template cloned, own material instance).</summary>
-        public MeshRenderer SpawnBody(string id)
+        public MeshRenderer SpawnBody(string id, bool star)
         {
-            var r = Instantiate(bodyTemplate, transform);
+            var r = Instantiate(star ? starTemplate : planetTemplate, transform);
             r.name = id;
             r.gameObject.SetActive(true);
             return r;

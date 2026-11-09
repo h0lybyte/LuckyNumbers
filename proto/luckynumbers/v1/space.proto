@@ -9,22 +9,24 @@ option csharp_namespace = "LuckyNumbers.Model";
 
 // 3D universe shown on the title (and reused by the intro). World units: a scale-1 body is 1 unit across.
 message SpaceBackdrop {
-  reserved 2, 3, 4, 6; // 2D era: planet, planet_position, planet_scale, pan
+  reserved 2, 3, 4, 6, 8; // planet, planet_position, planet_scale, pan, sun_direction (now a star body)
   StarfieldLook stars = 1;
+  // Planets and stars. The first star lights every planet (point light at its position).
   repeated CelestialBody bodies = 5;
   CameraOrbit camera = 7;
-  // Direction towards the sun, shared by every planet's lighting (normalized at runtime).
-  Vec3 sun_direction = 8;
 }
 
-// A sphere using LuckyNumbers/Planet3D with its own look.
+// One entity of the universe: a planet or a star sphere.
 message CelestialBody {
   string id = 1;
   // World position; for orbiting bodies, an offset from the orbit centre (usually 0,0,0).
   Vec3 position = 2;
   // Diameter in world units.
   float scale = 3;
-  PlanetLook look = 4;
+  oneof appearance {
+    PlanetLook planet = 4;
+    StarLook star = 6;
+  }
   // Optional: circle another body (listed earlier) in the XZ plane. radius 0 = static.
   Orbit orbit = 5;
 }
@@ -74,6 +76,23 @@ message StarfieldLook {
   // Slow sky rotation, radians per second around (y, x).
   Vec2 drift = 9;
   optional float seed = 10;
+}
+
+// Shader properties of LuckyNumbers/Star: glowing surface + corona. Its light_color lights the planets.
+message StarLook {
+  option (ln.material) = "LuckyNumbers/Star";
+  Rgba core_color = 1;
+  Rgba corona_color = 2;
+  Rgba light_color = 3;
+  optional float intensity = 4;
+  // Corona shell size, share of the radius.
+  optional float corona_size = 5;
+  // Higher = corona fades faster away from the surface.
+  optional float corona_power = 6;
+  optional float corona_intensity = 7;
+  optional float noise_scale = 8;
+  // Surface churn speed.
+  optional float boil_speed = 9;
 }
 
 // Shader properties of LuckyNumbers/Planet3D.

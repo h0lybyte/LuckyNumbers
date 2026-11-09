@@ -95,10 +95,28 @@ namespace LuckyNumbers.Model
                 {
                     new CelestialBody
                     {
+                        Id = "sun",
+                        Position = new Vec3(42.0f, 14.0f, -26.0f),
+                        Scale = 9.0f,
+                        Star = new StarLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.78f, 0.42f, 1.0f),
+                            CoronaColor = new Rgba(1.0f, 0.55f, 0.2f, 1.0f),
+                            LightColor = new Rgba(1.0f, 0.95f, 0.85f, 1.0f),
+                            Intensity = 1.6f,
+                            CoronaSize = 1.8f,
+                            CoronaPower = 5.0f,
+                            CoronaIntensity = 1.8f,
+                            NoiseScale = 3.0f,
+                            BoilSpeed = 0.05f,
+                        },
+                    },
+                    new CelestialBody
+                    {
                         Id = "home",
                         Position = new Vec3(default(float), default(float), default(float)),
                         Scale = 2.4f,
-                        Look = new PlanetLook
+                        Planet = new PlanetLook
                         {
                             PlanetColor = new Rgba(1.0f, 0.34f, default(float), 1.0f),
                             AtmosphereColor = new Rgba(0.41f, 0.6f, 1.0f, 1.0f),
@@ -121,7 +139,7 @@ namespace LuckyNumbers.Model
                         Id = "moon",
                         Position = new Vec3(default(float), 0.3f, default(float)),
                         Scale = 0.6f,
-                        Look = new PlanetLook
+                        Planet = new PlanetLook
                         {
                             PlanetColor = new Rgba(0.6f, 0.6f, 0.65f, 1.0f),
                             AtmosphereColor = new Rgba(0.7f, 0.7f, 0.8f, 1.0f),
@@ -151,7 +169,7 @@ namespace LuckyNumbers.Model
                         Id = "ice",
                         Position = new Vec3(-9.0f, 3.0f, -14.0f),
                         Scale = 1.6f,
-                        Look = new PlanetLook
+                        Planet = new PlanetLook
                         {
                             PlanetColor = new Rgba(0.3f, 0.75f, 1.0f, 1.0f),
                             AtmosphereColor = new Rgba(0.8f, 0.95f, 1.0f, 1.0f),
@@ -174,7 +192,7 @@ namespace LuckyNumbers.Model
                         Id = "giant",
                         Position = new Vec3(14.0f, -4.0f, 18.0f),
                         Scale = 6.0f,
-                        Look = new PlanetLook
+                        Planet = new PlanetLook
                         {
                             PlanetColor = new Rgba(0.55f, 0.2f, 0.85f, 1.0f),
                             AtmosphereColor = new Rgba(0.9f, 0.5f, 1.0f, 1.0f),
@@ -209,7 +227,6 @@ namespace LuckyNumbers.Model
                     FrameOffset = new Vec2(-1.6f, 0.2f),
                     FieldOfViewDegrees = 45.0f,
                 },
-                SunDirection = new Vec3(1.0f, 0.35f, -0.6f),
             },
             PromptPulseSeconds = 1.6f,
             LoadingPrompt = "Loading...",

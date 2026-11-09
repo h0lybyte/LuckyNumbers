@@ -19,7 +19,8 @@ namespace LuckyNumbers.Editor
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             RenderSettings.skybox = new Material(Find("LuckyNumbers/Starfield"));
-            Shader.SetGlobalVector("_LnSunDirection", new Vector4(1f, 0.35f, -0.6f).normalized);
+            Shader.SetGlobalVector("_LnSunPosition", new Vector4(40f, 14f, -26f, 1f));
+            Shader.SetGlobalVector("_LnSunColor", Color.white);
 
             var cam = new GameObject("PreviewCamera").AddComponent<Camera>();
             cam.fieldOfView = 45f;

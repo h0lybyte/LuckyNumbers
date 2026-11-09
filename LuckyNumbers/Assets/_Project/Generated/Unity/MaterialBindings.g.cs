@@ -39,6 +39,31 @@ namespace LuckyNumbers.Model
             material.SetFloat(StarfieldLook_Seed, look.Seed);
         }
 
+        public const string StarLookShader = "LuckyNumbers/Star";
+        static readonly int StarLook_CoreColor = Shader.PropertyToID("_CoreColor");
+        static readonly int StarLook_CoronaColor = Shader.PropertyToID("_CoronaColor");
+        static readonly int StarLook_LightColor = Shader.PropertyToID("_LightColor");
+        static readonly int StarLook_Intensity = Shader.PropertyToID("_Intensity");
+        static readonly int StarLook_CoronaSize = Shader.PropertyToID("_CoronaSize");
+        static readonly int StarLook_CoronaPower = Shader.PropertyToID("_CoronaPower");
+        static readonly int StarLook_CoronaIntensity = Shader.PropertyToID("_CoronaIntensity");
+        static readonly int StarLook_NoiseScale = Shader.PropertyToID("_NoiseScale");
+        static readonly int StarLook_BoilSpeed = Shader.PropertyToID("_BoilSpeed");
+
+        /// <summary>Copies every field to the matching LuckyNumbers/Star property.</summary>
+        public static void ApplyTo(this StarLook look, Material material)
+        {
+            material.SetColor(StarLook_CoreColor, look.CoreColor.ToColor());
+            material.SetColor(StarLook_CoronaColor, look.CoronaColor.ToColor());
+            material.SetColor(StarLook_LightColor, look.LightColor.ToColor());
+            material.SetFloat(StarLook_Intensity, look.Intensity);
+            material.SetFloat(StarLook_CoronaSize, look.CoronaSize);
+            material.SetFloat(StarLook_CoronaPower, look.CoronaPower);
+            material.SetFloat(StarLook_CoronaIntensity, look.CoronaIntensity);
+            material.SetFloat(StarLook_NoiseScale, look.NoiseScale);
+            material.SetFloat(StarLook_BoilSpeed, look.BoilSpeed);
+        }
+
         public const string PlanetLookShader = "LuckyNumbers/Planet3D";
         static readonly int PlanetLook_PlanetColor = Shader.PropertyToID("_PlanetColor");
         static readonly int PlanetLook_AtmosphereColor = Shader.PropertyToID("_AtmosphereColor");

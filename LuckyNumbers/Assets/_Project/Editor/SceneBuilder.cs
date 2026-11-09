@@ -26,8 +26,9 @@ namespace LuckyNumbers.Editor
         {
             var starfield = MaterialAsset("Starfield", "LuckyNumbers/Starfield");
             var planet = MaterialAsset("Planet3D", "LuckyNumbers/Planet3D");
+            var star = MaterialAsset("Star", "LuckyNumbers/Star");
 
-            BuildTitle(starfield, planet);
+            BuildTitle(starfield, planet, star);
             BuildIntroPlaceholder(starfield);
 
             EditorBuildSettings.scenes = new[]
@@ -41,7 +42,7 @@ namespace LuckyNumbers.Editor
             Debug.Log("[SceneBuilder] built Title, Intro; build settings = [Title, Intro]");
         }
 
-        static void BuildTitle(Material starfieldMat, Material planetMat)
+        static void BuildTitle(Material starfieldMat, Material planetMat, Material starMat)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -49,9 +50,11 @@ namespace LuckyNumbers.Editor
             var cam = Camera();
             Sky(starfieldMat);
             var space = new GameObject("Space").AddComponent<SpaceView>();
-            var template = Sphere("BodyTemplate", planetMat, space.transform);
-            template.gameObject.SetActive(false);
-            Assign(space, ("viewCamera", cam), ("bodyTemplate", template));
+            var planetTemplate = Sphere("PlanetTemplate", planetMat, space.transform);
+            var starTemplate = Sphere("StarTemplate", starMat, space.transform);
+            planetTemplate.gameObject.SetActive(false);
+            starTemplate.gameObject.SetActive(false);
+            Assign(space, ("viewCamera", cam), ("planetTemplate", planetTemplate), ("starTemplate", starTemplate));
 
             // UI.
             var canvas = Canvas();

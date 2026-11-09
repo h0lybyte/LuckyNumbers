@@ -9,16 +9,20 @@ namespace LuckyNumbers.Space
     /// Celestial bodies as entities: parallel arrays indexed by entity, built from content
     /// (or later from a dice-seeded generator). Systems read/write these arrays; views mirror them.
     /// </summary>
+    public enum BodyKind { Planet, Star }
+
     public sealed class SpaceWorld
     {
         public readonly string[] Ids;
+        public readonly BodyKind[] Kind;
         public readonly float3[] BasePosition;
         public readonly float[] Scale;
         public readonly int[] OrbitParent;     // -1 = static
         public readonly float[] OrbitRadius;
         public readonly float[] OrbitPeriod;
         public readonly float[] OrbitPhase;
-        public readonly PlanetLook[] Look;
+        public readonly PlanetLook[] Planet;   // set when Kind == Planet
+        public readonly StarLook[] Star;       // set when Kind == Star
         public readonly float3[] Position;     // output of OrbitSystem
 
         public int Count => Ids.Length;
@@ -27,13 +31,15 @@ namespace LuckyNumbers.Space
         {
             var n = bodies.Count;
             Ids = new string[n];
+            Kind = new BodyKind[n];
             BasePosition = new float3[n];
             Scale = new float[n];
             OrbitParent = new int[n];
             OrbitRadius = new float[n];
             OrbitPeriod = new float[n];
             OrbitPhase = new float[n];
-            Look = new PlanetLook[n];
+            Planet = new PlanetLook[n];
+            Star = new StarLook[n];
             Position = new float3[n];
 
             var index = new Dictionary<string, int>(n);
@@ -45,7 +51,12 @@ namespace LuckyNumbers.Space
                 Ids[i] = b.Id;
                 BasePosition[i] = new float3(b.Position.X, b.Position.Y, b.Position.Z);
                 Scale[i] = b.Scale;
-                Look[i] = b.Look;
+                switch (b.Appearance)
+                {
+                    case CelestialBody.AppearanceCase.Planet: Kind[i] = BodyKind.Planet; Planet[i] = b.Planet; break;
+                    case CelestialBody.AppearanceCase.Star: Kind[i] = BodyKind.Star; Star[i] = b.Star; break;
+                    default: throw new ArgumentException($"'{b.Id}' needs a planet {{ }} or star {{ }} appearance");
+                }
                 OrbitParent[i] = -1;
                 if (b.Orbit != null && b.Orbit.Radius > 0f)
                 {
@@ -61,6 +72,9 @@ namespace LuckyNumbers.Space
         }
 
         public int IndexOf(string id) => Array.IndexOf(Ids, id);
+
+        /// <summary>First star, the light source for every planet; -1 if none.</summary>
+        public int FirstStar() => Array.IndexOf(Kind, BodyKind.Star);
     }
 
     /// <summary>Positions every body for time t (seconds); orbits lie in the XZ plane. Pure function.</summary>
