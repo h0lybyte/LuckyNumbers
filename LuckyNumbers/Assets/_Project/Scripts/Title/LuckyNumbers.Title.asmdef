@@ -10,8 +10,7 @@
         "VContainer",
         "MessagePipe",
         "R3.Unity",
-        "UniTask",
-        "UnityEngine.UI"
+        "UniTask"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

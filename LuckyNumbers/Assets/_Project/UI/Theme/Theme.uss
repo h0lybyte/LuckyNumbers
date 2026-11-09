@@ -1,0 +1,94 @@
+/* Lucky Numbers UI theme: every screen shares these classes. */
+
+.ln-screen {
+    flex-grow: 1;
+    align-items: center;
+    padding: 64px 0 28px 0;
+}
+
+.ln-spacer {
+    flex-grow: 1;
+}
+
+.ln-title {
+    font-size: 72px;
+    -unity-font-style: bold;
+    color: rgb(255, 255, 255);
+    /* Readable over bright sky (sun, corona). */
+    text-shadow: 0 3px 10px rgba(0, 0, 0, 0.9);
+    -unity-text-outline-width: 0.6px;
+    -unity-text-outline-color: rgba(0, 0, 0, 0.55);
+}
+
+.ln-menu {
+    flex-direction: row;
+    justify-content: center;
+    margin-bottom: 26px;
+}
+
+.ln-button {
+    width: 220px;
+    height: 56px;
+    margin: 0 12px;
+    font-size: 26px;
+    color: rgb(255, 255, 255);
+    background-color: rgba(20, 20, 46, 0.82);
+    border-width: 1px;
+    border-color: rgba(140, 160, 255, 0.35);
+    border-radius: 6px;
+    transition-duration: 0.12s;
+}
+
+.ln-button:hover {
+    background-color: rgba(48, 48, 110, 0.92);
+    border-color: rgba(170, 190, 255, 0.85);
+}
+
+.ln-button:active {
+    background-color: rgba(80, 80, 160, 0.96);
+}
+
+.ln-prompt {
+    font-size: 20px;
+    -unity-font-style: italic;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 1px 5px rgba(0, 0, 0, 0.95);
+}
+
+.ln-panel {
+    position: absolute;
+    left: 50%;
+    top: 45%;
+    width: 560px;
+    height: 320px;
+    translate: -50% -50%;
+    padding: 24px;
+    align-items: center;
+    justify-content: space-around;
+    background-color: rgba(8, 8, 20, 0.92);
+    border-width: 1px;
+    border-color: rgba(140, 160, 255, 0.3);
+    border-radius: 10px;
+}
+
+.ln-panel-title {
+    font-size: 40px;
+    -unity-font-style: bold;
+    color: rgb(255, 255, 255);
+}
+
+.ln-panel-body {
+    font-size: 24px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.ln-placeholder {
+    flex-grow: 1;
+    font-size: 36px;
+    color: rgb(255, 255, 255);
+    -unity-text-align: middle-center;
+}
+
+.ln-hidden {
+    display: none;
+}

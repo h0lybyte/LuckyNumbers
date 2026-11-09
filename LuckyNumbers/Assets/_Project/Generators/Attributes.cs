@@ -15,4 +15,15 @@ namespace LuckyNumbers
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, Inherited = false)]
     public sealed class ViewAttribute : Attribute { }
+
+    /// <summary>
+    /// UI Toolkit element looked up by name. The generator adds BindUi(VisualElement root) to the
+    /// (partial) class, assigning every [Ui] field and throwing if an element is missing from the UXML.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Field, Inherited = false)]
+    public sealed class UiAttribute : Attribute
+    {
+        public readonly string Name;
+        public UiAttribute(string name) => Name = name;
+    }
 }

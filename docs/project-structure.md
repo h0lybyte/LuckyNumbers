@@ -13,6 +13,7 @@ LuckyNumbers/            Unity project
     Scripts/Title/       TitleView, TitlePresenter, TitleScope
     Scripts/Rendering/   RenderResolutionCap
     Settings/            URP assets, input actions
+    UI/                  UI Toolkit: Screens/*.uxml, Theme/Theme.uss + LuckyNumbers.tss, PanelSettings
     Spikes/WebThreadsTest/  temporary threading benchmark
   Builds/                build output (gitignored)
 proto/, content/         schema + authored data (source of truth)

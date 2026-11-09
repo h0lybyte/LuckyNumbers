@@ -78,7 +78,9 @@ namespace LuckyNumbers.Space
             if (dt > 0f)
             {
                 var pressed = _input.PointerPressed.Value;
-                if (pressed && !_wasPressed) _dragging = !_view.IsPointerOverUI(); // drags can't start on buttons
+                var pointer = _input.PointerPosition.Value;
+                var overUi = _view.IsPointerOverUI(new Vector2(pointer.X, pointer.Y));
+                if (pressed && !_wasPressed) _dragging = !overUi; // drags can't start on buttons
                 if (!pressed) _dragging = false;
                 _wasPressed = pressed;
 
@@ -96,7 +98,7 @@ namespace LuckyNumbers.Space
                 _pitch = math.clamp(_pitch + _spin.y * dt, c.MinPitchDegrees, c.MaxPitchDegrees);
 
                 var scroll = _input.PointerScroll.Value;
-                if (scroll != 0f && !_view.IsPointerOverUI())
+                if (scroll != 0f && !overUi)
                     _distance = math.clamp(_distance * (1f - math.sign(scroll) * c.ZoomStep), c.MinDistance, c.MaxDistance);
             }
 

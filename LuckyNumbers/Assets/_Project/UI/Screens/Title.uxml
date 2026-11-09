@@ -1,0 +1,14 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- Text comes from content/title.txtpb; menu buttons are added at runtime from its `menu` list. -->
+    <ui:VisualElement name="screen" class="ln-screen" picking-mode="Ignore">
+        <ui:Label name="title" class="ln-title" picking-mode="Ignore" />
+        <ui:VisualElement class="ln-spacer" picking-mode="Ignore" />
+        <ui:VisualElement name="menu" class="ln-menu" picking-mode="Ignore" />
+        <ui:Label name="prompt" class="ln-prompt" picking-mode="Ignore" />
+        <ui:VisualElement name="settings" class="ln-panel ln-hidden">
+            <ui:Label name="settings-title" class="ln-panel-title" picking-mode="Ignore" />
+            <ui:Label name="settings-body" class="ln-panel-body" picking-mode="Ignore" />
+            <ui:Button name="settings-back" class="ln-button" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

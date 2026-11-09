@@ -1,0 +1,4 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <!-- Placeholder until the cutscene player exists. -->
+    <ui:Label text="Intro (cutscene player next)" class="ln-placeholder" picking-mode="Ignore" />
+</ui:UXML>

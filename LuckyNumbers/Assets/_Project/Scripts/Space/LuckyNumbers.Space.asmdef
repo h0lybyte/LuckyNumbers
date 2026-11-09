@@ -7,8 +7,7 @@
         "LuckyNumbers.Model.Unity",
         "VContainer",
         "R3.Unity",
-        "Unity.Mathematics",
-        "UnityEngine.UI"
+        "Unity.Mathematics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

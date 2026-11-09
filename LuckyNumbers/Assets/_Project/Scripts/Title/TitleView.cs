@@ -1,51 +1,56 @@
 using System;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.UIElements;
 
 namespace LuckyNumbers.Title
 {
-    /// <summary>Title UI references. No logic: TitlePresenter drives it.</summary>
+    /// <summary>Title UI (UI/Screens/Title.uxml). No logic: TitlePresenter drives it. [Ui] fields are bound by Roslyn.</summary>
     [View]
-    public sealed class TitleView : MonoBehaviour
+    public sealed partial class TitleView : MonoBehaviour
     {
-        [SerializeField] Text title;
-        [SerializeField] Text prompt;
-        [SerializeField] RectTransform menu;
-        [SerializeField] Button buttonTemplate;
-        [SerializeField] GameObject settingsPanel;
-        [SerializeField] Text settingsTitle;
-        [SerializeField] Text settingsBody;
-        [SerializeField] Button settingsBack;
+        [SerializeField] UIDocument document;
 
-        public void SetTitle(string text) => title.text = text;
-        public void SetPrompt(string text) => prompt.text = text;
+        [Ui("title")] Label _title;
+        [Ui("prompt")] Label _prompt;
+        [Ui("menu")] VisualElement _menu;
+        [Ui("settings")] VisualElement _settings;
+        [Ui("settings-title")] Label _settingsTitle;
+        [Ui("settings-body")] Label _settingsBody;
+        [Ui("settings-back")] Button _settingsBack;
+        bool _bound;
 
-        public void SetPromptAlpha(float alpha)
+        /// <summary>Looks up the UXML elements (generated BindUi); call before using the view.</summary>
+        public void Bind()
         {
-            var c = prompt.color;
-            prompt.color = new Color(c.r, c.g, c.b, alpha);
+            if (_bound) return;
+            document.rootVisualElement.pickingMode = PickingMode.Ignore; // only buttons/panels catch the pointer
+            BindUi(document.rootVisualElement);
+            _bound = true;
         }
+
+        public void SetTitle(string text) => _title.text = text;
+        public void SetPrompt(string text) => _prompt.text = text;
+        public void SetPromptAlpha(float alpha) => _prompt.style.opacity = alpha;
 
         public void AddMenuButton(string label, Action onClick)
         {
-            var b = Instantiate(buttonTemplate, menu);
-            b.gameObject.SetActive(true);
-            b.GetComponentInChildren<Text>().text = label;
-            b.onClick.AddListener(() => onClick());
+            var button = new Button(onClick) { text = label };
+            button.AddToClassList("ln-button");
+            _menu.Add(button);
         }
 
         public void SetSettings(string heading, string body, string back, Action onBack)
         {
-            settingsTitle.text = heading;
-            settingsBody.text = body;
-            settingsBack.GetComponentInChildren<Text>().text = back;
-            settingsBack.onClick.AddListener(() => onBack());
+            _settingsTitle.text = heading;
+            _settingsBody.text = body;
+            _settingsBack.text = back;
+            _settingsBack.clicked += onBack;
         }
 
         public void ShowSettings(bool visible)
         {
-            settingsPanel.SetActive(visible);
-            menu.gameObject.SetActive(!visible);
+            _settings.EnableInClassList("ln-hidden", !visible);
+            _menu.EnableInClassList("ln-hidden", visible);
         }
     }
 }

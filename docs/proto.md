@@ -49,5 +49,6 @@ Python stdlib only.
 runs inside Unity's compiler for assemblies referencing `LuckyNumbers.Attributes`:
 
 - `[Presenter]` class → `RegisterEntryPoint<T>()`; `[View]` MonoBehaviour → `RegisterComponentInHierarchy<T>()`
-- emitted as `builder.Register<AssemblyName>()` (e.g. `RegisterLuckyNumbersTitle()`); diagnostics LN0001/LN0002
+- `[Ui("name")]` field in a `partial` class → generated `BindUi(root)` doing `root.Q<T>("name")`, throwing if the UXML lacks it
+- emitted as `builder.Register<AssemblyName>()` (e.g. `RegisterLuckyNumbersTitle()`); diagnostics LN0001–LN0004
 - rebuild after changing the generator: `python3 tools/ln.py roslyn`

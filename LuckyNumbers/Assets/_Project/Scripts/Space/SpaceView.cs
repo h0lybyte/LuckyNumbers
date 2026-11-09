@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.EventSystems;
+using UnityEngine.UIElements;
 
 namespace LuckyNumbers.Space
 {
@@ -10,6 +10,7 @@ namespace LuckyNumbers.Space
         [SerializeField] Camera viewCamera;
         [SerializeField] MeshRenderer planetTemplate;
         [SerializeField] MeshRenderer starTemplate;
+        [SerializeField] UIDocument ui; // optional: drags don't start on its interactive elements
         Material _sky;
 
         public Camera Camera => viewCamera;
@@ -34,6 +35,14 @@ namespace LuckyNumbers.Space
             return r;
         }
 
-        public bool IsPointerOverUI() => EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+        /// <summary>True if <paramref name="screen"/> (pixels, origin bottom-left) is over an element that takes the pointer.</summary>
+        public bool IsPointerOverUI(Vector2 screen)
+        {
+            var root = ui != null ? ui.rootVisualElement : null;
+            if (root?.panel == null) return false;
+            var p = RuntimePanelUtils.ScreenToPanel(root.panel, new Vector2(screen.x, Screen.height - screen.y));
+            var picked = root.panel.Pick(p);
+            return picked != null && picked != root;
+        }
     }
 }

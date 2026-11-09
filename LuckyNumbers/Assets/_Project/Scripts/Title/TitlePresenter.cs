@@ -44,6 +44,7 @@ namespace LuckyNumbers.Title
         public void Start()
         {
             var content = GameContent.Title;
+            _view.Bind();
             _view.SetTitle(content.Title);
             foreach (var item in content.Menu)
             {

@@ -4,9 +4,7 @@ using LuckyNumbers.Title;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem.UI;
-using UnityEngine.UI;
+using UnityEngine.UIElements;
 
 namespace LuckyNumbers.Editor
 {
@@ -18,8 +16,8 @@ namespace LuckyNumbers.Editor
     {
         const string ScenesDir = "Assets/_Project/Scenes";
         const string MaterialsDir = "Assets/_Project/Art/Materials";
-        static readonly Color ButtonColor = new(0.08f, 0.08f, 0.18f, 0.8f);
-        static readonly Color PanelColor = new(0.03f, 0.03f, 0.08f, 0.9f);
+        const string UiDir = "Assets/_Project/UI";
+        const string PanelSettingsPath = UiDir + "/PanelSettings.asset";
 
         [MenuItem("LuckyNumbers/Scenes/Rebuild All")]
         public static void BuildAll()
@@ -28,8 +26,9 @@ namespace LuckyNumbers.Editor
             var planet = MaterialAsset("Planet3D", "LuckyNumbers/Planet3D");
             var star = MaterialAsset("Star", "LuckyNumbers/Star");
 
-            BuildTitle(starfield, planet, star);
-            BuildIntroPlaceholder(starfield);
+            var panel = PanelSettingsAsset();
+            BuildTitle(starfield, planet, star, panel);
+            BuildIntroPlaceholder(starfield, panel);
 
             EditorBuildSettings.scenes = new[]
             {
@@ -42,7 +41,7 @@ namespace LuckyNumbers.Editor
             Debug.Log("[SceneBuilder] built Title, Intro; build settings = [Title, Intro]");
         }
 
-        static void BuildTitle(Material starfieldMat, Material planetMat, Material starMat)
+        static void BuildTitle(Material starfieldMat, Material planetMat, Material starMat, PanelSettings panel)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -54,58 +53,23 @@ namespace LuckyNumbers.Editor
             var starTemplate = Sphere("StarTemplate", starMat, space.transform);
             planetTemplate.gameObject.SetActive(false);
             starTemplate.gameObject.SetActive(false);
-            Assign(space, ("viewCamera", cam), ("planetTemplate", planetTemplate), ("starTemplate", starTemplate));
-
-            // UI.
-            var canvas = Canvas();
-            var title = Label(canvas, "Title", 72, new Vector2(0.5f, 0.78f), FontStyle.Bold);
-            var prompt = Label(canvas, "Prompt", 22, new Vector2(0.5f, 0.06f), FontStyle.Italic);
-
-            var menu = new GameObject("Menu", typeof(RectTransform), typeof(HorizontalLayoutGroup)).GetComponent<RectTransform>();
-            menu.SetParent(canvas, false);
-            menu.anchorMin = menu.anchorMax = new Vector2(0.5f, 0.17f);
-            menu.sizeDelta = new Vector2(600, 64);
-            var layout = menu.GetComponent<HorizontalLayoutGroup>();
-            layout.spacing = 24;
-            layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.childControlWidth = layout.childControlHeight = false;
-            layout.childForceExpandWidth = layout.childForceExpandHeight = false;
-
-            var buttonTemplate = Button(canvas, "ButtonTemplate", new Vector2(220, 56));
-            buttonTemplate.gameObject.SetActive(false);
-
-            var panel = new GameObject("SettingsPanel", typeof(RectTransform), typeof(Image));
-            panel.transform.SetParent(canvas, false);
-            var panelRt = (RectTransform)panel.transform;
-            panelRt.anchorMin = panelRt.anchorMax = new Vector2(0.5f, 0.45f);
-            panelRt.sizeDelta = new Vector2(560, 320);
-            panel.GetComponent<Image>().color = PanelColor;
-            var settingsTitle = Label(panelRt, "SettingsTitle", 40, new Vector2(0.5f, 0.82f), FontStyle.Bold);
-            var settingsBody = Label(panelRt, "SettingsBody", 24, new Vector2(0.5f, 0.5f), FontStyle.Normal);
-            var back = Button(panelRt, "Back", new Vector2(180, 52));
-            var backRt = (RectTransform)back.transform;
-            backRt.anchorMin = backRt.anchorMax = new Vector2(0.5f, 0.16f);
-            panel.SetActive(false);
-
+            // UI Toolkit: UI/Screens/Title.uxml styled by UI/Theme; TitleView binds it ([Ui] fields, Roslyn).
+            var ui = Document("UI", panel, "Title");
+            Assign(space, ("viewCamera", cam), ("planetTemplate", planetTemplate), ("starTemplate", starTemplate), ("ui", ui));
             var view = new GameObject("TitleView").AddComponent<TitleView>();
-            Assign(view, ("title", title), ("prompt", prompt), ("menu", menu), ("buttonTemplate", buttonTemplate),
-                   ("settingsPanel", panel), ("settingsTitle", settingsTitle), ("settingsBody", settingsBody),
-                   ("settingsBack", back));
-
-            var events = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
-            events.transform.SetAsLastSibling();
+            Assign(view, ("document", ui));
 
             Scopes<TitleScope>();
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Title.unity");
         }
 
         // Placeholder until the cutscene player exists: proves the title -> intro switch.
-        static void BuildIntroPlaceholder(Material starfieldMat)
+        static void BuildIntroPlaceholder(Material starfieldMat, PanelSettings panel)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             Camera();
             Sky(starfieldMat);
-            Label(Canvas(), "Placeholder", 36, new Vector2(0.5f, 0.5f), FontStyle.Normal).text = "Intro (cutscene player next)";
+            Document("UI", panel, "Intro");
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Intro.unity");
         }
 
@@ -173,43 +137,37 @@ namespace LuckyNumbers.Editor
             return r;
         }
 
-        static Transform Canvas()
+        /// <summary>One PanelSettings for every screen: 1280x720 reference, scales with the screen, our theme.</summary>
+        static PanelSettings PanelSettingsAsset()
         {
-            var go = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-            go.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
-            var scaler = go.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280, 720);
-            scaler.matchWidthOrHeight = 0.5f;
-            return go.transform;
+            var path = PanelSettingsPath;
+            var ps = AssetDatabase.LoadAssetAtPath<PanelSettings>(path);
+            if (ps == null)
+            {
+                ps = ScriptableObject.CreateInstance<PanelSettings>();
+                AssetDatabase.CreateAsset(ps, path);
+            }
+            ps.themeStyleSheet = AssetDatabase.LoadAssetAtPath<ThemeStyleSheet>($"{UiDir}/Theme/LuckyNumbers.tss")
+                                 ?? throw new System.Exception("UI theme not found");
+            ps.scaleMode = PanelScaleMode.ScaleWithScreenSize;
+            ps.referenceResolution = new Vector2Int(1280, 720);
+            ps.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
+            ps.match = 0.5f;
+            EditorUtility.SetDirty(ps);
+            // Saving re-imports the asset and invalidates this instance: hand out a fresh load instead.
+            AssetDatabase.SaveAssetIfDirty(ps);
+            return AssetDatabase.LoadAssetAtPath<PanelSettings>(path);
         }
 
-        static Button Button(Transform parent, string name, Vector2 size)
+        static UIDocument Document(string name, PanelSettings panel, string screen)
         {
-            var go = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
-            go.transform.SetParent(parent, false);
-            ((RectTransform)go.transform).sizeDelta = size;
-            go.GetComponent<Image>().color = ButtonColor;
-            var label = Label(go.transform, "Label", 28, new Vector2(0.5f, 0.5f), FontStyle.Normal);
-            ((RectTransform)label.transform).sizeDelta = size;
-            return go.GetComponent<Button>();
-        }
-
-        static Text Label(Transform parent, string name, int size, Vector2 anchor, FontStyle style)
-        {
-            var go = new GameObject(name, typeof(RectTransform), typeof(Text));
-            go.transform.SetParent(parent, false);
-            var rt = (RectTransform)go.transform;
-            rt.anchorMin = rt.anchorMax = anchor;
-            rt.sizeDelta = new Vector2(1200, size * 1.6f);
-            var text = go.GetComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = size;
-            text.fontStyle = style;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.color = Color.white;
-            text.raycastTarget = false; // labels never block drags/clicks
-            return text;
+            var doc = new GameObject(name).AddComponent<UIDocument>();
+            // Load by path each time: an instance held across SaveScene/SaveAssets can go stale.
+            doc.panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>(PanelSettingsPath)
+                                ?? throw new System.Exception("PanelSettings asset missing");
+            doc.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>($"{UiDir}/Screens/{screen}.uxml")
+                                  ?? throw new System.Exception($"UI screen not found: {screen}.uxml");
+            return doc;
         }
     }
 }
