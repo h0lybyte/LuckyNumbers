@@ -75,6 +75,7 @@ class Field:
     repeated: bool
     oneof: int | None
     doc: str = ""
+    optional: bool = False  # proto3 `optional` (explicit presence)
 
 
 @dataclass
@@ -180,7 +181,7 @@ def _load_message(model, b, scope, fname, docs, path):
         if n == 1:
             name = _str(v)
         elif n == 2:
-            f = dict(name="", number=0, type=0, type_name="", repeated=False, oneof=None)
+            f = dict(name="", number=0, type=0, type_name="", repeated=False, oneof=None, optional=False)
             for fn, _, fv in _fields(v):
                 if fn == 1:
                     f["name"] = _str(fv)
@@ -194,6 +195,8 @@ def _load_message(model, b, scope, fname, docs, path):
                     f["type_name"] = _str(fv)
                 elif fn == 9:
                     f["oneof"] = fv
+                elif fn == 17:
+                    f["optional"] = bool(fv)
             fields.append(Field(**f, doc=docs.get(path + (2, len(fields)), "")))
         elif n == 3:
             nested.append(v)
@@ -207,6 +210,12 @@ def _load_message(model, b, scope, fname, docs, path):
             oneofs.append(next(_str(x) for k, _, x in _fields(v) if k == 1))
     if nested:
         raise ValueError(f"{scope}.{name}: nested types aren't supported; declare them at file level")
+    # proto3 `optional` is encoded as a synthetic one-field oneof (always after the real ones): drop it.
+    synthetic = {f.oneof for f in fields if f.optional}
+    for f in fields:
+        if f.optional:
+            f.oneof = None
+    oneofs = oneofs[:len(oneofs) - len(synthetic)]
     full = f"{scope}.{name}"
     model.messages[full] = Message(full, name, fields, oneofs, options, fname, docs.get(path, ""), material)
     model.order.append((fname, full))
@@ -532,6 +541,10 @@ def check_materials(model: Model, shader_root: Path) -> None:
     for msg in model.messages.values():
         if not msg.material:
             continue
+        plain = [f.name for f in msg.fields if f.type != T_MESSAGE and not f.optional]
+        if plain:
+            raise ValueError(f"{msg.name}: declare scalar fields `optional` so an explicit 0 counts as set: "
+                             f"{', '.join(plain)}")
         if msg.material not in shaders:
             raise ValueError(f"{msg.name}: (ln.material) shader '{msg.material}' not found under {shader_root}")
         missing = [f"_{pascal(f.name)}" for f in msg.fields if f"_{pascal(f.name)}" not in shaders[msg.material]]

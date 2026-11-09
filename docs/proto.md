@@ -17,7 +17,7 @@ content/*.txtpb                  title, intro cutscene, player config
 | `(ln.state)` | class of R3 `ReactiveProperty<T>` / `ObservableList<T>` | `builder.RegisterModelState()` registers each as a singleton |
 | `(ln.config)` | data class | each `content/<name>.txtpb` is baked into `GameContent.<Name>` |
 | `(ln.value)` | `readonly struct` with value equality | |
-| `(ln.material) = "Shader/Name"` | data class | `look.ApplyTo(material)`: fields → `_PascalCase` shader properties; gen fails if a property is missing or content leaves a field unset |
+| `(ln.material) = "Shader/Name"` | data class | `look.ApplyTo(material)`: fields → `_PascalCase` shader properties. gen fails if a property is missing, if content leaves a field unset, or if a scalar field isn't `optional` (needed so an explicit 0 counts as set) |
 | none | data class; oneof → `<Name>Case` enum + property | |
 
 Assemblies: `LuckyNumbers.Model` (types + content, no engine refs) and `LuckyNumbers.Model.Di`

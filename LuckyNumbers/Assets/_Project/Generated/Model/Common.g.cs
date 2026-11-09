@@ -27,6 +27,26 @@ namespace LuckyNumbers.Model
         public static bool operator !=(Vec2 a, Vec2 b) => !a.Equals(b);
     }
 
+    public readonly struct Vec3 : IEquatable<Vec3>
+    {
+        public readonly float X;
+        public readonly float Y;
+        public readonly float Z;
+
+        public Vec3(float x, float y, float z)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+        }
+
+        public bool Equals(Vec3 other) => X.Equals(other.X) && Y.Equals(other.Y) && Z.Equals(other.Z);
+        public override bool Equals(object obj) => obj is Vec3 other && Equals(other);
+        public override int GetHashCode() => HashCode.Combine(X, Y, Z);
+        public static bool operator ==(Vec3 a, Vec3 b) => a.Equals(b);
+        public static bool operator !=(Vec3 a, Vec3 b) => !a.Equals(b);
+    }
+
     /// <summary>
     /// Linear 0..1 RGBA.
     /// </summary>

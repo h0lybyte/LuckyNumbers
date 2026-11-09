@@ -25,7 +25,7 @@ namespace LuckyNumbers.Editor
         public static void BuildAll()
         {
             var starfield = MaterialAsset("Starfield", "LuckyNumbers/Starfield");
-            var planet = MaterialAsset("Planet2D", "LuckyNumbers/Planet2D");
+            var planet = MaterialAsset("Planet3D", "LuckyNumbers/Planet3D");
 
             BuildTitle(starfield, planet);
             BuildIntroPlaceholder(starfield);
@@ -45,13 +45,13 @@ namespace LuckyNumbers.Editor
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-            // Universe: camera (starfield rides on it), bodies spawned by SpacePresenter from content.
+            // Universe: perspective camera + starfield skybox; bodies spawned by SpacePresenter from content.
             var cam = Camera();
-            var starfield = Quad("Starfield", starfieldMat, cam.transform, new Vector3(0, 0, 15), new Vector3(40, 40, 1));
+            Sky(starfieldMat);
             var space = new GameObject("Space").AddComponent<SpaceView>();
-            var template = Quad("BodyTemplate", planetMat, space.transform, Vector3.zero, Vector3.one);
+            var template = Sphere("BodyTemplate", planetMat, space.transform);
             template.gameObject.SetActive(false);
-            Assign(space, ("viewCamera", cam), ("starfield", starfield), ("bodyTemplate", template));
+            Assign(space, ("viewCamera", cam), ("bodyTemplate", template));
 
             // UI.
             var canvas = Canvas();
@@ -100,8 +100,8 @@ namespace LuckyNumbers.Editor
         static void BuildIntroPlaceholder(Material starfieldMat)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            var cam = Camera();
-            Quad("Starfield", starfieldMat, cam.transform, new Vector3(0, 0, 15), new Vector3(40, 40, 1));
+            Camera();
+            Sky(starfieldMat);
             Label(Canvas(), "Placeholder", 36, new Vector2(0.5f, 0.5f), FontStyle.Normal).text = "Intro (cutscene player next)";
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Intro.unity");
         }
@@ -140,24 +140,33 @@ namespace LuckyNumbers.Editor
         static UnityEngine.Camera Camera()
         {
             var cam = new GameObject("Main Camera") { tag = "MainCamera" }.AddComponent<UnityEngine.Camera>();
-            cam.orthographic = true;
-            cam.orthographicSize = 1f;
-            cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = Color.black;
-            cam.transform.position = new Vector3(0, 0, -10);
+            cam.orthographic = false;
+            cam.fieldOfView = 45f;
+            cam.nearClipPlane = 0.1f;
+            cam.farClipPlane = 500f;
+            cam.clearFlags = CameraClearFlags.Skybox;
+            cam.transform.position = new Vector3(0, 0, -6);
             return cam;
         }
 
-        static MeshRenderer Quad(string name, Material material, Transform parent, Vector3 localPosition, Vector3 scale)
+        static void Sky(Material starfield)
         {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            RenderSettings.skybox = starfield;
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = Color.black; // all shaders are unlit; no baked/ambient lighting
+            RenderSettings.fog = false;
+        }
+
+        static MeshRenderer Sphere(string name, Material material, Transform parent)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere); // 1 unit diameter
             go.name = name;
             Object.DestroyImmediate(go.GetComponent<Collider>());
             go.transform.SetParent(parent, false);
-            go.transform.localPosition = localPosition;
-            go.transform.localScale = scale;
             var r = go.GetComponent<MeshRenderer>();
             r.sharedMaterial = material;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            r.receiveShadows = false;
             return r;
         }
 

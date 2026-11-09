@@ -7,24 +7,25 @@ import "luckynumbers/v1/common.proto";
 
 option csharp_namespace = "LuckyNumbers.Model";
 
-// Space background shown on the title (and reused by the intro).
-// World units: orthographic camera, 1 unit = half the screen height.
+// 3D universe shown on the title (and reused by the intro). World units: a scale-1 body is 1 unit across.
 message SpaceBackdrop {
-  reserved 2, 3, 4; // old single planet (planet, planet_position, planet_scale)
+  reserved 2, 3, 4, 6; // 2D era: planet, planet_position, planet_scale, pan
   StarfieldLook stars = 1;
-  // Drawn in list order (later = in front).
   repeated CelestialBody bodies = 5;
-  CameraPan pan = 6;
+  CameraOrbit camera = 7;
+  // Direction towards the sun, shared by every planet's lighting (normalized at runtime).
+  Vec3 sun_direction = 8;
 }
 
-// A planet/moon quad using LuckyNumbers/Planet2D with its own look.
+// A sphere using LuckyNumbers/Planet3D with its own look.
 message CelestialBody {
   string id = 1;
-  // World position; for orbiting bodies, the orbit centre offset (usually 0,0).
-  Vec2 position = 2;
+  // World position; for orbiting bodies, an offset from the orbit centre (usually 0,0,0).
+  Vec3 position = 2;
+  // Diameter in world units.
   float scale = 3;
   PlanetLook look = 4;
-  // Optional: circle another body (by id). radius 0 = static.
+  // Optional: circle another body (listed earlier) in the XZ plane. radius 0 = static.
   Orbit orbit = 5;
 }
 
@@ -36,49 +37,67 @@ message Orbit {
   float phase = 4;
 }
 
-// Click-drag to look around the universe.
-message CameraPan {
-  // 1 = the universe follows the pointer exactly.
-  float drag_speed = 1;
-  // Camera may move within +-bounds of the start position.
-  Vec2 bounds = 2;
-  // Inertia after release: velocity kept per second (0 = stop instantly, 0.9 = long glide).
-  float glide = 3;
+// Drag rotates the camera around `target`; scroll zooms.
+message CameraOrbit {
+  // Body id to orbit around.
+  string target = 1;
+  float distance = 2;
+  float min_distance = 3;
+  float max_distance = 4;
+  float yaw_degrees = 5;
+  float pitch_degrees = 6;
+  float min_pitch_degrees = 7;
+  float max_pitch_degrees = 8;
+  // Degrees of rotation for a drag across the full screen width.
+  float drag_degrees_per_screen = 9;
+  // Inertia after release: share of spin kept per 1/60 s (0 = stop, 0.95 = long glide).
+  float glide = 10;
+  // Distance change per scroll notch, as a share of the current distance.
+  float zoom_step = 11;
+  // Shifts the framing (camera-space x/y, world units) so the target can sit off-centre.
+  Vec2 frame_offset = 12;
+  float field_of_view_degrees = 13;
 }
 
-// Shader properties of LuckyNumbers/Starfield.
+// Shader properties of LuckyNumbers/Starfield (skybox: stars + nebula on the celestial sphere).
 message StarfieldLook {
   option (ln.material) = "LuckyNumbers/Starfield";
+  reserved 11; // 2D era: parallax
   Rgba space_color = 1;
   Rgba nebula_color_a = 2;
   Rgba nebula_color_b = 3;
-  float nebula_intensity = 4;
-  float nebula_scale = 5;
-  float star_density = 6;
-  float star_brightness = 7;
-  float twinkle_speed = 8;
+  optional float nebula_intensity = 4;
+  optional float nebula_scale = 5;
+  optional float star_density = 6;
+  optional float star_brightness = 7;
+  optional float twinkle_speed = 8;
+  // Slow sky rotation, radians per second around (y, x).
   Vec2 drift = 9;
-  float seed = 10;
-  // How far each layer moves when the camera pans (0 = fixed to screen, 1 = world-locked).
-  float parallax = 11;
+  optional float seed = 10;
 }
 
-// Shader properties of LuckyNumbers/Planet2D.
+// Shader properties of LuckyNumbers/Planet3D.
 message PlanetLook {
-  option (ln.material) = "LuckyNumbers/Planet2D";
+  option (ln.material) = "LuckyNumbers/Planet3D";
+  reserved 4, 5, 8, 9, 10, 11, 13; // 2D era: planet_size, edge_smoothness, rotation_axis, light_origin,
+                                   // light_shadow_hardness, light_size, shadow_size
   Rgba planet_color = 1;
   Rgba atmosphere_color = 2;
   Rgba light_color = 3;
-  float planet_size = 4;
-  float edge_smoothness = 5;
-  float atmosphere_thickness = 6;
-  float rotation_speed = 7;
-  float rotation_axis = 8;
-  Vec2 light_origin = 9;
-  float light_shadow_hardness = 10;
-  float light_size = 11;
-  float light_intensity = 12;
-  float shadow_size = 13;
-  float shadow_intensity = 14;
-  Vec2 noise_offset = 15;
+  // Glow shell thickness, share of the radius.
+  optional float atmosphere_thickness = 6;
+  // Turns per second around the (tilted) axis.
+  optional float rotation_speed = 7;
+  optional float light_intensity = 12;
+  optional float shadow_intensity = 14;
+  Vec3 noise_offset = 15;
+  optional float noise_scale = 16;
+  // 0 = original look (noise can go negative, giving complementary colours), 1 = true colour.
+  optional float noise_remap = 17;
+  optional float atmosphere_intensity = 18;
+  // Higher = glow hugs the surface more tightly.
+  optional float atmosphere_power = 19;
+  // Width of the day/night blend on the surface.
+  optional float terminator_softness = 20;
+  optional float axial_tilt_degrees = 21;
 }

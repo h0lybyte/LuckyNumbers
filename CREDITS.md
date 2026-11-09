@@ -2,8 +2,9 @@
 
 ## Shaders
 
-- Planet shader: "Simple 2D Planet shader" by **Ikkemcwood** on Shadertoy, https://www.shadertoy.com/view/Wcf3W7
+- Planet shader look: "Simple 2D Planet shader" by **Ikkemcwood** on Shadertoy, https://www.shadertoy.com/view/Wcf3W7 (adapted to 3D spheres)
 - Noise and fBm techniques: **The Book of Shaders** by Patricio Gonzalez Vivo and Jen Lowe, https://thebookofshaders.com
+- 3D simplex noise: **webgl-noise** by Ian McEwan, Stefan Gustavson and Ashima Arts (MIT), https://github.com/ashima/webgl-noise
 
 ## Libraries
 

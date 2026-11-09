@@ -1,4 +1,3 @@
-using System;
 using LuckyNumbers.Model;
 using Unity.Mathematics;
 using UnityEngine;
@@ -8,20 +7,22 @@ using VContainer.Unity;
 namespace LuckyNumbers.Space
 {
     /// <summary>
-    /// Drives the universe: builds the SpaceWorld from the scope's SpaceBackdrop, runs OrbitSystem,
-    /// mirrors positions to views, and pans the camera on click-drag (glide + bounds).
+    /// Drives the 3D universe: builds the SpaceWorld from the scope's SpaceBackdrop, runs OrbitSystem,
+    /// mirrors positions to views, and orbits the camera around a target body (drag rotates, scroll zooms).
     /// </summary>
     [Presenter]
     public sealed class SpacePresenter : IStartable, ITickable
     {
-        static readonly int PanOffset = Shader.PropertyToID("_PanOffset");
+        static readonly int SunDirection = Shader.PropertyToID("_LnSunDirection");
 
         readonly SpaceView _view;
         readonly SpaceBackdrop _backdrop;
         readonly PlayerInput _input;
         SpaceWorld _world;
         Transform[] _bodies;
-        float2 _origin, _velocity;
+        int _target;
+        float _yaw, _pitch, _distance;
+        float2 _spin;               // degrees per second (yaw, pitch)
         bool _dragging, _wasPressed;
 
         [Inject]
@@ -34,60 +35,68 @@ namespace LuckyNumbers.Space
 
         public void Start()
         {
-            _backdrop.Stars.ApplyTo(_view.StarfieldMaterial);
+            if (_view.SkyboxMaterial != null) _backdrop.Stars.ApplyTo(_view.SkyboxMaterial);
+            var sun = _backdrop.SunDirection;
+            Shader.SetGlobalVector(SunDirection, ((Vector3)math.normalizesafe(new float3(sun.X, sun.Y, sun.Z), new float3(1, 0, 0))));
+
             _world = new SpaceWorld(_backdrop.Bodies);
             _bodies = new Transform[_world.Count];
             for (var i = 0; i < _world.Count; i++)
             {
-                var r = _view.SpawnBody(_world.Ids[i], i);
+                var r = _view.SpawnBody(_world.Ids[i]);
                 _world.Look[i].ApplyTo(r.material);
                 r.transform.localScale = Vector3.one * _world.Scale[i];
                 _bodies[i] = r.transform;
             }
-            var cam = _view.Camera.transform.position;
-            _origin = new float2(cam.x, cam.y);
+
+            var cam = _backdrop.Camera;
+            _target = math.max(0, _world.IndexOf(cam.Target));
+            _yaw = cam.YawDegrees;
+            _pitch = cam.PitchDegrees;
+            _distance = cam.Distance;
+            if (cam.FieldOfViewDegrees > 0f) _view.Camera.fieldOfView = cam.FieldOfViewDegrees;
         }
 
         public void Tick()
         {
             OrbitSystem.Update(_world, Time.time);
-            for (var i = 0; i < _world.Count; i++)
-            {
-                var p = _world.Position[i];
-                var t = _bodies[i].localPosition;
-                _bodies[i].localPosition = new Vector3(p.x, p.y, t.z);
-            }
-            Pan(Time.deltaTime);
+            for (var i = 0; i < _world.Count; i++) _bodies[i].localPosition = _world.Position[i];
+            OrbitCamera(Time.deltaTime);
         }
 
-        void Pan(float dt)
+        void OrbitCamera(float dt)
         {
-            var pan = _backdrop.Pan;
-            if (pan == null || dt <= 0f) return;
-
-            var pressed = _input.PointerPressed.Value;
-            if (pressed && !_wasPressed) _dragging = !_view.IsPointerOverUI(); // drags can't start on buttons
-            if (!pressed) _dragging = false;
-            _wasPressed = pressed;
-
-            var cam = _view.Camera;
-            var unitsPerPixel = 2f * cam.orthographicSize / Mathf.Max(1, Screen.height);
-            if (_dragging)
+            var c = _backdrop.Camera;
+            if (dt > 0f)
             {
-                var d = _input.PointerDelta.Value;
-                _velocity = -new float2(d.X, d.Y) * unitsPerPixel * pan.DragSpeed / dt; // grab-and-move
-            }
-            else
-            {
-                _velocity *= math.pow(math.saturate(pan.Glide), dt * 60f); // glide, frame-rate independent
+                var pressed = _input.PointerPressed.Value;
+                if (pressed && !_wasPressed) _dragging = !_view.IsPointerOverUI(); // drags can't start on buttons
+                if (!pressed) _dragging = false;
+                _wasPressed = pressed;
+
+                var degreesPerPixel = c.DragDegreesPerScreen / Mathf.Max(1, Screen.width);
+                if (_dragging)
+                {
+                    var d = _input.PointerDelta.Value;
+                    _spin = new float2(d.X, -d.Y) * degreesPerPixel / dt;   // grab the universe and turn it
+                }
+                else
+                {
+                    _spin *= math.pow(math.saturate(c.Glide), dt * 60f);     // glide, frame-rate independent
+                }
+                _yaw += _spin.x * dt;
+                _pitch = math.clamp(_pitch + _spin.y * dt, c.MinPitchDegrees, c.MaxPitchDegrees);
+
+                var scroll = _input.PointerScroll.Value;
+                if (scroll != 0f && !_view.IsPointerOverUI())
+                    _distance = math.clamp(_distance * (1f - math.sign(scroll) * c.ZoomStep), c.MinDistance, c.MaxDistance);
             }
 
-            var p = cam.transform.position;
-            var next = new float2(p.x, p.y) + _velocity * dt;
-            var bounds = new float2(pan.Bounds.X, pan.Bounds.Y);
-            next = math.clamp(next, _origin - bounds, _origin + bounds);
-            cam.transform.position = new Vector3(next.x, next.y, p.z);
-            _view.StarfieldMaterial.SetVector(PanOffset, new Vector4(next.x - _origin.x, next.y - _origin.y));
+            var target = (Vector3)_world.Position[_target];
+            var rotation = Quaternion.Euler(_pitch, _yaw, 0f);
+            var t = _view.Camera.transform;
+            t.SetPositionAndRotation(target - rotation * Vector3.forward * _distance, rotation);
+            t.position += t.right * c.FrameOffset.X + t.up * c.FrameOffset.Y; // off-centre framing
         }
     }
 }

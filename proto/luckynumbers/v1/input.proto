@@ -29,6 +29,8 @@ message PlayerInput {
   Vec2 pointer_position = 3;
   Vec2 pointer_delta = 4;
   bool pointer_pressed = 5;
+  // Mouse wheel / trackpad scroll this frame (positive = up/away).
+  float pointer_scroll = 6;
 }
 
 message InputActionPerformed {

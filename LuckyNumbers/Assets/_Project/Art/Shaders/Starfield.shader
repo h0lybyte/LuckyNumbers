@@ -1,6 +1,5 @@
-// Procedural space background: parallax star layers with twinkle + drift, faint fBm nebula.
-// Screen-space (fills any aspect ratio); _PanOffset (camera world xy, set at runtime) scrolls each
-// layer by a different share of `_Parallax` for depth. Keep the quad parented to the camera.
+// Procedural skybox: three star layers + faint fBm nebula on the celestial sphere, slow drift.
+// Use as RenderSettings.skybox with the camera clearing to Skybox.
 Shader "LuckyNumbers/Starfield"
 {
     Properties
@@ -9,19 +8,17 @@ Shader "LuckyNumbers/Starfield"
         _NebulaColorA ("Nebula Color A", Color) = (0.25, 0.08, 0.35, 1)
         _NebulaColorB ("Nebula Color B", Color) = (0.05, 0.15, 0.35, 1)
         _NebulaIntensity ("Nebula Intensity", Range(0, 1)) = 0.35
-        _NebulaScale ("Nebula Scale", Float) = 1.5
-        _StarDensity ("Star Density (cells across)", Float) = 60
+        _NebulaScale ("Nebula Scale", Float) = 1.2
+        _StarDensity ("Star Density", Float) = 140
         _StarBrightness ("Star Brightness", Float) = 1.2
         _TwinkleSpeed ("Twinkle Speed", Float) = 2
-        _Drift ("Drift (xy per second)", Vector) = (0.004, 0.001, 0, 0)
+        _Drift ("Drift (radians/s around y, x)", Vector) = (0.003, 0, 0, 0)
         _Seed ("Seed", Float) = 7
-        _Parallax ("Parallax (share of camera pan)", Float) = 0.15
-        _PanOffset ("Pan Offset (runtime: camera world xy)", Vector) = (0, 0, 0, 0)
     }
 
     SubShader
     {
-        Tags { "RenderType" = "Opaque" "Queue" = "Background" "RenderPipeline" = "UniversalPipeline" }
+        Tags { "RenderType" = "Background" "Queue" = "Background" "PreviewType" = "Skybox" "RenderPipeline" = "UniversalPipeline" }
         ZWrite Off
         Cull Off
 
@@ -37,54 +34,55 @@ Shader "LuckyNumbers/Starfield"
                 float4 _SpaceColor, _NebulaColorA, _NebulaColorB;
                 float _NebulaIntensity, _NebulaScale, _StarDensity, _StarBrightness, _TwinkleSpeed;
                 float4 _Drift;
-                float _Seed, _Parallax;
-                float4 _PanOffset;
+                float _Seed;
             CBUFFER_END
 
             struct Attributes { float4 positionOS : POSITION; };
-            struct Varyings { float4 positionCS : SV_POSITION; float4 screenPos : TEXCOORD0; };
+            struct Varyings { float4 positionCS : SV_POSITION; float3 dir : TEXCOORD0; };
 
             Varyings vert(Attributes v)
             {
                 Varyings o;
                 o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
-                o.screenPos = ComputeScreenPos(o.positionCS);
+                o.dir = v.positionOS.xyz;
                 return o;
             }
 
-            // One layer of stars: one candidate star per grid cell, random position/size/brightness.
-            float StarLayer(float2 uv, float density, float seed, float time)
+            float3 Drift(float3 d, float t)
             {
-                float2 grid = uv * density;
-                float2 cell = floor(grid);
-                float2 local = frac(grid) - 0.5;
-                float h = ln_hash21(cell + seed);
-                if (h < 0.85) return 0.0;                       // ~15% of cells hold a star
-                float2 pos = float2(ln_hash21(cell + seed + 1.3), ln_hash21(cell + seed + 2.7)) - 0.5;
-                float size = lerp(0.02, 0.08, ln_hash21(cell + seed + 4.1));
-                float d = length(local - pos * 0.7);
+                float a = _Drift.x * t, b = _Drift.y * t;
+                float sa = sin(a), ca = cos(a), sb = sin(b), cb = cos(b);
+                d = float3(d.x * ca - d.z * sa, d.y, d.x * sa + d.z * ca);       // around y
+                return float3(d.x, d.y * cb - d.z * sb, d.y * sb + d.z * cb);     // around x
+            }
+
+            // One star layer: a candidate star per 3D grid cell near the sphere, random size/brightness.
+            float StarLayer(float3 dir, float density, float seed, float t)
+            {
+                float3 g = dir * density;
+                float3 cell = floor(g);
+                float h = ln_hash31(cell + seed);
+                if (h < 0.9) return 0.0;                                     // ~10% of cells hold a star
+                float3 pos = ln_hash33(cell + seed + 1.7);
+                float d = length(frac(g) - pos);
+                float size = lerp(0.04, 0.14, ln_hash31(cell + seed + 4.1));
                 float core = ln_smoothstep_down(0.0, size, d);
-                float twinkle = 0.6 + 0.4 * sin(time * _TwinkleSpeed * (0.5 + h) + h * 6.2831);
-                return core * twinkle * (h - 0.85) / 0.15;
+                float twinkle = 0.6 + 0.4 * sin(t * _TwinkleSpeed * (0.5 + h) + h * 6.2831);
+                return core * twinkle * (h - 0.9) / 0.1;
             }
 
             float4 frag(Varyings i) : SV_Target
             {
-                float2 uv = i.screenPos.xy / i.screenPos.w;
-                uv.x *= _ScreenParams.x / _ScreenParams.y;      // square cells at any aspect
                 float t = _Time.y;
-                // Orthographic size 1: one world unit is half the screen height = 0.5 in uv.
-                float2 pan = _PanOffset.xy * 0.5 * _Parallax;
+                float3 dir = Drift(normalize(i.dir), t);
 
-                float2 nuv = uv + pan * 0.3;                    // nebula: farthest
-                float n = ln_fbm(nuv * _NebulaScale + _Seed + _Drift.xy * t * 0.5, 5, 0.5, 0.55, 2.0) * 0.5 + 0.5;
-                float n2 = ln_fbm(nuv * _NebulaScale * 1.7 - _Seed + 3.1, 4, 0.5, 0.5, 2.0) * 0.5 + 0.5;
+                float n  = ln_fbm(dir * _NebulaScale + _Seed, 5, 0.5, 0.55, 2.0) * 0.5 + 0.5;
+                float n2 = ln_fbm(dir * _NebulaScale * 1.7 - _Seed + 3.1, 3, 0.5, 0.5, 2.0) * 0.5 + 0.5;
                 float3 nebula = lerp(_NebulaColorA.rgb, _NebulaColorB.rgb, saturate(n2)) * pow(saturate(n), 3.0) * _NebulaIntensity;
 
-                float stars = 0.0;                              // far -> near: denser, slower
-                stars += StarLayer(uv + pan * 0.4 + _Drift.xy * t * 0.3, _StarDensity,        _Seed,        t) * 0.6;
-                stars += StarLayer(uv + pan * 0.7 + _Drift.xy * t * 0.6, _StarDensity * 0.6,  _Seed + 11.0, t) * 0.8;
-                stars += StarLayer(uv + pan * 1.0 + _Drift.xy * t * 1.0, _StarDensity * 0.35, _Seed + 23.0, t);
+                float stars = StarLayer(dir, _StarDensity, _Seed, t) * 0.6
+                            + StarLayer(dir, _StarDensity * 0.6, _Seed + 11.0, t) * 0.8
+                            + StarLayer(dir, _StarDensity * 0.35, _Seed + 23.0, t);
 
                 return float4(_SpaceColor.rgb + nebula + stars * _StarBrightness, 1.0);
             }

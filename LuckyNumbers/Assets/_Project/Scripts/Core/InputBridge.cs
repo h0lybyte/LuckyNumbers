@@ -75,6 +75,7 @@ namespace LuckyNumbers.Core
                 _input.PointerDelta.Value = new Vec2(delta.x, delta.y);
                 _input.PointerPressed.Value = pointer.press.isPressed;
             }
+            _input.PointerScroll.Value = Mouse.current != null ? Mouse.current.scroll.ReadValue().y : 0f;
         }
 
         public void Dispose()

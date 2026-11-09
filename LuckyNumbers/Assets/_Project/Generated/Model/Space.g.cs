@@ -10,33 +10,36 @@ using R3;
 namespace LuckyNumbers.Model
 {
     /// <summary>
-    /// Space background shown on the title (and reused by the intro).
-    /// World units: orthographic camera, 1 unit = half the screen height.
+    /// 3D universe shown on the title (and reused by the intro). World units: a scale-1 body is 1 unit across.
     /// </summary>
     public sealed class SpaceBackdrop
     {
         public StarfieldLook Stars { get; set; }
-        /// <summary>
-        /// Drawn in list order (later = in front).
-        /// </summary>
         public List<CelestialBody> Bodies { get; } = new List<CelestialBody>();
-        public CameraPan Pan { get; set; }
+        public CameraOrbit Camera { get; set; }
+        /// <summary>
+        /// Direction towards the sun, shared by every planet's lighting (normalized at runtime).
+        /// </summary>
+        public Vec3 SunDirection { get; set; }
     }
 
     /// <summary>
-    /// A planet/moon quad using LuckyNumbers/Planet2D with its own look.
+    /// A sphere using LuckyNumbers/Planet3D with its own look.
     /// </summary>
     public sealed class CelestialBody
     {
         public string Id { get; set; }
         /// <summary>
-        /// World position; for orbiting bodies, the orbit centre offset (usually 0,0).
+        /// World position; for orbiting bodies, an offset from the orbit centre (usually 0,0,0).
         /// </summary>
-        public Vec2 Position { get; set; }
+        public Vec3 Position { get; set; }
+        /// <summary>
+        /// Diameter in world units.
+        /// </summary>
         public float Scale { get; set; }
         public PlanetLook Look { get; set; }
         /// <summary>
-        /// Optional: circle another body (by id). radius 0 = static.
+        /// Optional: circle another body (listed earlier) in the XZ plane. radius 0 = static.
         /// </summary>
         public Orbit Orbit { get; set; }
     }
@@ -53,26 +56,42 @@ namespace LuckyNumbers.Model
     }
 
     /// <summary>
-    /// Click-drag to look around the universe.
+    /// Drag rotates the camera around `target`; scroll zooms.
     /// </summary>
-    public sealed class CameraPan
+    public sealed class CameraOrbit
     {
         /// <summary>
-        /// 1 = the universe follows the pointer exactly.
+        /// Body id to orbit around.
         /// </summary>
-        public float DragSpeed { get; set; }
+        public string Target { get; set; }
+        public float Distance { get; set; }
+        public float MinDistance { get; set; }
+        public float MaxDistance { get; set; }
+        public float YawDegrees { get; set; }
+        public float PitchDegrees { get; set; }
+        public float MinPitchDegrees { get; set; }
+        public float MaxPitchDegrees { get; set; }
         /// <summary>
-        /// Camera may move within +-bounds of the start position.
+        /// Degrees of rotation for a drag across the full screen width.
         /// </summary>
-        public Vec2 Bounds { get; set; }
+        public float DragDegreesPerScreen { get; set; }
         /// <summary>
-        /// Inertia after release: velocity kept per second (0 = stop instantly, 0.9 = long glide).
+        /// Inertia after release: share of spin kept per 1/60 s (0 = stop, 0.95 = long glide).
         /// </summary>
         public float Glide { get; set; }
+        /// <summary>
+        /// Distance change per scroll notch, as a share of the current distance.
+        /// </summary>
+        public float ZoomStep { get; set; }
+        /// <summary>
+        /// Shifts the framing (camera-space x/y, world units) so the target can sit off-centre.
+        /// </summary>
+        public Vec2 FrameOffset { get; set; }
+        public float FieldOfViewDegrees { get; set; }
     }
 
     /// <summary>
-    /// Shader properties of LuckyNumbers/Starfield.
+    /// Shader properties of LuckyNumbers/Starfield (skybox: stars + nebula on the celestial sphere).
     /// </summary>
     public sealed class StarfieldLook
     {
@@ -84,33 +103,49 @@ namespace LuckyNumbers.Model
         public float StarDensity { get; set; }
         public float StarBrightness { get; set; }
         public float TwinkleSpeed { get; set; }
+        /// <summary>
+        /// Slow sky rotation, radians per second around (y, x).
+        /// </summary>
         public Vec2 Drift { get; set; }
         public float Seed { get; set; }
-        /// <summary>
-        /// How far each layer moves when the camera pans (0 = fixed to screen, 1 = world-locked).
-        /// </summary>
-        public float Parallax { get; set; }
     }
 
     /// <summary>
-    /// Shader properties of LuckyNumbers/Planet2D.
+    /// Shader properties of LuckyNumbers/Planet3D.
     /// </summary>
     public sealed class PlanetLook
     {
+        /// <summary>
+        /// light_shadow_hardness, light_size, shadow_size
+        /// </summary>
         public Rgba PlanetColor { get; set; }
         public Rgba AtmosphereColor { get; set; }
         public Rgba LightColor { get; set; }
-        public float PlanetSize { get; set; }
-        public float EdgeSmoothness { get; set; }
+        /// <summary>
+        /// Glow shell thickness, share of the radius.
+        /// </summary>
         public float AtmosphereThickness { get; set; }
+        /// <summary>
+        /// Turns per second around the (tilted) axis.
+        /// </summary>
         public float RotationSpeed { get; set; }
-        public float RotationAxis { get; set; }
-        public Vec2 LightOrigin { get; set; }
-        public float LightShadowHardness { get; set; }
-        public float LightSize { get; set; }
         public float LightIntensity { get; set; }
-        public float ShadowSize { get; set; }
         public float ShadowIntensity { get; set; }
-        public Vec2 NoiseOffset { get; set; }
+        public Vec3 NoiseOffset { get; set; }
+        public float NoiseScale { get; set; }
+        /// <summary>
+        /// 0 = original look (noise can go negative, giving complementary colours), 1 = true colour.
+        /// </summary>
+        public float NoiseRemap { get; set; }
+        public float AtmosphereIntensity { get; set; }
+        /// <summary>
+        /// Higher = glow hugs the surface more tightly.
+        /// </summary>
+        public float AtmospherePower { get; set; }
+        /// <summary>
+        /// Width of the day/night blend on the surface.
+        /// </summary>
+        public float TerminatorSoftness { get; set; }
+        public float AxialTiltDegrees { get; set; }
     }
 }

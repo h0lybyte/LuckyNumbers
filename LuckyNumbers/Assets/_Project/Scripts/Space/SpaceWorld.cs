@@ -12,14 +12,14 @@ namespace LuckyNumbers.Space
     public sealed class SpaceWorld
     {
         public readonly string[] Ids;
-        public readonly float2[] BasePosition;
+        public readonly float3[] BasePosition;
         public readonly float[] Scale;
         public readonly int[] OrbitParent;     // -1 = static
         public readonly float[] OrbitRadius;
         public readonly float[] OrbitPeriod;
         public readonly float[] OrbitPhase;
         public readonly PlanetLook[] Look;
-        public readonly float2[] Position;     // output of OrbitSystem
+        public readonly float3[] Position;     // output of OrbitSystem
 
         public int Count => Ids.Length;
 
@@ -27,14 +27,14 @@ namespace LuckyNumbers.Space
         {
             var n = bodies.Count;
             Ids = new string[n];
-            BasePosition = new float2[n];
+            BasePosition = new float3[n];
             Scale = new float[n];
             OrbitParent = new int[n];
             OrbitRadius = new float[n];
             OrbitPeriod = new float[n];
             OrbitPhase = new float[n];
             Look = new PlanetLook[n];
-            Position = new float2[n];
+            Position = new float3[n];
 
             var index = new Dictionary<string, int>(n);
             for (var i = 0; i < n; i++)
@@ -43,7 +43,7 @@ namespace LuckyNumbers.Space
                 if (string.IsNullOrEmpty(b.Id) || !index.TryAdd(b.Id, i))
                     throw new ArgumentException($"celestial body #{i}: id '{b.Id}' is empty or duplicated");
                 Ids[i] = b.Id;
-                BasePosition[i] = new float2(b.Position.X, b.Position.Y);
+                BasePosition[i] = new float3(b.Position.X, b.Position.Y, b.Position.Z);
                 Scale[i] = b.Scale;
                 Look[i] = b.Look;
                 OrbitParent[i] = -1;
@@ -59,9 +59,11 @@ namespace LuckyNumbers.Space
                 }
             }
         }
+
+        public int IndexOf(string id) => Array.IndexOf(Ids, id);
     }
 
-    /// <summary>Positions every body for time t (seconds). Pure function over the arrays.</summary>
+    /// <summary>Positions every body for time t (seconds); orbits lie in the XZ plane. Pure function.</summary>
     public static class OrbitSystem
     {
         public static void Update(SpaceWorld w, float t)
@@ -75,7 +77,8 @@ namespace LuckyNumbers.Space
                     continue;
                 }
                 var angle = 2f * math.PI * (t / w.OrbitPeriod[i] + w.OrbitPhase[i]);
-                w.Position[i] = w.Position[p] + w.BasePosition[i] + w.OrbitRadius[i] * new float2(math.cos(angle), math.sin(angle));
+                w.Position[i] = w.Position[p] + w.BasePosition[i]
+                              + w.OrbitRadius[i] * new float3(math.cos(angle), 0f, math.sin(angle));
             }
         }
     }

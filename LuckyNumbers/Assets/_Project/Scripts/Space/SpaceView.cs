@@ -3,24 +3,33 @@ using UnityEngine.EventSystems;
 
 namespace LuckyNumbers.Space
 {
-    /// <summary>Camera, starfield and a body template. SpacePresenter spawns one quad per entity.</summary>
+    /// <summary>Camera, skybox and a sphere template. SpacePresenter spawns one body per entity.</summary>
     [View]
     public sealed class SpaceView : MonoBehaviour
     {
         [SerializeField] Camera viewCamera;
-        [SerializeField] MeshRenderer starfield;
         [SerializeField] MeshRenderer bodyTemplate;
+        Material _sky;
 
         public Camera Camera => viewCamera;
-        public Material StarfieldMaterial => starfield.material;
 
-        /// <summary>New body quad (inactive template cloned, own material instance).</summary>
-        public MeshRenderer SpawnBody(string id, int order)
+        /// <summary>Per-scene copy of the skybox material (editing the asset at runtime would persist in the editor).</summary>
+        public Material SkyboxMaterial
+        {
+            get
+            {
+                if (_sky == null && RenderSettings.skybox != null)
+                    RenderSettings.skybox = _sky = new Material(RenderSettings.skybox);
+                return _sky;
+            }
+        }
+
+        /// <summary>New body (inactive template cloned, own material instance).</summary>
+        public MeshRenderer SpawnBody(string id)
         {
             var r = Instantiate(bodyTemplate, transform);
             r.name = id;
             r.gameObject.SetActive(true);
-            r.transform.localPosition = new Vector3(0, 0, -0.01f * order); // later = in front
             return r;
         }
 

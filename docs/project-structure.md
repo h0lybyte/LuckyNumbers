@@ -3,13 +3,13 @@
 ```
 LuckyNumbers/            Unity project
   Assets/_Project/       all our assets and code
-    Art/Shaders/         Starfield, Planet2D, Include/Noise.hlsl; Art/Materials/
+    Art/Shaders/         Starfield (skybox), Planet3D, Include/Noise.hlsl; Art/Materials/
     Editor/              WebBuild, SceneBuilder, ShaderPreview
     Generators/          Roslyn generator DLL + [Presenter]/[View] attributes
     Generated/           C# generated from proto/ + content/ (do not edit)
     Scenes/              Title, Intro (built by SceneBuilder)
     Scripts/Core/        RootLifetimeScope, SceneFlow, InputBridge
-    Scripts/Space/       SpaceWorld + OrbitSystem (bodies as entities), SpaceView, SpacePresenter (pan)
+    Scripts/Space/       SpaceWorld + OrbitSystem (bodies as entities), SpaceView, SpacePresenter (orbit camera)
     Scripts/Title/       TitleView, TitlePresenter, TitleScope
     Scripts/Rendering/   RenderResolutionCap
     Settings/            URP assets, input actions

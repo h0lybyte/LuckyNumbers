@@ -9,6 +9,7 @@ namespace LuckyNumbers.Model
     public static class MaterialBindings
     {
         public static Vector2 ToVector2(this Vec2 v) => new Vector2(v.X, v.Y);
+        public static Vector3 ToVector3(this Vec3 v) => new Vector3(v.X, v.Y, v.Z);
         public static Color ToColor(this Rgba c) => new Color(c.R, c.G, c.B, c.A);
 
         public const string StarfieldLookShader = "LuckyNumbers/Starfield";
@@ -22,7 +23,6 @@ namespace LuckyNumbers.Model
         static readonly int StarfieldLook_TwinkleSpeed = Shader.PropertyToID("_TwinkleSpeed");
         static readonly int StarfieldLook_Drift = Shader.PropertyToID("_Drift");
         static readonly int StarfieldLook_Seed = Shader.PropertyToID("_Seed");
-        static readonly int StarfieldLook_Parallax = Shader.PropertyToID("_Parallax");
 
         /// <summary>Copies every field to the matching LuckyNumbers/Starfield property.</summary>
         public static void ApplyTo(this StarfieldLook look, Material material)
@@ -37,44 +37,41 @@ namespace LuckyNumbers.Model
             material.SetFloat(StarfieldLook_TwinkleSpeed, look.TwinkleSpeed);
             material.SetVector(StarfieldLook_Drift, look.Drift.ToVector2());
             material.SetFloat(StarfieldLook_Seed, look.Seed);
-            material.SetFloat(StarfieldLook_Parallax, look.Parallax);
         }
 
-        public const string PlanetLookShader = "LuckyNumbers/Planet2D";
+        public const string PlanetLookShader = "LuckyNumbers/Planet3D";
         static readonly int PlanetLook_PlanetColor = Shader.PropertyToID("_PlanetColor");
         static readonly int PlanetLook_AtmosphereColor = Shader.PropertyToID("_AtmosphereColor");
         static readonly int PlanetLook_LightColor = Shader.PropertyToID("_LightColor");
-        static readonly int PlanetLook_PlanetSize = Shader.PropertyToID("_PlanetSize");
-        static readonly int PlanetLook_EdgeSmoothness = Shader.PropertyToID("_EdgeSmoothness");
         static readonly int PlanetLook_AtmosphereThickness = Shader.PropertyToID("_AtmosphereThickness");
         static readonly int PlanetLook_RotationSpeed = Shader.PropertyToID("_RotationSpeed");
-        static readonly int PlanetLook_RotationAxis = Shader.PropertyToID("_RotationAxis");
-        static readonly int PlanetLook_LightOrigin = Shader.PropertyToID("_LightOrigin");
-        static readonly int PlanetLook_LightShadowHardness = Shader.PropertyToID("_LightShadowHardness");
-        static readonly int PlanetLook_LightSize = Shader.PropertyToID("_LightSize");
         static readonly int PlanetLook_LightIntensity = Shader.PropertyToID("_LightIntensity");
-        static readonly int PlanetLook_ShadowSize = Shader.PropertyToID("_ShadowSize");
         static readonly int PlanetLook_ShadowIntensity = Shader.PropertyToID("_ShadowIntensity");
         static readonly int PlanetLook_NoiseOffset = Shader.PropertyToID("_NoiseOffset");
+        static readonly int PlanetLook_NoiseScale = Shader.PropertyToID("_NoiseScale");
+        static readonly int PlanetLook_NoiseRemap = Shader.PropertyToID("_NoiseRemap");
+        static readonly int PlanetLook_AtmosphereIntensity = Shader.PropertyToID("_AtmosphereIntensity");
+        static readonly int PlanetLook_AtmospherePower = Shader.PropertyToID("_AtmospherePower");
+        static readonly int PlanetLook_TerminatorSoftness = Shader.PropertyToID("_TerminatorSoftness");
+        static readonly int PlanetLook_AxialTiltDegrees = Shader.PropertyToID("_AxialTiltDegrees");
 
-        /// <summary>Copies every field to the matching LuckyNumbers/Planet2D property.</summary>
+        /// <summary>Copies every field to the matching LuckyNumbers/Planet3D property.</summary>
         public static void ApplyTo(this PlanetLook look, Material material)
         {
             material.SetColor(PlanetLook_PlanetColor, look.PlanetColor.ToColor());
             material.SetColor(PlanetLook_AtmosphereColor, look.AtmosphereColor.ToColor());
             material.SetColor(PlanetLook_LightColor, look.LightColor.ToColor());
-            material.SetFloat(PlanetLook_PlanetSize, look.PlanetSize);
-            material.SetFloat(PlanetLook_EdgeSmoothness, look.EdgeSmoothness);
             material.SetFloat(PlanetLook_AtmosphereThickness, look.AtmosphereThickness);
             material.SetFloat(PlanetLook_RotationSpeed, look.RotationSpeed);
-            material.SetFloat(PlanetLook_RotationAxis, look.RotationAxis);
-            material.SetVector(PlanetLook_LightOrigin, look.LightOrigin.ToVector2());
-            material.SetFloat(PlanetLook_LightShadowHardness, look.LightShadowHardness);
-            material.SetFloat(PlanetLook_LightSize, look.LightSize);
             material.SetFloat(PlanetLook_LightIntensity, look.LightIntensity);
-            material.SetFloat(PlanetLook_ShadowSize, look.ShadowSize);
             material.SetFloat(PlanetLook_ShadowIntensity, look.ShadowIntensity);
-            material.SetVector(PlanetLook_NoiseOffset, look.NoiseOffset.ToVector2());
+            material.SetVector(PlanetLook_NoiseOffset, look.NoiseOffset.ToVector3());
+            material.SetFloat(PlanetLook_NoiseScale, look.NoiseScale);
+            material.SetFloat(PlanetLook_NoiseRemap, look.NoiseRemap);
+            material.SetFloat(PlanetLook_AtmosphereIntensity, look.AtmosphereIntensity);
+            material.SetFloat(PlanetLook_AtmospherePower, look.AtmospherePower);
+            material.SetFloat(PlanetLook_TerminatorSoftness, look.TerminatorSoftness);
+            material.SetFloat(PlanetLook_AxialTiltDegrees, look.AxialTiltDegrees);
         }
     }
 }

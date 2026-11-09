@@ -7,8 +7,8 @@ using UnityEngine.Rendering;
 namespace LuckyNumbers.Editor
 {
     /// <summary>
-    /// Renders the space background (starfield + planet) to Logs/preview-space.png at 1280x720,
-    /// so shaders can be checked visually from the command line (tools/ln.py preview).
+    /// Renders the 3D space shaders (starfield skybox + a planet sphere) to Logs/preview-space.png at
+    /// 1280x720, so shaders can be checked visually from the command line (tools/ln.py preview).
     /// </summary>
     public static class ShaderPreview
     {
@@ -18,16 +18,18 @@ namespace LuckyNumbers.Editor
         public static void RenderSpace()
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            RenderSettings.skybox = new Material(Find("LuckyNumbers/Starfield"));
+            Shader.SetGlobalVector("_LnSunDirection", new Vector4(1f, 0.35f, -0.6f).normalized);
 
             var cam = new GameObject("PreviewCamera").AddComponent<Camera>();
-            cam.orthographic = true;
-            cam.orthographicSize = 1f;
-            cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = Color.black;
-            cam.transform.position = new Vector3(0, 0, -10);
+            cam.fieldOfView = 45f;
+            cam.clearFlags = CameraClearFlags.Skybox;
+            cam.transform.SetPositionAndRotation(new Vector3(0, 0.5f, -6), Quaternion.Euler(5, 0, 0));
 
-            Quad("Starfield", "LuckyNumbers/Starfield", new Vector3(0, 0, 5), new Vector3(4f, 2.25f, 1f));
-            Quad("Planet", "LuckyNumbers/Planet2D", new Vector3(0.45f, -0.1f, 0), new Vector3(1.2f, 1.2f, 1f));
+            var planet = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            planet.transform.position = new Vector3(1.4f, 0, 0);
+            planet.transform.localScale = Vector3.one * 2.4f;
+            planet.GetComponent<MeshRenderer>().sharedMaterial = new Material(Find("LuckyNumbers/Planet3D"));
 
             var rt = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
             var request = new RenderPipeline.StandardRequest { destination = rt };
@@ -51,15 +53,6 @@ namespace LuckyNumbers.Editor
             Debug.Log($"[ShaderPreview] wrote {path}");
         }
 
-        static void Quad(string name, string shader, Vector3 position, Vector3 scale)
-        {
-            var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            go.name = name;
-            go.transform.position = position;
-            go.transform.localScale = scale;
-            var s = Shader.Find(shader);
-            if (s == null) throw new System.Exception($"Shader not found: {shader}");
-            go.GetComponent<MeshRenderer>().sharedMaterial = new Material(s);
-        }
+        static Shader Find(string name) => Shader.Find(name) ?? throw new System.Exception($"Shader not found: {name}");
     }
 }

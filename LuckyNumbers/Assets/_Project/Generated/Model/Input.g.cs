@@ -40,6 +40,10 @@ namespace LuckyNumbers.Model
         public readonly ReactiveProperty<Vec2> PointerPosition = new ReactiveProperty<Vec2>();
         public readonly ReactiveProperty<Vec2> PointerDelta = new ReactiveProperty<Vec2>();
         public readonly ReactiveProperty<bool> PointerPressed = new ReactiveProperty<bool>();
+        /// <summary>
+        /// Mouse wheel / trackpad scroll this frame (positive = up/away).
+        /// </summary>
+        public readonly ReactiveProperty<float> PointerScroll = new ReactiveProperty<float>();
 
         public void Dispose()
         {
@@ -48,6 +52,7 @@ namespace LuckyNumbers.Model
             PointerPosition.Dispose();
             PointerDelta.Dispose();
             PointerPressed.Dispose();
+            PointerScroll.Dispose();
         }
     }
 
