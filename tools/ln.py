@@ -215,7 +215,8 @@ def web_build_dir(gfx: str) -> Path:
 
 
 def cmd_preview(args) -> int:
-    method, png = ("RenderShip", "preview-ship.png") if args.what == "ship" else ("RenderSpace", "preview-space.png")
+    method, png = {"ship": ("RenderShip", "preview-ship.png"), "arms": ("RenderArms", "preview-arms.png")}.get(
+        args.what, ("RenderSpace", "preview-space.png"))
     code, log = run_unity(["-executeMethod", f"LuckyNumbers.Editor.ShaderPreview.{method}"],
                           "ln-preview.log", args.force, graphics=True)
     errors = summarize_log(log)
@@ -614,7 +615,7 @@ def main(argv=None) -> int:
     s.set_defaults(func=cmd_webshot)
 
     s = sub.add_parser("preview", help="render shaders to LuckyNumbers/Logs/preview-<what>.png")
-    s.add_argument("what", nargs="?", choices=["space", "ship"], default="space")
+    s.add_argument("what", nargs="?", choices=["space", "ship", "arms"], default="space")
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
     s.set_defaults(func=cmd_preview)
 

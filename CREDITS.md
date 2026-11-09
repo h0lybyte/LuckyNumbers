@@ -17,6 +17,9 @@
   Jodomatis, NMT3000, Psychic Parrot, Robin, Shadee, Snaz, Thor and Psionic.
   (readme: `LuckyNumbers/Assets/_Project/Art/Models/Fighter/README-psionic.txt`)
 
+- First-person arms (rig, 13 animations, skin and glove textures): "PSX First Person Arms" by **DrillImpact**,
+  https://drillimpact.itch.io/psx-first-person-arms-free (CC0 / public domain)
+
 ## Fonts
 
 - **Exo 2** by Natanael Gama / The Exo 2 Project Authors (SIL Open Font License 1.1), https://github.com/googlefonts/Exo-2.0

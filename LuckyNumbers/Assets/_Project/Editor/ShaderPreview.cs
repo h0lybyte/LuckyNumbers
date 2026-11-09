@@ -111,6 +111,74 @@ namespace LuckyNumbers.Editor
             Save(cam, "preview-ship.png");
         }
 
+        /// <summary>First-person arms: lists clips, renders 4 poses from the rig's own camera to Logs/preview-arms.png.</summary>
+        [MenuItem("LuckyNumbers/Preview/Render Arms")]
+        public static void RenderArms()
+        {
+            const string path = "Assets/_Project/Art/Characters/Arms/arms_rig.fbx";
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);   // pick up ArtImport rule changes
+            var clips = new System.Collections.Generic.List<AnimationClip>();
+            foreach (var o in AssetDatabase.LoadAllAssetsAtPath(path))
+                if (o is AnimationClip c && !c.name.StartsWith("__preview")) clips.Add(c);
+            Debug.Log($"[ShaderPreview] arms clips ({clips.Count}): {string.Join(", ", clips.ConvertAll(c => $"{c.name} {c.length:0.##}s"))}");
+
+            var poses = new[] { "relax", "guard_idle", "finger_gun_idle", "grab.R" };
+            var model = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            var tex = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/_Project/Art/Characters/Arms/arms_gloves_01.png");
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);   // destroys loose objects: create after
+            var sheet = new Texture2D(Width, Height, TextureFormat.RGB24, false);
+            Shader.SetGlobalVector("_LnSunPosition", new Vector4(40f, 60f, -20f, 1f));
+            Shader.SetGlobalVector("_LnSunColor", Color.white);
+            var arms = (GameObject)Object.Instantiate(model);
+            var mat = new Material(Find("LuckyNumbers/Ship")) { mainTexture = tex };
+            foreach (var r in arms.GetComponentsInChildren<Renderer>()) r.sharedMaterial = mat;
+            var cam = arms.GetComponentInChildren<Camera>();
+            var own = cam != null;
+            if (!own) cam = new GameObject("Cam").AddComponent<Camera>();
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.12f, 0.12f, 0.16f);
+            cam.nearClipPlane = 0.01f;
+            var rt = new RenderTexture(Width / 2, Height / 2, 24, RenderTextureFormat.ARGB32);
+            for (var k = 0; k < poses.Length; k++)
+            {
+                var clip = clips.Find(c => c.name == poses[k] || c.name.EndsWith("|" + poses[k]));
+                if (clip != null) clip.SampleAnimation(arms, clip.length * 0.3f);
+                if (!own)
+                {
+                    var b = new Bounds();
+                    var first = true;
+                    foreach (var r in arms.GetComponentsInChildren<SkinnedMeshRenderer>())
+                    {
+                        r.updateWhenOffscreen = true;
+                        if (first) { b = r.bounds; first = false; } else b.Encapsulate(r.bounds);
+                    }
+                    var hand = FindDeep(arms.transform, "hand.R");
+                    Debug.Log($"[ShaderPreview] arms {poses[k]}: bounds {b.center} size {b.size}, hand.R {(hand ? hand.position.ToString() : "?")}");
+                    // First-person eye: the rig's origin column at head height, looking +Z slightly down.
+                    cam.transform.SetPositionAndRotation(new Vector3(0f, 1.66f, -0.02f), Quaternion.Euler(12f, 0f, 0f));
+                    cam.fieldOfView = 62f;
+                }
+                Debug.Log($"[ShaderPreview] arms camera {(own ? "from rig" : "framed")} at {cam.transform.position} rot {cam.transform.eulerAngles} fov {cam.fieldOfView}");
+                var request = new RenderPipeline.StandardRequest { destination = rt };
+                if (RenderPipeline.SupportsRenderRequest(cam, request)) RenderPipeline.SubmitRenderRequest(cam, request);
+                else { cam.targetTexture = rt; cam.Render(); }
+                RenderTexture.active = rt;
+                sheet.ReadPixels(new Rect(0, 0, Width / 2, Height / 2), (k % 2) * Width / 2, (1 - k / 2) * Height / 2);
+                RenderTexture.active = null;
+            }
+            sheet.Apply();
+            var outPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", "preview-arms.png"));
+            File.WriteAllBytes(outPath, sheet.EncodeToPNG());
+            Debug.Log($"[ShaderPreview] wrote {outPath}");
+        }
+
+        static Transform FindDeep(Transform t, string name)
+        {
+            if (t.name == name) return t;
+            foreach (Transform c in t) { var f = FindDeep(c, name); if (f != null) return f; }
+            return null;
+        }
+
         static void Save(Camera cam, string file)
         {
             var rt = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
