@@ -21,3 +21,10 @@ extend google.protobuf.MessageOptions {
   // generates ApplyTo(Material). Content must set every field.
   string material = 50005;
 }
+
+extend google.protobuf.FieldOptions {
+  // On a string field: a content path (e.g. "space/looks/planets/ice", relative to content/, no extension)
+  // whose message is merged into the named sibling field before that field's inline values.
+  // On a repeated string field: each path is appended to the named repeated field.
+  string ref = 50101;
+}

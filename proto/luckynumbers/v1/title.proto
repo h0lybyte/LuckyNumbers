@@ -16,6 +16,8 @@ message TitleScreen {
   string start_prompt = 2;
   GameScene next = 3;
   SpaceBackdrop backdrop = 4;
+  // Universe shown behind the title, from the content library (e.g. "space/systems/home").
+  string backdrop_ref = 9 [(ln.ref) = "backdrop"];
   // Prompt pulse period while waiting for input.
   float prompt_pulse_seconds = 5;
   // Shown instead of start_prompt while `next` is still loading.

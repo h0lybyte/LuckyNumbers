@@ -64,6 +64,7 @@ def _packed_varints(b: bytes):
 SCALARS = {1: "double", 2: "float", 3: "long", 5: "int", 8: "bool", 9: "string", 13: "uint"}
 T_MESSAGE, T_ENUM, LABEL_REPEATED = 11, 14, 3
 OPT_EVENT, OPT_STATE, OPT_CONFIG, OPT_VALUE, OPT_MATERIAL = 50001, 50002, 50003, 50004, 50005
+FIELD_OPT_REF = 50101
 
 
 @dataclass
@@ -76,6 +77,7 @@ class Field:
     oneof: int | None
     doc: str = ""
     optional: bool = False  # proto3 `optional` (explicit presence)
+    ref_target: str = ""    # (ln.ref): content path(s) merged into this sibling field
 
 
 @dataclass
@@ -181,7 +183,7 @@ def _load_message(model, b, scope, fname, docs, path):
         if n == 1:
             name = _str(v)
         elif n == 2:
-            f = dict(name="", number=0, type=0, type_name="", repeated=False, oneof=None, optional=False)
+            f = dict(name="", number=0, type=0, type_name="", repeated=False, oneof=None, optional=False, ref_target="")
             for fn, _, fv in _fields(v):
                 if fn == 1:
                     f["name"] = _str(fv)
@@ -197,6 +199,10 @@ def _load_message(model, b, scope, fname, docs, path):
                     f["oneof"] = fv
                 elif fn == 17:
                     f["optional"] = bool(fv)
+                elif fn == 8:  # FieldOptions
+                    for on, _, ov in _fields(fv):
+                        if on == FIELD_OPT_REF:
+                            f["ref_target"] = _str(ov)
             fields.append(Field(**f, doc=docs.get(path + (2, len(fields)), "")))
         elif n == 3:
             nested.append(v)
@@ -253,6 +259,12 @@ class Emitter:
             for f in msg.fields:
                 if f.oneof is not None and f.type != T_MESSAGE:
                     raise ValueError(f"{msg.full}.{f.name}: oneof members must be messages")
+                if f.ref_target:
+                    target = next((t for t in msg.fields if t.name == f.ref_target), None)
+                    if f.type != 9 or target is None or target.type != T_MESSAGE or target.repeated != f.repeated:
+                        raise ValueError(f"{msg.full}.{f.name}: (ln.ref) must be a string field naming a sibling message "
+                                         f"field with the same repeated-ness ('{f.ref_target}')")
+        self.content: dict[str, tuple[str, bytes]] = {}  # library: path -> (message full name, merged payload)
 
     def ctype(self, f: Field) -> str:
         if f.type in SCALARS:
@@ -336,6 +348,8 @@ class Emitter:
     def data_class(self, m: Message) -> list[str]:
         lines = _doc(m.doc, "    ") + [f"    public sealed class {m.name}", "    {"]
         for f in m.fields:
+            if f.ref_target:
+                continue  # resolved at generation time; nothing at runtime
             t, p = self.ctype(f), pascal(f.name)
             lines += _doc(f.doc, "        ")
             if f.repeated:
@@ -360,7 +374,7 @@ class Emitter:
         msg = self.m.messages[full]
         values: dict[int, list] = {}
         by_num = {f.number: f for f in msg.fields}
-        for num, wt, v in _fields(payload):
+        for num, wt, v in self._expand(msg, payload):
             f = by_num.get(num)
             if f is None:
                 raise ValueError(f"{msg.full}: unknown field {num} in content")
@@ -392,6 +406,35 @@ class Emitter:
         if not parts:
             return f"new {msg.name}()"
         return f"new {msg.name}\n{indent}{{\n" + "\n".join(parts) + f"\n{indent}}}"
+
+    def _expand(self, msg: Message, payload: bytes) -> list:
+        """Resolve (ln.ref) fields into entries of their target field (refs first, so inline values override),
+        then merge repeated occurrences of singular message fields: concatenating wire bytes is protobuf's merge."""
+        by_name = {f.name: f for f in msg.fields}
+        by_num = {f.number: f for f in msg.fields}
+        refs, rest = [], []
+        for num, wt, v in _fields(payload):
+            f = by_num.get(num)
+            if f is not None and f.ref_target:
+                target = by_name[f.ref_target]
+                path = _str(v)
+                if path not in self.content:
+                    raise ValueError(f"{msg.name}.{f.name}: reference '{path}' not found (content/{path}.txtpb)")
+                ref_full, ref_payload = self.content[path]
+                if ref_full != target.type_name:
+                    raise ValueError(f"{msg.name}.{f.name}: '{path}' is a {ref_full.split('.')[-1]}, "
+                                     f"expected {target.type_name.split('.')[-1]}")
+                refs.append((target.number, 2, ref_payload))
+            else:
+                rest.append((num, wt, v))
+        out, merged = [], {}
+        for num, wt, v in refs + rest:
+            f = by_num.get(num)
+            if f is not None and f.type == T_MESSAGE and not f.repeated:
+                merged[num] = merged.get(num, b"") + v
+            else:
+                out.append((num, wt, v))
+        return out + [(n, 2, b) for n, b in merged.items()]
 
     def _packed(self, f: Field, b: bytes):
         if f.type == 2:
@@ -475,9 +518,12 @@ def material_bindings(model: Model, em: "Emitter", namespace: str) -> str:
 HEADER = "// <auto-generated>\n// Generated by tools/ln.py gen from {src}. Do not edit; change the source and regenerate.\n// </auto-generated>\n"
 
 
-def generate(model: Model, content: list[tuple[str, str, bytes]], namespace: str) -> dict[str, str]:
-    """Return {relative path: text} for everything under Generated/."""
+def generate(model: Model, content: list[tuple[str, str, bytes]], namespace: str,
+             library: dict[str, tuple[str, bytes]] | None = None) -> dict[str, str]:
+    """Return {relative path: text} for everything under Generated/. `content` = baked top-level configs,
+    `library` = every content file by path (targets for (ln.ref))."""
     em = Emitter(model)
+    em.content = library or {}
     files: dict[str, str] = {}
     usings = "using System;\nusing System.Collections.Generic;\nusing ObservableCollections;\nusing R3;\n"
     for fname in sorted({f for f, _ in model.order}):
@@ -566,11 +612,38 @@ def run(protoc: str, include: Path, proto_dir: Path, content_dir: Path, header_r
     if shader_root is not None:
         check_materials(model, shader_root)
     namespace = "LuckyNumbers.Model"
-    content = []
+
+    # Every content file by path ("space/looks/planets/ice"); `# proto-extends: <path>` merges a base first.
+    raw = {}
     for txt in sorted(content_dir.rglob("*.txtpb")):
+        key = txt.relative_to(content_dir).with_suffix("").as_posix()
         header = dict(header_re.findall(txt.read_text(encoding="utf-8")))
         with open(txt, "rb") as f:
             payload = subprocess.run([protoc, f"-I{proto_dir}", f"-I{include}", f"--encode={header['message']}",
                                       header["file"]], stdin=f, capture_output=True, check=True).stdout
-        content.append((str(txt.relative_to(content_dir.parent)), "." + header["message"], payload))
-    return generate(model, content, namespace)
+        raw[key] = ("." + header["message"], payload, header.get("extends"), str(txt.relative_to(content_dir.parent)))
+
+    resolved: dict[str, tuple[str, bytes]] = {}
+
+    def resolve(key: str, stack: tuple = ()) -> tuple[str, bytes]:
+        if key in resolved:
+            return resolved[key]
+        if key in stack:
+            raise ValueError(f"content extends cycle: {' -> '.join(stack + (key,))}")
+        if key not in raw:
+            raise ValueError(f"content/{stack[-1]}.txtpb extends '{key}', which doesn't exist")
+        full, payload, base, _ = raw[key]
+        if base:
+            base_full, base_payload = resolve(base, stack + (key,))
+            if base_full != full:
+                raise ValueError(f"content/{key}.txtpb ({full[1:]}) extends {base} ({base_full[1:]}): types differ")
+            payload = base_payload + payload  # base first: this file's fields override
+        resolved[key] = (full, payload)
+        return resolved[key]
+
+    for key in raw:
+        resolve(key)
+    # Top-level files are game configs (baked into GameContent); subfolders are a library for refs/extends.
+    content = [(raw[k][3], *resolved[k]) for k in raw if "/" not in k]
+    return generate(model, content, namespace, resolved)
+

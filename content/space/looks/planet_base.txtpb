@@ -1,0 +1,16 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.PlanetLook
+# Defaults every planet look extends. Presets override only what differs.
+
+light_color { r: 1 g: 1 b: 1 a: 1 }
+light_intensity: 0.8
+shadow_intensity: 1
+terminator_softness: 0.15
+noise_scale: 1.6
+noise_offset { x: 0 y: 0 z: 0 }
+noise_remap: 1
+rotation_speed: 0.01
+axial_tilt_degrees: 0
+atmosphere_thickness: 0.08
+atmosphere_intensity: 1.2
+atmosphere_power: 2.5

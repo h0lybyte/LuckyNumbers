@@ -1,0 +1,14 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.StarfieldLook
+# Dark violet sky with a faint nebula.
+
+space_color { r: 0.01 g: 0.01 b: 0.03 a: 1 }
+nebula_color_a { r: 0.25 g: 0.08 b: 0.35 a: 1 }
+nebula_color_b { r: 0.05 g: 0.15 b: 0.35 a: 1 }
+nebula_intensity: 0.35
+nebula_scale: 1.2
+star_density: 140
+star_brightness: 1.2
+twinkle_speed: 2
+drift { x: 0.003 y: 0 }
+seed: 7

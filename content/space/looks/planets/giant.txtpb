@@ -1,0 +1,15 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.PlanetLook
+# proto-extends: space/looks/planet_base
+# Purple gas giant: broad bands, thick glow.
+
+planet_color { r: 0.55 g: 0.2 b: 0.85 a: 1 }
+atmosphere_color { r: 0.9 g: 0.5 b: 1 a: 1 }
+light_intensity: 0.7
+noise_scale: 1.1
+noise_offset { x: 77 y: 3 z: 31 }
+rotation_speed: 0.004
+axial_tilt_degrees: -25
+atmosphere_thickness: 0.12
+atmosphere_intensity: 1
+atmosphere_power: 2

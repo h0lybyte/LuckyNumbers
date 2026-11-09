@@ -11,6 +11,7 @@ option csharp_namespace = "LuckyNumbers.Model";
 message SpaceBackdrop {
   reserved 2, 3, 4, 6, 8; // planet, planet_position, planet_scale, pan, sun_direction (now a star body)
   StarfieldLook stars = 1;
+  string stars_ref = 10 [(ln.ref) = "stars"];
   // Planets and stars. The first star lights every planet (point light at its position).
   repeated CelestialBody bodies = 5;
   CameraOrbit camera = 7;
@@ -27,6 +28,9 @@ message CelestialBody {
     PlanetLook planet = 4;
     StarLook star = 6;
   }
+  // Look presets from the content library; inline planet/star fields override them.
+  string planet_ref = 7 [(ln.ref) = "planet"];
+  string star_ref = 8 [(ln.ref) = "star"];
   // Optional: orbit another body (listed earlier). radius 0 = static at `position`.
   Orbit orbit = 5;
 }

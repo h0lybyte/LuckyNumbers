@@ -339,7 +339,7 @@ def cmd_deploy(args) -> int:
 
 PROTO_DIR = ROOT / "proto"
 CONTENT_DIR = ROOT / "content"
-CONTENT_HEADER = re.compile(r"^#\s*proto-(file|message):\s*(\S+)\s*$", re.M)
+CONTENT_HEADER = re.compile(r"^#\s*proto-(file|message|extends):\s*(\S+)\s*$", re.M)
 
 
 # Pinned official protoc release; downloaded once into .cache/ and verified by SHA-256

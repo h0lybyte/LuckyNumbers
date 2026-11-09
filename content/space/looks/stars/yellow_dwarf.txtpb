@@ -1,0 +1,13 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.StarLook
+# Sun-like star with a soft orange corona.
+
+core_color { r: 1 g: 0.78 b: 0.42 a: 1 }
+corona_color { r: 1 g: 0.55 b: 0.2 a: 1 }
+light_color { r: 1 g: 0.95 b: 0.85 a: 1 }
+intensity: 1.6
+corona_size: 1.8
+corona_power: 5
+corona_intensity: 1.8
+noise_scale: 3
+boil_speed: 0.05
