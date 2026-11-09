@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using Cysharp.Threading.Tasks;
+using LuckyNumbers.Model;
 using MessagePipe;
 using ObservableCollections;
 using R3;
@@ -68,6 +69,15 @@ namespace LuckyNumbers.Spikes.LibsSmokeTest
 
             Line($"INFO R3 default frame provider: {ObservableSystem.DefaultFrameProvider.GetType().Name}");
 
+            Check("Generated content: intro dice 6 6 6", () =>
+            {
+                var dice = GameContent.Intro.Steps[0];
+                return dice.Step == CutsceneStep.StepCase.DiceRoll
+                       && string.Join(",", dice.DiceRoll.Faces) == "6,6,6"
+                       && GameContent.Intro.Steps[^1].GoTo.Scene == GameScene.Planet
+                       && GameContent.Title.Title == "Lucky Numbers";
+            });
+
             // VContainer (+ MessagePipe.VContainer). Separate checks so a stripped
             // constructor shows up as its own failure.
             VContainer.Unity.LifetimeScope scope = null;
@@ -76,12 +86,20 @@ namespace LuckyNumbers.Spikes.LibsSmokeTest
             {
                 Check("VContainer resolve ([Inject] ctor)", () => scope.Container.Resolve<InjectedService>() != null);
                 Check("VContainer resolve (plain ctor)", () => scope.Container.Resolve<PlainService>().Answer == 42);
-                Check("MessagePipe via VContainer", () =>
+                Check("Generated event via MessagePipe + VContainer", () =>
                 {
-                    var got = 0;
-                    using var _ = scope.Container.Resolve<ISubscriber<ScoreChanged>>().Subscribe(e => got = e.Value);
-                    scope.Container.Resolve<InjectedService>().Raise(9);
-                    return got == 9;
+                    var got = GameScene.Unspecified;
+                    using var _ = scope.Container.Resolve<ISubscriber<SceneChangeRequested>>().Subscribe(e => got = e.Target);
+                    scope.Container.Resolve<InjectedService>().Request(GameScene.Planet);
+                    return got == GameScene.Planet;
+                });
+                Check("Generated state (R3) resolved as singleton", () =>
+                {
+                    var flow = scope.Container.Resolve<FlowState>();
+                    var seen = GameScene.Unspecified;
+                    using var _ = flow.Scene.Subscribe(s => seen = s);
+                    flow.Scene.Value = GameScene.Intro;
+                    return seen == GameScene.Intro && ReferenceEquals(flow, scope.Container.Resolve<FlowState>());
                 });
                 await UniTask.DelayFrame(2); // entry points start from VContainer's PlayerLoop
                 Check("VContainer entry point (IStartable)", () => StartProbe.Started);

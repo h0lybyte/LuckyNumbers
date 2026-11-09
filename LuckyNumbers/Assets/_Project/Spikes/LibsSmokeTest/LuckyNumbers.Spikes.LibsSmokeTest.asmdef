@@ -6,7 +6,9 @@
         "R3.Unity",
         "MessagePipe",
         "VContainer",
-        "MessagePipe.VContainer"
+        "MessagePipe.VContainer",
+        "LuckyNumbers.Model",
+        "LuckyNumbers.Model.Di"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
