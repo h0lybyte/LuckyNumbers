@@ -358,8 +358,8 @@ namespace LuckyNumbers.Intro
             var length = diameter * math.max(0.005f, _cut.ShipSize);
             var outward = ((Vector3)shipPos - (Vector3)home).normalized;
             // Over the shoulder: out beyond the ship (planet behind it) and a little behind its heading.
-            wantPos = shipPos + outward * (length * 3.6f * distanceScale)
-                        + shipRot * Vector3.back * (length * 1.6f * distanceScale) + (Vector3)_axisUp * (length * 0.9f);
+            wantPos = shipPos + outward * (length * 2.3f * distanceScale)
+                        + shipRot * Vector3.back * (length * 1.2f * distanceScale) + (Vector3)_axisUp * (length * 0.75f);
             var toShip = (shipPos + shipRot * Vector3.forward * length - wantPos).normalized;
             var toHome = ((Vector3)home - wantPos).normalized;
             var angle = Vector3.Angle(toShip, toHome);
