@@ -460,6 +460,18 @@ namespace LuckyNumbers.Model
                 Instant = true,
             },
             ShipSize = 0.05f,
+            ShipSkins =
+            {
+                "jodomatis",
+                "krulspeld3",
+                "krulspeld4",
+                "robin",
+                "cinfa",
+                "idolknight",
+                "kaoskiwi",
+                "krulspeld2",
+                "wilko",
+            },
         };
 
         /// <summary>From <c>content/planet.txtpb</c>.</summary>
@@ -881,6 +893,9 @@ namespace LuckyNumbers.Model
             Haze = 0.55f,
             SunElevationDegrees = 38.0f,
             Hint = "Click to look around - WASD to move - Shift to run - Space to jump",
+            ArmBreathDegrees = 2.5f,
+            ArmSwingDegrees = 7.0f,
+            FingerFidgetDegrees = 9.0f,
         };
 
         /// <summary>From <c>content/player.txtpb</c>.</summary>

@@ -41,6 +41,10 @@ message PlanetScene {
   // Sun height in the sky (degrees above the horizon).
   float sun_elevation_degrees = 21;
   string hint = 22;
+  // Arm life on top of the (very still) idle clip: breathing lift, walking swing, finger fidget (degrees).
+  float arm_breath_degrees = 23;
+  float arm_swing_degrees = 24;
+  float finger_fidget_degrees = 25;
 }
 
 // Where the intro's ship came down: read by the Planet scene (and later a save file).

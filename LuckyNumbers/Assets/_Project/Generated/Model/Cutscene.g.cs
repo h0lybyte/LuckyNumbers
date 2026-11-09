@@ -28,6 +28,10 @@ namespace LuckyNumbers.Model
         /// Ship length, in target-planet diameters.
         /// </summary>
         public float ShipSize { get; set; }
+        /// <summary>
+        /// Skins the lucky number picks from when ship_skin is empty (file names); empty = all skins.
+        /// </summary>
+        public List<string> ShipSkins { get; } = new List<string>();
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public Cutscene Clone() => (Cutscene)MemberwiseClone();

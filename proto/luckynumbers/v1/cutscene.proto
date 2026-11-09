@@ -20,6 +20,8 @@ message Cutscene {
   string ship_skin = 5;
   // Ship length, in target-planet diameters.
   float ship_size = 6;
+  // Skins the lucky number picks from when ship_skin is empty (file names); empty = all skins.
+  repeated string ship_skins = 7;
 }
 
 message CutsceneStep {

@@ -20,6 +20,10 @@ look_degrees_per_pixel: 0.12
 bob_amount: 0.045
 bob_frequency: 1.9
 sway: 0.06
+# Arms: the idle clip barely moves (4 degrees), so add breathing, a stride swing and finger fidgets.
+arm_breath_degrees: 2.5
+arm_swing_degrees: 7
+finger_fidget_degrees: 9
 
 wake_seconds: 3.2
 wreck_distance: 9

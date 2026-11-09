@@ -138,6 +138,21 @@ namespace LuckyNumbers.Editor
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = new Color(0.12f, 0.12f, 0.16f);
             cam.nearClipPlane = 0.01f;
+            // How much each clip actually moves: max bone rotation change between its start and middle.
+            foreach (var c in clips)
+            {
+                var bones = arms.GetComponentsInChildren<Transform>();
+                c.SampleAnimation(arms, 0f);
+                var start = System.Array.ConvertAll(bones, b => b.localRotation);
+                c.SampleAnimation(arms, c.length * 0.5f);
+                var most = 0f; var which = "";
+                for (var i = 0; i < bones.Length; i++)
+                {
+                    var d = Quaternion.Angle(start[i], bones[i].localRotation);
+                    if (d > most) { most = d; which = bones[i].name; }
+                }
+                Debug.Log($"[ShaderPreview] clip {c.name}: {c.length:0.##}s, max bone change {most:0.#} deg ({which}), loop {c.isLooping}");
+            }
             var rt = new RenderTexture(Width / 2, Height / 2, 24, RenderTextureFormat.ARGB32);
             for (var k = 0; k < poses.Length; k++)
             {

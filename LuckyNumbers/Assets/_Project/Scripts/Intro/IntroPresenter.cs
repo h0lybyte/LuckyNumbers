@@ -92,7 +92,9 @@ namespace LuckyNumbers.Intro
             SetupSpiral();
             _space.TryGetBody(Target, out _, out var diameter);
             var length = diameter * math.max(0.005f, _cut.ShipSize);
-            _ship.Show(_cut.ShipSkin, (int)(_space.Seed % (uint)math.max(1, _ship.SkinCount)), length);
+            var skin = _cut.ShipSkin;
+            if (string.IsNullOrEmpty(skin) && _cut.ShipSkins.Count > 0) skin = _cut.ShipSkins[(int)(_space.Seed % (uint)_cut.ShipSkins.Count)];
+            _ship.Show(skin, (int)(_space.Seed % (uint)math.max(1, _ship.SkinCount)), length);
             _space.Camera.nearClipPlane = math.max(0.002f, length * 0.2f);   // the camera sits a few ship-lengths away
             PoseShip(0f, 0f, out var shipPos, out var shipRot);
             if (!_fromTitle) SnapCamera(shipPos, shipRot);

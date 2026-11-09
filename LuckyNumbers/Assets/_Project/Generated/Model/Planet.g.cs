@@ -62,6 +62,12 @@ namespace LuckyNumbers.Model
         /// </summary>
         public float SunElevationDegrees { get; set; }
         public string Hint { get; set; }
+        /// <summary>
+        /// Arm life on top of the (very still) idle clip: breathing lift, walking swing, finger fidget (degrees).
+        /// </summary>
+        public float ArmBreathDegrees { get; set; }
+        public float ArmSwingDegrees { get; set; }
+        public float FingerFidgetDegrees { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public PlanetScene Clone() => (PlanetScene)MemberwiseClone();

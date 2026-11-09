@@ -57,6 +57,7 @@ namespace LuckyNumbers.Planet
         {
             _subscription = _actions.Subscribe(e => { if (e.Action == InputAction.Jump) _jump = true; });
             _arms.Play("relax");
+            _arms.SetLife(_config.ArmBreathDegrees, _config.ArmSwingDegrees, _config.FingerFidgetDegrees);
         }
 
         public void Tick()
@@ -100,6 +101,7 @@ namespace LuckyNumbers.Planet
             _player.Head.localPosition = new Vector3(0f, _config.EyeHeight + bobY, 0f);
             _player.Head.localRotation = Quaternion.Euler(_pitch, 0f, 0f);
 
+            _arms.SetMotion(_stride, moving);
             // Arms lag against the look and follow the stride.
             var target = new Vector3(-lookDelta.y, lookDelta.x, 0f) * _config.Sway;
             _sway = Vector3.Lerp(_sway, target, 1f - math.exp(-10f * dt));

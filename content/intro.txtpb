@@ -8,8 +8,10 @@ id: "intro"
 backdrop_ref: "space/systems/home"
 backdrop { instant: true }
 
-# Empty skin: the lucky number picks one of the 22 community skins.
+# Empty skin: the lucky number picks one from ship_skins (the colourful ones; see Art/Models/Fighter/Skins).
 ship_skin: ""
+ship_skins: ["jodomatis", "krulspeld3", "krulspeld4", "robin", "cinfa",
+             "idolknight", "kaoskiwi", "krulspeld2", "wilko"]   # bold hull colours only
 ship_size: 0.05
 
 # Continues straight from the title's camera (the dice were rolled there): the ship streaks in past it.
