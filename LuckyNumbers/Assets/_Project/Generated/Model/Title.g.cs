@@ -9,6 +9,23 @@ using R3;
 
 namespace LuckyNumbers.Model
 {
+    public enum DieRole
+    {
+        None = 0,
+        /// <summary>
+        /// Star type: low = cool red dwarf .. high = hot blue giant (order of the generator's star palette).
+        /// </summary>
+        Star = 1,
+        /// <summary>
+        /// How many planets: low = min_planets .. high = max_planets.
+        /// </summary>
+        Worlds = 2,
+        /// <summary>
+        /// Luck: more moons and galaxies, a brighter sky.
+        /// </summary>
+        Luck = 3,
+    }
+
     public enum MenuAction
     {
         Unspecified = 0,
@@ -71,6 +88,10 @@ namespace LuckyNumbers.Model
         /// Face shown (and seeding the universe) before the first roll.
         /// </summary>
         public int InitialFace { get; set; }
+        /// <summary>
+        /// What this die decides (its face, low..high). Every die also feeds the lucky number.
+        /// </summary>
+        public DieRole Role { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public Die Clone() => (Die)MemberwiseClone();

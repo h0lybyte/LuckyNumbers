@@ -27,9 +27,10 @@ namespace LuckyNumbers.Editor
             var planet = MaterialAsset("Planet3D", "LuckyNumbers/Planet3D");
             var star = MaterialAsset("Star", "LuckyNumbers/Star");
             var galaxy = MaterialAsset("Galaxy", "LuckyNumbers/Galaxy");
+            var disk = MaterialAsset("Disk", "LuckyNumbers/Disk");
 
             var panel = PanelSettingsAsset();
-            BuildTitle(starfield, planet, star, galaxy, panel);
+            BuildTitle(starfield, planet, star, galaxy, disk, panel);
             BuildIntroPlaceholder(starfield, panel);
 
             EditorBuildSettings.scenes = new[]
@@ -43,7 +44,7 @@ namespace LuckyNumbers.Editor
             Debug.Log("[SceneBuilder] built Title, Intro; build settings = [Title, Intro]");
         }
 
-        static void BuildTitle(Material starfieldMat, Material planetMat, Material starMat, Material galaxyMat, PanelSettings panel)
+        static void BuildTitle(Material starfieldMat, Material planetMat, Material starMat, Material galaxyMat, Material diskMat, PanelSettings panel)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -57,10 +58,12 @@ namespace LuckyNumbers.Editor
             planetTemplate.gameObject.SetActive(false);
             starTemplate.gameObject.SetActive(false);
             galaxyTemplate.gameObject.SetActive(false);
+            var disk = QuadMesh("Disk", diskMat, space.transform);
+            disk.gameObject.SetActive(false);
             // UI Toolkit: UI/Screens/Title.uxml styled by UI/Theme; TitleView binds it ([Ui] fields, Roslyn).
             var ui = Document("UI", panel, "Title");
             Assign(space, ("viewCamera", cam), ("planetTemplate", planetTemplate), ("starTemplate", starTemplate),
-                   ("galaxyTemplate", galaxyTemplate), ("ui", ui));
+                   ("galaxyTemplate", galaxyTemplate), ("disk", disk), ("ui", ui));
             var view = new GameObject("TitleView").AddComponent<TitleView>();
             Assign(view, ("document", ui));
             var dice = new GameObject("DiceView").AddComponent<DiceView>();

@@ -13,23 +13,30 @@ namespace LuckyNumbers.Space
     /// </summary>
     public static class UniverseGenerator
     {
-        public static List<CelestialBody> Generate(SystemGenerator rules, uint seed)
+        /// <summary>
+        /// Bodies for a roll. Dice with a role (roll.Star/Worlds/Luck in 0..1) pick that aspect directly;
+        /// -1 leaves it to the seed. Everything else comes from the seed.
+        /// </summary>
+        public static List<CelestialBody> Generate(SystemGenerator rules, in UniverseSeedChanged roll)
         {
             if (rules.Stars.Count == 0 || rules.Planets.Count == 0)
                 throw new ArgumentException("SystemGenerator needs at least one star and one planet look");
+            var seed = roll.Seed;
             var rng = new Random(seed == 0 ? 0x9E3779B9u : seed);
             var bodies = new List<CelestialBody>();
+            var luck = Role(roll.Luck, ref rng);
 
             bodies.Add(new CelestialBody
             {
                 Id = "sun",
                 Position = new Vec3(0, 0, 0),
                 Scale = rng.NextFloat(rules.StarScaleMin, rules.StarScaleMax),
-                Star = Pick(rules.Stars, ref rng).Clone(),
+                Star = rules.Stars[RoleIndex(roll.Star, rules.Stars.Count, ref rng)].Clone(),
             });
 
             var star = bodies[0];
-            var planetCount = rng.NextInt(rules.MinPlanets, rules.MaxPlanets + 1);
+            var planetCount = rules.MinPlanets + RoleIndex(roll.Worlds, rules.MaxPlanets - rules.MinPlanets + 1, ref rng);
+            var moonChance = math.saturate(rules.MoonChance * math.lerp(0.4f, 1.6f, luck));
             var radius = rules.FirstOrbitRadius;
             var prevOuter = star.Scale * 0.5f;   // inner edge for the next orbit: star surface, then each system's apoapsis
             for (var i = 0; i < planetCount; i++)
@@ -41,7 +48,7 @@ namespace LuckyNumbers.Space
 
                 // Moons first: they decide how much room this planet's system needs.
                 var moons = new List<CelestialBody>();
-                var wantMoons = rules.Moons.Count > 0 && rng.NextFloat() < rules.MoonChance ? rng.NextInt(1, rules.MaxMoons + 1) : 0;
+                var wantMoons = rules.Moons.Count > 0 && rng.NextFloat() < moonChance ? rng.NextInt(1, rules.MaxMoons + 1) : 0;
                 var extent = scale * 0.5f;
                 for (var m = 0; m < wantMoons; m++)
                 {
@@ -88,7 +95,8 @@ namespace LuckyNumbers.Space
                 radius *= rng.NextFloat(rules.OrbitSpacingMin, rules.OrbitSpacingMax);
             }
 
-            for (var g = 0; g < rules.GalaxyCount && rules.Galaxies.Count > 0; g++)
+            var galaxies = rules.GalaxyCount + (int)math.round(luck * 4f - 2f);
+            for (var g = 0; g < galaxies && rules.Galaxies.Count > 0; g++)
             {
                 var dir = math.normalize(rng.NextFloat3Direction());
                 var look = Pick(rules.Galaxies, ref rng).Clone();
@@ -107,10 +115,11 @@ namespace LuckyNumbers.Space
         }
 
         /// <summary>The sky for a seed: a preset with its own seed, band direction and gas shape. Null if no presets.</summary>
-        public static StarfieldLook Sky(SystemGenerator rules, uint seed)
+        public static StarfieldLook Sky(SystemGenerator rules, in UniverseSeedChanged roll)
         {
             if (rules.Skies.Count == 0) return null;
-            var rng = new Random((seed ^ 0x5BD1E995u) | 1u);
+            var rng = new Random((roll.Seed ^ 0x5BD1E995u) | 1u);
+            var luck = Role(roll.Luck, ref rng);
             var sky = Pick(rules.Skies, ref rng).Clone();
             var n = rng.NextFloat3Direction();
             sky.BandNormal = new Vec3(n.x, n.y, n.z);
@@ -119,8 +128,25 @@ namespace LuckyNumbers.Space
             sky.NebulaScale = sky.NebulaScale * rng.NextFloat(0.8f, 1.3f);
             sky.Warp = sky.Warp * rng.NextFloat(0.6f, 1.5f);
             sky.Dust = math.saturate(sky.Dust * rng.NextFloat(0.6f, 1.3f));
+            sky.NebulaIntensity = sky.NebulaIntensity * math.lerp(0.75f, 1.35f, luck);   // luckier = richer sky
+            sky.KnotBrightness = sky.KnotBrightness * math.lerp(0.6f, 1.6f, luck);
             return sky;
         }
+
+        /// <summary>The forming-system dust disk for a roll. Null if no presets.</summary>
+        public static DiskLook Disk(SystemGenerator rules, in UniverseSeedChanged roll)
+        {
+            if (rules.Disks.Count == 0) return null;
+            var rng = new Random((roll.Seed ^ 0x27D4EB2Fu) | 1u);
+            var disk = Pick(rules.Disks, ref rng).Clone();
+            disk.Seed = rng.NextFloat(0f, 100f);
+            return disk;
+        }
+
+        static float Role(float value, ref Random rng) => value >= 0f ? math.saturate(value) : rng.NextFloat();
+
+        static int RoleIndex(float value, int count, ref Random rng) =>
+            value >= 0f ? math.min(count - 1, (int)(math.saturate(value) * count)) : rng.NextInt(count);
 
         static Orbit OrbitAround(string parent, float radius, SystemGenerator rules, ref Random rng) => new()
         {

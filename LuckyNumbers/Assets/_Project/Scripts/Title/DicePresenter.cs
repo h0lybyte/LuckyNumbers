@@ -87,7 +87,16 @@ namespace LuckyNumbers.Title
             _state.Seed.Value = seed;
             _view.SetLuckyNumber(_config.SeedFormat.Replace("{0}", seed.ToString()));
             Debug.Log($"[Dice] {string.Join(" ", _faces)} -> lucky number {seed}");
-            _seeds.Publish(new UniverseSeedChanged(seed));
+            _seeds.Publish(new UniverseSeedChanged(seed, Role(DieRole.Star), Role(DieRole.Worlds), Role(DieRole.Luck)));
+        }
+
+        /// <summary>The face of the die with this role as 0..1 (1 = highest face), or -1 if no die has it.</summary>
+        float Role(DieRole role)
+        {
+            for (var i = 0; i < _faces.Count; i++)
+                if (_config.Dice[i].Role == role)
+                    return _sides[i] > 1 ? (_faces[i] - 1) / (float)(_sides[i] - 1) : 1f;
+            return -1f;
         }
 
         public void Dispose() => _disposed = true;

@@ -1,0 +1,14 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.DiskLook
+# Warm dusty disk: white-hot near the star, rusty brown outside.
+
+inner_color { r: 1 g: 0.85 b: 0.6 a: 1 }
+outer_color { r: 0.55 g: 0.25 b: 0.12 a: 1 }
+brightness: 1.2
+inner_radius: 0.03
+clump_scale: 6
+clumpiness: 0.7
+spin_speed: 0.25
+gap_depth: 0.85
+gap_width: 0.025
+seed: 1

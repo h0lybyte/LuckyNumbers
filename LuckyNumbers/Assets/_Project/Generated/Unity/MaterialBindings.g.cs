@@ -57,6 +57,33 @@ namespace LuckyNumbers.Model
             material.SetFloat(StarfieldLook_KnotBrightness, look.KnotBrightness);
         }
 
+        public const string DiskLookShader = "LuckyNumbers/Disk";
+        static readonly int DiskLook_InnerColor = Shader.PropertyToID("_InnerColor");
+        static readonly int DiskLook_OuterColor = Shader.PropertyToID("_OuterColor");
+        static readonly int DiskLook_Brightness = Shader.PropertyToID("_Brightness");
+        static readonly int DiskLook_InnerRadius = Shader.PropertyToID("_InnerRadius");
+        static readonly int DiskLook_ClumpScale = Shader.PropertyToID("_ClumpScale");
+        static readonly int DiskLook_Clumpiness = Shader.PropertyToID("_Clumpiness");
+        static readonly int DiskLook_SpinSpeed = Shader.PropertyToID("_SpinSpeed");
+        static readonly int DiskLook_GapDepth = Shader.PropertyToID("_GapDepth");
+        static readonly int DiskLook_GapWidth = Shader.PropertyToID("_GapWidth");
+        static readonly int DiskLook_Seed = Shader.PropertyToID("_Seed");
+
+        /// <summary>Copies every field to the matching LuckyNumbers/Disk property.</summary>
+        public static void ApplyTo(this DiskLook look, Material material)
+        {
+            material.SetColor(DiskLook_InnerColor, look.InnerColor.ToColor());
+            material.SetColor(DiskLook_OuterColor, look.OuterColor.ToColor());
+            material.SetFloat(DiskLook_Brightness, look.Brightness);
+            material.SetFloat(DiskLook_InnerRadius, look.InnerRadius);
+            material.SetFloat(DiskLook_ClumpScale, look.ClumpScale);
+            material.SetFloat(DiskLook_Clumpiness, look.Clumpiness);
+            material.SetFloat(DiskLook_SpinSpeed, look.SpinSpeed);
+            material.SetFloat(DiskLook_GapDepth, look.GapDepth);
+            material.SetFloat(DiskLook_GapWidth, look.GapWidth);
+            material.SetFloat(DiskLook_Seed, look.Seed);
+        }
+
         public const string StarLookShader = "LuckyNumbers/Star";
         static readonly int StarLook_CoreColor = Shader.PropertyToID("_CoreColor");
         static readonly int StarLook_CoronaColor = Shader.PropertyToID("_CoronaColor");

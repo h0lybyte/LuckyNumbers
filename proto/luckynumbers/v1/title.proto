@@ -44,6 +44,18 @@ message Die {
   Rgba color = 3;
   // Face shown (and seeding the universe) before the first roll.
   int32 initial_face = 4;
+  // What this die decides (its face, low..high). Every die also feeds the lucky number.
+  DieRole role = 5;
+}
+
+enum DieRole {
+  DIE_ROLE_NONE = 0;
+  // Star type: low = cool red dwarf .. high = hot blue giant (order of the generator's star palette).
+  DIE_ROLE_STAR = 1;
+  // How many planets: low = min_planets .. high = max_planets.
+  DIE_ROLE_WORLDS = 2;
+  // Luck: more moons and galaxies, a brighter sky.
+  DIE_ROLE_LUCK = 3;
 }
 
 message DiceState {

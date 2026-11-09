@@ -20,6 +20,9 @@ namespace LuckyNumbers.Space
     {
         static readonly int SunPosition = Shader.PropertyToID("_LnSunPosition");
         static readonly int SunColor = Shader.PropertyToID("_LnSunColor");
+        static readonly int DiskFade = Shader.PropertyToID("_Fade");
+        static readonly int DiskGaps0 = Shader.PropertyToID("_Gaps0");
+        static readonly int DiskGaps1 = Shader.PropertyToID("_Gaps1");
 
         enum Phase { Idle, Collapsing, Expanding }
 
@@ -38,7 +41,8 @@ namespace LuckyNumbers.Space
 
         Phase _phase;
         float _phaseTime;
-        uint? _pendingSeed;
+        UniverseSeedChanged? _pendingRoll;
+        float _diskRadius, _systemRadius, _overviewRadius;
 
         [Inject]
         public SpacePresenter(SpaceView view, SpaceBackdrop backdrop, PlayerInput input,
@@ -61,14 +65,14 @@ namespace LuckyNumbers.Space
 
             Build(_backdrop.Bodies);
             if (_backdrop.Generator != null)
-                _subscription = _seeds.Subscribe(e => OnSeed(e.Seed)); // buffered: also delivers the latest seed
+                _subscription = _seeds.Subscribe(OnSeed); // buffered: also delivers the latest roll
         }
 
-        void OnSeed(uint seed)
+        void OnSeed(UniverseSeedChanged roll)
         {
-            if (seed == 0) return; // buffered default before the first roll; lucky numbers are never 0
-            Debug.Log($"[Space] lucky number {seed}");
-            _pendingSeed = seed;
+            if (roll.Seed == 0) return; // buffered default before the first roll; lucky numbers are never 0
+            Debug.Log($"[Space] lucky number {roll.Seed} (star {roll.Star:0.##}, worlds {roll.Worlds:0.##}, luck {roll.Luck:0.##})");
+            _pendingRoll = roll;
             if (_world == null || _world.Count == 0) { Expand(); return; }
             _phase = Phase.Collapsing;
             _phaseTime = 0f;
@@ -76,16 +80,17 @@ namespace LuckyNumbers.Space
 
         void Expand()
         {
-            var seed = _pendingSeed ?? 1u;
-            var bodies = UniverseGenerator.Generate(_backdrop.Generator, seed);
+            var roll = _pendingRoll ?? new UniverseSeedChanged(1u, -1f, -1f, -1f);
+            var bodies = UniverseGenerator.Generate(_backdrop.Generator, roll);
             Build(bodies);
-            var sky = UniverseGenerator.Sky(_backdrop.Generator, seed);
+            var sky = UniverseGenerator.Sky(_backdrop.Generator, roll);
             if (sky != null && _view.SkyboxMaterial != null) sky.ApplyTo(_view.SkyboxMaterial);
+            SetupDisk(UniverseGenerator.Disk(_backdrop.Generator, roll), bodies);
             var layout = new System.Text.StringBuilder();
             foreach (var b in bodies)
                 if (b.Orbit != null) layout.Append($" {b.Id}@{b.Orbit.Radius:0.#}(d{b.Scale:0.#})");
             Debug.Log($"[Space] system:{layout}");
-            _pendingSeed = null;
+            _pendingRoll = null;
             _phase = Phase.Expanding;
             _phaseTime = 0f;
         }
@@ -112,6 +117,9 @@ namespace LuckyNumbers.Space
             if (_sun >= 0) Shader.SetGlobalVector(SunColor, _world.Star[_sun].LightColor.ToColor());
             else Shader.SetGlobalVector(SunPosition, Vector4.zero); // planets fall back to a fixed light direction
             _target = math.max(0, _world.IndexOf(_backdrop.Camera.Target));
+            _systemRadius = 0f;
+            for (var i = 0; i < _world.Count; i++)
+                if (_world.Kind[i] != BodyKind.Galaxy) _systemRadius = math.max(_systemRadius, math.length(_world.Position[i]) * 1.2f);
         }
 
         public void Tick()
@@ -119,6 +127,7 @@ namespace LuckyNumbers.Space
             var dt = Time.deltaTime;
             OrbitSystem.Update(_world, Time.time);
             var bang = BigBang(dt);   // 1 = normal; <1 pulls bodies to the centre and shrinks them
+            UpdateDisk(bang);
             var centre = _sun >= 0 ? _world.Position[_sun] : float3.zero;
             for (var i = 0; i < _world.Count; i++)
             {
@@ -136,6 +145,55 @@ namespace LuckyNumbers.Space
             var eye = (float3)_view.Camera.transform.position;
             for (var i = 0; i < _world.Count; i++)
                 if (_world.Kind[i] == BodyKind.Galaxy) _bodies[i].localPosition = eye + _world.Position[i];
+        }
+
+        /// <summary>Dust disk out to the outermost planet, with a gap at each planet's orbit.</summary>
+        void SetupDisk(DiskLook look, List<CelestialBody> bodies)
+        {
+            var disk = _view.Disk;
+            _diskRadius = 0f;
+            if (disk == null || look == null) return;
+            var radii = new List<float>();
+            foreach (var b in bodies)
+                if (b.Orbit != null && b.Orbit.Around == "sun") radii.Add(b.Orbit.Radius);
+            foreach (var r in radii) _diskRadius = math.max(_diskRadius, r * 1.2f);
+            if (_diskRadius <= 0f) return;
+            _systemRadius = math.max(_systemRadius, _diskRadius);
+            var gaps = new float[8];
+            for (var i = 0; i < radii.Count && i < 8; i++) gaps[i] = radii[i] / _diskRadius;
+            var m = disk.material;
+            look.ApplyTo(m);
+            m.SetVector(DiskGaps0, new Vector4(gaps[0], gaps[1], gaps[2], gaps[3]));
+            m.SetVector(DiskGaps1, new Vector4(gaps[4], gaps[5], gaps[6], gaps[7]));
+        }
+
+        /// <summary>The disk flares as the system forms, grows with it, then clears.</summary>
+        void UpdateDisk(float bang)
+        {
+            var disk = _view.Disk;
+            if (disk == null) return;
+            var g = _backdrop.Generator;
+            var e = _phase == Phase.Expanding && g != null ? math.saturate(_phaseTime / math.max(0.01f, g.ExpandSeconds)) : 1f;
+            var fade = _diskRadius > 0f && _phase == Phase.Expanding ? math.smoothstep(0f, 0.06f, e) * math.pow(1f - e, 1.4f) : 0f;
+            disk.gameObject.SetActive(fade > 0.001f);
+            if (fade <= 0.001f) return;
+            var t = disk.transform;
+            t.localPosition = _sun >= 0 ? _world.Position[_sun] : float3.zero;
+            t.localRotation = Quaternion.Euler(90f, 0f, 0f);            // quad (XY) -> orbital plane (XZ)
+            t.localScale = Vector3.one * (_diskRadius * 2f * math.max(bang, 0.05f));
+            disk.material.SetFloat(DiskFade, fade);
+        }
+
+        const float OverviewPitchDegrees = 55f;
+
+        /// <summary>0 = follow the target, 1 = overview: eases out during collapse, holds, eases back late in expand.</summary>
+        float OverviewWeight()
+        {
+            var g = _backdrop.Generator;
+            if (g == null || _phase == Phase.Idle) return 0f;
+            if (_phase == Phase.Collapsing) return math.smoothstep(0f, 1f, math.saturate(_phaseTime / math.max(0.01f, g.CollapseSeconds)));
+            var e = math.saturate(_phaseTime / math.max(0.01f, g.ExpandSeconds));
+            return 1f - math.smoothstep(0.55f, 1f, e);
         }
 
         float BigBang(float dt)
@@ -190,8 +248,21 @@ namespace LuckyNumbers.Space
             var distance = math.max(_distance, 0.6f) * size;   // content distances are in target diameters
             var rotation = Quaternion.Euler(_pitch, _yaw, 0f);
             var t = _view.Camera.transform;
-            t.SetPositionAndRotation(target - rotation * Vector3.forward * distance, rotation);
-            t.position += (t.right * c.FrameOffset.X + t.up * c.FrameOffset.Y) * size; // off-centre framing
+            var position = target - rotation * Vector3.forward * distance
+                         + (rotation * Vector3.right * c.FrameOffset.X + rotation * Vector3.up * c.FrameOffset.Y) * size; // off-centre framing
+
+            // Big bang: pull up and out to watch the whole system form from above, then glide back.
+            _overviewRadius = _overviewRadius <= 0f ? _systemRadius : math.lerp(_overviewRadius, _systemRadius, 1f - math.exp(-4f * dt));
+            var w = OverviewWeight();
+            if (w > 0f && _overviewRadius > 0f)
+            {
+                var centre = _sun >= 0 ? (Vector3)_world.Position[_sun] : Vector3.zero;
+                var overview = Quaternion.Euler(OverviewPitchDegrees, _yaw, 0f);
+                var far = centre - overview * Vector3.forward * (_overviewRadius * 2.4f); // fits the system in ~45 degrees
+                position = Vector3.Lerp(position, far, w);
+                rotation = Quaternion.Slerp(rotation, overview, w);
+            }
+            t.SetPositionAndRotation(position, rotation);
         }
 
         public void Dispose() => _subscription?.Dispose();

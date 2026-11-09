@@ -35,10 +35,19 @@ namespace LuckyNumbers.Model
     public readonly struct UniverseSeedChanged
     {
         public readonly uint Seed;
+        /// <summary>
+        /// Dice roles as 0..1 (face low..high), or -1 when no die has that role (the seed decides).
+        /// </summary>
+        public readonly float Star;
+        public readonly float Worlds;
+        public readonly float Luck;
 
-        public UniverseSeedChanged(uint seed)
+        public UniverseSeedChanged(uint seed, float star, float worlds, float luck)
         {
             Seed = seed;
+            Star = star;
+            Worlds = worlds;
+            Luck = luck;
         }
     }
 
@@ -103,6 +112,10 @@ namespace LuckyNumbers.Model
         /// Planet density / star density, for the mass ratio m/M = ratio * (d_planet/d_star)^3 (Earth/Sun ~ 4).
         /// </summary>
         public float PlanetStarDensityRatio { get; set; }
+        /// <summary>
+        /// Dust disk shown while a new system forms (big bang expand); one picked per roll.
+        /// </summary>
+        public List<DiskLook> Disks { get; } = new List<DiskLook>();
         /// <summary>
         /// Sky presets; each roll picks one and randomises its seed, band and gas shape.
         /// </summary>
@@ -276,6 +289,39 @@ namespace LuckyNumbers.Model
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public StarfieldLook Clone() => (StarfieldLook)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// Shader properties of LuckyNumbers/Disk: a flat dust disk around a forming star. Inner gas orbits
+    /// faster (differential rotation) so clumps shear into spirals; planets clear dark gaps at their orbits.
+    /// </summary>
+    public sealed class DiskLook
+    {
+        public Rgba InnerColor { get; set; }
+        public Rgba OuterColor { get; set; }
+        public float Brightness { get; set; }
+        /// <summary>
+        /// Hole around the star, share of the disk radius.
+        /// </summary>
+        public float InnerRadius { get; set; }
+        /// <summary>
+        /// Clump noise scale and contrast.
+        /// </summary>
+        public float ClumpScale { get; set; }
+        public float Clumpiness { get; set; }
+        /// <summary>
+        /// Orbital shear speed (radians/s at the edge; faster inside).
+        /// </summary>
+        public float SpinSpeed { get; set; }
+        /// <summary>
+        /// How dark the planet gaps get (0..1) and their width (share of the radius).
+        /// </summary>
+        public float GapDepth { get; set; }
+        public float GapWidth { get; set; }
+        public float Seed { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public DiskLook Clone() => (DiskLook)MemberwiseClone();
     }
 
     /// <summary>

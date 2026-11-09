@@ -24,6 +24,10 @@ message SpaceBackdrop {
 message UniverseSeedChanged {
   option (ln.event) = true;
   uint32 seed = 1;
+  // Dice roles as 0..1 (face low..high), or -1 when no die has that role (the seed decides).
+  float star = 2;
+  float worlds = 3;
+  float luck = 4;
 }
 
 // Rules for seed -> solar system. Palettes are lists of library looks (refs append).
@@ -70,6 +74,9 @@ message SystemGenerator {
   float moon_hill_fraction = 32;
   // Planet density / star density, for the mass ratio m/M = ratio * (d_planet/d_star)^3 (Earth/Sun ~ 4).
   float planet_star_density_ratio = 33;
+  // Dust disk shown while a new system forms (big bang expand); one picked per roll.
+  repeated DiskLook disks = 37;
+  repeated string disk_refs = 38 [(ln.ref) = "disks"];
   // Sky presets; each roll picks one and randomises its seed, band and gas shape.
   repeated StarfieldLook skies = 35;
   repeated string sky_refs = 36 [(ln.ref) = "skies"];
@@ -166,6 +173,26 @@ message StarfieldLook {
   // Bright emission knots: grid density on the sphere and brightness.
   optional float knot_density = 19;
   optional float knot_brightness = 20;
+}
+
+// Shader properties of LuckyNumbers/Disk: a flat dust disk around a forming star. Inner gas orbits
+// faster (differential rotation) so clumps shear into spirals; planets clear dark gaps at their orbits.
+message DiskLook {
+  option (ln.material) = "LuckyNumbers/Disk";
+  Rgba inner_color = 1;
+  Rgba outer_color = 2;
+  optional float brightness = 3;
+  // Hole around the star, share of the disk radius.
+  optional float inner_radius = 4;
+  // Clump noise scale and contrast.
+  optional float clump_scale = 5;
+  optional float clumpiness = 6;
+  // Orbital shear speed (radians/s at the edge; faster inside).
+  optional float spin_speed = 7;
+  // How dark the planet gaps get (0..1) and their width (share of the radius).
+  optional float gap_depth = 8;
+  optional float gap_width = 9;
+  optional float seed = 10;
 }
 
 // Shader properties of LuckyNumbers/Star: glowing surface + corona. Its light_color lights the planets.

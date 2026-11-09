@@ -11,10 +11,12 @@ namespace LuckyNumbers.Space
         [SerializeField] MeshRenderer planetTemplate;
         [SerializeField] MeshRenderer starTemplate;
         [SerializeField] MeshRenderer galaxyTemplate;
+        [SerializeField] MeshRenderer disk;  // flat quad in the orbital plane, shown while a system forms
         [SerializeField] UIDocument ui; // optional: drags don't start on its interactive elements
         Material _sky;
 
         public Camera Camera => viewCamera;
+        public MeshRenderer Disk => disk;
 
         /// <summary>Per-scene copy of the skybox material (editing the asset at runtime would persist in the editor).</summary>
         public Material SkyboxMaterial

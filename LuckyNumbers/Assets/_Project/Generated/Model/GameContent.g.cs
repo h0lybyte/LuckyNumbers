@@ -122,18 +122,6 @@ namespace LuckyNumbers.Model
                     {
                         new StarLook
                         {
-                            CoreColor = new Rgba(1.0f, 0.78f, 0.42f, 1.0f),
-                            CoronaColor = new Rgba(1.0f, 0.55f, 0.2f, 1.0f),
-                            LightColor = new Rgba(1.0f, 0.95f, 0.85f, 1.0f),
-                            Intensity = 1.6f,
-                            CoronaSize = 1.8f,
-                            CoronaPower = 5.0f,
-                            CoronaIntensity = 1.8f,
-                            NoiseScale = 3.0f,
-                            BoilSpeed = 0.05f,
-                        },
-                        new StarLook
-                        {
                             CoreColor = new Rgba(1.0f, 0.45f, 0.25f, 1.0f),
                             CoronaColor = new Rgba(1.0f, 0.25f, 0.1f, 1.0f),
                             LightColor = new Rgba(1.0f, 0.7f, 0.55f, 1.0f),
@@ -143,6 +131,18 @@ namespace LuckyNumbers.Model
                             CoronaIntensity = 1.6f,
                             NoiseScale = 3.5f,
                             BoilSpeed = 0.04f,
+                        },
+                        new StarLook
+                        {
+                            CoreColor = new Rgba(1.0f, 0.78f, 0.42f, 1.0f),
+                            CoronaColor = new Rgba(1.0f, 0.55f, 0.2f, 1.0f),
+                            LightColor = new Rgba(1.0f, 0.95f, 0.85f, 1.0f),
+                            Intensity = 1.6f,
+                            CoronaSize = 1.8f,
+                            CoronaPower = 5.0f,
+                            CoronaIntensity = 1.8f,
+                            NoiseScale = 3.0f,
+                            BoilSpeed = 0.05f,
                         },
                         new StarLook
                         {
@@ -323,8 +323,8 @@ namespace LuckyNumbers.Model
                     GalaxyDistance = 2000.0f,
                     GalaxyScaleMin = 60.0f,
                     GalaxyScaleMax = 160.0f,
-                    CollapseSeconds = 0.5f,
-                    ExpandSeconds = 1.6f,
+                    CollapseSeconds = 0.8f,
+                    ExpandSeconds = 4.0f,
                     Moons =
                     {
                         new PlanetLook
@@ -349,6 +349,35 @@ namespace LuckyNumbers.Model
                     MoonOrbitMax = 6.0f,
                     MoonHillFraction = 0.5f,
                     PlanetStarDensityRatio = 4.0f,
+                    Disks =
+                    {
+                        new DiskLook
+                        {
+                            InnerColor = new Rgba(1.0f, 0.85f, 0.6f, 1.0f),
+                            OuterColor = new Rgba(0.55f, 0.25f, 0.12f, 1.0f),
+                            Brightness = 1.2f,
+                            InnerRadius = 0.03f,
+                            ClumpScale = 6.0f,
+                            Clumpiness = 0.7f,
+                            SpinSpeed = 0.25f,
+                            GapDepth = 0.85f,
+                            GapWidth = 0.025f,
+                            Seed = 1.0f,
+                        },
+                        new DiskLook
+                        {
+                            InnerColor = new Rgba(0.85f, 0.92f, 1.0f, 1.0f),
+                            OuterColor = new Rgba(0.3f, 0.25f, 0.55f, 1.0f),
+                            Brightness = 1.0f,
+                            InnerRadius = 0.04f,
+                            ClumpScale = 8.0f,
+                            Clumpiness = 0.6f,
+                            SpinSpeed = 0.3f,
+                            GapDepth = 0.8f,
+                            GapWidth = 0.02f,
+                            Seed = 2.0f,
+                        },
+                    },
                     Skies =
                     {
                         new StarfieldLook
@@ -474,6 +503,7 @@ namespace LuckyNumbers.Model
                         Sides = 6,
                         Color = new Rgba(0.85f, 0.2f, 0.25f, 1.0f),
                         InitialFace = 6,
+                        Role = DieRole.Star,
                     },
                     new Die
                     {
@@ -481,6 +511,7 @@ namespace LuckyNumbers.Model
                         Sides = 6,
                         Color = new Rgba(0.95f, 0.95f, 0.95f, 1.0f),
                         InitialFace = 6,
+                        Role = DieRole.Worlds,
                     },
                     new Die
                     {
@@ -488,6 +519,7 @@ namespace LuckyNumbers.Model
                         Sides = 6,
                         Color = new Rgba(0.95f, 0.75f, 0.2f, 1.0f),
                         InitialFace = 6,
+                        Role = DieRole.Luck,
                     },
                 },
                 RollLabel = "Roll",
