@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+message Vec2 {
+  float x = 1;
+  float y = 2;
+}

@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+import "luckynumbers/v1/common.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Discrete actions (button presses). Bound to devices in the Input System asset.
+enum InputAction {
+  INPUT_ACTION_UNSPECIFIED = 0;
+  INPUT_ACTION_CONFIRM = 1;
+  INPUT_ACTION_CANCEL = 2;
+  INPUT_ACTION_PAUSE = 3;
+  INPUT_ACTION_JUMP = 4;
+  INPUT_ACTION_INTERACT = 5;
+  INPUT_ACTION_SPRINT = 6;
+}
+
+// Continuous axes, sampled every frame.
+message PlayerInput {
+  option (ln.state) = true;
+  Vec2 move = 1;
+  Vec2 look = 2;
+}
+
+message InputActionPerformed {
+  option (ln.event) = true;
+  InputAction action = 1;
+}

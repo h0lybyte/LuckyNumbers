@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+import "luckynumbers/v1/flow.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Title screen. Confirm (see input.proto) requests a change to `next`.
+message TitleScreen {
+  option (ln.config) = true;
+  string title = 1;
+  string start_prompt = 2;
+  GameScene next = 3;
+}

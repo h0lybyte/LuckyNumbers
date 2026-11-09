@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package ln;
+
+import "google/protobuf/descriptor.proto";
+
+option csharp_namespace = "LuckyNumbers.Model.Options";
+
+// Tells the code generator what to emit for a message.
+// Field numbers 50000-99999 are reserved for in-house options.
+extend google.protobuf.MessageOptions {
+  // Published/subscribed through MessagePipe: struct + RegisterMessageBroker<T>.
+  bool event = 50001;
+  // Runtime state, exposed reactively (R3) to systems and UI.
+  bool state = 50002;
+  // Authored data, loaded from a content/*.txtpb file.
+  bool config = 50003;
+}

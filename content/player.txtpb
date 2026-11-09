@@ -1,0 +1,5 @@
+# proto-file: luckynumbers/v1/player.proto
+# proto-message: luckynumbers.v1.PlayerConfig
+# Placeholder value; tune with gameplay.
+
+max_health: 100
