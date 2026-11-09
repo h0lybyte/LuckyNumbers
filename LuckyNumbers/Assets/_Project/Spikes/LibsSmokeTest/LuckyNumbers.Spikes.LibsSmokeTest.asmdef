@@ -1,0 +1,18 @@
+{
+    "name": "LuckyNumbers.Spikes.LibsSmokeTest",
+    "rootNamespace": "LuckyNumbers.Spikes.LibsSmokeTest",
+    "references": [
+        "UniTask",
+        "R3.Unity",
+        "MessagePipe"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

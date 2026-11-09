@@ -159,6 +159,12 @@ def summarize_log(log: Path) -> int:
     for marker in ("Scripts have compiler errors.", "Aborting batchmode due to failure:"):
         if marker in text:
             print(f"  {marker}")
+    # Package Manager failures (bad manifest entries) aren't C# errors; show them too.
+    pkg = re.search(r"^An error occurred while resolving packages:\n((?:[ \t]+.*\n?)+)", text, re.M)
+    if pkg:
+        print("  Package resolution failed:")
+        for line in pkg.group(1).rstrip().splitlines():
+            print(f"  {line}")
     exc = re.search(r"^\w+(?:\.\w+)*Exception: .*$", text, re.M)
     if exc:
         print(f"  {exc.group(0)}")
