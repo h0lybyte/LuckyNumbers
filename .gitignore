@@ -36,6 +36,16 @@ ExportedObj/
 *.unitypackage
 *.app
 
+# Burst intermediates written next to the project by Web builds
+/LuckyNumbers/[Dd]ata/
+
+# Mono crash dumps from editor crashes
+mono_crash.*.json
+
+# Python
+__pycache__/
+*.pyc
+
 # Crashlytics
 crashlytics-build.properties
 
