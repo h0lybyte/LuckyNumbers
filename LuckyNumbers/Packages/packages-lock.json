@@ -7,6 +7,13 @@
       "dependencies": {},
       "hash": "58516c36d4465a7b6396b7850a4ad7e03326998c"
     },
+    "com.cysharp.messagepipe.vcontainer": {
+      "version": "https://github.com/Cysharp/MessagePipe.git?path=src/MessagePipe.Unity/Assets/Plugins/MessagePipe.VContainer#1.8.2",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "58516c36d4465a7b6396b7850a4ad7e03326998c"
+    },
     "com.cysharp.r3": {
       "version": "https://github.com/Cysharp/R3.git?path=src/R3.Unity/Assets/R3.Unity#1.3.1",
       "depth": 0,
@@ -187,6 +194,13 @@
         "com.unity.modules.physics2d": "1.0.0",
         "com.unity.modules.physics": "1.0.0"
       }
+    },
+    "jp.hadashikick.vcontainer": {
+      "version": "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer#1.19.0",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "5401e5a7ebc4980a2b82141ffc26391a6547edd7"
     },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
