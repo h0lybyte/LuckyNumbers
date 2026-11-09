@@ -17,6 +17,7 @@ python3 tools/ln.py build-web    # headless Web build (WebGPU + WebGL 2) -> Luck
 python3 tools/ln.py build-web --gfx webgl2   # WebGL 2 only -> Builds/WebGL-WebGL2 (serve --gfx webgl2)
 python3 tools/ln.py serve --open # serve it at http://localhost:8080 with COOP/COEP headers
 python3 tools/ln.py deploy --target user/game [--version 0.1.0] [--dry-run]   # butler push to itch
+python3 tools/ln.py secrets [--dry-run]   # push .env values to GitHub Actions secrets
 ```
 
 - `check` / `build-web` need the **Unity editor closed** (the tool detects a live editor, ignores stale lockfiles).
@@ -35,19 +36,18 @@ using the same `WebBuild.Build` entry point as `ln.py build-web`, then pushes to
 | Push to `main`, tag `v*` | build + deploy to itch.io channel `html5` (version = tag or short SHA) |
 | Manual (Actions tab → Run workflow) | build, deploy if "deploy" ticked |
 
-One-time setup (run these yourself; they prompt for the values):
+One-time setup: copy `.env.example` to `.env` (gitignored), fill it in, then:
 
 ```
-gh secret set UNITY_EMAIL
-gh secret set UNITY_PASSWORD
-gh secret set UNITY_LICENSE        # license file contents, see GameCI activation guide below
-gh secret set BUTLER_API_KEY       # https://itch.io/user/settings/api-keys
-gh variable set ITCH_TARGET --body "<itch-user>/<game-slug>"
+python3 tools/ln.py secrets --dry-run   # shows which keys are set (never values)
+python3 tools/ln.py secrets             # pushes them via gh (secrets over stdin)
 ```
 
-- Unity license: follow https://game.ci/docs/github/activation. Unity 6 Hub activations store an
-  entitlement license (`~/Library/Unity/licenses/`), not the classic `Unity_lic.ulf`, so check the guide
-  for the current way to obtain the license for CI.
+- Unity license (https://game.ci/docs/github/activation): Unity Hub → Licenses → **Add** → "Get a free
+  personal license", even if Hub already shows "Personal". That writes
+  `/Library/Application Support/Unity/Unity_lic.ulf` (Windows: `C:\ProgramData\Unity\Unity_lic.ulf`);
+  `.env` points `UNITY_LICENSE_FILE` at it. Email + password are also required by GameCI for Personal.
+- `BUTLER_API_KEY` must belong to the itch.io account that owns `ITCH_TARGET` (currently `kbve/lucky-numbers`).
 - Create the itch.io project first (Kind: **HTML**). After the first push, set the `html5` upload as
   "played in the browser", embed size 1280×720, and tick **SharedArrayBuffer support** (needed for threads).
 - PRs from forks get no secrets, so their build job fails at license activation. Expected for a public repo.

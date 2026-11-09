@@ -274,6 +274,68 @@ def cmd_deploy(args) -> int:
     return subprocess.call(cmd)
 
 
+ENV_FILE = ROOT / ".env"
+SECRET_KEYS = ("UNITY_EMAIL", "UNITY_PASSWORD", "UNITY_LICENSE", "BUTLER_API_KEY")
+VARIABLE_KEYS = ("ITCH_TARGET",)
+
+
+def read_env(path: Path) -> dict[str, str]:
+    """Minimal .env parser: KEY=VALUE, # comments, optional surrounding quotes."""
+    values = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, val = line.partition("=")
+        val = val.strip()
+        if len(val) >= 2 and val[0] == val[-1] and val[0] in "\"'":
+            val = val[1:-1]
+        values[key.strip()] = val
+    return values
+
+
+def cmd_secrets(args) -> int:
+    """Push .env values to GitHub Actions secrets/variables via gh. Never prints values."""
+    if not ENV_FILE.is_file():
+        return fail(f"no {ENV_FILE.name}. Copy .env.example to .env and fill it in.")
+    gh = shutil.which("gh")
+    if not gh:
+        return fail("GitHub CLI (gh) not found on PATH.")
+    env = read_env(ENV_FILE)
+
+    # The license is uploaded from its file, so its contents never sit in .env.
+    lic = env.get("UNITY_LICENSE_FILE", "")
+    if lic:
+        lic_path = Path(lic).expanduser()
+        if not lic_path.is_file():
+            return fail(f"UNITY_LICENSE_FILE not found: {lic_path}")
+        env["UNITY_LICENSE"] = lic_path.read_text(encoding="utf-8")
+
+    plan = [(k, "secret") for k in SECRET_KEYS] + [(k, "variable") for k in VARIABLE_KEYS]
+    missing = [k for k, _ in plan if not env.get(k)]
+    for key, kind in plan:
+        state = "set" if env.get(key) else "EMPTY, skipped"
+        print(f"  {kind:8} {key:16} {state}")
+    if args.dry_run:
+        print("(dry run, nothing sent)")
+        return 0 if not missing else 1
+
+    for key, kind in plan:
+        value = env.get(key)
+        if not value:
+            continue
+        cmd = [gh, kind, "set", key] + (["--body", value] if kind == "variable" else [])
+        # Secrets go over stdin so they never appear in the process list.
+        r = subprocess.run(cmd, input=None if kind == "variable" else value,
+                           text=True, capture_output=True)
+        if r.returncode != 0:
+            return fail(f"gh {kind} set {key} failed: {r.stderr.strip()}")
+        print(f"  pushed {kind} {key}")
+    if missing:
+        print(f"not pushed (empty in .env): {', '.join(missing)}")
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="ln.py", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -303,6 +365,10 @@ def main(argv=None) -> int:
     s.add_argument("--version", help="user version, e.g. 0.1.0")
     s.add_argument("--dry-run", action="store_true")
     s.set_defaults(func=cmd_deploy)
+
+    s = sub.add_parser("secrets", help="push .env values to GitHub Actions secrets (never printed)")
+    s.add_argument("--dry-run", action="store_true", help="only show which keys are set / empty")
+    s.set_defaults(func=cmd_secrets)
 
     s = sub.add_parser("doctor", help="show what the tools detected")
     s.set_defaults(func=cmd_doctor)

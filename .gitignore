@@ -36,6 +36,12 @@ ExportedObj/
 *.unitypackage
 *.app
 
+# Local secrets: never commit. .env.example (no values) is the committed template.
+.env
+.env.*
+!.env.example
+*.ulf
+
 # Burst intermediates written next to the project by Web builds
 /LuckyNumbers/[Dd]ata/
 
