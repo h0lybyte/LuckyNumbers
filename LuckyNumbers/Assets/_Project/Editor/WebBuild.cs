@@ -32,6 +32,7 @@ namespace LuckyNumbers.Editor
     {
         public const string DefaultOutputDir = "Builds/WebGL";
         const string GfxArg = "-lnGfx";
+        const string VersionArg = "-lnVersion";
         const int Width = 1280, Height = 720;
 
         public static string OutputDirFor(WebGraphics gfx) =>
@@ -81,9 +82,14 @@ namespace LuckyNumbers.Editor
         public static void Build(WebGraphics gfx)
         {
             var output = OutputDirFor(gfx);
+            // Release version comes from CHANGELOG.md via "-lnVersion x.y.z" (tools/ln.py, CI).
+            // Stamped into the build only, so ProjectSettings doesn't churn on every release.
+            var version = ArgValue(VersionArg);
+            var projectVersion = PlayerSettings.bundleVersion;
             try
             {
                 ApplySettings(gfx);
+                if (!string.IsNullOrEmpty(version)) PlayerSettings.bundleVersion = version;
 
                 var scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
                 if (scenes.Length == 0) throw new BuildFailedException("No enabled scenes in Build Settings.");
@@ -97,26 +103,39 @@ namespace LuckyNumbers.Editor
                 });
 
                 var s = report.summary;
-                Debug.Log($"[WebBuild] {s.result} ({gfx}): {s.totalErrors} errors, {s.totalSize / (1024f * 1024f):F1} MB, " +
+                Debug.Log($"[WebBuild] {s.result} ({gfx}, v{PlayerSettings.bundleVersion}): {s.totalErrors} errors, " +
+                          $"{s.totalSize / (1024f * 1024f):F1} MB, " +
                           $"{s.totalTime.TotalSeconds:F0}s -> {Path.GetFullPath(output)}");
                 if (s.result != BuildResult.Succeeded)
                     throw new BuildFailedException($"Web build {s.result}");
             }
             finally
             {
-                // Keep the committed project setting stable (WebGPU + WebGL 2).
+                // Keep the committed project settings stable (WebGPU + WebGL 2, project version).
                 if (gfx != WebGraphics.Both) ApplySettings(WebGraphics.Both);
+                if (PlayerSettings.bundleVersion != projectVersion)
+                {
+                    PlayerSettings.bundleVersion = projectVersion;
+                    AssetDatabase.SaveAssets();
+                }
             }
         }
 
         /// <summary>Reads "-lnGfx webgl2|webgpu|both" from the command line (default Both).</summary>
         static WebGraphics GraphicsFromCommandLine()
         {
+            var value = ArgValue(GfxArg);
+            if (value == null) return WebGraphics.Both;
+            if (Enum.TryParse(value, ignoreCase: true, out WebGraphics gfx)) return gfx;
+            throw new BuildFailedException($"Unknown {GfxArg} value '{value}' (use webgl2, webgpu or both)");
+        }
+
+        /// <summary>Value following <paramref name="name"/> on the command line, or null.</summary>
+        static string ArgValue(string name)
+        {
             var args = Environment.GetCommandLineArgs();
-            var i = Array.IndexOf(args, GfxArg);
-            if (i < 0 || i + 1 >= args.Length) return WebGraphics.Both;
-            if (Enum.TryParse(args[i + 1], ignoreCase: true, out WebGraphics gfx)) return gfx;
-            throw new BuildFailedException($"Unknown {GfxArg} value '{args[i + 1]}' (use webgl2, webgpu or both)");
+            var i = Array.IndexOf(args, name);
+            return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
         }
     }
 }

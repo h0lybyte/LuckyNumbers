@@ -174,6 +174,27 @@ def cmd_check(args) -> int:
     return 0 if code == 0 and errors == 0 else 1
 
 
+CHANGELOG = ROOT / "CHANGELOG.md"
+VERSION_HEADING = re.compile(r"^##\s+v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?)\b.*$", re.M)
+
+
+def changelog_version() -> tuple[str, str]:
+    """(version, notes) from the top '## x.y.z' entry of CHANGELOG.md."""
+    text = CHANGELOG.read_text(encoding="utf-8")
+    m = VERSION_HEADING.search(text)
+    if not m:
+        raise RuntimeError(f"no '## x.y.z' heading in {CHANGELOG.name}")
+    nxt = VERSION_HEADING.search(text, m.end())
+    notes = text[m.end():nxt.start() if nxt else len(text)].strip()
+    return m.group(1), notes
+
+
+def cmd_version(args) -> int:
+    version, notes = changelog_version()
+    print(notes if args.notes else version)
+    return 0
+
+
 GFX_CHOICES = ("both", "webgl2", "webgpu")
 
 
@@ -184,9 +205,10 @@ def web_build_dir(gfx: str) -> Path:
 
 
 def cmd_build_web(args) -> int:
+    version = args.version or changelog_version()[0]
     code, log = run_unity(["-buildTarget", "WebGL",
                            "-executeMethod", "LuckyNumbers.Editor.WebBuild.Build",
-                           "-lnGfx", args.gfx],
+                           "-lnGfx", args.gfx, "-lnVersion", version],
                           f"ln-build-web-{args.gfx}.log", args.force)
     errors = summarize_log(log)
     out = web_build_dir(args.gfx)
@@ -264,9 +286,8 @@ def cmd_deploy(args) -> int:
     butler = shutil.which("butler")
     if not butler:
         return fail("butler not found on PATH. Install: https://itch.io/docs/butler/")
-    cmd = [butler, "push", str(WEB_BUILD), f"{target}:{args.channel}"]
-    if args.version:
-        cmd += ["--userversion", args.version]
+    version = args.version or changelog_version()[0]
+    cmd = [butler, "push", str(WEB_BUILD), f"{target}:{args.channel}", "--userversion", version]
     print(" ".join(cmd))
     if args.dry_run:
         print("(dry run, nothing pushed)")
@@ -350,6 +371,7 @@ def main(argv=None) -> int:
     s.add_argument("--gfx", choices=GFX_CHOICES, default="both",
                    help="graphics backend(s): both = WebGPU + WebGL 2 fallback (default); "
                         "other variants build to Builds/WebGL-<Variant>")
+    s.add_argument("--version", help="game version (default: top entry of CHANGELOG.md)")
     s.set_defaults(func=cmd_build_web)
 
     s = sub.add_parser("serve", aliases=["server"], help="serve the Web build with COOP/COEP headers")
@@ -362,9 +384,13 @@ def main(argv=None) -> int:
     s = sub.add_parser("deploy", help="butler push the Web build to itch.io")
     s.add_argument("--target", help="itch user/game (or ITCH_TARGET env)")
     s.add_argument("--channel", default="html5")
-    s.add_argument("--version", help="user version, e.g. 0.1.0")
+    s.add_argument("--version", help="itch user version (default: top entry of CHANGELOG.md)")
     s.add_argument("--dry-run", action="store_true")
     s.set_defaults(func=cmd_deploy)
+
+    s = sub.add_parser("version", help="print the game version from CHANGELOG.md")
+    s.add_argument("--notes", action="store_true", help="print that entry's release notes instead")
+    s.set_defaults(func=cmd_version)
 
     s = sub.add_parser("secrets", help="push .env values to GitHub Actions secrets (never printed)")
     s.add_argument("--dry-run", action="store_true", help="only show which keys are set / empty")

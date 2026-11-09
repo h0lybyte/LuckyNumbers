@@ -130,7 +130,7 @@ namespace LuckyNumbers.Spikes.WebThreadsTest
         {
             _sb.Clear();
             _sb.AppendLine($"Web threads test: {ItemCount:N0} items, Burst");
-            _sb.AppendLine($"Platform: {Application.platform}   Unity {Application.unityVersion}");
+            _sb.AppendLine($"v{Application.version}   Platform: {Application.platform}   Unity {Application.unityVersion}");
             _sb.AppendLine($"Graphics: {SystemInfo.graphicsDeviceType} ({SystemInfo.graphicsDeviceVersion})");
             _sb.AppendLine($"Cross-origin isolated: {Isolation}");
             _sb.AppendLine($"Cores: Unity {SystemInfo.processorCount}" + (BrowserCores > 0 ? $", browser {BrowserCores}" : "") +

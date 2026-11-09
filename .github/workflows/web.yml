@@ -1,39 +1,31 @@
-# Builds the Unity Web (WebGL) player and deploys it to itch.io.
+# Release pipeline: CHANGELOG.md drives Web builds and itch.io deploys.
 #
-#   pull_request        -> build only (checks the project compiles and builds)
-#   push to main / v*   -> build + deploy to itch.io (channel: html5)
-#   manual run          -> build, deploy if "deploy" is ticked
+#   push to main touching CHANGELOG.md
+#     -> read version from the top "## x.y.z" entry
+#     -> if tag vx.y.z already exists: stop (notes-only edit, nothing to release)
+#     -> else: build WebGL (WebGPU + WebGL 2), push to itch.io as x.y.z, tag + GitHub release vx.y.z
+#   manual run (Actions -> Web release -> Run workflow)
+#     -> build the current version; deploy only if "deploy" is ticked
 #
-# Required repository secrets (Settings -> Secrets and variables -> Actions):
-#   UNITY_LICENSE    contents of your Unity .ulf license file
-#   UNITY_EMAIL      Unity account email
-#   UNITY_PASSWORD   Unity account password
-#   BUTLER_API_KEY   itch.io API key (https://itch.io/user/settings/api-keys)
-# Required repository variable:
-#   ITCH_TARGET      itch.io "user/game", e.g. h0lybyte/lucky-numbers
-name: Web build & itch.io deploy
+# Repository secrets: UNITY_LICENSE, UNITY_EMAIL, UNITY_PASSWORD, BUTLER_API_KEY
+# Repository variable: ITCH_TARGET (itch.io "user/game")
+# Set them from .env with: python3 tools/ln.py secrets
+name: Web release
 
 on:
-  pull_request:
-    paths:
-      - "LuckyNumbers/Assets/**"
-      - "LuckyNumbers/Packages/**"
-      - "LuckyNumbers/ProjectSettings/**"
-      - "tools/**"
-      - ".github/workflows/web.yml"
   push:
     branches: [main]
-    tags: ["v*"]
+    paths: ["CHANGELOG.md"]
   workflow_dispatch:
     inputs:
       deploy:
-        description: "Deploy the build to itch.io"
+        description: "Deploy to itch.io (and tag/release if this version is new)"
         type: boolean
         default: false
 
 concurrency:
-  group: web-${{ github.ref }}
-  cancel-in-progress: true
+  group: web-release
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -43,8 +35,29 @@ env:
   BUILD_DIR: LuckyNumbers/Builds/WebGL
 
 jobs:
+  version:
+    name: Read version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      released: ${{ steps.v.outputs.released }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # tags, to detect already-released versions
+
+      - id: v
+        run: |
+          version="$(python3 tools/ln.py version)"
+          if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then released=true; else released=false; fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "released=$released" >> "$GITHUB_OUTPUT"
+          echo "### Version $version (already released: $released)" >> "$GITHUB_STEP_SUMMARY"
+
   build:
-    name: Build WebGL
+    name: Build WebGL ${{ needs.version.outputs.version }}
+    needs: version
+    if: needs.version.outputs.released == 'false' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -61,8 +74,8 @@ jobs:
           restore-keys: |
             Library-WebGL-
 
-      # Same entry point as `tools/ln.py build-web`, so CI and local builds
-      # use identical settings (threads, gzip + decompression fallback, 720p).
+      # Same entry point as `tools/ln.py build-web`: threads, gzip + decompression
+      # fallback, 720p, WebGPU + WebGL 2, version stamped from CHANGELOG.md.
       - uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -72,7 +85,7 @@ jobs:
           projectPath: ${{ env.PROJECT_PATH }}
           targetPlatform: WebGL
           buildMethod: LuckyNumbers.Editor.WebBuild.Build
-          customParameters: -lnGfx both
+          customParameters: -lnGfx both -lnVersion ${{ needs.version.outputs.version }}
           versioning: None
 
       - name: Check build output
@@ -83,24 +96,28 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: web-build
+          name: web-build-${{ needs.version.outputs.version }}
           path: ${{ env.BUILD_DIR }}
-          retention-days: 14
+          retention-days: 30
           if-no-files-found: error
 
   deploy:
-    name: Deploy to itch.io
-    needs: build
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.deploy)
+    name: Deploy ${{ needs.version.outputs.version }} to itch.io
+    needs: [version, build]
+    if: (github.event_name == 'push' && needs.version.outputs.released == 'false') || (github.event_name == 'workflow_dispatch' && inputs.deploy)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: itch
+    permissions:
+      contents: write # create the vx.y.z tag + GitHub release
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/download-artifact@v4
         with:
-          name: web-build
+          name: web-build-${{ needs.version.outputs.version }}
           path: ${{ env.BUILD_DIR }}
 
       - name: Install butler
@@ -115,6 +132,12 @@ jobs:
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
           ITCH_TARGET: ${{ vars.ITCH_TARGET }}
-          # Tag builds use the tag (v0.1.0), everything else the short commit.
-          VERSION: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || github.sha }}
-        run: python3 tools/ln.py deploy --version "${VERSION:0:12}"
+        run: python3 tools/ln.py deploy --version "$VERSION"
+
+      - name: Tag and GitHub release
+        if: needs.version.outputs.released == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/ln.py version --notes > notes.md
+          gh release create "v$VERSION" --target "$GITHUB_SHA" --title "v$VERSION" --notes-file notes.md

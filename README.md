@@ -30,11 +30,18 @@ python3 tools/ln.py secrets [--dry-run]   # push .env values to GitHub Actions s
 GitHub Actions builds the Web player with [GameCI](https://game.ci) (`unityci/editor:ubuntu-6000.6.8f1-webgl-3`)
 using the same `WebBuild.Build` entry point as `ln.py build-web`, then pushes to itch.io with butler.
 
+**Releases are driven by `CHANGELOG.md`.** The top `## x.y.z` entry is the game version
+(`python3 tools/ln.py version`); it is stamped into the build as `Application.version`.
+
 | Trigger | Result |
 |---|---|
-| Pull request (Unity/tools changes) | build only, artifact `web-build` (14 days) |
-| Push to `main`, tag `v*` | build + deploy to itch.io channel `html5` (version = tag or short SHA) |
-| Manual (Actions tab → Run workflow) | build, deploy if "deploy" ticked |
+| Push to `main` changing `CHANGELOG.md` with a **new** version | build → itch.io `html5` as `x.y.z` → GitHub tag + release `vx.y.z` (notes = that entry) |
+| Push to `main` changing only notes (version already tagged) | nothing (version job reports "already released") |
+| Manual (Actions → Web release → Run workflow) | build current version; deploy if "deploy" ticked |
+| Any other push / PR | no build |
+
+To release: add `## 0.2.0 (date)` with notes at the top of `CHANGELOG.md`, merge to `main`.
+A `## Unreleased` section above it is ignored, so notes can accumulate there first.
 
 One-time setup: copy `.env.example` to `.env` (gitignored), fill it in, then:
 
