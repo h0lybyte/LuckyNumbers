@@ -66,7 +66,8 @@ namespace LuckyNumbers.Spikes.WebThreadsTest
             }
 
             Debug.Log($"[WebThreadsTest] started: platform={Application.platform}, cores={SystemInfo.processorCount}, " +
-                      $"jobWorkers={JobsUtility.JobWorkerCount}, crossOriginIsolated={Isolation}");
+                      $"jobWorkers={JobsUtility.JobWorkerCount}, crossOriginIsolated={Isolation}, " +
+                      $"graphics={SystemInfo.graphicsDeviceType}");
         }
 
         void Update()
@@ -130,6 +131,7 @@ namespace LuckyNumbers.Spikes.WebThreadsTest
             _sb.Clear();
             _sb.AppendLine($"Web threads test: {ItemCount:N0} items, Burst");
             _sb.AppendLine($"Platform: {Application.platform}   Unity {Application.unityVersion}");
+            _sb.AppendLine($"Graphics: {SystemInfo.graphicsDeviceType} ({SystemInfo.graphicsDeviceVersion})");
             _sb.AppendLine($"Cross-origin isolated: {Isolation}");
             _sb.AppendLine($"Cores: Unity {SystemInfo.processorCount}" + (BrowserCores > 0 ? $", browser {BrowserCores}" : "") +
                            $"   Job workers: {JobsUtility.JobWorkerCount}");
@@ -152,7 +154,7 @@ namespace LuckyNumbers.Spikes.WebThreadsTest
                 fontSize = 20, alignment = TextAnchor.UpperLeft, wordWrap = true,
                 normal = { textColor = Color.white },
             };
-            GUI.Box(new Rect(10, 10, Mathf.Min(Screen.width - 20, 720), 280), BuildReport(), _style);
+            GUI.Box(new Rect(10, 10, Mathf.Min(Screen.width - 20, 720), 310), BuildReport(), _style);
         }
 
         void OnDestroy()

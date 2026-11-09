@@ -174,17 +174,27 @@ def cmd_check(args) -> int:
     return 0 if code == 0 and errors == 0 else 1
 
 
+GFX_CHOICES = ("both", "webgl2", "webgpu")
+
+
+def web_build_dir(gfx: str) -> Path:
+    """Mirror of WebBuild.OutputDirFor: Both (default) -> Builds/WebGL, others -> Builds/WebGL-<Variant>."""
+    suffix = {"both": "", "webgl2": "-WebGL2", "webgpu": "-WebGPU"}[gfx]
+    return WEB_BUILD.with_name("WebGL" + suffix)
+
+
 def cmd_build_web(args) -> int:
     code, log = run_unity(["-buildTarget", "WebGL",
-                           "-executeMethod", "LuckyNumbers.Editor.WebBuild.Build"],
-                          "ln-build-web.log", args.force)
+                           "-executeMethod", "LuckyNumbers.Editor.WebBuild.Build",
+                           "-lnGfx", args.gfx],
+                          f"ln-build-web-{args.gfx}.log", args.force)
     errors = summarize_log(log)
-    index = WEB_BUILD / "index.html"
-    if code != 0 or errors or not index.is_file():
+    out = web_build_dir(args.gfx)
+    if code != 0 or errors or not (out / "index.html").is_file():
         return fail("Web build failed, see log above.")
-    size = sum(f.stat().st_size for f in WEB_BUILD.rglob("*") if f.is_file()) / (1024 * 1024)
-    print(f"Web build OK: {WEB_BUILD} ({size:.1f} MB)")
-    print("Next: python3 tools/ln.py serve")
+    size = sum(f.stat().st_size for f in out.rglob("*") if f.is_file()) / (1024 * 1024)
+    print(f"Web build OK ({args.gfx}): {out} ({size:.1f} MB)")
+    print(f"Next: python3 tools/ln.py serve --gfx {args.gfx}")
     return 0
 
 
@@ -229,7 +239,7 @@ class WebHandler(http.server.SimpleHTTPRequestHandler):
 
 
 def cmd_serve(args) -> int:
-    build = Path(args.dir).resolve() if args.dir else WEB_BUILD
+    build = Path(args.dir).resolve() if args.dir else web_build_dir(args.gfx)
     if not (build / "index.html").is_file():
         return fail(f"no index.html in {build}. Run: python3 tools/ln.py build-web")
     handler = lambda *a, **kw: WebHandler(*a, directory=str(build), **kw)  # noqa: E731
@@ -275,11 +285,15 @@ def main(argv=None) -> int:
 
     s = sub.add_parser("build-web", help="headless Web build")
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
+    s.add_argument("--gfx", choices=GFX_CHOICES, default="both",
+                   help="graphics backend(s): both = WebGPU + WebGL 2 fallback (default); "
+                        "other variants build to Builds/WebGL-<Variant>")
     s.set_defaults(func=cmd_build_web)
 
     s = sub.add_parser("serve", aliases=["server"], help="serve the Web build with COOP/COEP headers")
     s.add_argument("--port", type=int, default=8080)
     s.add_argument("--dir", help=f"build folder (default {WEB_BUILD.relative_to(ROOT)})")
+    s.add_argument("--gfx", choices=GFX_CHOICES, default="both", help="which variant's build folder to serve")
     s.add_argument("--open", action="store_true", help="open the browser")
     s.set_defaults(func=cmd_serve)
 
