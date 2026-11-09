@@ -117,14 +117,14 @@ def editor_is_open() -> bool:
         return True
 
 
-def run_unity(extra: list[str], log_name: str, force: bool) -> tuple[int, Path]:
+def run_unity(extra: list[str], log_name: str, force: bool, graphics: bool = False) -> tuple[int, Path]:
     if editor_is_open() and not force:
         raise RuntimeError("Unity has this project open. Close the editor first "
                            "(or pass --force if the lockfile is stale after a crash).")
     unity = find_unity()
     LOGS.mkdir(parents=True, exist_ok=True)
     log = LOGS / log_name
-    cmd = [str(unity), "-batchmode", "-quit", "-nographics",
+    cmd = [str(unity), "-batchmode", "-quit", *([] if graphics else ["-nographics"]),
            "-projectPath", str(PROJECT), "-logFile", str(log), *extra]
     print(f"Unity {unity_version()}: {' '.join(extra) or 'compile'}")
     print(f"  log: {log}")
@@ -154,7 +154,11 @@ def summarize_log(log: Path) -> int:
         print(f"  {line}")
     if len(errors) > 50:
         print(f"  ... and {len(errors) - 50} more")
-    for line in re.findall(r"^\[WebBuild\].*$", text, re.M):
+    shader_errors = sorted(set(re.findall(r"^Shader error in '.*$", text, re.M)))
+    for line in shader_errors[:20]:
+        print(f"  {line}")
+    errors += shader_errors
+    for line in re.findall(r"^\[(?:WebBuild|ShaderPreview)\].*$", text, re.M):
         print(f"  {line}")
     for marker in ("Scripts have compiler errors.", "Aborting batchmode due to failure:"):
         if marker in text:
@@ -208,6 +212,17 @@ def web_build_dir(gfx: str) -> Path:
     """Mirror of WebBuild.OutputDirFor: Both (default) -> Builds/WebGL, others -> Builds/WebGL-<Variant>."""
     suffix = {"both": "", "webgl2": "-WebGL2", "webgpu": "-WebGPU"}[gfx]
     return WEB_BUILD.with_name("WebGL" + suffix)
+
+
+def cmd_preview(args) -> int:
+    code, log = run_unity(["-executeMethod", "LuckyNumbers.Editor.ShaderPreview.RenderSpace"],
+                          "ln-preview.log", args.force, graphics=True)
+    errors = summarize_log(log)
+    out = PROJECT / "Logs" / "preview-space.png"
+    if code != 0 or errors or not out.is_file():
+        return fail("preview failed, see log above")
+    print(f"Preview: {out}")
+    return 0
 
 
 def cmd_build_web(args) -> int:
@@ -493,6 +508,10 @@ def main(argv=None) -> int:
                         "other variants build to Builds/WebGL-<Variant>")
     s.add_argument("--version", help="game version (default: top entry of CHANGELOG.md)")
     s.set_defaults(func=cmd_build_web)
+
+    s = sub.add_parser("preview", help="render the space background to LuckyNumbers/Logs/preview-space.png")
+    s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
+    s.set_defaults(func=cmd_preview)
 
     s = sub.add_parser("serve", aliases=["server"], help="serve the Web build with COOP/COEP headers")
     s.add_argument("--port", type=int, default=8080)
