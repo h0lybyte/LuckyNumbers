@@ -10,10 +10,24 @@
 
 :root {
   --bg: {{{ BACKGROUND_COLOR }}};
-  --fg: #e8e6e1;
-  --muted: rgba(232, 230, 225, 0.6);
-  --panel: rgba(12, 14, 18, 0.72);
-  --edge: rgba(255, 255, 255, 0.12);
+  /* Neon HUD palette: cyan is the system colour, magenta the accent, amber for objectives/warnings. */
+  --fg: #d9f7ff;
+  --muted: rgba(150, 215, 235, 0.62);
+  --neon: #00e5ff;
+  --neon-soft: rgba(0, 229, 255, 0.35);
+  --neon-glow: 0 0 6px rgba(0, 229, 255, 0.55), 0 0 18px rgba(0, 229, 255, 0.2);
+  --hot: #ff2bd6;
+  --warn: #ffb020;
+  --bad: #ff3b5c;
+  --good: #3dff9a;
+  --panel: rgba(3, 10, 20, 0.78);
+  --edge: rgba(0, 229, 255, 0.28);
+  --scan: repeating-linear-gradient(0deg, rgba(0, 229, 255, 0.045) 0 1px, transparent 1px 3px);
+  --cut: 9px;
+  /* Chamfered corners (top-left, bottom-right). */
+  --chamfer: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+  --font-ui: "Exo 2", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Share Tech Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --gap: 12px;
   --dock-width: clamp(240px, 22vw, 360px);
 }
@@ -29,7 +43,7 @@ html, body {
   overscroll-behavior: none;
   background: var(--bg);
   color: var(--fg);
-  font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 14px/1.4 var(--font-ui);
 }
 
 #app {
@@ -94,23 +108,27 @@ html, body {
   height: 36px;
   padding: 0;
   border: 1px solid var(--edge);
-  border-radius: 8px;
-  background: var(--panel);
-  color: var(--fg);
+  border-radius: 0;
+  clip-path: var(--chamfer);
+  background: var(--scan), var(--panel);
+  color: var(--neon);
   cursor: pointer;
-  opacity: 0.55;
-  transition: opacity 120ms ease;
+  opacity: 0.6;
+  transition: opacity 120ms ease, border-color 120ms ease;
   backdrop-filter: blur(6px);
 }
-.icon-button:hover, .icon-button:focus-visible { opacity: 1; }
+.icon-button:hover, .icon-button:focus-visible { opacity: 1; border-color: var(--neon); background: var(--neon); color: #030a14; }
 .icon-button[hidden] { display: none; }
 
 #toolbar button:not(.icon-button) {
   height: 36px;
   padding: 0 10px;
   border: 1px solid var(--edge);
-  border-radius: 8px;
-  background: var(--panel);
+  clip-path: var(--chamfer);
+  background: var(--scan), var(--panel);
+  font: 12px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--fg);
   cursor: pointer;
 }
@@ -133,24 +151,41 @@ html, body {
 }
 
 #loading-title {
-  font-size: 15px;
-  letter-spacing: 0.2em;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.32em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--neon);
+  text-shadow: var(--neon-glow);
+  animation: loading-flicker 2.4s steps(1) infinite;
 }
+#loading-title::after {
+  content: "// booting";
+  display: block;
+  margin-top: 6px;
+  text-align: center;
+  font: 11px var(--font-mono);
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  text-shadow: none;
+}
+@keyframes loading-flicker { 0%, 100% { opacity: 1; } 47% { opacity: 0.55; } 49% { opacity: 1; } 83% { opacity: 0.8; } }
 
 #unity-progress-bar-empty {
-  width: min(240px, 60vw);
-  height: 4px;
-  border-radius: 2px;
-  background: var(--edge);
+  width: min(280px, 64vw);
+  height: 8px;
+  padding: 1px;
+  border: 1px solid var(--edge);
+  background: rgba(0, 229, 255, 0.05);
   overflow: hidden;
 }
 
 #unity-progress-bar-full {
   width: 0%;
   height: 100%;
-  background: var(--fg);
+  /* Segmented fill. */
+  background: repeating-linear-gradient(90deg, var(--neon) 0 6px, transparent 6px 8px);
+  box-shadow: var(--neon-glow);
   transition: width 120ms linear;
 }
 
@@ -168,12 +203,15 @@ html, body {
 }
 #unity-warning > div {
   padding: 10px 14px;
-  border-radius: 8px;
-  color: #111;
-  background: #fff;
+  border: 1px solid var(--edge);
+  border-left: 3px solid var(--neon);
+  clip-path: var(--chamfer);
+  color: var(--fg);
+  background: var(--scan), var(--panel);
+  font-family: var(--font-mono);
 }
-#unity-warning > div.warning { background: #f5d76e; }
-#unity-warning > div.error { background: #e5484d; color: #fff; }
+#unity-warning > div.warning { border-left-color: var(--warn); color: var(--warn); }
+#unity-warning > div.error { border-left-color: var(--bad); color: var(--bad); }
 
 /* ---- dock (reserved) ------------------------------------------------------ */
 
@@ -182,7 +220,7 @@ html, body {
   min-height: 0;
   overflow: auto;
   border-left: 1px solid var(--edge);
-  background: var(--panel);
+  background: var(--scan), rgba(3, 8, 16, 0.94);
 }
 #dock[hidden] { display: none; }
 

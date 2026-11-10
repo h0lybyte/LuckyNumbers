@@ -50,6 +50,8 @@ Lucky Numbers is made with the work of these people. Thank you.
 - **UI font**: "Exo 2" by **Natanael Gama / The Exo 2 Project Authors** (SIL Open Font License 1.1)
   https://github.com/googlefonts/Exo-2.0
   (`LuckyNumbers/Assets/_Project/Art/Fonts/Exo2/OFL.txt`)
+- **HUD readout font (web overlay)**: "Share Tech Mono" by **Carrois Apostrophe** (SIL Open Font License 1.1)
+  https://fonts.google.com/specimen/Share+Tech+Mono
 
 ## Libraries
 

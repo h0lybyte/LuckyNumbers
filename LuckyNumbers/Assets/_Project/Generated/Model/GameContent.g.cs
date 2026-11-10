@@ -367,6 +367,14 @@ namespace LuckyNumbers.Model
                             Url = "https://github.com/googlefonts/Exo-2.0",
                             Path = "LuckyNumbers/Assets/_Project/Art/Fonts/Exo2/OFL.txt",
                         },
+                        new Credit
+                        {
+                            What = "HUD readout font (web overlay)",
+                            Title = "Share Tech Mono",
+                            Author = "Carrois Apostrophe",
+                            License = "SIL Open Font License 1.1",
+                            Url = "https://fonts.google.com/specimen/Share+Tech+Mono",
+                        },
                     },
                 },
                 new CreditSection
