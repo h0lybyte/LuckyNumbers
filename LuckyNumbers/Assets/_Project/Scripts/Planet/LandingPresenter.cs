@@ -38,6 +38,8 @@ namespace LuckyNumbers.Planet
         readonly PlayerShip _playerShip;
         readonly FlightState _state;
         readonly ISubscriber<FlightHudReady> _hudReady;
+        readonly ISubscriber<DevWarpRequested> _warps;
+        IDisposable _warpSubscription;
         IDisposable _hudSubscription;
         bool _pageHud;          // the page draws the flight HUD (FlightHudReady): Unity's readout steps aside
         float _stateTimer;
@@ -60,7 +62,7 @@ namespace LuckyNumbers.Planet
         [Inject]
         public LandingPresenter(PlanetScene config, PlanetView view, PlayerView player, GroundView ground,
                                 IFirstPerson firstPerson, PlayerInput input, PlayerShip playerShip, FlightState state,
-                                ISubscriber<FlightHudReady> hudReady)
+                                ISubscriber<FlightHudReady> hudReady, ISubscriber<DevWarpRequested> warps)
         {
             _config = config;
             _view = view;
@@ -75,6 +77,15 @@ namespace LuckyNumbers.Planet
             {
                 _pageHud = e.On;
                 if (_pageHud && _phase == Phase.Flying) _view.Hint("", 0f);
+            });
+            _warps = warps;
+            // Dev (the page's inspector): "land" sets the ship down on the pad, so you're on foot in seconds.
+            _warpSubscription = _warps.Subscribe(e =>
+            {
+                if (e.To != "land" || _phase != Phase.Flying) return;
+                _position = _pad + Vector3.up * 2f;
+                Debug.Log("[Landing] dev: skip to touchdown");
+                Land(Vector3.up);
             });
         }
 
@@ -522,6 +533,7 @@ namespace LuckyNumbers.Planet
         {
             _state.Flying.Value = false;
             _hudSubscription?.Dispose();
+            _warpSubscription?.Dispose();
             _done?.TrySetCanceled();
         }
     }

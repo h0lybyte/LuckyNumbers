@@ -38,6 +38,7 @@ interface Item {
   slot: number;
   equipped: number;
   bonuses: string;
+  count: number;
 }
 
 const parse = (s: string): Shape => s.split("/").map((row) => [...row].map((ch) => ch === "#"));
@@ -53,13 +54,13 @@ const turn = (cells: Shape): Shape => {
 
 function readItems(rows: string[]): Item[] {
   return rows.map((row) => {
-    const [uid, id, name, kind, x, y, rot, shape, bulk, value, color, description, actions, slot, equipped, bonuses] = row.split("|");
+    const [uid, id, name, kind, x, y, rot, shape, bulk, value, color, description, actions, slot, equipped, bonuses, count] = row.split("|");
     const a = Number(actions);
     return {
       uid: Number(uid), id, name, kind: Number(kind), x: Number(x), y: Number(y), rot: Number(rot),
       shape: parse(shape), bulk: Number(bulk), value: Number(value), color, description,
       canUse: (a & 1) !== 0, canDrop: (a & 2) !== 0, canEquip: (a & 4) !== 0,
-      slot: Number(slot ?? 0), equipped: Number(equipped ?? 0), bonuses: bonuses ?? "",
+      slot: Number(slot ?? 0), equipped: Number(equipped ?? 0), bonuses: bonuses ?? "", count: Number(count ?? 1) || 1,
     };
   });
 }
@@ -324,9 +325,16 @@ function GearTotals({ rows }: { rows: string[] }) {
 
 function Detail({ item, onDropped }: { item: Item; onDropped: () => void }) {
   const worn = item.equipped !== 0;
+  const inv = useLNState("PlayerInventory");
+  const onTitle = useLNState("FlowState")?.scene === "Title";
+  // Drop lays it at your feet where there's a world; while setting up (title) it just leaves the kit.
+  const dropLabel = inv?.canDrop ? "Drop" : onTitle ? "Remove" : null;
   return (
     <div className="pack-detail" style={{ ["--c" as string]: item.color }}>
-      <div className="pack-detail-name">{item.name}</div>
+      <div className="pack-detail-name">
+        {item.name}
+        {item.count > 1 && <span className="pack-detail-count"> &times;{item.count}</span>}
+      </div>
       <div className="pack-detail-kind">
         {KINDS[item.kind] ?? ""}
         {item.slot && slotName(item.slot) !== KINDS[item.kind] ? ` · ${slotName(item.slot)} slot` : ""} &middot; {item.bulk} bulk{item.value > 0 ? ` · ${item.value.toLocaleString()} cr` : ""}
@@ -356,9 +364,11 @@ function Detail({ item, onDropped }: { item: Item; onDropped: () => void }) {
             Rotate <kbd>R</kbd>
           </button>
         )}
-        {item.canDrop && (
-          <button type="button" className="sheet-btn danger" onClick={() => { LN.send("InventoryDropRequested", { uid: item.uid }); onDropped(); }}>
-            Drop
+        {item.canDrop && dropLabel && (
+          <button type="button" className="sheet-btn danger" onClick={() => { LN.send("InventoryDropRequested", { uid: item.uid }); onDropped(); }}
+                  title={dropLabel === "Drop" ? "Lay it at your feet (E picks it back up)" : "Take it out of your kit"}>
+            {dropLabel}
+            {item.count > 1 ? ` ×${item.count}` : ""}
           </button>
         )}
       </div>
@@ -393,6 +403,11 @@ function ItemView({ item, dragging, selected, onGrab, onUse }: {
       <span className="pack-label" style={{ ["--r" as string]: labelR, ["--cc" as string]: labelC }}>
         {item.name}
       </span>
+      {item.count > 1 && (
+        <span className="pack-count" style={{ ["--r" as string]: labelR, ["--cc" as string]: labelC }}>
+          &times;{item.count}
+        </span>
+      )}
     </div>
   );
 }

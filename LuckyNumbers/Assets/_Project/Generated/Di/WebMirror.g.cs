@@ -136,6 +136,7 @@ namespace LuckyNumbers.Model
                 NotifyCollectionChangedEventHandler<string> hGearBonuses = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(4);
                 s.GearBonuses.CollectionChanged += hGearBonuses;
                 d.Add(Disposable.Create(() => s.GearBonuses.CollectionChanged -= hGearBonuses));
+                d.Add(s.CanDrop.Subscribe(_ => sink.MarkState(4)));
                 sink.MarkState(4);
             }
             {
@@ -745,6 +746,8 @@ namespace LuckyNumbers.Model
                 }
             }
             b.Append(']');
+            b.Append(",\"canDrop\":");
+            b.Append(s.CanDrop.Value ? "true" : "false");
             b.Append('}');
         }
 
