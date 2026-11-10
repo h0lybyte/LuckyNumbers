@@ -4,6 +4,22 @@ Releases are driven by this file: the **top `## x.y.z` entry is the game version
 Bumping it on `main` builds the Web player, uploads it to itch.io with that version,
 and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version does not rebuild.
 
+## 0.3.1 (2026-11-10)
+
+- The flight home: on foot beside your landed fighter, E boards it. Lift off and climb to orbit (the HUD
+  shows how far), and you're back at the station, stepping off beside your docked ship
+- The museum calls as soon as you're back and buys every relic in your pack for its value: credits (shown
+  next to Sheet / Pack) and XP per relic. Come back empty-handed and it tells you the cargo's still down there
+- Item stacks: med-patches, rations, ping beacons, flares and trauma kits share a cell (x10, x5, x5, x3, x2).
+  Using one takes one; bulk and value count each copy
+- Drop puts the item at your feet on the planet (E picks it back up), and so does taking gear off with a full
+  pack. Not from the cockpit: land first
+- Every class starts with a Carbine in its weapon slot (the Ace's and Fixer's sidearm goes in the pack)
+- Weapons' finger grips are baked ahead of time, so hands close on a gun or knife cleanly from the first frame
+- Fixed: the cryo pods and corridor ribs in the station flickered (overlapping flush panels)
+- Fixed: the station's test rifle stayed by the old spawn after the station was rebuilt from your lucky number
+- Fixed: the hangar ship is framed the same size it is when you fly it
+
 ## 0.3.0 (2026-11-10)
 
 - Your character: Play opens character creation, a d20 sheet rolled from your lucky number. Six abilities
