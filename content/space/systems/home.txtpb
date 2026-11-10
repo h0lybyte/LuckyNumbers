@@ -5,8 +5,8 @@
 stars_ref: "space/skies/default"
 
 camera {
-  target: "home"
-  # In home-planet diameters.
+  # No target: orbit the crash site (the planet the lucky number picks), where the intro's freighter goes down.
+  # In that planet's diameters.
   distance: 2.5
   min_distance: 1
   max_distance: 10

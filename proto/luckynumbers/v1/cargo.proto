@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+import "luckynumbers/v1/common.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// The museum freighter and its cargo of relics, all generated from the lucky number (Cargo.Manifest).
+message CargoConfig {
+  option (ln.config) = true;
+  // Picked from by the seed: the ship, and the museum it flies for.
+  repeated string ship_names = 1;
+  repeated string museums = 2;
+  // How many relics are aboard.
+  int32 min_relics = 3;
+  int32 max_relics = 4;
+  repeated RelicCulture cultures = 5;
+  repeated RelicKind kinds = 6;
+}
+
+// Where a relic comes from: its name, what it's made of, where it was found, its colours (for the relic shaders).
+message RelicCulture {
+  string id = 1;
+  string name = 2;
+  repeated string materials = 3;
+  repeated string origins = 4;
+  // Share of the cargo (relative), and how much its relics are worth (x the kind's value).
+  float weight = 5;
+  float value_scale = 6;
+  Rgba color_a = 7;
+  Rgba color_b = 8;
+}
+
+// What a relic is (an amulet, a vase...), and what it's worth (credits).
+message RelicKind {
+  string id = 1;
+  string name = 2;
+  float value_min = 3;
+  float value_max = 4;
+}

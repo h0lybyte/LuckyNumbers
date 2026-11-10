@@ -11,3 +11,20 @@ python3 tools/ln.py serve --open
 Open the `LuckyNumbers/` subfolder in Unity Hub. Release: new `## x.y.z` at the top of `CHANGELOG.md`, merge to `main`.
 
 Docs: [docs/](docs/README.md)
+
+<!-- credits:begin (generated from content/credits.txtpb by tools/ln.py gen; edit that file) -->
+## Credits
+
+- Museum freighter (the cargo ship that crashes): [Deep Space Science Survey Vessel (PSX lo-fi)](https://sketchfab.com/3d-models/deep-space-science-survey-vessel-psx-lo-fi-925a09ef43fe4675acd0a935d61dcd43) by Vaportrash ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/))
+- Fighter ship and skins: [FREE Low Poly Space ship pack (fighter1)](https://retrovandal.itch.io/low-poly-space-ship-pack) by RetroVandal (formerly Psionic Games) (Free for freeware, shareware and commercial games)
+- First-person arms (rig, 13 animations, skin and glove textures): [PSX First Person Arms](https://drillimpact.itch.io/psx-first-person-arms-free) by DrillImpact (CC0, public domain)
+- Planet shader look: [Simple 2D Planet shader](https://www.shadertoy.com/view/Wcf3W7) by Ikkemcwood (Shadertoy)
+- Seeded nebula sky (layered gas, dark dust, emission knots): [Nebula Background Shadertoy Study (inspiration)](https://github.com/guinetik) by guinetik
+- Forming-system dust disk: [Protoplanetary disk (inspiration)](https://www.shadertoy.com/view/MdtGRl) by Duke (Shadertoy)
+- Noise and fBm techniques: [The Book of Shaders](https://thebookofshaders.com) by Patricio Gonzalez Vivo and Jen Lowe
+- 3D simplex noise: [webgl-noise](https://github.com/ashima/webgl-noise) by Ian McEwan, Stefan Gustavson and Ashima Arts (MIT)
+- UI font: [Exo 2](https://github.com/googlefonts/Exo-2.0) by Natanael Gama / The Exo 2 Project Authors (SIL Open Font License 1.1)
+- Libraries: [UniTask](https://github.com/Cysharp/UniTask), [R3](https://github.com/Cysharp/R3), [ObservableCollections](https://github.com/Cysharp/ObservableCollections), [MessagePipe](https://github.com/Cysharp/MessagePipe), [VContainer](https://github.com/hadashiA/VContainer), [NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity) (MIT)
+
+Details: [CREDITS.md](CREDITS.md) (also in the game: title screen, Credits).
+<!-- credits:end -->

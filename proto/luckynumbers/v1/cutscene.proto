@@ -19,6 +19,8 @@ message Cutscene {
   reserved 5, 7; // ship_skin, ship_skins: the skin is the player's choice now (PlayerShip)
   // Ship length, in target-planet diameters.
   float ship_size = 6;
+  // Body the ship is pulled into ("home"); empty = a planet of the system picked from the lucky number.
+  string target = 8;
 }
 
 message CutsceneStep {
@@ -66,12 +68,16 @@ message CrashLanding {
   float flash_seconds = 3;
 }
 
+// A line of text (typewriter). In cutscenes the text may use {ship}, {museum}, {planet}, {cargo}, {relics} and
+// {value}, filled from the seeded cargo manifest.
 message Dialogue {
   string speaker = 1;
   string text = 2;
   float duration_seconds = 3;
   // Typewriter speed; 0 = show the whole line at once.
   float chars_per_second = 4;
+  // In a cutscene: start the line and carry straight on with the next step (a caption over the action).
+  bool overlap = 5;
 }
 
 message GoTo {

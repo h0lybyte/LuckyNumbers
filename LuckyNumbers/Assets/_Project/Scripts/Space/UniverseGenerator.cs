@@ -173,6 +173,23 @@ namespace LuckyNumbers.Space
     }
 
     /// <summary>Lucky numbers: dice faces chained onto the previous number (FNV-1a), so rolls keep exploring.</summary>
+    /// <summary>Readable, seeded names for bodies ("planet-3" in system 1234 -> "Velmor III").</summary>
+    public static class BodyNames
+    {
+        static readonly string[] Syllables = { "ka", "vel", "mor", "ri", "tan", "lu", "xe", "dra", "on", "pha", "sun", "ae", "quil", "bor", "nyx", "ti" };
+        static readonly string[] Numerals = { "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII" };
+
+        /// <summary>The system's name from the seed, then the body's place in it (index in Worlds order).</summary>
+        public static string Planet(uint seed, int index)
+        {
+            var rng = new Unity.Mathematics.Random((seed ^ 0x5EEDBEEFu) | 1u);
+            var name = "";
+            for (var i = rng.NextInt(2, 4); i > 0; i--) name += Syllables[rng.NextInt(Syllables.Length)];
+            name = char.ToUpperInvariant(name[0]) + name.Substring(1);
+            return $"{name} {Numerals[Unity.Mathematics.math.clamp(index, 0, Numerals.Length - 1)]}";
+        }
+    }
+
     public static class LuckyNumber
     {
         public static uint Next(uint previous, IReadOnlyList<int> faces, IReadOnlyList<int> sides)

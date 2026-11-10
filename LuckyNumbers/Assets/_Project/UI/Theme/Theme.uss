@@ -76,6 +76,76 @@
     border-radius: 10px;
 }
 
+/* Credits: a taller panel with a scrolling list. */
+.ln-panel--tall {
+    top: 50%;
+    background-color: rgba(6, 6, 16, 0.98);
+    width: 760px;
+    max-width: 94%;
+    height: 82%;
+    justify-content: flex-start;
+}
+
+.ln-credits-intro {
+    margin: 6px 0 12px 0;
+    -unity-text-align: middle-center;
+    white-space: normal;
+}
+
+.ln-credits-list {
+    flex-grow: 1;
+    width: 100%;
+    margin-bottom: 14px;
+}
+
+.ln-credit-section {
+    font-size: 26px;
+    -unity-font-style: bold;
+    color: rgb(150, 170, 255);
+    margin: 14px 0 6px 0;
+}
+
+.unity-button.ln-credit {
+    margin: 0 0 10px 0;
+    padding: 4px 6px;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    border-radius: 6px;
+    align-items: flex-start;
+    -unity-text-align: upper-left;
+}
+
+/* Unity's default theme styles .unity-button:hover:enabled; match it so ours wins. */
+.unity-button.ln-credit:hover:enabled {
+    background-color: rgba(140, 160, 255, 0.12);
+}
+
+.unity-button.ln-credit:active:enabled {
+    background-color: rgba(140, 160, 255, 0.22);
+}
+
+.ln-credit Label {
+    -unity-text-align: upper-left;
+}
+
+.ln-credit-head {
+    font-size: 19px;
+    color: rgb(255, 255, 255);
+    white-space: normal;
+}
+
+.ln-credit-detail {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.7);
+    white-space: normal;
+}
+
+.ln-credit-link {
+    font-size: 14px;
+    color: rgb(140, 190, 255);
+    white-space: normal;
+}
+
 .ln-panel-title {
     font-size: 40px;
     -unity-font-style: bold;

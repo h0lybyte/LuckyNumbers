@@ -1,0 +1,100 @@
+# proto-file: luckynumbers/v1/credits.proto
+# proto-message: luckynumbers.v1.CreditsConfig
+# Single source: the title screen's Credits panel, CREDITS.md and README.md's one-liners (`tools/ln.py gen`).
+
+title: "Credits"
+intro: "Lucky Numbers is made with the work of these people. Thank you."
+back_label: "Back"
+
+sections {
+  name: "Models"
+  credits {
+    what: "Museum freighter (the cargo ship that crashes)"
+    title: "Deep Space Science Survey Vessel (PSX lo-fi)"
+    author: "Vaportrash"
+    license: "CC BY 4.0"
+    url: "https://sketchfab.com/3d-models/deep-space-science-survey-vessel-psx-lo-fi-925a09ef43fe4675acd0a935d61dcd43"
+    license_url: "https://creativecommons.org/licenses/by/4.0/"
+    notes: "Changes: converted from glTF to FBX split into one part per material (tools/blender/gltf_to_fbx_by_material.py), textures downsized to 512 px, and a convex collision mesh generated from it (tools/collision/decompose.py)."
+    path: "LuckyNumbers/Assets/_Project/Art/Models/CargoShip/"
+  }
+  credits {
+    what: "Fighter ship and skins"
+    title: "FREE Low Poly Space ship pack (fighter1)"
+    author: "RetroVandal (formerly Psionic Games)"
+    license: "Free for freeware, shareware and commercial games"
+    url: "https://retrovandal.itch.io/low-poly-space-ship-pack"
+    notes: "From a 2005 3D Game Resources skinning competition. Skins (named after their authors): IdolKnight (1st), Krulspeld (2nd), Kaos Kiwi (3rd), Lordshadow (4th), Wilko, Cinfa, Crono782, Cubik, Freelancer, Jodomatis, NMT3000, Psychic Parrot, Robin, Shadee, Snaz, Thor and Psionic."
+    path: "LuckyNumbers/Assets/_Project/Art/Models/Fighter/README-psionic.txt"
+  }
+  credits {
+    what: "First-person arms (rig, 13 animations, skin and glove textures)"
+    title: "PSX First Person Arms"
+    author: "DrillImpact"
+    license: "CC0, public domain"
+    url: "https://drillimpact.itch.io/psx-first-person-arms-free"
+  }
+}
+
+sections {
+  name: "Shaders"
+  credits {
+    what: "Planet shader look"
+    title: "Simple 2D Planet shader"
+    author: "Ikkemcwood"
+    license: "Shadertoy"
+    url: "https://www.shadertoy.com/view/Wcf3W7"
+    notes: "Adapted to 3D spheres."
+  }
+  credits {
+    what: "Seeded nebula sky (layered gas, dark dust, emission knots)"
+    title: "Nebula Background Shadertoy Study (inspiration)"
+    author: "guinetik"
+    url: "https://github.com/guinetik"
+    notes: "Written fresh, no code copied."
+  }
+  credits {
+    what: "Forming-system dust disk"
+    title: "Protoplanetary disk (inspiration)"
+    author: "Duke"
+    license: "Shadertoy"
+    url: "https://www.shadertoy.com/view/MdtGRl"
+    notes: "Written fresh, no code copied."
+  }
+  credits {
+    what: "Noise and fBm techniques"
+    title: "The Book of Shaders"
+    author: "Patricio Gonzalez Vivo and Jen Lowe"
+    url: "https://thebookofshaders.com"
+  }
+  credits {
+    what: "3D simplex noise"
+    title: "webgl-noise"
+    author: "Ian McEwan, Stefan Gustavson and Ashima Arts"
+    license: "MIT"
+    url: "https://github.com/ashima/webgl-noise"
+  }
+}
+
+sections {
+  name: "Fonts"
+  credits {
+    what: "UI font"
+    title: "Exo 2"
+    author: "Natanael Gama / The Exo 2 Project Authors"
+    license: "SIL Open Font License 1.1"
+    url: "https://github.com/googlefonts/Exo-2.0"
+    path: "LuckyNumbers/Assets/_Project/Art/Fonts/Exo2/OFL.txt"
+  }
+}
+
+sections {
+  name: "Libraries"
+  compact: true
+  credits { what: "Async/await" title: "UniTask" author: "Cysharp" license: "MIT" url: "https://github.com/Cysharp/UniTask" }
+  credits { what: "Reactive state" title: "R3" author: "Cysharp" license: "MIT" url: "https://github.com/Cysharp/R3" }
+  credits { what: "Observable collections" title: "ObservableCollections" author: "Cysharp" license: "MIT" url: "https://github.com/Cysharp/ObservableCollections" }
+  credits { what: "Messaging" title: "MessagePipe" author: "Cysharp" license: "MIT" url: "https://github.com/Cysharp/MessagePipe" }
+  credits { what: "Dependency injection" title: "VContainer" author: "hadashiA" license: "MIT" url: "https://github.com/hadashiA/VContainer" }
+  credits { what: "NuGet packages in Unity" title: "NuGetForUnity" author: "GlitchEnzo" license: "MIT" url: "https://github.com/GlitchEnzo/NuGetForUnity" }
+}

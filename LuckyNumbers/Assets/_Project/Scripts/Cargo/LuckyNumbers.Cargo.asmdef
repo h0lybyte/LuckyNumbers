@@ -1,0 +1,17 @@
+{
+    "name": "LuckyNumbers.Cargo",
+    "rootNamespace": "LuckyNumbers.Cargo",
+    "references": [
+        "LuckyNumbers.Model",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

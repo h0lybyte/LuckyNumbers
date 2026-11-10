@@ -16,5 +16,12 @@
             <ui:Label name="settings-body" class="ln-panel-body" picking-mode="Ignore" />
             <ui:Button name="settings-back" class="ln-button" />
         </ui:VisualElement>
+        <!-- Credits (content/credits.txtpb): sections and entries are added at runtime. -->
+        <ui:VisualElement name="credits" class="ln-panel ln-panel--tall ln-hidden">
+            <ui:Label name="credits-title" class="ln-panel-title" picking-mode="Ignore" />
+            <ui:Label name="credits-intro" class="ln-panel-body ln-credits-intro" picking-mode="Ignore" />
+            <ui:ScrollView name="credits-list" class="ln-credits-list" />
+            <ui:Button name="credits-back" class="ln-button" />
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -403,6 +403,7 @@ namespace LuckyNumbers.Model
                 case MenuAction.Unspecified: return "Unspecified";
                 case MenuAction.Play: return "Play";
                 case MenuAction.Settings: return "Settings";
+                case MenuAction.Credits: return "Credits";
                 default: return ((int)v).ToString(CultureInfo.InvariantCulture);
             }
         }
@@ -415,6 +416,7 @@ namespace LuckyNumbers.Model
                 case "Unspecified": return MenuAction.Unspecified;
                 case "Play": return MenuAction.Play;
                 case "Settings": return MenuAction.Settings;
+                case "Credits": return MenuAction.Credits;
                 default: return default;
             }
         }

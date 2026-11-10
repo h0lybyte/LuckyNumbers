@@ -607,8 +607,39 @@ def check_materials(model: Model, shader_root: Path) -> None:
             raise ValueError(f"{msg.name}: shader '{msg.material}' has no properties {', '.join(missing)}")
 
 
-def run(protoc: str, include: Path, proto_dir: Path, content_dir: Path, header_re,
-        shader_root: Path | None = None) -> dict[str, str]:
+def decode(model: Model, full: str, payload: bytes) -> dict:
+    """A content payload as plain Python values (field name -> str/int/float/bool/dict, lists for repeated),
+    for tools that render content to other formats (e.g. Markdown). Unset fields are absent."""
+    msg = model.messages[full]
+    by_num = {f.number: f for f in msg.fields}
+    out: dict = {}
+    for num, wt, v in _fields(payload):
+        f = by_num.get(num)
+        if f is None:
+            continue
+        if f.type == T_MESSAGE:
+            if f.repeated:
+                out.setdefault(f.name, []).append(decode(model, f.type_name, v))
+            else:   # repeated occurrences of a singular message merge
+                out[f.name] = {**out.get(f.name, {}), **decode(model, f.type_name, v)}
+            continue
+        if f.type == 9:
+            x = _str(v)
+        elif f.type == 2:
+            x = struct.unpack("<f", v)[0] if wt == 5 else [struct.unpack("<f", v[i:i + 4])[0] for i in range(0, len(v), 4)]
+        elif f.type == 8:
+            x = bool(v)
+        else:
+            x = v
+        if f.repeated:
+            out.setdefault(f.name, []).extend(x if isinstance(x, list) else [x])
+        else:
+            out[f.name] = x
+    return out
+
+
+def load(protoc: str, include: Path, proto_dir: Path, content_dir: Path, header_re) -> tuple[Model, dict, dict]:
+    """Descriptors + every content file: (model, resolved {path: (full type, payload)}, raw)."""
     import tempfile
     protos = sorted(str(p.relative_to(proto_dir)) for p in proto_dir.rglob("*.proto"))
     with tempfile.TemporaryDirectory() as tmp:
@@ -618,9 +649,6 @@ def run(protoc: str, include: Path, proto_dir: Path, content_dir: Path, header_r
                        capture_output=True, check=True)
         desc = out.read_bytes()
     model = load_descriptors(desc)
-    if shader_root is not None:
-        check_materials(model, shader_root)
-    namespace = "LuckyNumbers.Model"
 
     # Every content file by path ("space/looks/planets/ice"); `# proto-extends: <path>` merges a base first.
     raw = {}
@@ -652,7 +680,15 @@ def run(protoc: str, include: Path, proto_dir: Path, content_dir: Path, header_r
 
     for key in raw:
         resolve(key)
+    return model, resolved, raw
+
+
+def run(protoc: str, include: Path, proto_dir: Path, content_dir: Path, header_re,
+        shader_root: Path | None = None) -> dict[str, str]:
+    model, resolved, raw = load(protoc, include, proto_dir, content_dir, header_re)
+    if shader_root is not None:
+        check_materials(model, shader_root)
     # Top-level files are game configs (baked into GameContent); subfolders are a library for refs/extends.
     content = [(raw[k][3], *resolved[k]) for k in raw if "/" not in k]
-    return generate(model, content, namespace, resolved)
+    return generate(model, content, "LuckyNumbers.Model", resolved)
 
