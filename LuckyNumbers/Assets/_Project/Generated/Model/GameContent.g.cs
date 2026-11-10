@@ -1783,7 +1783,7 @@ namespace LuckyNumbers.Model
             },
             Landing = new FlightLanding
             {
-                ShipLength = 16.0f,
+                ShipLength = 24.0f,
                 StartAltitude = 110.0f,
                 StartDistance = 260.0f,
                 StartSpeed = 30.0f,
@@ -1800,8 +1800,8 @@ namespace LuckyNumbers.Model
                 MaxTouchdownVertical = 4.0f,
                 MaxTouchdownHorizontal = 7.0f,
                 MaxTouchdownTilt = 18.0f,
-                ChaseDistance = 2.2f,
-                ChaseHeight = 0.7f,
+                ChaseDistance = 1.45f,
+                ChaseHeight = 0.42f,
                 Hint = "Mouse aim - W/S thrust - A/D strafe - Q/E roll - Space/C up/down - Shift boost - X brake. Stop over the green pad, hold C to land.",
                 LandedText = "Landed.",
                 CrashedText = "Too hard. Try again.",
