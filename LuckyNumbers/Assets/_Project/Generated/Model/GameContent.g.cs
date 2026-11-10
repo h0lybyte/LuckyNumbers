@@ -11,6 +11,281 @@ namespace LuckyNumbers.Model
 {
     public static class GameContent
     {
+        /// <summary>From <c>content/cargo.txtpb</c>.</summary>
+        public static readonly CargoConfig Cargo = new CargoConfig
+        {
+            ShipNames =
+            {
+                "MSV Curator",
+                "MSV Long Memory",
+                "MSV Patient Archive",
+                "MSV Quiet Reliquary",
+                "MSV Old Light",
+            },
+            Museums =
+            {
+                "Galactic Museum of Antiquities",
+                "Hall of Lost Worlds",
+                "Interstellar Heritage Trust",
+                "Museum of Before",
+            },
+            MinRelics = 6,
+            MaxRelics = 11,
+            Cultures =
+            {
+                new RelicCulture
+                {
+                    Id = "tibetan",
+                    Name = "Tibetan",
+                    Materials =
+                    {
+                        "gilded copper",
+                        "turquoise-set silver",
+                        "lacquered wood",
+                        "dzi agate",
+                    },
+                    Origins =
+                    {
+                        "a Lhasa monastery",
+                        "the Changtang plateau",
+                        "a Himalayan pass shrine",
+                    },
+                    Weight = 1.0f,
+                    ValueScale = 1.2f,
+                    ColorA = new Rgba(0.75f, 0.12f, 0.08f, 1.0f),
+                    ColorB = new Rgba(0.95f, 0.75f, 0.25f, 1.0f),
+                },
+                new RelicCulture
+                {
+                    Id = "roman",
+                    Name = "Roman",
+                    Materials =
+                    {
+                        "terracotta",
+                        "bronze",
+                        "glass",
+                        "marble",
+                    },
+                    Origins =
+                    {
+                        "a villa near Pompeii",
+                        "a wreck off Sicily",
+                        "a Hadrian's Wall fort",
+                    },
+                    Weight = 1.0f,
+                    ValueScale = 1.0f,
+                    ColorA = new Rgba(0.72f, 0.36f, 0.2f, 1.0f),
+                    ColorB = new Rgba(0.1f, 0.08f, 0.06f, 1.0f),
+                },
+                new RelicCulture
+                {
+                    Id = "alien",
+                    Name = "unknown alien",
+                    Materials =
+                    {
+                        "living crystal",
+                        "humming alloy",
+                        "a metal that isn't",
+                        "folded glass",
+                    },
+                    Origins =
+                    {
+                        "a dead moon's vault",
+                        "a signal no one answered",
+                        "the far side of the galaxy",
+                    },
+                    Weight = 0.6f,
+                    ValueScale = 2.5f,
+                    ColorA = new Rgba(0.2f, 0.95f, 0.75f, 1.0f),
+                    ColorB = new Rgba(0.55f, 0.2f, 0.95f, 1.0f),
+                },
+            },
+            Kinds =
+            {
+                new RelicKind
+                {
+                    Id = "amulet",
+                    Name = "amulet",
+                    ValueMin = 300.0f,
+                    ValueMax = 900.0f,
+                },
+                new RelicKind
+                {
+                    Id = "vase",
+                    Name = "vase",
+                    ValueMin = 500.0f,
+                    ValueMax = 1500.0f,
+                },
+            },
+        };
+
+        /// <summary>From <c>content/credits.txtpb</c>.</summary>
+        public static readonly CreditsConfig Credits = new CreditsConfig
+        {
+            Title = "Credits",
+            Intro = "Lucky Numbers is made with the work of these people. Thank you.",
+            BackLabel = "Back",
+            Sections =
+            {
+                new CreditSection
+                {
+                    Name = "Models",
+                    Credits =
+                    {
+                        new Credit
+                        {
+                            What = "Museum freighter (the cargo ship that crashes)",
+                            Title = "Deep Space Science Survey Vessel (PSX lo-fi)",
+                            Author = "Vaportrash",
+                            License = "CC BY 4.0",
+                            Url = "https://sketchfab.com/3d-models/deep-space-science-survey-vessel-psx-lo-fi-925a09ef43fe4675acd0a935d61dcd43",
+                            LicenseUrl = "https://creativecommons.org/licenses/by/4.0/",
+                            Notes = "Changes: converted from glTF to FBX split into one part per material (tools/blender/gltf_to_fbx_by_material.py), textures downsized to 512 px, and a convex collision mesh generated from it (tools/collision/decompose.py).",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Models/CargoShip/",
+                        },
+                        new Credit
+                        {
+                            What = "Fighter ship and skins",
+                            Title = "FREE Low Poly Space ship pack (fighter1)",
+                            Author = "RetroVandal (formerly Psionic Games)",
+                            License = "Free for freeware, shareware and commercial games",
+                            Url = "https://retrovandal.itch.io/low-poly-space-ship-pack",
+                            Notes = "From a 2005 3D Game Resources skinning competition. Skins (named after their authors): IdolKnight (1st), Krulspeld (2nd), Kaos Kiwi (3rd), Lordshadow (4th), Wilko, Cinfa, Crono782, Cubik, Freelancer, Jodomatis, NMT3000, Psychic Parrot, Robin, Shadee, Snaz, Thor and Psionic.",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Models/Fighter/README-psionic.txt",
+                        },
+                        new Credit
+                        {
+                            What = "First-person arms (rig, 13 animations, skin and glove textures)",
+                            Title = "PSX First Person Arms",
+                            Author = "DrillImpact",
+                            License = "CC0, public domain",
+                            Url = "https://drillimpact.itch.io/psx-first-person-arms-free",
+                        },
+                    },
+                },
+                new CreditSection
+                {
+                    Name = "Shaders",
+                    Credits =
+                    {
+                        new Credit
+                        {
+                            What = "Planet shader look",
+                            Title = "Simple 2D Planet shader",
+                            Author = "Ikkemcwood",
+                            License = "Shadertoy",
+                            Url = "https://www.shadertoy.com/view/Wcf3W7",
+                            Notes = "Adapted to 3D spheres.",
+                        },
+                        new Credit
+                        {
+                            What = "Seeded nebula sky (layered gas, dark dust, emission knots)",
+                            Title = "Nebula Background Shadertoy Study (inspiration)",
+                            Author = "guinetik",
+                            Url = "https://github.com/guinetik",
+                            Notes = "Written fresh, no code copied.",
+                        },
+                        new Credit
+                        {
+                            What = "Forming-system dust disk",
+                            Title = "Protoplanetary disk (inspiration)",
+                            Author = "Duke",
+                            License = "Shadertoy",
+                            Url = "https://www.shadertoy.com/view/MdtGRl",
+                            Notes = "Written fresh, no code copied.",
+                        },
+                        new Credit
+                        {
+                            What = "Noise and fBm techniques",
+                            Title = "The Book of Shaders",
+                            Author = "Patricio Gonzalez Vivo and Jen Lowe",
+                            Url = "https://thebookofshaders.com",
+                        },
+                        new Credit
+                        {
+                            What = "3D simplex noise",
+                            Title = "webgl-noise",
+                            Author = "Ian McEwan, Stefan Gustavson and Ashima Arts",
+                            License = "MIT",
+                            Url = "https://github.com/ashima/webgl-noise",
+                        },
+                    },
+                },
+                new CreditSection
+                {
+                    Name = "Fonts",
+                    Credits =
+                    {
+                        new Credit
+                        {
+                            What = "UI font",
+                            Title = "Exo 2",
+                            Author = "Natanael Gama / The Exo 2 Project Authors",
+                            License = "SIL Open Font License 1.1",
+                            Url = "https://github.com/googlefonts/Exo-2.0",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Fonts/Exo2/OFL.txt",
+                        },
+                    },
+                },
+                new CreditSection
+                {
+                    Name = "Libraries",
+                    Credits =
+                    {
+                        new Credit
+                        {
+                            What = "Async/await",
+                            Title = "UniTask",
+                            Author = "Cysharp",
+                            License = "MIT",
+                            Url = "https://github.com/Cysharp/UniTask",
+                        },
+                        new Credit
+                        {
+                            What = "Reactive state",
+                            Title = "R3",
+                            Author = "Cysharp",
+                            License = "MIT",
+                            Url = "https://github.com/Cysharp/R3",
+                        },
+                        new Credit
+                        {
+                            What = "Observable collections",
+                            Title = "ObservableCollections",
+                            Author = "Cysharp",
+                            License = "MIT",
+                            Url = "https://github.com/Cysharp/ObservableCollections",
+                        },
+                        new Credit
+                        {
+                            What = "Messaging",
+                            Title = "MessagePipe",
+                            Author = "Cysharp",
+                            License = "MIT",
+                            Url = "https://github.com/Cysharp/MessagePipe",
+                        },
+                        new Credit
+                        {
+                            What = "Dependency injection",
+                            Title = "VContainer",
+                            Author = "hadashiA",
+                            License = "MIT",
+                            Url = "https://github.com/hadashiA/VContainer",
+                        },
+                        new Credit
+                        {
+                            What = "NuGet packages in Unity",
+                            Title = "NuGetForUnity",
+                            Author = "GlitchEnzo",
+                            License = "MIT",
+                            Url = "https://github.com/GlitchEnzo/NuGetForUnity",
+                        },
+                    },
+                    Compact = true,
+                },
+            },
+        };
+
         /// <summary>From <c>content/intro.txtpb</c>.</summary>
         public static readonly Cutscene Intro = new Cutscene
         {
@@ -22,6 +297,17 @@ namespace LuckyNumbers.Model
                     ShipArrives = new ShipArrives
                     {
                         DurationSeconds = 3.0f,
+                    },
+                },
+                new CutsceneStep
+                {
+                    Dialogue = new Dialogue
+                    {
+                        Speaker = "{ship} - MAYDAY",
+                        Text = "{museum} freighter going down over {planet}. Cargo: {relics} relics, {cargo}.",
+                        DurationSeconds = 6.5f,
+                        CharsPerSecond = 34.0f,
+                        Overlap = true,
                     },
                 },
                 new CutsceneStep
@@ -78,7 +364,6 @@ namespace LuckyNumbers.Model
                 },
                 Camera = new CameraOrbit
                 {
-                    Target = "home",
                     Distance = 2.5f,
                     MinDistance = 1.0f,
                     MaxDistance = 10.0f,
@@ -449,7 +734,7 @@ namespace LuckyNumbers.Model
                 },
                 Instant = true,
             },
-            ShipSize = 0.05f,
+            ShipSize = 0.1f,
         };
 
         /// <summary>From <c>content/planet.txtpb</c>.</summary>
@@ -481,7 +766,6 @@ namespace LuckyNumbers.Model
                 },
                 Camera = new CameraOrbit
                 {
-                    Target = "home",
                     Distance = 2.5f,
                     MinDistance = 1.0f,
                     MaxDistance = 10.0f,
@@ -867,8 +1151,8 @@ namespace LuckyNumbers.Model
             BobFrequency = 1.9f,
             Sway = 0.06f,
             WakeSeconds = 3.2f,
-            WreckDistance = 9.0f,
-            WreckLength = 11.0f,
+            WreckDistance = 26.0f,
+            WreckLength = 30.0f,
             Haze = 0.6f,
             SunElevationDegrees = 38.0f,
             Hint = "Click to look around - WASD to move - Shift to run - Space to jump - E to pick up, click to throw - M for the map",
@@ -1430,7 +1714,6 @@ namespace LuckyNumbers.Model
                 },
                 Camera = new CameraOrbit
                 {
-                    Target = "home",
                     Distance = 2.5f,
                     MinDistance = 1.0f,
                     MaxDistance = 10.0f,
@@ -1813,6 +2096,11 @@ namespace LuckyNumbers.Model
                 {
                     Label = "Settings",
                     Action = MenuAction.Settings,
+                },
+                new MenuItem
+                {
+                    Label = "Credits",
+                    Action = MenuAction.Credits,
                 },
             },
             Settings = new SettingsPanel

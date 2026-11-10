@@ -157,3 +157,22 @@ kbd {
   overflow-wrap: anywhere;
 }
 .inspector .payload { color: var(--muted); }
+
+.inspector .send-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px;
+  margin-top: 8px;
+}
+.inspector .send-form select { grid-column: 1 / -1; }
+.inspector .send-form select,
+.inspector .send-form input {
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--fg);
+  font: inherit;
+}
+.inspector .send-form .error { grid-column: 1 / -1; color: #e5484d; }

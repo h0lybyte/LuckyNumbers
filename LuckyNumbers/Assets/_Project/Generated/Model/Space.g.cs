@@ -231,7 +231,8 @@ namespace LuckyNumbers.Model
     public sealed class CameraOrbit
     {
         /// <summary>
-        /// Body id to orbit around.
+        /// Body id to orbit around; empty = the crash site, a planet of the system picked from the lucky number
+        /// (ISpaceDirector.Focus), so the title already looks at where the freighter goes down.
         /// </summary>
         public string Target { get; set; }
         /// <summary>

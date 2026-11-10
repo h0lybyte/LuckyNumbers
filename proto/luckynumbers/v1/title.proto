@@ -74,6 +74,8 @@ enum MenuAction {
   MENU_ACTION_UNSPECIFIED = 0;
   MENU_ACTION_PLAY = 1;
   MENU_ACTION_SETTINGS = 2;
+  // The Credits panel (content/credits.txtpb).
+  MENU_ACTION_CREDITS = 3;
 }
 
 message MenuItem {

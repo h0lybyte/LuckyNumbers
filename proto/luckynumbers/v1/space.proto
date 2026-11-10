@@ -134,7 +134,8 @@ message Orbit {
 
 // Drag rotates the camera around `target`; scroll zooms.
 message CameraOrbit {
-  // Body id to orbit around.
+  // Body id to orbit around; empty = the crash site, a planet of the system picked from the lucky number
+  // (ISpaceDirector.Focus), so the title already looks at where the freighter goes down.
   string target = 1;
   // Distances and frame_offset are in target diameters, so any planet size frames the same.
   float distance = 2;

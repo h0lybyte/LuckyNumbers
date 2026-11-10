@@ -12,7 +12,8 @@
         "R3.Unity",
         "UniTask",
         "LuckyNumbers.Title",
-        "Unity.Mathematics"
+        "Unity.Mathematics",
+        "LuckyNumbers.Cargo"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

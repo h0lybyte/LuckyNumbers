@@ -50,6 +50,27 @@ namespace LuckyNumbers.Space
         public void TakeCamera() => _directed = true;
         public void Release() => _directed = false;
 
+        public System.Collections.Generic.IReadOnlyList<string> Worlds
+        {
+            get
+            {
+                var worlds = new System.Collections.Generic.List<string>();
+                for (var i = 0; i < (_world?.Count ?? 0); i++)
+                {
+                    if (_world.Kind[i] != BodyKind.Planet) continue;
+                    var parent = _world.OrbitParent[i];
+                    if (parent < 0 || _world.Kind[parent] == BodyKind.Star) worlds.Add(_world.Ids[i]);   // moons orbit planets
+                }
+                return worlds;
+            }
+        }
+
+        public string Focus => _world != null && _world.Count > 0 ? _world.Ids[_target] : null;
+
+        /// <summary>The planet the museum freighter goes down on: one of the system's planets, from the lucky number.</summary>
+        public static string CrashSite(System.Collections.Generic.IReadOnlyList<string> worlds, uint seed) =>
+            worlds.Count == 0 ? null : worlds[new Unity.Mathematics.Random((seed ^ 0xA11CE5EDu) | 1u).NextInt(worlds.Count)];
+
         public string Nearest(float3 point, out float surfaceDistance)
         {
             string best = null;
@@ -152,7 +173,9 @@ namespace LuckyNumbers.Space
             _sun = _world.FirstStar();
             if (_sun >= 0) Shader.SetGlobalVector(SunColor, _world.Star[_sun].LightColor.ToColor());
             else Shader.SetGlobalVector(SunPosition, Vector4.zero); // planets fall back to a fixed light direction
-            _target = math.max(0, _world.IndexOf(_backdrop.Camera.Target));
+            // Camera focus: the configured body, or the crash site picked from the lucky number (same for every scene).
+            var focus = string.IsNullOrEmpty(_backdrop.Camera.Target) ? CrashSite(Worlds, _seed) : _backdrop.Camera.Target;
+            _target = math.max(0, _world.IndexOf(focus));
             _systemRadius = 0f;
             for (var i = 0; i < _world.Count; i++)
                 if (_world.Kind[i] != BodyKind.Galaxy) _systemRadius = math.max(_systemRadius, math.length(_world.Position[i]) * 1.2f);

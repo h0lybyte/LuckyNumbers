@@ -1,6 +1,7 @@
 // Textured ship lit by the universe's star (globals _LnSunPosition / _LnSunColor, like Planet3D):
 // wrapped diffuse + ambient floor + a soft fill from the camera side (dark skins and the night side stay
 // readable), bright saturated texels (lights, engines) glow regardless of light, thin rim against space.
+// Optional: double-sided (_Cull Off; back faces lit from their side) and alpha cutout (_Cutoff > 0) for decals.
 Shader "LuckyNumbers/Ship"
 {
     Properties
@@ -11,6 +12,8 @@ Shader "LuckyNumbers/Ship"
         _Glow ("Light Glow", Float) = 1.5
         _Rim ("Rim", Float) = 0.35
         _Heat ("Entry Heat (0..1, set at runtime)", Range(0, 1)) = 0
+        [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 2
+        _Cutoff ("Alpha Cutoff (0 = opaque)", Range(0, 1)) = 0
     }
 
     SubShader
@@ -19,6 +22,7 @@ Shader "LuckyNumbers/Ship"
 
         Pass
         {
+            Cull [_Cull]
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -29,7 +33,7 @@ Shader "LuckyNumbers/Ship"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
-                float _Ambient, _Fill, _Glow, _Rim, _Heat;
+                float _Ambient, _Fill, _Glow, _Rim, _Heat, _Cutoff;
             CBUFFER_END
 
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; float2 uv : TEXCOORD0; };
@@ -45,10 +49,12 @@ Shader "LuckyNumbers/Ship"
                 return o;
             }
 
-            float4 frag(Varyings i) : SV_Target
+            float4 frag(Varyings i, bool front : SV_IsFrontFace) : SV_Target
             {
-                float3 albedo = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv).rgb;
-                float3 n = normalize(i.normalWS);
+                float4 texel = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
+                if (_Cutoff > 0.0) clip(texel.a - _Cutoff);
+                float3 albedo = texel.rgb;
+                float3 n = normalize(i.normalWS) * (front ? 1.0 : -1.0);
                 bool sunSet = _LnSunPosition.w > 0.5;
                 float3 l = sunSet ? normalize(_LnSunPosition.xyz - i.positionWS) : normalize(float3(0.6, 0.3, -0.7));
                 float3 sun = sunSet ? _LnSunColor.rgb : float3(1, 1, 1);

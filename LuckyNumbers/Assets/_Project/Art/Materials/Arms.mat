@@ -30,6 +30,8 @@ Material:
     m_Ints: []
     m_Floats:
     - _Ambient: 0.22
+    - _Cull: 2
+    - _Cutoff: 0
     - _Fill: 0.45
     - _Glow: 0
     - _Heat: 0

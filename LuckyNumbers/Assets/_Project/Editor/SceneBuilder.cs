@@ -70,7 +70,7 @@ namespace LuckyNumbers.Editor
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var ui = Document("UI", rig.Panel, "Intro");
             SpaceRig(rig, ui);   // same universe as the title (IntroScope registers the intro backdrop)
-            ShipRig();
+            FreighterRig();      // the museum freighter that goes down
             var view = new GameObject("IntroView").AddComponent<IntroView>();
             Assign(view, ("document", ui));
             var dice = new GameObject("DiceView").AddComponent<DiceView>();
@@ -218,7 +218,7 @@ namespace LuckyNumbers.Editor
                    ("moonTemplate", moonTemplate));
             mapCamGo.SetActive(false);
 
-            ShipRig(collide: true);   // the wreck: solid, so you walk around (and onto) it
+            FreighterRig(collide: true);   // the wreck: the museum freighter, solid, so you walk around (and onto) it
             Scopes<PlanetScope>();
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Planet.unity");
         }
@@ -258,6 +258,79 @@ namespace LuckyNumbers.Editor
             sk.arraySize = skins.Count;
             for (var i = 0; i < skins.Count; i++) sk.GetArrayElementAtIndex(i).objectReferenceValue = skins[i];
             so.ApplyModifiedPropertiesWithoutUndo();
+            pivot.gameObject.SetActive(false);
+        }
+
+        const string FreighterDir = "Assets/_Project/Art/Models/CargoShip";
+        // Alpha BLEND in the source glTF (decals): alpha-tested here. Every part is double-sided.
+        static readonly string[] FreighterDecals = { "mat_0001", "mat_0016" };
+
+        /// <summary>
+        /// The museum freighter (CC BY, see CREDITS): one part per material, named after it (mat_0005 uses
+        /// Textures/tex_0005), its own look kept (no skins). Pivot +Z forward; length measured from the model.
+        /// With `collide`: the convex pieces of cargo_ship_collision.obj (tools/collision/decompose.py).
+        /// </summary>
+        static void FreighterRig(bool collide = false)
+        {
+            var model = AssetDatabase.LoadAssetAtPath<GameObject>($"{FreighterDir}/cargo_ship.fbx")
+                        ?? throw new System.Exception("cargo_ship.fbx missing");
+            var view = new GameObject("Freighter").AddComponent<ShipView>();
+            var pivot = new GameObject("Pivot").transform;
+            pivot.SetParent(view.transform, false);
+            var ship = (GameObject)PrefabUtility.InstantiatePrefab(model);
+            ship.transform.SetParent(pivot, false);
+            ship.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);   // bow (antennas) to +Z
+            var renderers = ship.GetComponentsInChildren<Renderer>();
+            var bounds = new Bounds();
+            for (var i = 0; i < renderers.Length; i++)
+            {
+                var r = renderers[i];
+                var part = r.gameObject.name.Split('.')[0];                     // "mat_0005" (or "mat_0005.002")
+                var texture = AssetDatabase.LoadAssetAtPath<Texture2D>($"{FreighterDir}/Textures/{part.Replace("mat_", "tex_")}.png");
+                if (texture == null) Debug.LogWarning($"[SceneBuilder] freighter part {r.gameObject.name}: no texture");
+                var mat = MaterialAsset($"Freighter_{part}", "LuckyNumbers/Ship");
+                mat.mainTexture = texture;
+                mat.SetFloat("_Cull", (float)UnityEngine.Rendering.CullMode.Off);
+                mat.SetFloat("_Cutoff", System.Array.IndexOf(FreighterDecals, part) >= 0 ? 0.5f : 0f);
+                EditorUtility.SetDirty(mat);
+                r.sharedMaterial = mat;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                var b = r.bounds;
+                if (i == 0) bounds = b; else bounds.Encapsulate(b);
+            }
+            // Solid collision: convex pieces from tools/collision/decompose.py (a watertight remesh decomposed, so no
+            // hollow to fall into, while gaps and overhangs stay open). One convex MeshCollider each, not rendered.
+            if (collide)
+            {
+                var source = AssetDatabase.LoadAssetAtPath<GameObject>($"{FreighterDir}/cargo_ship_collision.obj")
+                             ?? throw new System.Exception("cargo_ship_collision.obj missing (tools/collision/decompose.py)");
+                var hulls = (GameObject)PrefabUtility.InstantiatePrefab(source);
+                hulls.name = "Collision";
+                hulls.transform.SetParent(ship.transform, false);
+                var hullBounds = new Bounds();
+                var pieces = hulls.GetComponentsInChildren<MeshFilter>();
+                for (var i = 0; i < pieces.Length; i++)
+                {
+                    var hr = pieces[i].GetComponent<MeshRenderer>();
+                    if (i == 0) hullBounds = hr.bounds; else hullBounds.Encapsulate(hr.bounds);
+                    var c = pieces[i].gameObject.AddComponent<MeshCollider>();
+                    c.sharedMesh = pieces[i].sharedMesh;
+                    c.convex = true;
+                    Object.DestroyImmediate(hr);
+                }
+                Debug.Log($"[SceneBuilder] freighter collision: {pieces.Length} convex pieces, bounds {hullBounds.center} {hullBounds.size} " +
+                          $"(model {bounds.center} {bounds.size})");
+            }
+
+            var so = new SerializedObject(view);
+            so.FindProperty("pivot").objectReferenceValue = pivot;
+            so.FindProperty("modelLength").floatValue = bounds.size.z;
+            var rs = so.FindProperty("renderers");
+            rs.arraySize = renderers.Length;
+            for (var i = 0; i < renderers.Length; i++) rs.GetArrayElementAtIndex(i).objectReferenceValue = renderers[i];
+            so.FindProperty("skins").arraySize = 0;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            Debug.Log($"[SceneBuilder] freighter: {renderers.Length} parts, {bounds.size.x:0.#} x {bounds.size.y:0.#} x {bounds.size.z:0.#} m");
             pivot.gameObject.SetActive(false);
         }
 

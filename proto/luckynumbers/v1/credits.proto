@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Everyone whose work is in the game: the single source for the title screen's Credits panel, CREDITS.md and
+// the one-liners in README.md (both written by `tools/ln.py gen`, checked by `gen --check`).
+message CreditsConfig {
+  option (ln.config) = true;
+  string title = 1;
+  string intro = 2;
+  string back_label = 3;
+  repeated CreditSection sections = 4;
+}
+
+message CreditSection {
+  string name = 1;
+  repeated Credit credits = 2;
+  // README.md: the whole section on one line (e.g. libraries) instead of a line per credit.
+  bool compact = 3;
+}
+
+message Credit {
+  // What it is in the game (e.g. "Museum freighter"), and the work's own title.
+  string what = 1;
+  string title = 2;
+  string author = 3;
+  string license = 4;
+  string url = 5;
+  string license_url = 6;
+  // Longer details (changes we made, who did what): CREDITS.md and the in-game panel, not the README.
+  string notes = 7;
+  // Where it lives in the repo (optional).
+  string path = 8;
+}

@@ -31,6 +31,10 @@ namespace LuckyNumbers.Model
         Unspecified = 0,
         Play = 1,
         Settings = 2,
+        /// <summary>
+        /// The Credits panel (content/credits.txtpb).
+        /// </summary>
+        Credits = 3,
     }
 
     /// <summary>

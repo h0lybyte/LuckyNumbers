@@ -28,6 +28,8 @@ Assemblies: `LuckyNumbers.Model` (types + content, no engine refs) and `LuckyNum
 
 ```
 content/title.txtpb, intro.txtpb, planet.txtpb, player.txtpb   game configs (top level, must be (ln.config)) -> GameContent.*
+content/cargo.txtpb                              the museum freighter's seeded manifest: ships, museums, cultures, relic kinds
+content/credits.txtpb                            credits: the title's Credits panel; `gen` also writes CREDITS.md and README.md's block
 content/space/systems/home.txtpb                 library: a whole solar system (camera, bodies, orbits)
 content/space/looks/planet_base.txtpb            library: defaults every planet look extends
 content/space/looks/planets/*.txtpb              library: planet presets

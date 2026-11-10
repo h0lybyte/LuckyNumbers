@@ -77,6 +77,17 @@ namespace LuckyNumbers.Core
                 Debug.LogWarning($"[SceneFlow] {target} scene not built yet; back to Title");
                 target = GameScene.Title;
             }
+            if (_pending != null && _pendingScene != target)
+            {
+                // Unity runs async loads in order, and one held at allowSceneActivation = false blocks every load
+                // queued after it (the old hang: Title preloads Intro, asking for Planet never arrived). There's no
+                // cancel: let the preload finish (its scene is active for a frame or two), then load the target.
+                var held = _pending;
+                _pending = null;
+                held.allowSceneActivation = true;
+                held.completed += _ => Activate(target);
+                return;
+            }
             var op = _pending != null && _pendingScene == target ? _pending : SceneManager.LoadSceneAsync(target.ToString());
             _pending = null;
             op.allowSceneActivation = true;
