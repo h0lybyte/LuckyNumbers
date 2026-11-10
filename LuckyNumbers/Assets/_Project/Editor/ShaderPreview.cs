@@ -211,7 +211,9 @@ namespace LuckyNumbers.Editor
             world.transform.localScale = Vector3.one * 150f;
             world.GetComponent<MeshRenderer>().sharedMaterial = new Material(Find("LuckyNumbers/Planet3D"));
             var config = LuckyNumbers.Model.GameContent.Station;
-            view.Build(config);
+            var seeded = config.Generator != null && config.Generator.Enabled;
+            var layout = seeded ? LuckyNumbers.Station.LayoutGenerator.Generate(config, 3250720893u) : null;   // the title's first roll
+            view.Build(config, layout);
             var plan = view.Plan;
 
             Camera Eye(Vector3 from, Vector3 to)
@@ -289,6 +291,39 @@ namespace LuckyNumbers.Editor
             SaveGrid(new[] { corridor, RoomView(big[0]) }, modes.Length, "preview-station-lights.png",
                      row => view.SetLights(modes[row]));
             view.SetLights(LuckyNumbers.Model.StationLightMode.On);
+            // Four lucky numbers, four stations (from above).
+            if (seeded)
+            {
+                int w = Width / 2, h = Height / 2;
+                var sheet = new Texture2D(Width, Height, TextureFormat.RGB24, false);
+                var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
+                var seeds = new[] { 1u, 777u, 424242u, 9001u };
+                for (var i = 0; i < seeds.Length; i++)
+                {
+                    view.Build(config, LuckyNumbers.Station.LayoutGenerator.Generate(config, seeds[i]));
+                    var p2 = view.Plan;
+                    var cam = new GameObject("Seed").AddComponent<Camera>();
+                    cam.orthographic = true;
+                    cam.clearFlags = CameraClearFlags.SolidColor;
+                    cam.backgroundColor = new Color(0.05f, 0.05f, 0.08f);
+                    var span = new Vector2(p2.Width, p2.Depth) * 2f;
+                    cam.orthographicSize = Mathf.Max(span.y, span.x * Height / Width) * 0.55f;
+                    cam.transform.SetPositionAndRotation(new Vector3(span.x / 2f, 30f, span.y / 2f), Quaternion.Euler(90, 0, 0));
+                    cam.farClipPlane = 60f;
+                    var request = new RenderPipeline.StandardRequest { destination = rt };
+                    if (RenderPipeline.SupportsRenderRequest(cam, request)) RenderPipeline.SubmitRenderRequest(cam, request);
+                    else { cam.targetTexture = rt; cam.Render(); cam.targetTexture = null; }
+                    var prev = RenderTexture.active;
+                    RenderTexture.active = rt;
+                    sheet.ReadPixels(new Rect(0, 0, w, h), (i % 2) * w, (1 - i / 2) * h);
+                    RenderTexture.active = prev;
+                    Object.DestroyImmediate(cam.gameObject);
+                }
+                sheet.Apply();
+                File.WriteAllBytes(Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", "preview-station-seeds.png")),
+                                   sheet.EncodeToPNG());
+                view.Build(config, layout);
+            }
             Debug.Log($"[ShaderPreview] station: {rooms.Count} rooms (largest {big[0].Count} cells), corridor run " +
                       $"{runFrom} -> {runTo}");
         }

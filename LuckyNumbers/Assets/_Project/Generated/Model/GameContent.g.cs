@@ -2156,6 +2156,350 @@ namespace LuckyNumbers.Model
             CorridorHandrails = true,
             Glow = 0.8f,
             LightPools = 0.35f,
+            Generator = new StationGenerator
+            {
+                Enabled = true,
+                Rooms =
+                {
+                    new StationRoomRule
+                    {
+                        Role = StationRoomRole.Hub,
+                        Name = "Hub",
+                        MinWidth = 7,
+                        MaxWidth = 10,
+                        MinDepth = 6,
+                        MaxDepth = 9,
+                        Items =
+                        {
+                            new StationRoomItem
+                            {
+                                Piece = "crate_station",
+                                U = -0.25f,
+                                V = -0.25f,
+                                Yaw = 5.0f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_small",
+                                U = -0.25f,
+                                V = 0.08f,
+                                Yaw = 30.0f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "barrel",
+                                U = 1.25f,
+                                V = -0.25f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "canister",
+                                U = 1.25f,
+                                V = 1.25f,
+                                Solid = true,
+                            },
+                        },
+                    },
+                    new StationRoomRule
+                    {
+                        Role = StationRoomRole.Gallery,
+                        Name = "Observation Gallery",
+                        MinWidth = 14,
+                        MaxWidth = 24,
+                        MinDepth = 3,
+                        MaxDepth = 4,
+                        Windows = true,
+                        Items =
+                        {
+                            new StationRoomItem
+                            {
+                                Piece = "chair_station",
+                                U = 0.15f,
+                                V = 0.1f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "chair_station",
+                                U = 0.35f,
+                                V = 0.1f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "chair_station",
+                                U = 0.65f,
+                                V = 0.1f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "chair_station",
+                                U = 0.85f,
+                                V = 0.1f,
+                                Solid = true,
+                            },
+                        },
+                    },
+                    new StationRoomRule
+                    {
+                        Role = StationRoomRole.Bay,
+                        Name = "Docking Bay",
+                        MinWidth = 10,
+                        MaxWidth = 13,
+                        MinDepth = 10,
+                        MaxDepth = 13,
+                        Windows = true,
+                        Items =
+                        {
+                            new StationRoomItem
+                            {
+                                Piece = "crate_station",
+                                U = -0.25f,
+                                V = -0.25f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_station",
+                                U = -0.25f,
+                                V = 0.02f,
+                                Yaw = 10.0f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_small",
+                                U = 0.02f,
+                                V = -0.25f,
+                                Yaw = 25.0f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "barrel",
+                                U = -0.25f,
+                                V = 1.25f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "barrel",
+                                V = 1.25f,
+                                Yaw = 40.0f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_case",
+                                U = 1.25f,
+                                V = 1.25f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_case",
+                                U = 1.25f,
+                                V = 1.0f,
+                                Yaw = 12.0f,
+                                Solid = true,
+                            },
+                        },
+                    },
+                    new StationRoomRule
+                    {
+                        Role = StationRoomRole.Comms,
+                        Name = "Comms",
+                        MinWidth = 6,
+                        MaxWidth = 8,
+                        MinDepth = 4,
+                        MaxDepth = 6,
+                        Windows = true,
+                        Items =
+                        {
+                            new StationRoomItem
+                            {
+                                Piece = "lab_bench",
+                                U = 0.5f,
+                                V = -0.3f,
+                                Yaw = 180.0f,
+                                Action = StationAction.Answer,
+                                Prompt = "E: answer the call",
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "chair_station",
+                                U = 0.4f,
+                                V = 0.2f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "chair_station",
+                                U = 0.6f,
+                                V = 0.2f,
+                                Yaw = 10.0f,
+                                Solid = true,
+                            },
+                        },
+                    },
+                    new StationRoomRule
+                    {
+                        Role = StationRoomRole.Cabin,
+                        Name = "Crew Cabin",
+                        MinWidth = 4,
+                        MaxWidth = 4,
+                        MinDepth = 4,
+                        MaxDepth = 5,
+                        Count = 3,
+                        YourName = "Your Cabin",
+                        Windows = true,
+                        Items =
+                        {
+                            new StationRoomItem
+                            {
+                                Piece = "cryo_pod",
+                                U = 0.5f,
+                                V = 1.25f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "chair_station",
+                                V = 0.1f,
+                                Yaw = 200.0f,
+                                Solid = true,
+                            },
+                        },
+                    },
+                    new StationRoomRule
+                    {
+                        Role = StationRoomRole.Storage,
+                        Name = "Storage",
+                        MinWidth = 6,
+                        MaxWidth = 8,
+                        MinDepth = 5,
+                        MaxDepth = 7,
+                        Items =
+                        {
+                            new StationRoomItem
+                            {
+                                Piece = "crate_station",
+                                U = -0.25f,
+                                V = 0.2f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_station",
+                                U = -0.25f,
+                                V = 0.32f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_station",
+                                U = 0.05f,
+                                V = 0.2f,
+                                Yaw = 5.0f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_small",
+                                U = 0.15f,
+                                V = 0.2f,
+                                Yaw = 20.0f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "canister",
+                                U = 1.25f,
+                                V = 0.2f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "canister",
+                                U = 1.25f,
+                                V = 0.3f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "barrel",
+                                U = -0.25f,
+                                V = 1.25f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_case",
+                                U = 0.55f,
+                                V = 1.25f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_case",
+                                U = 0.62f,
+                                V = 1.25f,
+                                Yaw = 8.0f,
+                                Solid = true,
+                            },
+                        },
+                    },
+                    new StationRoomRule
+                    {
+                        Role = StationRoomRole.Engineering,
+                        Name = "Engineering",
+                        MinWidth = 5,
+                        MaxWidth = 7,
+                        MinDepth = 6,
+                        MaxDepth = 9,
+                        Windows = true,
+                        Items =
+                        {
+                            new StationRoomItem
+                            {
+                                Piece = "lab_bench",
+                                U = 0.3f,
+                                V = 1.3f,
+                                Action = StationAction.Lights,
+                                Prompt = "E: cycle the station lights",
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "lab_bench",
+                                U = 0.75f,
+                                V = 1.3f,
+                                Action = StationAction.Psx,
+                                Prompt = "E: toggle the retro display",
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "barrel",
+                                U = 1.25f,
+                                V = 0.1f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "canister",
+                                U = 1.25f,
+                                V = 0.25f,
+                                Solid = true,
+                            },
+                        },
+                    },
+                },
+                MinCorridor = 2,
+                MaxCorridor = 4,
+            },
         };
 
         /// <summary>From <c>content/title.txtpb</c>.</summary>

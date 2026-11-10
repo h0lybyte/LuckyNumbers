@@ -88,12 +88,13 @@ namespace LuckyNumbers.Station
             pieces = kitPieces;
         }
 
-        /// <param name="plan">Rows to build instead of config.plan (the page's layout editor).</param>
-        public void Build(StationScene config, IReadOnlyList<string> plan = null)
+        /// <param name="layout">Plan, props and consoles (default: content's; or seeded, or the page's editor).</param>
+        public void Build(StationScene config, StationLayout layout = null)
         {
             Clear();
             _config = config;
-            Plan = new StationPlan(plan ?? config.Plan, config.LightEvery, config.CeilingLightEvery, config.TallRoomCells, config.TallLevels,
+            layout ??= StationLayout.FromContent(config);
+            Plan = new StationPlan(layout.Plan, config.LightEvery, config.CeilingLightEvery, config.TallRoomCells, config.TallLevels,
                                    config.CorridorHandrails);
             var chunk = Math.Max(1, config.ChunkCells);
 
@@ -129,8 +130,8 @@ namespace LuckyNumbers.Station
                 Plan.Add(piece, k == 0 ? StationPlan.Kit.Station : StationPlan.Kit.Starship, position, rotation);
                 if (solid) solids.Add((piece, position, rotation));
             }
-            foreach (var prop in config.Props) Place(prop.Piece, prop.Col, prop.Row, prop.Yaw, prop.Solid);
-            foreach (var sw in config.Switches) Place(sw.Piece, sw.Col, sw.Row, sw.Yaw, true);
+            foreach (var prop in layout.Props) Place(prop.Piece, prop.Col, prop.Row, prop.Yaw, prop.Solid);
+            foreach (var sw in layout.Switches) Place(sw.Piece, sw.Col, sw.Row, sw.Yaw, true);
             if (missingProps.Count > 0) Debug.LogWarning($"[Station] no model for props: {string.Join(", ", missingProps)}");
 
             // Windows: the kits paint stars on their glass. Split those panes off (glassMaterial), so a window

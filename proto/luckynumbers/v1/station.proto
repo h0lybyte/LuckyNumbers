@@ -68,6 +68,63 @@ message StationScene {
   // Lamp glow (bloom intensity; 0 = off) and light pools under the ceiling strips (0..1).
   float glow = 24;
   float light_pools = 25;
+  // Lay the station out from the lucky number instead of `plan` (rooms, props, consoles and dock from its rules).
+  StationGenerator generator = 26;
+}
+
+// Seeded layout: a hub in the middle, rooms around it by role, joined by corridors through doorways.
+message StationGenerator {
+  bool enabled = 1;
+  repeated StationRoomRule rooms = 2;
+  // Corridor length (cells) between the hub and the rooms around it.
+  int32 min_corridor = 3;
+  int32 max_corridor = 4;
+}
+
+enum StationRoomRole {
+  STATION_ROOM_ROLE_UNSPECIFIED = 0;
+  // In the middle; the call comes in here.
+  STATION_ROOM_ROLE_HUB = 1;
+  // North of the hub (towards the planet), windows on its north wall.
+  STATION_ROOM_ROLE_GALLERY = 2;
+  // West of the hub; your ship docks in it.
+  STATION_ROOM_ROLE_BAY = 3;
+  // East of the hub.
+  STATION_ROOM_ROLE_COMMS = 4;
+  // Along a corridor south of the hub (count of them); the first is yours (you start there).
+  STATION_ROOM_ROLE_CABIN = 5;
+  // At the west end of the south corridor.
+  STATION_ROOM_ROLE_STORAGE = 6;
+  // At the east end of the south corridor.
+  STATION_ROOM_ROLE_ENGINEERING = 7;
+}
+
+message StationRoomRule {
+  StationRoomRole role = 1;
+  string name = 2;
+  // Size range in cells (width west-east, depth north-south).
+  int32 min_width = 3;
+  int32 max_width = 4;
+  int32 min_depth = 5;
+  int32 max_depth = 6;
+  // Cabins: how many (the first one is "Your Cabin" if your_name is set).
+  int32 count = 7;
+  string your_name = 8;
+  // Windows on the wall facing away from the hub (every other cell).
+  bool windows = 9;
+  // Placed across the room: u west -> east, v north -> south, both 0..1 (inside the walls).
+  repeated StationRoomItem items = 10;
+}
+
+message StationRoomItem {
+  string piece = 1;
+  float u = 2;
+  float v = 3;
+  float yaw = 4;
+  bool solid = 5;
+  // A console: E does this (see StationAction), with this prompt.
+  StationAction action = 6;
+  string prompt = 7;
 }
 
 message StationRoom {

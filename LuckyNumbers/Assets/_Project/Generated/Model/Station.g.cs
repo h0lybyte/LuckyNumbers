@@ -9,6 +9,39 @@ using R3;
 
 namespace LuckyNumbers.Model
 {
+    public enum StationRoomRole
+    {
+        Unspecified = 0,
+        /// <summary>
+        /// In the middle; the call comes in here.
+        /// </summary>
+        Hub = 1,
+        /// <summary>
+        /// North of the hub (towards the planet), windows on its north wall.
+        /// </summary>
+        Gallery = 2,
+        /// <summary>
+        /// West of the hub; your ship docks in it.
+        /// </summary>
+        Bay = 3,
+        /// <summary>
+        /// East of the hub.
+        /// </summary>
+        Comms = 4,
+        /// <summary>
+        /// Along a corridor south of the hub (count of them); the first is yours (you start there).
+        /// </summary>
+        Cabin = 5,
+        /// <summary>
+        /// At the west end of the south corridor.
+        /// </summary>
+        Storage = 6,
+        /// <summary>
+        /// At the east end of the south corridor.
+        /// </summary>
+        Engineering = 7,
+    }
+
     public enum StationAction
     {
         Unspecified = 0,
@@ -146,9 +179,76 @@ namespace LuckyNumbers.Model
         /// </summary>
         public float Glow { get; set; }
         public float LightPools { get; set; }
+        /// <summary>
+        /// Lay the station out from the lucky number instead of `plan` (rooms, props, consoles and dock from its rules).
+        /// </summary>
+        public StationGenerator Generator { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public StationScene Clone() => (StationScene)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// Seeded layout: a hub in the middle, rooms around it by role, joined by corridors through doorways.
+    /// </summary>
+    public sealed class StationGenerator
+    {
+        public bool Enabled { get; set; }
+        public List<StationRoomRule> Rooms { get; } = new List<StationRoomRule>();
+        /// <summary>
+        /// Corridor length (cells) between the hub and the rooms around it.
+        /// </summary>
+        public int MinCorridor { get; set; }
+        public int MaxCorridor { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public StationGenerator Clone() => (StationGenerator)MemberwiseClone();
+    }
+
+    public sealed class StationRoomRule
+    {
+        public StationRoomRole Role { get; set; }
+        public string Name { get; set; }
+        /// <summary>
+        /// Size range in cells (width west-east, depth north-south).
+        /// </summary>
+        public int MinWidth { get; set; }
+        public int MaxWidth { get; set; }
+        public int MinDepth { get; set; }
+        public int MaxDepth { get; set; }
+        /// <summary>
+        /// Cabins: how many (the first one is "Your Cabin" if your_name is set).
+        /// </summary>
+        public int Count { get; set; }
+        public string YourName { get; set; }
+        /// <summary>
+        /// Windows on the wall facing away from the hub (every other cell).
+        /// </summary>
+        public bool Windows { get; set; }
+        /// <summary>
+        /// Placed across the room: u west -&gt; east, v north -&gt; south, both 0..1 (inside the walls).
+        /// </summary>
+        public List<StationRoomItem> Items { get; } = new List<StationRoomItem>();
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public StationRoomRule Clone() => (StationRoomRule)MemberwiseClone();
+    }
+
+    public sealed class StationRoomItem
+    {
+        public string Piece { get; set; }
+        public float U { get; set; }
+        public float V { get; set; }
+        public float Yaw { get; set; }
+        public bool Solid { get; set; }
+        /// <summary>
+        /// A console: E does this (see StationAction), with this prompt.
+        /// </summary>
+        public StationAction Action { get; set; }
+        public string Prompt { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public StationRoomItem Clone() => (StationRoomItem)MemberwiseClone();
     }
 
     public sealed class StationRoom

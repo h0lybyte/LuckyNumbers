@@ -52,7 +52,7 @@ namespace LuckyNumbers.Station
         readonly List<IDisposable> _subscriptions = new();
         static readonly int Psx = Shader.PropertyToID("_LnPsx");
 
-        IReadOnlyList<string> _plan;   // the plan as built (the layout editor can swap it)
+        StationLayout _layout;   // as built: content's, seeded (generator), or the page's editor
         readonly Dictionary<Vector2Int, string> _roomOf = new();
         bool _inSpace, _leaving, _interact;
         Vector3 _orbitPosition, _dockPosition;
@@ -93,7 +93,7 @@ namespace LuckyNumbers.Station
 
         public void Start()
         {
-            Build(_config.Plan);
+            Build(StationLayout.FromContent(_config));
             SetLights(StationLightMode.On);
             SetGlow(_config.Glow);
             SetPsx(false);
@@ -121,21 +121,21 @@ namespace LuckyNumbers.Station
             PlaceInSpace(_cts.Token).Forget();
         }
 
-        void Build(IReadOnlyList<string> rows)
+        void Build(StationLayout layout)
         {
-            _plan = rows;
-            _station.Build(_config, rows);
+            _layout = layout;
+            _station.Build(_config, layout);
             _roomOf.Clear();
             var plan = _station.Plan;
             foreach (var cells in plan.Rooms())
             {
                 string name = null;
-                foreach (var r in _config.Rooms)
+                foreach (var r in layout.Rooms)
                     if (cells.Contains(plan.PlanCell(r.Col, r.Row))) name = r.Name;
                 if (name == null) continue;
                 foreach (var c in cells) _roomOf[c] = name;
             }
-            _state.Plan.Value = string.Join("\n", rows);
+            _state.Plan.Value = string.Join("\n", layout.Plan);
         }
 
         /// <summary>Lamp glow: the scene's bloom (a Volume built by SceneBuilder), from content.</summary>
@@ -158,7 +158,7 @@ namespace LuckyNumbers.Station
 
         void DockShip()
         {
-            var dock = _config.Dock;
+            var dock = _layout.Dock;
             if (dock == null || dock.Length <= 0f) return;
             _dockPosition = _station.Plan.PlanToWorld(dock.Col, dock.Row);
             _ship.Show(PlayerShipSkin.Current(_playerShip), dock.Length);
@@ -188,6 +188,14 @@ namespace LuckyNumbers.Station
             var index = 0;
             for (var i = 0; i < worlds.Count; i++) if (worlds[i] == target) index = i;
             _planet = BodyNames.Planet(_space.Seed, index);
+            if (_config.Generator != null && _config.Generator.Enabled)
+            {
+                // Your station, from your lucky number: built while the screen is still black.
+                Build(LayoutGenerator.Generate(_config, _space.Seed));
+                SetLights(_state.Lights.Value);
+                Teleport(StationPlan.Centre(_station.Plan.Spawn), _config.SpawnYaw);
+                DockShip();
+            }
             var manifest = LuckyNumbers.Cargo.Manifest.Generate(GameContent.Cargo, _space.Seed);
             _freighter = manifest.Ship;
             _museum = manifest.Museum;
@@ -226,7 +234,7 @@ namespace LuckyNumbers.Station
             var room = _roomOf.TryGetValue(cell, out var r) ? r : "";
             if (_state.Room.Value != room) _state.Room.Value = room;
             var call = _config.Call;
-            if (call != null && _state.Call.Value == CallPhase.None && room != "" && room == call.Room)
+            if (call != null && _state.Call.Value == CallPhase.None && room != "" && room == _layout.CallRoom)
             {
                 _state.Call.Value = CallPhase.Ringing;
                 Debug.Log($"[Station] call from {call.Caller}");
@@ -240,7 +248,7 @@ namespace LuckyNumbers.Station
             else
             {
                 var best = UseDistance;
-                foreach (var sw in _config.Switches)
+                foreach (var sw in _layout.Switches)
                 {
                     if (sw.Action == StationAction.Answer) continue;   // only while ringing
                     var at = _station.Plan.PlanToWorld(sw.Col, sw.Row);
@@ -248,7 +256,7 @@ namespace LuckyNumbers.Station
                     if (d < best) { best = d; console = sw; }
                 }
                 if (console != null) prompt = console.Prompt;
-                else if (NearShip(position)) prompt = _config.Dock.BoardPrompt;
+                else if (NearShip(position)) prompt = _layout.Dock.BoardPrompt;
             }
             if (_state.Prompt.Value != prompt) _state.Prompt.Value = prompt;
 
@@ -269,7 +277,7 @@ namespace LuckyNumbers.Station
 
         bool NearShip(Vector3 position)
         {
-            var dock = _config.Dock;
+            var dock = _layout.Dock;
             if (dock == null || dock.Length <= 0f) return false;
             // From the hull (its bounds, on the deck plane), not the middle: a 9 m ship can be boarded from any side.
             var near = _hull.ClosestPoint(new Vector3(position.x, _hull.center.y, position.z));
@@ -355,10 +363,10 @@ namespace LuckyNumbers.Station
             if (string.IsNullOrWhiteSpace(planText)) return;
             var rows = new List<string>(planText.Replace("\r", "").Split('\n'));
             rows.RemoveAll(string.IsNullOrEmpty);
-            var previous = _plan;
+            var previous = _layout;
             try
             {
-                Build(rows);
+                Build(_layout.WithPlan(rows));
                 SetLights(_state.Lights.Value);
                 var here = StationPlan.CellOf(_player.Body.transform.position);
                 if (!StationPlan.Walkable(_station.Plan.At(here))) Teleport(StationPlan.Centre(_station.Plan.Spawn), _config.SpawnYaw);
