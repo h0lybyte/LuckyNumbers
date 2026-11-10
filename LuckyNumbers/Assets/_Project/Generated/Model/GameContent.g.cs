@@ -2667,6 +2667,10 @@ namespace LuckyNumbers.Model
                     LevelHeight = 14.0f,
                     LevelRate = 40.0f,
                 },
+                OrbitAltitude = 260.0f,
+                BoardPrompt = "E: board your ship and fly back to the station",
+                BoardDistance = 4.0f,
+                TakeoffHint = "Space to lift off - climb to orbit (nose up and Shift to climb faster)",
             },
         };
 
@@ -3514,6 +3518,49 @@ namespace LuckyNumbers.Model
                 },
                 MinCorridor = 2,
                 MaxCorridor = 4,
+            },
+            Homecoming = new StationReturn
+            {
+                Caller = "{museum}",
+                PaidLines =
+                {
+                    new StationCallLine
+                    {
+                        Speaker = "{museum}",
+                        Text = "Pilot, we're reading your docking beacon. Is that the cargo from the {ship}?",
+                        Seconds = 4.0f,
+                    },
+                    new StationCallLine
+                    {
+                        Speaker = "{museum}",
+                        Text = "{relics}. Remarkable. They'll go on display before the week's out.",
+                        Seconds = 4.5f,
+                    },
+                    new StationCallLine
+                    {
+                        Speaker = "{museum}",
+                        Text = "{credits} credits are on their way to your account. Thank you.",
+                        Seconds = 4.0f,
+                    },
+                },
+                EmptyLines =
+                {
+                    new StationCallLine
+                    {
+                        Speaker = "{museum}",
+                        Text = "Pilot, we're reading your docking beacon. Nothing from the {ship}?",
+                        Seconds = 4.0f,
+                    },
+                    new StationCallLine
+                    {
+                        Speaker = "{museum}",
+                        Text = "The cargo's still down there on {planet}. Bring something back and we'll pay for it.",
+                        Seconds = 5.0f,
+                    },
+                },
+                CharsPerSecond = 38.0f,
+                Objective = "Rest up, or board your ship in the Docking Bay to fly back down",
+                XpPerRelic = 150,
             },
         };
 

@@ -12,11 +12,26 @@ using VContainer.Unity;
 
 namespace LuckyNumbers.Planet
 {
+    /// <summary>Your landed fighter, for the on-foot prompts (RelicsPresenter): boarding it flies you back out.</summary>
+    public interface IFighter
+    {
+        /// <summary>The board prompt when `feet` is close enough to the landed ship to board it, else "".</summary>
+        string BoardPrompt(Vector3 feet);
+
+        /// <summary>Climb aboard and lift off: past FlightLanding.orbit_altitude you're back at the station.</summary>
+        void Board();
+
+        /// <summary>Where you step out beside the landed ship (the dev warp "ship"); null while it isn't landed.</summary>
+        Vector3? BoardingSpot { get; }
+    }
+
     /// <summary>
     /// You arrive in your own fighter and land it near the wreck, fully piloted (content/planet.txtpb landing):
     /// mouse pitches and yaws, A/D roll (wings level themselves when you let go), W/S throttle, Shift boost,
     /// Space lift thrusters, under gravity and air drag. Touch down slow, level and gentle, or crash and start
-    /// over. Landed: you step out beside your ship and walk (first person).
+    /// over. Landed: you step out beside your ship and walk (first person). Back beside it, E boards it (IFighter):
+    /// lift off and climb, and past orbit_altitude you fly out of the atmosphere, back to the station
+    /// (PlayerVoyage.returning, so it knows you're back).
     ///
     /// Flight assist (FlightLanding.assist, on by default): W/S set a speed the ship holds, the engine pushing
     /// forward and air brakes pulling back, so letting off really slows you; Space hovers: the thrusters hold a
@@ -24,7 +39,7 @@ namespace LuckyNumbers.Planet
     /// shows descent, drift and tilt against the touchdown limits (green / amber / red) once you're low.
     /// </summary>
     [Presenter]
-    public sealed class LandingPresenter : ITickable, IArrival, IDisposable
+    public sealed class LandingPresenter : ITickable, IArrival, IFighter, IDisposable
     {
         enum Phase { Idle, Flying, Crashed, Landed }
 
@@ -38,6 +53,12 @@ namespace LuckyNumbers.Planet
         readonly PlayerShip _playerShip;
         readonly FlightState _state;
         readonly ISubscriber<FlightHudReady> _hudReady;
+        readonly PlayerVoyage _voyage;
+        readonly IPublisher<SceneChangeRequested> _scenes;
+        // Flying out: boarded after landing (`_leaving`), still lifting clear of the ground (`_clearing`: no touchdown
+        // or crash yet), past orbit and fading out (`_exiting`); where it was parked (a crash on the way up restarts there).
+        bool _leaving, _clearing, _exiting, _boarding;
+        Vector3 _parked;
         readonly ISubscriber<DevWarpRequested> _warps;
         IDisposable _warpSubscription;
         IDisposable _hudSubscription;
@@ -62,8 +83,11 @@ namespace LuckyNumbers.Planet
         [Inject]
         public LandingPresenter(PlanetScene config, PlanetView view, PlayerView player, GroundView ground,
                                 IFirstPerson firstPerson, PlayerInput input, PlayerShip playerShip, FlightState state,
-                                ISubscriber<FlightHudReady> hudReady, ISubscriber<DevWarpRequested> warps)
+                                ISubscriber<FlightHudReady> hudReady, ISubscriber<DevWarpRequested> warps,
+                                PlayerVoyage voyage, IPublisher<SceneChangeRequested> scenes)
         {
+            _voyage = voyage;
+            _scenes = scenes;
             _config = config;
             _view = view;
             _player = player;
@@ -119,6 +143,22 @@ namespace LuckyNumbers.Planet
         /// <summary>Back to the start: up high, some way off, heading for the wreck (seeded bearing).</summary>
         void Restart()
         {
+            if (_leaving)
+            {
+                // Crashed on the way out: hovering above where you'd parked, still leaving.
+                _position = _parked + Vector3.up * 40f;
+                _velocity = Vector3.zero;
+                _spin = Vector3.zero;
+                _rotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(_rotation * Vector3.forward, Vector3.up).normalized, Vector3.up);
+                _heading = _rotation.eulerAngles.y;
+                _pitch = _bank = _yawRate = _pitchRate = 0f;
+                SetSolid(false);
+                _phase = Phase.Flying;
+                _phaseTime = 0f;
+                _view.Flight("", null);
+                Debug.Log("[Landing] restart over the parking spot, leaving");
+                return;
+            }
             var bearing = Quaternion.Euler(0f, (_site.Seed % 360u) * 1f, 0f) * Vector3.forward;
             var start = Wreck - bearing * L.StartDistance;
             start.y = _ground.HeightAt(start) + L.StartAltitude;
@@ -242,6 +282,13 @@ namespace LuckyNumbers.Planet
             var horizontal = Vector3.ProjectOnPlane(_velocity, normal).magnitude;
             var tilt = Vector3.Angle(_rotation * Vector3.up, normal);
             var altitude = _position.y - _ground.HeightAt(_position);
+            if (_leaving && !_exiting && altitude >= L.OrbitAltitude && L.OrbitAltitude > 0f) ExitAsync().Forget();
+            // Lifting off: no touchdown (you're sitting on the ground) or bumps until the gear is well clear.
+            if (_clearing)
+            {
+                if (lowest > math.max(2f, L.ShipLength * 0.12f)) _clearing = false;
+                else lowest = float.MaxValue;
+            }
             if (lowest <= 0f)
             {
                 if (vertical <= L.MaxTouchdownVertical && horizontal <= L.MaxTouchdownHorizontal && tilt <= L.MaxTouchdownTilt) Land(normal);
@@ -256,7 +303,7 @@ namespace LuckyNumbers.Planet
                 return;
             }
             // Hitting anything solid (the wreck, a boulder) in the air is a crash too.
-            var n = Physics.OverlapSphereNonAlloc(_position, half * 0.45f, _hits, ~0, QueryTriggerInteraction.Ignore);
+            var n = _clearing ? 0 : Physics.OverlapSphereNonAlloc(_position, half * 0.45f, _hits, ~0, QueryTriggerInteraction.Ignore);
             for (var i = 0; i < n; i++)
             {
                 if (Array.IndexOf(_ownColliders, _hits[i]) >= 0 || _hits[i].GetComponentInParent<GroundView>() != null) continue;
@@ -295,6 +342,8 @@ namespace LuckyNumbers.Planet
                 _state.Landed.Value = false;
                 _state.Assisted.Value = Assisted || HoverShip;
                 _state.HoverShip.Value = HoverShip;
+                _state.Leaving.Value = _leaving;
+                _state.OrbitAltitude.Value = L.OrbitAltitude;
                 _state.Altitude.Value = altitude;
                 _state.Climb.Value = _velocity.y;   // true vertical speed (the gauges below stay relative to the slope)
                 _state.Speed.Value = _velocity.magnitude;
@@ -404,7 +453,8 @@ namespace LuckyNumbers.Planet
             // Travel: the velocity the keys ask for, in the ship's frame; the assist eases towards it.
             var forward = move.Y > 0.1f ? H.MaxSpeed * boost * move.Y : move.Y < -0.1f ? H.ReverseSpeed * move.Y : 0f;
             var side = math.abs(move.X) > 0.1f ? H.StrafeSpeed * move.X : 0f;
-            var vertical = _input.Lifting.Value ? H.ClimbSpeed : descending ? -H.DescendSpeed : 0f;
+            // Flying out, Shift boosts the climb too (orbit is a long way up).
+            var vertical = _input.Lifting.Value ? H.ClimbSpeed * (_leaving ? boost : 1f) : descending ? -H.DescendSpeed : 0f;
             var target = _input.Braking.Value ? Vector3.zero : _rotation * new Vector3(side, vertical, forward);
             var change = target - _velocity;
             var pushing = target.sqrMagnitude > 0.01f && Vector3.Dot(change, target) > 0f;
@@ -456,6 +506,8 @@ namespace LuckyNumbers.Planet
         void Land(Vector3 normal)
         {
             _phase = Phase.Landed;
+            _leaving = _clearing = false;
+            _state.Leaving.Value = false;
             _state.Flying.Value = false;
             _state.Landed.Value = true;
             _velocity = Vector3.zero;
@@ -466,6 +518,7 @@ namespace LuckyNumbers.Planet
             Ship.Pose(_position, _rotation);
             Ship.SetHeat(0f, 0.3f);
             SetSolid(true);
+            _parked = _position;
             if (_beacon != null) _beacon.gameObject.SetActive(false);
             if (_padMarker != null) _padMarker.gameObject.SetActive(false);
             Debug.Log($"[Landing] landed {Vector3.Distance(_position, Wreck):0} m from the wreck, " +
@@ -497,6 +550,75 @@ namespace LuckyNumbers.Planet
             _view.Hint(_config.Hint, 1f);
             foreach (var line in L.LandedLines) await DialogueLine.Play(line, _view.Dialogue, default);
             _done?.TrySetResult();
+        }
+
+        // ---- IFighter: flying back out ----------------------------------------------------------------------
+
+        public string BoardPrompt(Vector3 feet)
+        {
+            if (_phase != Phase.Landed || _boarding || !_firstPerson.Active || L.OrbitAltitude <= 0f) return "";
+            // From the hull (its bounds), not the middle: a 24 m ship can be boarded from any side.
+            var hull = new Bounds(_position, Vector3.zero);
+            var first = true;
+            foreach (var r in Ship.Pivot.GetComponentsInChildren<Renderer>())
+            {
+                if (first) { hull = r.bounds; first = false; }
+                else hull.Encapsulate(r.bounds);
+            }
+            var flat = new Vector3(feet.x, hull.center.y, feet.z);
+            var reach = L.BoardDistance > 0f ? L.BoardDistance : 4f;
+            return Vector3.Distance(hull.ClosestPoint(flat), flat) <= reach ? L.BoardPrompt ?? "E: board your ship" : "";
+        }
+
+        public Vector3? BoardingSpot =>
+            _phase == Phase.Landed ? _position + _rotation * Vector3.right * (L.ShipLength * 0.5f + 2f) : null;
+
+        public void Board()
+        {
+            if (_phase != Phase.Landed || _boarding) return;
+            BoardAsync().Forget();
+        }
+
+        /// <summary>Fade, and you're back in the cockpit (the chase camera), sitting where you parked; Space lifts off.</summary>
+        async UniTaskVoid BoardAsync()
+        {
+            _boarding = true;
+            _firstPerson.Active = false;
+            _view.Hint("", 0f);
+            for (var t = 0f; t < 0.4f; t += Time.deltaTime) { _view.Fade(t / 0.4f); await UniTask.Yield(); }
+            _view.Fade(1f);
+            _player.Camera.enabled = false;
+            _view.FlightCamera.gameObject.SetActive(true);
+            _site.Follow(Ship.Pivot, _view.FlightCamera.transform);
+            SetSolid(false);
+            _velocity = Vector3.zero;
+            _spin = Vector3.zero;
+            _heading = _rotation.eulerAngles.y;
+            _pitch = _bank = _yawRate = _pitchRate = 0f;
+            var flatForward = Vector3.ProjectOnPlane(_rotation * Vector3.forward, Vector3.up).normalized;
+            _camPos = _position - flatForward * (L.ShipLength * L.ChaseDistance) + Vector3.up * (L.ShipLength * L.ChaseHeight);
+            _leaving = _clearing = true;
+            _phase = Phase.Flying;
+            _phaseTime = 0f;
+            _state.Landed.Value = false;
+            Debug.Log($"[Landing] boarded: climb to {L.OrbitAltitude:0} m to leave");
+            for (var t = 0f; t < 0.6f; t += Time.deltaTime) { _view.Fade(1f - t / 0.6f); await UniTask.Yield(); }
+            _view.Fade(0f);
+            if (!_pageHud) _view.Hint(L.TakeoffHint, 1f);
+            _boarding = false;
+        }
+
+        /// <summary>Out of the atmosphere: the sky fades to white and you're back at the station, docked.</summary>
+        async UniTaskVoid ExitAsync()
+        {
+            _exiting = true;
+            Debug.Log($"[Landing] reached orbit ({L.OrbitAltitude:0} m): back to the station");
+            for (var t = 0f; t < 1.2f; t += Time.deltaTime) { _view.Fade(t / 1.2f); await UniTask.Yield(); }
+            _view.Fade(1f);
+            _voyage.Returning.Value = true;
+            _state.Flying.Value = false;
+            _state.Leaving.Value = false;
+            _scenes.Publish(new SceneChangeRequested(GameScene.Station));
         }
 
         void Chase(float dt)

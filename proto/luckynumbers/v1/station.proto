@@ -70,6 +70,22 @@ message StationScene {
   float light_pools = 25;
   // Lay the station out from the lucky number instead of `plan` (rooms, props, consoles and dock from its rules).
   StationGenerator generator = 26;
+  // Coming back from the planet (PlayerVoyage.returning): you step off beside your ship and the museum calls to pay
+  // for the relics you carried back.
+  StationReturn homecoming = 27;
+}
+
+// The museum's call when you dock: it buys every relic in your pack (its value in credits) and you earn XP for each.
+// Lines fill {museum}, {planet}, {ship} (the freighter), {relics} (their names), {count} and {credits} (the payout).
+message StationReturn {
+  string caller = 1;
+  // Played when you brought relics back; and when you didn't.
+  repeated StationCallLine paid_lines = 2;
+  repeated StationCallLine empty_lines = 3;
+  float chars_per_second = 4;
+  // Shown once the call ends.
+  string objective = 5;
+  int32 xp_per_relic = 6;
 }
 
 // Seeded layout: a hub in the middle, rooms around it by role, joined by corridors through doorways.

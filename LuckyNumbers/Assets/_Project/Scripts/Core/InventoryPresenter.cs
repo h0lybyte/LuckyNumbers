@@ -23,6 +23,9 @@ namespace LuckyNumbers.Core
         /// <summary>Take every relic out (the crash site starts over).</summary>
         void ClearRelics();
 
+        /// <summary>Take every relic out and say what they were (name, value): the museum buys them at the station.</summary>
+        System.Collections.Generic.List<(string Name, int Value)> TakeRelics();
+
         /// <summary>Show `text` as the pack's message (e.g. "No room for ...").</summary>
         void Say(string text);
 
@@ -283,6 +286,14 @@ namespace LuckyNumbers.Core
                 Say((Config.FullPrompt ?? "No room for {name}").Replace("{name}", item.Name));
             }
             return false;
+        }
+
+        public System.Collections.Generic.List<(string Name, int Value)> TakeRelics()
+        {
+            var taken = new System.Collections.Generic.List<(string, int)>();
+            foreach (var i in _items) if (i.Relic >= 0 || i.Def.Kind == ItemKind.Relic) taken.Add((i.Name, i.Value));
+            if (_items.RemoveAll(i => i.Relic >= 0 || i.Def.Kind == ItemKind.Relic) > 0) Publish();
+            return taken;
         }
 
         /// <summary>Out of the pack (and its slot) into the world at your feet, the whole stack. False: no world.</summary>

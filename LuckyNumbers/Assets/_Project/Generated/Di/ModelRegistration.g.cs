@@ -66,6 +66,7 @@ namespace LuckyNumbers.Model
             builder.Register<PlayerShip>(Lifetime.Singleton);
             builder.Register<PlayerHealth>(Lifetime.Singleton);
             builder.Register<ShipPicker>(Lifetime.Singleton);
+            builder.Register<PlayerVoyage>(Lifetime.Singleton);
             builder.Register<StationState>(Lifetime.Singleton);
             builder.Register<DiceState>(Lifetime.Singleton);
         }

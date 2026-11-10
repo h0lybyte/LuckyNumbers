@@ -220,3 +220,17 @@ generator {
     items { piece: "canister" u: 1.25 v: 0.25 solid: true }
   }
 }
+
+# --- Coming back from the planet ---
+# The museum buys every relic you carried back, for its value; XP for each one.
+homecoming {
+  caller: "{museum}"
+  chars_per_second: 38
+  xp_per_relic: 150
+  paid_lines { speaker: "{museum}" text: "Pilot, we're reading your docking beacon. Is that the cargo from the {ship}?" seconds: 4 }
+  paid_lines { speaker: "{museum}" text: "{relics}. Remarkable. They'll go on display before the week's out." seconds: 4.5 }
+  paid_lines { speaker: "{museum}" text: "{credits} credits are on their way to your account. Thank you." seconds: 4 }
+  empty_lines { speaker: "{museum}" text: "Pilot, we're reading your docking beacon. Nothing from the {ship}?" seconds: 4 }
+  empty_lines { speaker: "{museum}" text: "The cargo's still down there on {planet}. Bring something back and we'll pay for it." seconds: 5 }
+  objective: "Rest up, or board your ship in the Docking Bay to fly back down"
+}

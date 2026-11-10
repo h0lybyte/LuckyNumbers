@@ -145,6 +145,13 @@ message FlightLanding {
   // Hover-ship controls (when enabled, instead of the flight model above): the ship hovers, holds its height and
   // stops when you let go; you fly it about and set it down. Easiest to land.
   FlightHover hover = 27;
+  // Leaving: on foot within board_distance (metres from the hull) of your landed ship, E boards it (board_prompt);
+  // you lift off and fly it out, and past orbit_altitude (metres above the ground) you're back at the station.
+  float orbit_altitude = 28;
+  string board_prompt = 29;
+  float board_distance = 30;
+  // Without the page's HUD: shown once you're aboard and climbing.
+  string takeoff_hint = 31;
 }
 
 // Six-axis ship controls with flight assist: the mouse aims the nose (yaw, pitch), Q/E roll; W/S thrust
@@ -210,6 +217,9 @@ message FlightState {
   bool assisted = 19;
   // Hover-ship controls (the HUD's steps and keys follow them).
   bool hover_ship = 20;
+  // Flying out (boarded after landing): climb to orbit_altitude to leave.
+  bool leaving = 21;
+  float orbit_altitude = 22;
 }
 
 // The page draws the flight HUD: Unity's own text readout and controls line step aside.

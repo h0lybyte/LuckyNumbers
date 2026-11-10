@@ -39,6 +39,7 @@ namespace LuckyNumbers.Model
             "PlayerShip",
             "PlayerHealth",
             "ShipPicker",
+            "PlayerVoyage",
             "StationState",
             "DiceState",
         };
@@ -161,6 +162,8 @@ namespace LuckyNumbers.Model
                 d.Add(s.CrashReason.Subscribe(_ => sink.MarkState(5)));
                 d.Add(s.Assisted.Subscribe(_ => sink.MarkState(5)));
                 d.Add(s.HoverShip.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.Leaving.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.OrbitAltitude.Subscribe(_ => sink.MarkState(5)));
                 sink.MarkState(5);
             }
             {
@@ -194,34 +197,41 @@ namespace LuckyNumbers.Model
                 sink.MarkState(10);
             }
             {
-                var s = c.Resolve<StationState>();
-                d.Add(s.Lights.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Room.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Call.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Caller.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Objective.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Prompt.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Psx.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Plan.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.MapOpen.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.PlayerCol.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.PlayerRow.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.PlayerYaw.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.DockCol.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.DockRow.Subscribe(_ => sink.MarkState(11)));
-                NotifyCollectionChangedEventHandler<string> hRooms = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(11);
-                s.Rooms.CollectionChanged += hRooms;
-                d.Add(Disposable.Create(() => s.Rooms.CollectionChanged -= hRooms));
+                var s = c.Resolve<PlayerVoyage>();
+                d.Add(s.Returning.Subscribe(_ => sink.MarkState(11)));
+                d.Add(s.Credits.Subscribe(_ => sink.MarkState(11)));
+                d.Add(s.LastPayout.Subscribe(_ => sink.MarkState(11)));
                 sink.MarkState(11);
             }
             {
+                var s = c.Resolve<StationState>();
+                d.Add(s.Lights.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Room.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Call.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Caller.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Objective.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Prompt.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Psx.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Plan.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.MapOpen.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.PlayerCol.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.PlayerRow.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.PlayerYaw.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.DockCol.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.DockRow.Subscribe(_ => sink.MarkState(12)));
+                NotifyCollectionChangedEventHandler<string> hRooms = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(12);
+                s.Rooms.CollectionChanged += hRooms;
+                d.Add(Disposable.Create(() => s.Rooms.CollectionChanged -= hRooms));
+                sink.MarkState(12);
+            }
+            {
                 var s = c.Resolve<DiceState>();
-                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(12);
+                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(13);
                 s.Faces.CollectionChanged += hFaces;
                 d.Add(Disposable.Create(() => s.Faces.CollectionChanged -= hFaces));
-                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(12)));
-                d.Add(s.Seed.Subscribe(_ => sink.MarkState(12)));
-                sink.MarkState(12);
+                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Seed.Subscribe(_ => sink.MarkState(13)));
+                sink.MarkState(13);
             }
             d.Add(c.Resolve<ISubscriber<RelicRolled>>().Subscribe(e =>
             {
@@ -412,8 +422,9 @@ namespace LuckyNumbers.Model
                 case 8: Write(b, c.Resolve<PlayerShip>()); break;
                 case 9: Write(b, c.Resolve<PlayerHealth>()); break;
                 case 10: Write(b, c.Resolve<ShipPicker>()); break;
-                case 11: Write(b, c.Resolve<StationState>()); break;
-                case 12: Write(b, c.Resolve<DiceState>()); break;
+                case 11: Write(b, c.Resolve<PlayerVoyage>()); break;
+                case 12: Write(b, c.Resolve<StationState>()); break;
+                case 13: Write(b, c.Resolve<DiceState>()); break;
             }
         }
 
@@ -794,6 +805,10 @@ namespace LuckyNumbers.Model
             b.Append(s.Assisted.Value ? "true" : "false");
             b.Append(",\"hoverShip\":");
             b.Append(s.HoverShip.Value ? "true" : "false");
+            b.Append(",\"leaving\":");
+            b.Append(s.Leaving.Value ? "true" : "false");
+            b.Append(",\"orbitAltitude\":");
+            Json.Num(b, s.OrbitAltitude.Value);
             b.Append('}');
         }
 
@@ -844,6 +859,18 @@ namespace LuckyNumbers.Model
             Json.Num(b, s.Index.Value);
             b.Append(",\"count\":");
             Json.Num(b, s.Count.Value);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, PlayerVoyage s)
+        {
+            b.Append('{');
+            b.Append("\"returning\":");
+            b.Append(s.Returning.Value ? "true" : "false");
+            b.Append(",\"credits\":");
+            Json.Num(b, s.Credits.Value);
+            b.Append(",\"lastPayout\":");
+            Json.Num(b, s.LastPayout.Value);
             b.Append('}');
         }
 

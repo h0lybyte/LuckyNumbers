@@ -14,6 +14,12 @@ const HOVER_STEPS = [
   { title: "Touch down", how: "Keep holding C, hands off the mouse" },
 ];
 
+// Flying back out (boarded after landing): lift off, then climb out of the atmosphere to the station.
+const LEAVE_STEPS = [
+  { title: "Lift off", how: "Hold SPACE to rise off the ground" },
+  { title: "Climb to orbit", how: "Keep holding SPACE, Shift to climb faster (or nose up and W)" },
+];
+
 const STEPS = [
   { title: "Fly to the green pad", how: "Mouse to steer, W / S to set your speed" },
   { title: "Slow down", how: "Tap S until SET reads 0" },
@@ -34,16 +40,19 @@ export function FlightHud() {
   // Follow what you're doing: hovering low = touch down, hovering = hover down, slow = hover down,
   // fast and near the pad = slow down, else fly to the pad. Landing anywhere counts.
   const slow = f.speed <= f.maxDrift * 0.85;
-  const steps = f.hoverShip ? HOVER_STEPS : STEPS;
-  const step = !f.assisted
+  const leaving = f.leaving;
+  const steps = leaving ? LEAVE_STEPS : f.hoverShip ? HOVER_STEPS : STEPS;
+  const step = leaving
+    ? f.altitude < 20 ? 0 : 1
+    : !f.assisted
     ? -1
     : f.hoverShip
       ? f.hovering || f.climb < -0.8   // descending: by the key, or still sinking after it
         ? f.altitude < 5 ? 3 : 2
         : f.padDistance > 18 ? 0 : f.speed > 2.5 ? 1 : 2
       : f.hovering ? (f.altitude < 15 ? 3 : 2) : slow ? 2 : f.padDistance > 45 ? 0 : 1;
-  const offPad = step >= 2 && f.padDistance > (f.hoverShip ? 18 : 45);
-  const low = f.altitude < 40;
+  const offPad = !leaving && step >= 2 && f.padDistance > (f.hoverShip ? 18 : 45);
+  const low = !leaving && f.altitude < 40;
   const warnings = low ? warn(f) : [];
   const keys = f.hoverShip
     ? [["Mouse", "aim"], ["W S", "thrust"], ["A D", "strafe"], ["Q E", "roll"], ["Space C", "up / down"], ["Shift", "boost"], ["X", "brake"]]
@@ -72,7 +81,19 @@ export function FlightHud() {
         </div>
       )}
 
-      <PadArrow bearing={f.padBearing} distance={f.padDistance} />
+      {leaving ? (
+        <div className="flight-orbit" title="Climb this high to leave the atmosphere">
+          <span>ORBIT</span>
+          <div className="flight-orbit-bar">
+            <div style={{ width: `${Math.min(100, (100 * Math.max(0, f.altitude)) / Math.max(1, f.orbitAltitude))}%` }} />
+          </div>
+          <b>
+            {Math.max(0, f.altitude).toFixed(0)} / {f.orbitAltitude.toFixed(0)} m
+          </b>
+        </div>
+      ) : (
+        <PadArrow bearing={f.padBearing} distance={f.padDistance} />
+      )}
 
       <div className="flight-instruments">
         <Instrument label="ALT" value={f.altitude} unit="m" />
