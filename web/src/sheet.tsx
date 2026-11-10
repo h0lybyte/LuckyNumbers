@@ -3,13 +3,22 @@
 // (Core/CharacterPresenter) and sends CharacterSheet; this only shows it and sends requests back.
 import { useEffect, useRef, useState } from "react";
 import { LN, useLNState } from "./ln";
+import { InventoryTab } from "./inventory";
+
+export type Tab = "sheet" | "inventory";
 
 const sign = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`);
 
-/** C toggles the sheet (not while flying: C is descend there); Esc closes it. Play opens it for character creation
- *  (CharacterSheet.setup): only Ready closes it then, and the title carries on to the station. */
+/** The personnel panel, tabbed: C opens it on the Sheet, I on the Inventory (the same key again closes it; not C
+ *  while flying: C is descend there); Esc closes it. Play opens it for character creation (CharacterSheet.setup):
+ *  only Ready closes it then, and the title carries on to the station. */
 export function CharacterSheetGate() {
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<Tab>("sheet");
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
+  const openRef = useRef(open);
+  openRef.current = open;
   const flow = useLNState("FlowState");
   const setup = useLNState("CharacterSheet")?.setup ?? false;
   const setupRef = useRef(setup);
@@ -21,11 +30,17 @@ export function CharacterSheetGate() {
       if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
       const t = document.activeElement;
       if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement) return;
-      if (setupRef.current) return;   // creation: Ready only
-      if (e.code === "KeyC") {
+      if (setupRef.current) return;   // creation: Ready only (tabs by click)
+      const want: Tab | null = e.code === "KeyC" ? "sheet" : e.code === "KeyI" ? "inventory" : null;
+      if (want) {
         if (LN.states.FlightState?.flying) return;
         e.stopImmediatePropagation();
-        setOpen((v) => !v);
+        // Same tab again closes; the other key switches.
+        if (openRef.current && tabRef.current === want) setOpen(false);
+        else {
+          setTab(want);
+          setOpen(true);
+        }
       } else if (e.code === "Escape") setOpen(false);
     };
     window.addEventListener("keydown", onKey, { capture: true });
@@ -47,16 +62,21 @@ export function CharacterSheetGate() {
   return (
     <>
       {!flying && !shown && scene !== "Title" && (
-        <button type="button" className="ui chip sheet-chip" onClick={() => setOpen(true)}>
-          Sheet <kbd>C</kbd>
-        </button>
+        <div className="sheet-chips">
+          <button type="button" className="ui chip" onClick={() => { setTab("sheet"); setOpen(true); }}>
+            Sheet <kbd>C</kbd>
+          </button>
+          <button type="button" className="ui chip" onClick={() => { setTab("inventory"); setOpen(true); }}>
+            Pack <kbd>I</kbd>
+          </button>
+        </div>
       )}
-      {shown && <Sheet onClose={close} setup={setup} />}
+      {shown && <Sheet onClose={close} setup={setup} tab={tab} setTab={setTab} />}
     </>
   );
 }
 
-function Sheet({ onClose, setup }: { onClose: () => void; setup: boolean }) {
+function Sheet({ onClose, setup, tab, setTab }: { onClose: () => void; setup: boolean; tab: Tab; setTab: (t: Tab) => void }) {
   const s = useLNState("CharacterSheet");
   const hp = useLNState("PlayerHealth");
   if (!s) return null;
@@ -90,13 +110,26 @@ function Sheet({ onClose, setup }: { onClose: () => void; setup: boolean }) {
         <div className="sheet-head-right">
           <span className={`sheet-badge${s.locked ? " locked" : ""}`}>{s.locked ? "Locked" : "Editable"}</span>
           {!setup && (
-            <button type="button" className="sheet-close" onClick={onClose} aria-label="Close sheet">
-              <kbd>C</kbd>
+            <button type="button" className="sheet-close" onClick={onClose} aria-label="Close">
+              <kbd>Esc</kbd>
             </button>
           )}
         </div>
       </header>
 
+      <nav className="sheet-tabs" role="tablist">
+        <button type="button" role="tab" aria-selected={tab === "sheet"} className={tab === "sheet" ? "active" : ""} onClick={() => setTab("sheet")}>
+          Sheet <kbd>C</kbd>
+        </button>
+        <button type="button" role="tab" aria-selected={tab === "inventory"} className={tab === "inventory" ? "active" : ""} onClick={() => setTab("inventory")}>
+          Inventory <kbd>I</kbd>
+        </button>
+        <button type="button" role="tab" disabled title="Coming next">
+          Equipment
+        </button>
+      </nav>
+
+      {tab === "inventory" ? <InventoryTab /> : (
       <div className="sheet-body">
         <section className="sheet-abilities">
           <h3>Abilities</h3>
@@ -197,7 +230,8 @@ function Sheet({ onClose, setup }: { onClose: () => void; setup: boolean }) {
           </ul>
         </section>
       </div>
-      {editable && (
+      )}
+      {(editable || setup) && (
         <footer className="sheet-foot">
           <span>
             {setup

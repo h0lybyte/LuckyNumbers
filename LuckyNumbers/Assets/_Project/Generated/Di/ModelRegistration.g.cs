@@ -28,6 +28,10 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<CutsceneStepStarted>(options);
             builder.RegisterMessageBroker<CutsceneFinished>(options);
             builder.RegisterMessageBroker<InputActionPerformed>(options);
+            builder.RegisterMessageBroker<InventoryMoveRequested>(options);
+            builder.RegisterMessageBroker<InventoryUseRequested>(options);
+            builder.RegisterMessageBroker<InventoryDropRequested>(options);
+            builder.RegisterMessageBroker<ItemEffectRequested>(options);
             builder.RegisterMessageBroker<FlightHudReady>(options);
             builder.RegisterMessageBroker<PlayerDamaged>(options);
             builder.RegisterMessageBroker<PlayerHealed>(options);
@@ -48,6 +52,7 @@ namespace LuckyNumbers.Model
             builder.Register<LoadingState>(Lifetime.Singleton);
             builder.Register<CameraHandoff>(Lifetime.Singleton);
             builder.Register<PlayerInput>(Lifetime.Singleton);
+            builder.Register<PlayerInventory>(Lifetime.Singleton);
             builder.Register<FlightState>(Lifetime.Singleton);
             builder.Register<MapState>(Lifetime.Singleton);
             builder.Register<LandingSite>(Lifetime.Singleton);

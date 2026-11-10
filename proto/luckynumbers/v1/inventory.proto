@@ -1,0 +1,133 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+import "luckynumbers/v1/cargo.proto";
+import "luckynumbers/v1/common.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// The player's pack (content/items.txtpb): a grid (10 x 6) that items fit into by shape, like falling blocks;
+// drag to move, R to rotate. Weight is separate: each item has bulk, and over a limit set by Strength you're
+// encumbered (slower), then overloaded (much slower). Your class packs a starting kit; relics you pick up go in too.
+message ItemConfig {
+  option (ln.config) = true;
+  int32 grid_width = 1;
+  int32 grid_height = 2;
+  repeated ItemDef items = 3;
+  repeated StartingKit kits = 4;
+  // Bulk you carry freely is Strength x bulk_per_str; past Strength x overload_per_str you're overloaded.
+  float bulk_per_str = 5;
+  float overload_per_str = 6;
+  // Walking speed while encumbered / overloaded.
+  float encumbered_speed = 7;
+  float overloaded_speed = 8;
+  // The item a picked-up relic becomes: matched by artifact id, then relic kind; else default_relic_item.
+  repeated RelicItem relic_items = 9;
+  string default_relic_item = 10;
+  // Shown when something doesn't fit.
+  string full_prompt = 11;
+}
+
+enum ItemKind {
+  ITEM_KIND_NONE = 0;
+  ITEM_KIND_GEAR = 1;
+  ITEM_KIND_CONSUMABLE = 2;
+  ITEM_KIND_RELIC = 3;
+  ITEM_KIND_TOOL = 4;
+  ITEM_KIND_WEAPON = 5;
+  ITEM_KIND_ARMOR = 6;
+}
+
+// Where an item can be worn or held (the Equipment tab, next).
+enum EquipSlot {
+  EQUIP_SLOT_NONE = 0;
+  EQUIP_SLOT_HEAD = 1;
+  EQUIP_SLOT_BODY = 2;
+  EQUIP_SLOT_HANDS = 3;
+  EQUIP_SLOT_WEAPON = 4;
+  EQUIP_SLOT_TOOL = 5;
+}
+
+message ItemDef {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  ItemKind kind = 4;
+  EquipSlot slot = 5;
+  // Its footprint in the grid: rows top to bottom separated by "/", "#" filled, "." empty ("##/#." is an L).
+  // Empty: one cell.
+  string shape = 6;
+  float bulk = 7;
+  int32 value = 8;
+  Rgba color = 9;
+  // Using it (consumables are used up): the same effects relic rolls have (heal, full heal, reveal...).
+  repeated RelicEffect effects = 10;
+  float amount = 11;
+  float seconds = 12;
+  bool consumable = 13;
+}
+
+message StartingKit {
+  // CharacterClass.id.
+  string class_id = 1;
+  // Item ids; repeat one to carry several.
+  repeated string items = 2;
+}
+
+message RelicItem {
+  // An artifact id or a relic kind id.
+  string relic = 1;
+  string item = 2;
+}
+
+// What's in the pack (Core/InventoryPresenter; the page's Inventory tab). Each item
+// "uid|id|name|kind|x|y|rot|shape|bulk|value|color|description|actions": shape already rotated (rows "/"),
+// color "#rrggbb", actions bits 1 = use, 2 = drop.
+message PlayerInventory {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  int32 width = 1;
+  int32 height = 2;
+  repeated string items = 3;
+  float bulk = 4;
+  float bulk_limit = 5;
+  float bulk_max = 6;
+  // 0 light, 1 encumbered, 2 overloaded; and the walking speed that gives.
+  int32 load = 7;
+  float speed = 8;
+  int32 value = 9;
+  // The last thing that didn't fit, or that happened ("No room for ...").
+  string message = 10;
+}
+
+// The page's grid: put item `uid` at cell (x, y) (its shape's top left), turned `rot` quarter turns clockwise.
+message InventoryMoveRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  int32 uid = 1;
+  int32 x = 2;
+  int32 y = 3;
+  int32 rot = 4;
+}
+
+message InventoryUseRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  int32 uid = 1;
+}
+
+message InventoryDropRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  int32 uid = 1;
+}
+
+// An item was used for an effect only the scene can do (reveal relics, slow): RelicsPresenter applies it.
+message ItemEffectRequested {
+  option (ln.event) = true;
+  RelicEffect effect = 1;
+  float amount = 2;
+  float seconds = 3;
+}
