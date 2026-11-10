@@ -29,196 +29,9 @@ namespace LuckyNumbers.Model
                 "Interstellar Heritage Trust",
                 "Museum of Before",
             },
-            Cultures =
+            Relics =
             {
-                new RelicCulture
-                {
-                    Id = "tibetan",
-                    Name = "Tibetan",
-                    Materials =
-                    {
-                        "gilded copper",
-                        "turquoise-set silver",
-                        "lacquered wood",
-                        "dzi agate",
-                    },
-                    Origins =
-                    {
-                        "a Lhasa monastery",
-                        "the Changtang plateau",
-                        "a Himalayan pass shrine",
-                    },
-                    Weight = 1.0f,
-                    ValueScale = 1.2f,
-                    ColorA = new Rgba(0.75f, 0.12f, 0.08f, 1.0f),
-                    ColorB = new Rgba(0.95f, 0.75f, 0.25f, 1.0f),
-                },
-                new RelicCulture
-                {
-                    Id = "roman",
-                    Name = "Roman",
-                    Materials =
-                    {
-                        "terracotta",
-                        "bronze",
-                        "glass",
-                        "marble",
-                    },
-                    Origins =
-                    {
-                        "a villa near Pompeii",
-                        "a wreck off Sicily",
-                        "a Hadrian's Wall fort",
-                    },
-                    Weight = 1.0f,
-                    ValueScale = 1.0f,
-                    ColorA = new Rgba(0.72f, 0.36f, 0.2f, 1.0f),
-                    ColorB = new Rgba(0.1f, 0.08f, 0.06f, 1.0f),
-                },
-                new RelicCulture
-                {
-                    Id = "alien",
-                    Name = "unknown alien",
-                    Materials =
-                    {
-                        "living crystal",
-                        "humming alloy",
-                        "a metal that isn't",
-                        "folded glass",
-                    },
-                    Origins =
-                    {
-                        "a dead moon's vault",
-                        "a signal no one answered",
-                        "the far side of the galaxy",
-                    },
-                    Weight = 0.6f,
-                    ValueScale = 2.5f,
-                    ColorA = new Rgba(0.2f, 0.95f, 0.75f, 1.0f),
-                    ColorB = new Rgba(0.55f, 0.2f, 0.95f, 1.0f),
-                },
-                new RelicCulture
-                {
-                    Id = "han",
-                    Name = "Han Chinese",
-                    Materials =
-                    {
-                        "jade",
-                        "bronze",
-                        "lacquered bronze",
-                        "celadon",
-                    },
-                    Origins =
-                    {
-                        "a Luoyang observatory",
-                        "a Nanyang tomb",
-                        "the Han imperial archive",
-                    },
-                    Weight = 0.8f,
-                    ValueScale = 1.6f,
-                    ColorA = new Rgba(0.18f, 0.62f, 0.52f, 1.0f),
-                    ColorB = new Rgba(0.72f, 0.52f, 0.25f, 1.0f),
-                },
-            },
-            Kinds =
-            {
-                new RelicKind
-                {
-                    Id = "amulet",
-                    Name = "amulet",
-                    ValueMin = 300.0f,
-                    ValueMax = 900.0f,
-                },
-                new RelicKind
-                {
-                    Id = "vase",
-                    Name = "vase",
-                    ValueMin = 500.0f,
-                    ValueMax = 1500.0f,
-                },
-            },
-            Artifacts =
-            {
-                new RelicArtifact
-                {
-                    Id = "zhang_heng_water_amulet",
-                    Name = "Water Amulet",
-                    Figure = "Zhang Heng",
-                    Era = "Eastern Han, 2nd century CE",
-                    Lore = "Jade carved for Zhang Heng, whose water-driven sphere turned with the heavens and whose bronze dragons pointed the way to distant quakes.",
-                    Culture = "han",
-                    Kind = "amulet",
-                    Value = 4800,
-                    ColorA = new Rgba(0.18f, 0.62f, 0.52f, 1.0f),
-                    ColorB = new Rgba(0.35f, 0.75f, 0.95f, 1.0f),
-                    CooldownSeconds = 12.0f,
-                    Rolls =
-                    {
-                        new RelicRoll
-                        {
-                            Min = 1,
-                            Max = 1,
-                            Title = "Flood",
-                            Text = "Water bursts from the jade and soaks you through. You slog on, slowed.",
-                            Effects =
-                            {
-                                RelicEffect.Slow,
-                            },
-                            Amount = 0.5f,
-                            Seconds = 8.0f,
-                        },
-                        new RelicRoll
-                        {
-                            Min = 2,
-                            Max = 7,
-                            Title = "Trickle",
-                            Text = "A cool trickle runs over your hands. A little strength comes back.",
-                            Effects =
-                            {
-                                RelicEffect.Heal,
-                            },
-                            Amount = 3.0f,
-                        },
-                        new RelicRoll
-                        {
-                            Min = 8,
-                            Max = 14,
-                            Title = "Spring",
-                            Text = "A clear spring wells up from the amulet. You feel much better.",
-                            Effects =
-                            {
-                                RelicEffect.Heal,
-                            },
-                            Amount = 8.0f,
-                        },
-                        new RelicRoll
-                        {
-                            Min = 15,
-                            Max = 19,
-                            Title = "Dragon's Pearl",
-                            Text = "A bronze dragon's pearl drops and rolls, pointing to the nearest relic.",
-                            Effects =
-                            {
-                                RelicEffect.RevealNearest,
-                            },
-                            Seconds = 25.0f,
-                        },
-                        new RelicRoll
-                        {
-                            Min = 20,
-                            Max = 20,
-                            Title = "Heavenly Tide",
-                            Text = "The sky turns like Zhang Heng's sphere: you are whole again, and every relic shines.",
-                            Effects =
-                            {
-                                RelicEffect.FullHeal,
-                                RelicEffect.RevealAll,
-                            },
-                            Seconds = 30.0f,
-                        },
-                    },
-                    Model = "water_amulet",
-                },
+                "zhang_heng_water_amulet",
             },
             LuckBonus = 3,
             ScatterMin = 10.0f,
@@ -1233,6 +1046,95 @@ namespace LuckyNumbers.Model
             {
                 new ItemDef
                 {
+                    Id = "zhang_heng_water_amulet",
+                    Name = "Water Amulet",
+                    Description = "Carved jade. It feels cold, and faintly wet.",
+                    Kind = ItemKind.Relic,
+                    Shape = "#",
+                    Bulk = 0.2f,
+                    Value = 4800,
+                    Color = new Rgba(0.18f, 0.62f, 0.52f, 1.0f),
+                    Unique = true,
+                    Model = "water_amulet",
+                    Lore = new ItemLore
+                    {
+                        Figure = "Zhang Heng",
+                        Era = "Eastern Han, 2nd century CE",
+                        Text = "Jade carved for Zhang Heng, whose water-driven sphere turned with the heavens and whose bronze dragons pointed the way to distant quakes.",
+                    },
+                    Use = new ItemUse
+                    {
+                        CooldownSeconds = 12.0f,
+                        Rolls =
+                        {
+                            new RelicRoll
+                            {
+                                Min = 1,
+                                Max = 1,
+                                Title = "Flood",
+                                Text = "Water bursts from the jade and soaks you through. You slog on, slowed.",
+                                Effects =
+                                {
+                                    RelicEffect.Slow,
+                                },
+                                Amount = 0.5f,
+                                Seconds = 8.0f,
+                            },
+                            new RelicRoll
+                            {
+                                Min = 2,
+                                Max = 7,
+                                Title = "Trickle",
+                                Text = "A cool trickle runs over your hands. A little strength comes back.",
+                                Effects =
+                                {
+                                    RelicEffect.Heal,
+                                },
+                                Amount = 3.0f,
+                            },
+                            new RelicRoll
+                            {
+                                Min = 8,
+                                Max = 14,
+                                Title = "Spring",
+                                Text = "A clear spring wells up from the amulet. You feel much better.",
+                                Effects =
+                                {
+                                    RelicEffect.Heal,
+                                },
+                                Amount = 8.0f,
+                            },
+                            new RelicRoll
+                            {
+                                Min = 15,
+                                Max = 19,
+                                Title = "Dragon's Pearl",
+                                Text = "A bronze dragon's pearl drops and rolls, pointing to the nearest relic.",
+                                Effects =
+                                {
+                                    RelicEffect.RevealNearest,
+                                },
+                                Seconds = 25.0f,
+                            },
+                            new RelicRoll
+                            {
+                                Min = 20,
+                                Max = 20,
+                                Title = "Heavenly Tide",
+                                Text = "The sky turns like Zhang Heng's sphere: you are whole again, and every relic shines.",
+                                Effects =
+                                {
+                                    RelicEffect.FullHeal,
+                                    RelicEffect.RevealAll,
+                                },
+                                Seconds = 30.0f,
+                            },
+                        },
+                    },
+                    ColorB = new Rgba(0.35f, 0.75f, 0.95f, 1.0f),
+                },
+                new ItemDef
+                {
                     Id = "medpatch",
                     Name = "Med-patch",
                     Description = "Stick it on, feel better. Heals 4.",
@@ -1592,36 +1494,6 @@ namespace LuckyNumbers.Model
                         },
                     },
                 },
-                new ItemDef
-                {
-                    Id = "relic_amulet",
-                    Name = "Amulet",
-                    Description = "Small, old and worth a lot.",
-                    Kind = ItemKind.Relic,
-                    Shape = "#",
-                    Bulk = 0.2f,
-                    Color = new Rgba(0.3f, 0.85f, 0.7f, 1.0f),
-                },
-                new ItemDef
-                {
-                    Id = "relic_vase",
-                    Name = "Vase",
-                    Description = "Fragile. Pack it carefully.",
-                    Kind = ItemKind.Relic,
-                    Shape = "#/#",
-                    Bulk = 1.0f,
-                    Color = new Rgba(0.85f, 0.55f, 0.35f, 1.0f),
-                },
-                new ItemDef
-                {
-                    Id = "relic",
-                    Name = "Relic",
-                    Description = "Something from the freighter's hold.",
-                    Kind = ItemKind.Relic,
-                    Shape = "#",
-                    Bulk = 0.5f,
-                    Color = new Rgba(0.7f, 0.6f, 0.9f, 1.0f),
-                },
             },
             Kits =
             {
@@ -1698,20 +1570,6 @@ namespace LuckyNumbers.Model
             OverloadPerStr = 1.0f,
             EncumberedSpeed = 0.8f,
             OverloadedSpeed = 0.55f,
-            RelicItems =
-            {
-                new RelicItem
-                {
-                    Relic = "amulet",
-                    Item = "relic_amulet",
-                },
-                new RelicItem
-                {
-                    Relic = "vase",
-                    Item = "relic_vase",
-                },
-            },
-            DefaultRelicItem = "relic",
             FullPrompt = "No room in your pack for {name}",
         };
 

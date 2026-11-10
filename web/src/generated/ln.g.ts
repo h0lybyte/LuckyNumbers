@@ -44,13 +44,10 @@ export type MenuAction =
   | "Credits";
 
 /**
- * What you carry (mirrored to the page's inventory strip): each item "id|name|figure|culture", the selected one,
- * seconds until it's ready again, relics still lying out, and the bearing of a revealed relic.
+ * The crash site's relics, for the page: how many still lie out, and a revealed one's bearing ("Water Amulet:
+ * 23 m north-east").
  */
-export interface RelicInventory {
-  items: string[];
-  selected: number;
-  cooldown: number;
+export interface RelicSite {
   lying: number;
   reveal: string;
 }
@@ -136,6 +133,10 @@ export interface PlayerInventory {
   gearBonuses: string[];
   /** There's a world to drop things into (the crash site): Drop and a full-pack unequip put the item at your feet. */
   canDrop: boolean;
+  /** The relic R uses (the one you picked up or used last; 0: none), its name, and seconds until it's ready. */
+  ready: number;
+  readyName: string;
+  cooldown: number;
 }
 
 /**
@@ -251,7 +252,7 @@ export interface DiceState {
   seed: number;
 }
 
-/** A relic was used: the d20, your luck bonus, the total, and what it did. */
+/** A relic was used (Core/InventoryPresenter): the d20, your bonuses (luck die + sheet), the total, and what it did. */
 export interface RelicRolled {
   relic: string;
   roll: number;
@@ -268,11 +269,6 @@ export interface RelicRolled {
  */
 export interface DevWarpRequested {
   to: string;
-}
-
-/** The page's inventory: use (and select) item `index`. */
-export interface RelicUseRequested {
-  index: number;
 }
 
 /**
@@ -439,7 +435,7 @@ export interface MenuItemSelected {
 
 /** Every (ln.web) state, by name: the page holds the latest snapshot of each. */
 export interface WebStates {
-  RelicInventory: RelicInventory;
+  RelicSite: RelicSite;
   CharacterSheet: CharacterSheet;
   FlowState: FlowState;
   LoadingState: LoadingState;
@@ -459,7 +455,6 @@ export interface WebStates {
 export interface WebEvents {
   RelicRolled: RelicRolled;
   DevWarpRequested: DevWarpRequested;
-  RelicUseRequested: RelicUseRequested;
   CharacterSheetReady: CharacterSheetReady;
   CharacterSetupDone: CharacterSetupDone;
   CharacterAbilityAdjustRequested: CharacterAbilityAdjustRequested;
@@ -494,6 +489,6 @@ export interface WebEvents {
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "DevWarpRequested" | "RelicUseRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
+export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
 
-export const STATE_NAMES = ["RelicInventory", "CharacterSheet", "FlowState", "LoadingState", "PlayerInventory", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "ShipPicker", "PlayerVoyage", "StationState", "DiceState"] as const;
+export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "PlayerInventory", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "ShipPicker", "PlayerVoyage", "StationState", "DiceState"] as const;

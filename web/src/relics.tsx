@@ -1,40 +1,36 @@
 // Relics at the crash site: the d20 when you use one (tumbles, lands on the roll, + luck and sheet = total, what it did),
-// the inventory strip (click to use), and a revealed relic's bearing. Unity rolls; this only shows it.
+// the ready relic (R, or click: an ordinary pack use, Core/InventoryPresenter rolls it), and a revealed relic's
+// bearing (RelicSite). Unity rolls; this only shows it.
 import { useEffect, useRef, useState } from "react";
 import { LN, useLNEvent, useLNState } from "./ln";
 import type { RelicRolled } from "./ln";
 
 export function RelicHud() {
-  const inv = useLNState("RelicInventory");
+  const site = useLNState("RelicSite");
+  const pack = useLNState("PlayerInventory");
   return (
     <>
       <D20 />
-      {inv?.reveal && <div className="relic-reveal">{inv.reveal}</div>}
-      {inv && inv.items.length > 0 && <Inventory items={inv.items} selected={inv.selected} cooldown={inv.cooldown} />}
+      {site?.reveal && <div className="relic-reveal">{site.reveal}</div>}
+      {pack && pack.ready !== 0 && pack.readyName && <ReadyRelic uid={pack.ready} name={pack.readyName} cooldown={pack.cooldown} />}
     </>
   );
 }
 
-function Inventory({ items, selected, cooldown }: { items: string[]; selected: number; cooldown: number }) {
+/** The relic R uses: its name and cooldown; click to use it too. */
+function ReadyRelic({ uid, name, cooldown }: { uid: number; name: string; cooldown: number }) {
   return (
     <div className="relic-strip ui">
-      {items.map((item, i) => {
-        const [id, name, figure] = item.split("|");
-        const usable = id !== "relic";
-        return (
-          <button
-            key={i}
-            type="button"
-            className={`relic-item${i === selected ? " selected" : ""}${usable ? " usable" : ""}`}
-            title={`${name}${figure ? ` (${figure})` : ""}${usable ? " - R or click to use" : ""}`}
-            onClick={() => LN.send("RelicUseRequested", { index: i })}
-          >
-            <span className="relic-icon">{usable ? "d20" : name.slice(0, 1).toUpperCase()}</span>
-            <span className="relic-name">{name}</span>
-            {usable && i === selected && cooldown > 0 && <span className="relic-cool">{Math.ceil(cooldown)}s</span>}
-          </button>
-        );
-      })}
+      <button
+        type="button"
+        className="relic-item selected usable"
+        title={`${name} - R or click to use`}
+        onClick={() => LN.send("InventoryUseRequested", { uid })}
+      >
+        <span className="relic-icon">d20</span>
+        <span className="relic-name">{name}</span>
+        {cooldown > 0 ? <span className="relic-cool">{Math.ceil(cooldown)}s</span> : <kbd>R</kbd>}
+      </button>
     </div>
   );
 }

@@ -55,11 +55,6 @@ namespace LuckyNumbers.Model
         public float EncumberedSpeed { get; set; }
         public float OverloadedSpeed { get; set; }
         /// <summary>
-        /// The item a picked-up relic becomes: matched by artifact id, then relic kind; else default_relic_item.
-        /// </summary>
-        public List<RelicItem> RelicItems { get; } = new List<RelicItem>();
-        public string DefaultRelicItem { get; set; }
-        /// <summary>
         /// Shown when something doesn't fit.
         /// </summary>
         public string FullPrompt { get; set; }
@@ -108,9 +103,52 @@ namespace LuckyNumbers.Model
         /// More than 1: this many copies share one cell (med-patches, rations). Bulk and value count each copy.
         /// </summary>
         public int Stack { get; set; }
+        /// <summary>
+        /// Its own model (file name in Art/Models/Relics, built into the scene); empty: a placeholder block.
+        /// </summary>
+        public string Model { get; set; }
+        /// <summary>
+        /// Whose it was, when, and a line about them (named relics: shown when you pick it up).
+        /// </summary>
+        public ItemLore Lore { get; set; }
+        /// <summary>
+        /// Using it rolls a d20 on a table (relics), with a cooldown.
+        /// </summary>
+        public ItemUse Use { get; set; }
+        /// <summary>
+        /// 25-27: hold / ranged / melee (docs/items.md step 5).
+        /// A second colour (the relic shader's _ColorB; `color` is _ColorA).
+        /// </summary>
+        public Rgba ColorB { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public ItemDef Clone() => (ItemDef)MemberwiseClone();
+    }
+
+    public sealed class ItemLore
+    {
+        public string Figure { get; set; }
+        public string Era { get; set; }
+        public string Text { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public ItemLore Clone() => (ItemLore)MemberwiseClone();
+    }
+
+    public sealed class ItemUse
+    {
+        /// <summary>
+        /// Seconds before it can be used again.
+        /// </summary>
+        public float CooldownSeconds { get; set; }
+        /// <summary>
+        /// What a d20 roll does (+ your luck die, up to cargo.txtpb luck_bonus, + the sheet's relic bonus): the first row
+        /// whose range holds the total. A natural 1 is always 1 (row 1), a natural 20 always 20.
+        /// </summary>
+        public List<RelicRoll> Rolls { get; } = new List<RelicRoll>();
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public ItemUse Clone() => (ItemUse)MemberwiseClone();
     }
 
     public sealed class SkillBonus
@@ -138,18 +176,6 @@ namespace LuckyNumbers.Model
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public StartingKit Clone() => (StartingKit)MemberwiseClone();
-    }
-
-    public sealed class RelicItem
-    {
-        /// <summary>
-        /// An artifact id or a relic kind id.
-        /// </summary>
-        public string Relic { get; set; }
-        public string Item { get; set; }
-
-        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
-        public RelicItem Clone() => (RelicItem)MemberwiseClone();
     }
 
     /// <summary>
@@ -185,6 +211,12 @@ namespace LuckyNumbers.Model
         /// There's a world to drop things into (the crash site): Drop and a full-pack unequip put the item at your feet.
         /// </summary>
         public readonly ReactiveProperty<bool> CanDrop = new ReactiveProperty<bool>();
+        /// <summary>
+        /// The relic R uses (the one you picked up or used last; 0: none), its name, and seconds until it's ready.
+        /// </summary>
+        public readonly ReactiveProperty<int> Ready = new ReactiveProperty<int>();
+        public readonly ReactiveProperty<string> ReadyName = new ReactiveProperty<string>();
+        public readonly ReactiveProperty<float> Cooldown = new ReactiveProperty<float>();
 
         public void Dispose()
         {
@@ -198,6 +230,9 @@ namespace LuckyNumbers.Model
             Value.Dispose();
             Message.Dispose();
             CanDrop.Dispose();
+            Ready.Dispose();
+            ReadyName.Dispose();
+            Cooldown.Dispose();
         }
     }
 

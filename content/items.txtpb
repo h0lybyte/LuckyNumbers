@@ -120,26 +120,9 @@ items {
   skill_bonuses { skill: "acrobatics" amount: 1 } skill_bonuses { skill: "athletics" amount: 1 }
 }
 
-# ---- relics (what a picked-up relic takes up) ----------------------------------------------------------------
+# ---- relics: one file each (lore, a d20 table, a model), unique ------------------------------------------------
 
-items {
-  id: "relic_amulet" name: "Amulet" kind: ITEM_KIND_RELIC
-  description: "Small, old and worth a lot." shape: "#" bulk: 0.2 value: 0
-  color { r: 0.3 g: 0.85 b: 0.7 a: 1 }
-}
-items {
-  id: "relic_vase" name: "Vase" kind: ITEM_KIND_RELIC
-  description: "Fragile. Pack it carefully." shape: "#/#" bulk: 1 value: 0
-  color { r: 0.85 g: 0.55 b: 0.35 a: 1 }
-}
-items {
-  id: "relic" name: "Relic" kind: ITEM_KIND_RELIC
-  description: "Something from the freighter's hold." shape: "#" bulk: 0.5 value: 0
-  color { r: 0.7 g: 0.6 b: 0.9 a: 1 }
-}
-relic_items { relic: "amulet" item: "relic_amulet" }
-relic_items { relic: "vase" item: "relic_vase" }
-default_relic_item: "relic"
+item_refs: ["items/relics/zhang_heng_water_amulet"]
 
 # ---- starting kits (CharacterClass.id): gear goes straight into its slot -------------------------------------------------------------------------
 

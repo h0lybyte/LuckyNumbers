@@ -7,20 +7,17 @@ import "luckynumbers/v1/common.proto";
 
 option csharp_namespace = "LuckyNumbers.Model";
 
-// The museum freighter and its cargo of relics, all generated from the lucky number (Cargo.Manifest).
+// The museum freighter and its cargo, from the lucky number (Cargo.Manifest). The relics themselves are items
+// (content/items.txtpb, each named relic its own file under content/items/relics, docs/items.md).
 message CargoConfig {
   option (ln.config) = true;
   // Picked from by the seed: the ship, and the museum it flies for.
   repeated string ship_names = 1;
   repeated string museums = 2;
-  // How many relics are aboard.
-  int32 min_relics = 3;
-  int32 max_relics = 4;
-  repeated RelicCulture cultures = 5;
-  repeated RelicKind kinds = 6;
-  // Named artifacts: always aboard, first in the hold (each its own file: content/relics/<id>.txtpb).
-  repeated RelicArtifact artifacts = 7;
-  repeated string artifact_refs = 8 [(ln.ref) = "artifacts"];
+  // 3-8: generated relics (cultures, kinds) and RelicArtifact, gone: relics are items now.
+  reserved 3, 4, 5, 6, 7, 8;
+  // What's aboard: item ids (ItemDef with kind RELIC, unique), always all of them, first in the hold.
+  repeated string relics = 15;
   // Your luck die (the title's dice) adds up to this to every relic roll.
   int32 luck_bonus = 9;
   // At the crash site the relics lie scattered this far (metres) from the wreck; E picks one up from this close.
@@ -30,28 +27,6 @@ message CargoConfig {
   // Prompts ({name}): picking up, and using what you carry.
   string pickup_prompt = 13;
   string use_prompt = 14;
-}
-
-// A named artifact: a real figure's relic, with a d20 table for what happens when you use it.
-message RelicArtifact {
-  string id = 1;
-  string name = 2;
-  // Who it belonged to, when, and a line about them (shown when you pick it up).
-  string figure = 3;
-  string era = 4;
-  string lore = 5;
-  // RelicCulture.id and RelicKind.id: its look and place in the manifest.
-  string culture = 6;
-  string kind = 7;
-  int32 value = 8;
-  Rgba color_a = 9;
-  Rgba color_b = 10;
-  // Seconds before it can be used again.
-  float cooldown_seconds = 11;
-  // What a d20 roll does: the first row whose range holds the total (a natural 1 is always row 1's).
-  repeated RelicRoll rolls = 12;
-  // Its own model (file name in Art/Models/Relics, built into the scene); empty: the kind's generic shape.
-  string model = 13;
 }
 
 enum RelicEffect {
@@ -78,19 +53,7 @@ message RelicRoll {
   float seconds = 7;
 }
 
-// What you carry (mirrored to the page's inventory strip): each item "id|name|figure|culture", the selected one,
-// seconds until it's ready again, relics still lying out, and the bearing of a revealed relic.
-message RelicInventory {
-  option (ln.state) = true;
-  option (ln.web) = true;
-  repeated string items = 1;
-  int32 selected = 2;
-  float cooldown = 3;
-  int32 lying = 4;
-  string reveal = 5;
-}
-
-// A relic was used: the d20, your luck bonus, the total, and what it did.
+// A relic was used (Core/InventoryPresenter): the d20, your bonuses (luck die + sheet), the total, and what it did.
 message RelicRolled {
   option (ln.event) = true;
   option (ln.web) = true;
@@ -111,30 +74,11 @@ message DevWarpRequested {
   string to = 1;
 }
 
-// The page's inventory: use (and select) item `index`.
-message RelicUseRequested {
-  option (ln.event) = true;
-  option (ln.web_in) = true;
-  int32 index = 1;
-}
-
-// Where a relic comes from: its name, what it's made of, where it was found, its colours (for the relic shaders).
-message RelicCulture {
-  string id = 1;
-  string name = 2;
-  repeated string materials = 3;
-  repeated string origins = 4;
-  // Share of the cargo (relative), and how much its relics are worth (x the kind's value).
-  float weight = 5;
-  float value_scale = 6;
-  Rgba color_a = 7;
-  Rgba color_b = 8;
-}
-
-// What a relic is (an amulet, a vase...), and what it's worth (credits).
-message RelicKind {
-  string id = 1;
-  string name = 2;
-  float value_min = 3;
-  float value_max = 4;
+// The crash site's relics, for the page: how many still lie out, and a revealed one's bearing ("Water Amulet:
+// 23 m north-east").
+message RelicSite {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  int32 lying = 1;
+  string reveal = 2;
 }
