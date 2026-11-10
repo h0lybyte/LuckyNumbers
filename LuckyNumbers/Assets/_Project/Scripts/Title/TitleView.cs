@@ -23,10 +23,17 @@ namespace LuckyNumbers.Title
         public void Bind()
         {
             if (_bound) return;
-            document.rootVisualElement.pickingMode = PickingMode.Ignore; // only buttons/panels catch the pointer
-            BindUi(document.rootVisualElement);
+            var root = document.rootVisualElement;
+            root.pickingMode = PickingMode.Ignore; // only buttons/panels catch the pointer
+            BindUi(root);
+            // No media queries in USS: below NarrowWidth (panel units) the dice panel joins the column under the
+            // menu instead of sitting in the corner, where it would cover the buttons (portrait phones, small iframes).
+            root.RegisterCallback<GeometryChangedEvent>(e => root.EnableInClassList("ln-narrow", e.newRect.width < NarrowWidth));
             _bound = true;
         }
+
+        /// <summary>Menu row (2 x 244) plus a dice panel (~290 incl. margin) on each side, so it stays centred.</summary>
+        const float NarrowWidth = 1080f;
 
         public void SetTitle(string text) => _title.text = text;
         public void SetPrompt(string text) => _prompt.text = text;

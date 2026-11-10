@@ -31,6 +31,7 @@ namespace LuckyNumbers.Planet
         readonly ICrashSite _site;
         readonly PlayerInput _input;
         readonly ISubscriber<InputActionPerformed> _actions;
+        readonly MapState _state;
         IDisposable _subscription;
         bool _toggle, _close;
         Phase _phase;
@@ -41,8 +42,9 @@ namespace LuckyNumbers.Planet
 
         [Inject]
         public MapPresenter(PlanetScene config, MapView map, PlanetView view, PlayerView player, IFirstPerson firstPerson,
-                            ICrashSite site, PlayerInput input, ISubscriber<InputActionPerformed> actions)
+                            ICrashSite site, PlayerInput input, ISubscriber<InputActionPerformed> actions, MapState state)
         {
+            _state = state;
             _config = config;
             _map = map;
             _view = view;
@@ -61,6 +63,7 @@ namespace LuckyNumbers.Planet
                 if (e.Action == InputAction.Cancel) _close = true;
             });
             _map.Show(false);
+            _state.Open.Value = false;   // app-wide state: don't carry a map left open in an earlier visit
         }
 
         public void Tick()
@@ -121,6 +124,7 @@ namespace LuckyNumbers.Planet
         {
             if (!_map.Built) Build(config);
             _phase = Phase.Opening;
+            _state.Open.Value = true;
             _t = 0f;
             _firstPerson.Active = false;
             _player.Camera.enabled = false;               // the map camera draws instead (and the arms with it)
@@ -150,6 +154,7 @@ namespace LuckyNumbers.Planet
         void FinishClose()
         {
             _phase = Phase.Closed;
+            _state.Open.Value = false;
             _map.Show(false);
             if (RenderSettings.skybox != null) RenderSettings.skybox.SetFloat(Haze, _haze);
             _player.Camera.enabled = true;

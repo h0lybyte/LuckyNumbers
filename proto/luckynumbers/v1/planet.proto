@@ -118,6 +118,14 @@ message PlanetMap {
   float close_seconds = 18;
 }
 
+// The planet map (M): open from the moment it starts opening until it has fully closed.
+// The pointer is free (not locked) while it's open, for dragging the globe.
+message MapState {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  bool open = 1;
+}
+
 // Where the intro's ship came down: read by the Planet scene (and later a save file).
 message LandingSite {
   option (ln.state) = true;

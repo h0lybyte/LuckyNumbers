@@ -177,6 +177,20 @@ namespace LuckyNumbers.Model
     }
 
     /// <summary>
+    /// The planet map (M): open from the moment it starts opening until it has fully closed.
+    /// The pointer is free (not locked) while it's open, for dragging the globe.
+    /// </summary>
+    public sealed class MapState : IDisposable
+    {
+        public readonly ReactiveProperty<bool> Open = new ReactiveProperty<bool>();
+
+        public void Dispose()
+        {
+            Open.Dispose();
+        }
+    }
+
+    /// <summary>
     /// Where the intro's ship came down: read by the Planet scene (and later a save file).
     /// </summary>
     public sealed class LandingSite : IDisposable

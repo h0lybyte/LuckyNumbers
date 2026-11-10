@@ -36,6 +36,14 @@ export interface LoadingState {
   ready: boolean;
 }
 
+/**
+ * The planet map (M): open from the moment it starts opening until it has fully closed.
+ * The pointer is free (not locked) while it's open, for dragging the globe.
+ */
+export interface MapState {
+  open: boolean;
+}
+
 /** Where the intro's ship came down: read by the Planet scene (and later a save file). */
 export interface LandingSite {
   valid: boolean;
@@ -110,6 +118,7 @@ export interface MenuItemSelected {
 export interface WebStates {
   FlowState: FlowState;
   LoadingState: LoadingState;
+  MapState: MapState;
   LandingSite: LandingSite;
   PlayerShip: PlayerShip;
   PlayerHealth: PlayerHealth;
@@ -133,4 +142,4 @@ export interface WebEvents {
 /** Events the page may publish into the game. */
 export type InboundEvent = "SceneChangeRequested" | "InputActionPerformed" | "MenuItemSelected";
 
-export const STATE_NAMES = ["FlowState", "LoadingState", "LandingSite", "PlayerShip", "PlayerHealth", "DiceState"] as const;
+export const STATE_NAMES = ["FlowState", "LoadingState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "DiceState"] as const;
