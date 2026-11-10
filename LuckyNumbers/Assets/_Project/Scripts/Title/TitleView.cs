@@ -32,14 +32,30 @@ namespace LuckyNumbers.Title
             var root = document.rootVisualElement;
             root.pickingMode = PickingMode.Ignore; // only buttons/panels catch the pointer
             BindUi(root);
-            // No media queries in USS: below NarrowWidth (panel units) the dice panel joins the column under the
-            // menu instead of sitting in the corner, where it would cover the buttons (portrait phones, small iframes).
-            root.RegisterCallback<GeometryChangedEvent>(e => root.EnableInClassList("ln-narrow", e.newRect.width < NarrowWidth));
+            // No media queries in USS: when the corner dice panel would reach the centred menu row (wide but short
+            // windows, small iframes, portrait phones), it joins the column under the menu instead. Measured, not a
+            // fixed width, so it holds whatever size the dice panel is.
+            root.RegisterCallback<GeometryChangedEvent>(_ => Relayout());
+            _menu.RegisterCallback<GeometryChangedEvent>(_ => Relayout());
+            _dicePanel.RegisterCallback<GeometryChangedEvent>(_ => Relayout());
             _bound = true;
         }
 
-        /// <summary>Menu row (3 x 244) plus a dice panel (~290 incl. margin) on each side, so it stays centred.</summary>
-        const float NarrowWidth = 1320f;
+        /// <summary>Clearance between the corner dice panel and the menu row (panel units).</summary>
+        const float CornerGap = 24f;
+        const float CornerInset = 28f;   // .ln-dice-panel left
+
+        void Relayout()
+        {
+            var root = document.rootVisualElement;
+            var width = root.layout.width;
+            var menu = _menu.layout.width;
+            var dice = _dicePanel.layout.width;
+            if (float.IsNaN(width) || float.IsNaN(menu) || float.IsNaN(dice) || width <= 0f || menu <= 0f || dice <= 0f) return;
+            // The menu is centred: it starts at (width - menu) / 2; the corner panel ends at inset + its width.
+            var narrow = (width - menu) * 0.5f < CornerInset + dice + CornerGap;
+            if (root.ClassListContains("ln-narrow") != narrow) root.EnableInClassList("ln-narrow", narrow);
+        }
 
         public void SetTitle(string text) => _title.text = text;
         public void SetPrompt(string text) => _prompt.text = text;
