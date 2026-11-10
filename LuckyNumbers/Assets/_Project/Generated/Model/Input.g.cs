@@ -52,6 +52,10 @@ namespace LuckyNumbers.Model
         /// Sprint held.
         /// </summary>
         public readonly ReactiveProperty<bool> Sprinting = new ReactiveProperty<bool>();
+        /// <summary>
+        /// Jump held (flying: the lift thrusters).
+        /// </summary>
+        public readonly ReactiveProperty<bool> Lifting = new ReactiveProperty<bool>();
 
         public void Dispose()
         {
@@ -62,6 +66,7 @@ namespace LuckyNumbers.Model
             PointerPressed.Dispose();
             PointerScroll.Dispose();
             Sprinting.Dispose();
+            Lifting.Dispose();
         }
     }
 

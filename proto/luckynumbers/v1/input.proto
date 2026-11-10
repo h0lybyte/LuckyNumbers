@@ -35,6 +35,8 @@ message PlayerInput {
   float pointer_scroll = 6;
   // Sprint held.
   bool sprinting = 7;
+  // Jump held (flying: the lift thrusters).
+  bool lifting = 8;
 }
 
 message InputActionPerformed {

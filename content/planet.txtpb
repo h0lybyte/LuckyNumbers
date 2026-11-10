@@ -9,7 +9,7 @@ ground_height: 7
 ground_noise_scale: 0.018
 chunk_size: 48
 chunk_resolution: 33
-view_chunks: 2
+view_chunks: 3
 surface_noise_scale: 0.12
 
 walk_speed: 4.5
@@ -88,4 +88,34 @@ map {
   open_seconds: 1.6
   close_seconds: 0.8
   hint: "Drag to turn - scroll to zoom - M to close"
+}
+
+# Arrival: you fly your own fighter in and land it near the wreck. Fully piloted: mouse pitches and yaws,
+# A/D roll, W/S throttle, Shift boost, Space lift thrusters. Touch down slow and level, or crash and retry.
+landing {
+  ship_length: 9
+  start_altitude: 110
+  start_distance: 260
+  start_speed: 30
+  gravity: 9.8
+  thrust: 22
+  boost: 2
+  lift: 16
+  drag: 0.35
+  throttle_per_second: 0.6
+  turn_degrees_per_pixel: 0.08
+  roll_degrees_per_second: 90
+  turn_damping: 4
+  roll_return_degrees_per_second: 25
+  max_touchdown_vertical: 4
+  max_touchdown_horizontal: 7
+  max_touchdown_tilt: 18
+  wing_lift: 0.011      # level flight at ~30 m/s
+  grip: 1.5
+  chase_distance: 2.2
+  chase_height: 0.7
+  hint: "Mouse: pitch and turn - A/D roll - W/S throttle - Shift boost - Space lift. Land slow and level near the wreck."
+  landed_text: "Landed."
+  crashed_text: "Too hard. Try again."
+  landed_lines { speaker: "You" text: "Down in one piece. Now, where's that cargo?" duration_seconds: 3.5 chars_per_second: 30 }
 }

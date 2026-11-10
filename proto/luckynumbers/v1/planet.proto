@@ -88,6 +88,48 @@ message PlanetScene {
   float wake_lines_delay = 51;
   // The planet map (M): a hex globe of the planet you're on.
   PlanetMap map = 52;
+  // Arrival in your own ship: you fly it in and land it near the wreck (fully piloted). Unset = the old
+  // arrival (waking up beside the wreck).
+  FlightLanding landing = 53;
+}
+
+// Piloting your fighter down to the crash site. Metres, seconds, m/s, m/s^2, degrees.
+message FlightLanding {
+  float ship_length = 1;
+  // Where you start: height above the ground, horizontal distance from the wreck, forward speed.
+  float start_altitude = 2;
+  float start_distance = 3;
+  float start_speed = 4;
+  // Flight model: gravity; main engine at full throttle (x boost with Shift); lift thrusters (Space, along the
+  // ship's up); air drag per second; how fast the throttle moves (W/S, share per second).
+  float gravity = 5;
+  float thrust = 6;
+  float boost = 7;
+  float lift = 8;
+  float drag = 9;
+  float throttle_per_second = 10;
+  // Handling: mouse pitch/yaw (degrees per pixel), roll (A/D, degrees per second), how quickly turning settles
+  // (per second), and how fast the wings level themselves when you're not rolling (degrees per second).
+  float turn_degrees_per_pixel = 11;
+  float roll_degrees_per_second = 12;
+  float turn_damping = 13;
+  float roll_return_degrees_per_second = 14;
+  // A landing counts if every limit holds at touchdown; otherwise you crash and try again.
+  float max_touchdown_vertical = 15;
+  float max_touchdown_horizontal = 16;
+  float max_touchdown_tilt = 17;
+  // Chase camera: behind and above the ship (ship lengths).
+  float chase_distance = 18;
+  float chase_height = 19;
+  string hint = 20;
+  string landed_text = 21;
+  string crashed_text = 22;
+  // Said once you've stepped out.
+  repeated Dialogue landed_lines = 23;
+  // Wings: lift along the ship's up per (forward speed)^2 (so it glides when fast and sinks when slow: land
+  // on the lift thrusters), and grip (per second) turning your motion toward where the nose points.
+  float wing_lift = 24;
+  float grip = 25;
 }
 
 // A Goldberg globe: hexagons plus exactly 12 pentagons (Euler), 10 * frequency^2 + 2 cells, each coloured by
