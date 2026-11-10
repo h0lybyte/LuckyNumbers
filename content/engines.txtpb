@@ -10,6 +10,10 @@ spool_down_seconds: 0.35
 idle: 0.15
 rcs_threshold: 0.12
 boost_stretch: 1.6
+# Cold gas: puffs from a 4% share (small corrections), each 0.55 s, the next one 40% of the way through while held.
+gas_threshold: 0.04
+gas_life_seconds: 0.55
+gas_repeat: 0.4
 
 # Mains: hot blue-white core cooling to violet, long, with shock diamonds.
 main_look {
@@ -47,8 +51,20 @@ rcs_look {
   flicker: 0.25
 }
 
+# Cold-gas puffs: pale compressed air, alpha-blended (shows on a bright sky), lit by the scene's sun and sky.
+gas_look {
+  color { r: 0.93 g: 0.95 b: 0.98 a: 1 }
+  opacity: 0.9
+  softness: 1.4
+  expand: 7
+  cloud_size: 9
+  wisp_scale: 3
+  wisp_speed: 2
+}
+
 # The fighter (Art/Models/Fighter/fighter1.fbx, 0.49 long): two main pods at the back, lift jets under the belly
-# and the pods, down jets on top, side jets on the pods and the nose prongs, retros under the front of the pods (clear of the gun rods).
+# and the pods, retros under the front of the pods (clear of the gun rods); cold gas on top, on the sides, under
+# the nose and the tail corners.
 ships {
   ship: "fighter"
   centre { x: 0 y: -0.005 z: 0 }
@@ -62,19 +78,25 @@ ships {
   thrusters { name: "lift_l" position { x: -0.077 y: -0.035 z: -0.14 } direction { y: -1 } radius: 0.011 length: 0.091 }
   thrusters { name: "lift_r" position { x: 0.077 y: -0.035 z: -0.14 } direction { y: -1 } radius: 0.011 length: 0.091 }
 
-  thrusters { name: "down_l" position { x: -0.077 y: 0.02 z: -0.14 } direction { y: 1 } radius: 0.008 length: 0.07 }
-  thrusters { name: "down_r" position { x: 0.077 y: 0.02 z: -0.14 } direction { y: 1 } radius: 0.008 length: 0.07 }
-  thrusters { name: "down_nose_l" position { x: -0.035 y: -0.002 z: 0.2 } direction { y: 1 } radius: 0.005 length: 0.056 }
-  thrusters { name: "down_nose_r" position { x: 0.035 y: -0.002 z: 0.2 } direction { y: 1 } radius: 0.005 length: 0.056 }
+  thrusters { gas: true name: "down_l" position { x: -0.077 y: 0.02 z: -0.14 } direction { y: 1 } radius: 0.0064 length: 0.126 }
+  thrusters { gas: true name: "down_r" position { x: 0.077 y: 0.02 z: -0.14 } direction { y: 1 } radius: 0.0064 length: 0.126 }
+  thrusters { gas: true name: "down_nose_l" position { x: -0.035 y: -0.002 z: 0.2 } direction { y: 1 } radius: 0.004 length: 0.101 }
+  thrusters { gas: true name: "down_nose_r" position { x: 0.035 y: -0.002 z: 0.2 } direction { y: 1 } radius: 0.004 length: 0.101 }
 
-  thrusters { name: "side_l" position { x: -0.104 y: -0.007 z: -0.13 } direction { x: -1 } radius: 0.008 length: 0.07 }
-  thrusters { name: "side_r" position { x: 0.104 y: -0.007 z: -0.13 } direction { x: 1 } radius: 0.008 length: 0.07 }
-  thrusters { name: "side_nose_l" position { x: -0.05 y: -0.007 z: 0.2 } direction { x: -1 } radius: 0.005 length: 0.056 }
-  thrusters { name: "side_nose_r" position { x: 0.05 y: -0.007 z: 0.2 } direction { x: 1 } radius: 0.005 length: 0.056 }
+  # Cold gas under the nose and the rear corners: pitch, roll and hover trim.
+  thrusters { gas: true name: "under_nose_l" position { x: -0.035 y: -0.012 z: 0.2 } direction { y: -1 } radius: 0.004 length: 0.1 }
+  thrusters { gas: true name: "under_nose_r" position { x: 0.035 y: -0.012 z: 0.2 } direction { y: -1 } radius: 0.004 length: 0.1 }
+  thrusters { gas: true name: "under_tail_l" position { x: -0.1 y: -0.03 z: -0.165 } direction { y: -1 } radius: 0.005 length: 0.11 }
+  thrusters { gas: true name: "under_tail_r" position { x: 0.1 y: -0.03 z: -0.165 } direction { y: -1 } radius: 0.005 length: 0.11 }
+
+  thrusters { gas: true name: "side_l" position { x: -0.104 y: -0.007 z: -0.13 } direction { x: -1 } radius: 0.0064 length: 0.126 }
+  thrusters { gas: true name: "side_r" position { x: 0.104 y: -0.007 z: -0.13 } direction { x: 1 } radius: 0.0064 length: 0.126 }
+  thrusters { gas: true name: "side_nose_l" position { x: -0.05 y: -0.007 z: 0.2 } direction { x: -1 } radius: 0.004 length: 0.101 }
+  thrusters { gas: true name: "side_nose_r" position { x: 0.05 y: -0.007 z: 0.2 } direction { x: 1 } radius: 0.004 length: 0.101 }
 }
 
 # The museum freighter (Art/Models/CargoShip, ~46 long): four big nozzles in a square at the stern, and the
-# silver thruster pods on its flanks (two above, two below), each with a jet up/down and one outwards.
+# silver thruster pods on its flanks (two above, two below), each puffing cold gas up/down and outwards.
 ships {
   ship: "freighter"
   centre { x: 0 y: 0 z: 0 }
@@ -83,12 +105,12 @@ ships {
   thrusters { name: "main_ll" main: true position { x: -2.75 y: -2.6 z: -18.4 } direction { z: -1 } radius: 1.5 length: 22 }
   thrusters { name: "main_lr" main: true position { x: 2.75 y: -2.6 z: -18.4 } direction { z: -1 } radius: 1.5 length: 22 }
 
-  thrusters { name: "pod_ul_up" position { x: -5.9 y: 4.9 z: -4.4 } direction { y: 1 } radius: 0.7 length: 7 }
-  thrusters { name: "pod_ur_up" position { x: 5.9 y: 4.9 z: -4.4 } direction { y: 1 } radius: 0.7 length: 7 }
-  thrusters { name: "pod_ll_down" position { x: -5.9 y: -4.9 z: -4.4 } direction { y: -1 } radius: 0.7 length: 7 }
-  thrusters { name: "pod_lr_down" position { x: 5.9 y: -4.9 z: -4.4 } direction { y: -1 } radius: 0.7 length: 7 }
-  thrusters { name: "pod_ul_out" position { x: -6.5 y: 4.3 z: -4.4 } direction { x: -1 } radius: 0.7 length: 7 }
-  thrusters { name: "pod_ur_out" position { x: 6.5 y: 4.3 z: -4.4 } direction { x: 1 } radius: 0.7 length: 7 }
-  thrusters { name: "pod_ll_out" position { x: -6.5 y: -4.3 z: -4.4 } direction { x: -1 } radius: 0.7 length: 7 }
-  thrusters { name: "pod_lr_out" position { x: 6.5 y: -4.3 z: -4.4 } direction { x: 1 } radius: 0.7 length: 7 }
+  thrusters { gas: true name: "pod_ul_up" position { x: -5.9 y: 4.9 z: -4.4 } direction { y: 1 } radius: 0.7 length: 7 }
+  thrusters { gas: true name: "pod_ur_up" position { x: 5.9 y: 4.9 z: -4.4 } direction { y: 1 } radius: 0.7 length: 7 }
+  thrusters { gas: true name: "pod_ll_down" position { x: -5.9 y: -4.9 z: -4.4 } direction { y: -1 } radius: 0.7 length: 7 }
+  thrusters { gas: true name: "pod_lr_down" position { x: 5.9 y: -4.9 z: -4.4 } direction { y: -1 } radius: 0.7 length: 7 }
+  thrusters { gas: true name: "pod_ul_out" position { x: -6.5 y: 4.3 z: -4.4 } direction { x: -1 } radius: 0.7 length: 7 }
+  thrusters { gas: true name: "pod_ur_out" position { x: 6.5 y: 4.3 z: -4.4 } direction { x: 1 } radius: 0.7 length: 7 }
+  thrusters { gas: true name: "pod_ll_out" position { x: -6.5 y: -4.3 z: -4.4 } direction { x: -1 } radius: 0.7 length: 7 }
+  thrusters { gas: true name: "pod_lr_out" position { x: 6.5 y: -4.3 z: -4.4 } direction { x: 1 } radius: 0.7 length: 7 }
 }

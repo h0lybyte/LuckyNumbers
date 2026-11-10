@@ -11,7 +11,9 @@ option csharp_namespace = "LuckyNumbers.Model";
 // helps the move being asked for. Whoever flies the ship says what it wants: a push in the ship's frame and a turn;
 // each jet works out its own share from where it sits and which way it points, so the mains burn for forward,
 // the belly jets for up, the side jets for strafing, and pairs at the ends fire against each other to turn and
-// roll. Mains idle with a low flame and stretch with boost; the small jets (RCS) puff.
+// roll. Mains idle with a low flame and stretch with boost; the small flame jets (RCS) burn short. Cold-gas jets
+// (gas) don't burn: they puff compressed air, a short white cloud, again and again while held, for the small
+// corrections (under the ship, on its sides).
 message EngineConfig {
   option (ln.config) = true;
   // Per ship model (ShipView.engines names one).
@@ -28,6 +30,12 @@ message EngineConfig {
   float rcs_threshold = 7;
   // How much longer the mains burn at full boost (x their length).
   float boost_stretch = 8;
+  // Cold-gas jets: the cloud's look; they puff above gas_threshold (lower than the flames': small corrections),
+  // each puff lasts gas_life_seconds and the next starts gas_repeat of the way through it while still asked.
+  GasLook gas_look = 9;
+  float gas_threshold = 10;
+  float gas_life_seconds = 11;
+  float gas_repeat = 12;
 }
 
 message ShipEngines {
@@ -51,6 +59,8 @@ message Thruster {
   float length = 5;
   // A main engine: main_look, idles, stretches with boost. Otherwise a manoeuvring jet (rcs_look).
   bool main = 6;
+  // A cold-gas jet: puffs of compressed air (gas_look) instead of a flame.
+  bool gas = 7;
 }
 
 // Shader properties of LuckyNumbers/Exhaust (additive flame: a tapered tube plus a glow at the nozzle).
@@ -78,4 +88,21 @@ message ExhaustLook {
   optional float halo_intensity = 13;
   // Flicker: quick brightness wobble.
   optional float flicker = 14;
+}
+
+// Shader properties of LuckyNumbers/ColdGas (alpha-blended puff: a widening cone off the nozzle and a cloud that
+// rolls out along it, lit by the scene's sun and sky so it reads on a bright sky as well as in space).
+message GasLook {
+  option (ln.material) = "LuckyNumbers/ColdGas";
+  Rgba color = 1;
+  // Peak opacity of a full-strength puff.
+  optional float opacity = 2;
+  // Higher = softer edges.
+  optional float softness = 3;
+  // How wide the cone opens at its end (x the nozzle radius), and the cloud's size (x the nozzle radius).
+  optional float expand = 4;
+  optional float cloud_size = 5;
+  // Wisps: noise size and how fast it churns.
+  optional float wisp_scale = 6;
+  optional float wisp_speed = 7;
 }

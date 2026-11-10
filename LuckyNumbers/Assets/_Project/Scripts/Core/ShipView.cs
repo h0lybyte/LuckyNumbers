@@ -14,6 +14,8 @@ namespace LuckyNumbers.Core
     /// in the ship's frame); each jet burns for its share of that, from which way it pushes and how it turns the
     /// ship about its centre, so the mains light for forward, the belly for up, the side jets for strafe, and
     /// opposite pairs fire to pitch, yaw and roll. Flames spool up and die down; EnginesOff cuts them all.
+    /// Cold-gas jets (LuckyNumbers/ColdGas) don't burn: past a small share they puff compressed air, one short
+    /// cloud after another while still asked, so fine corrections show as little bursts under and beside the ship.
     /// </summary>
     public sealed class ShipView : MonoBehaviour
     {
@@ -21,6 +23,7 @@ namespace LuckyNumbers.Core
         static readonly int Glow = Shader.PropertyToID("_Glow");
         static readonly int Thrust = Shader.PropertyToID("_Thrust");
         static readonly int Seed = Shader.PropertyToID("_Seed");
+        static readonly int Puff = Shader.PropertyToID("_Puff");
 
         [SerializeField] Transform pivot;
         [SerializeField] Renderer[] renderers;
@@ -28,6 +31,7 @@ namespace LuckyNumbers.Core
         [SerializeField] float modelLength = 0.49f;
         [SerializeField] string engines;      // EngineConfig.ships[].ship ("fighter"); empty: no flames
         [SerializeField] Material exhaust;    // LuckyNumbers/Exhaust, set by the scene builder
+        [SerializeField] Material coldGas;    // LuckyNumbers/ColdGas, set by the scene builder
         [Tooltip("Gun muzzles (the pivot's space, model units: +Z the nose): the tips of the fighter's twin gun barrels " +
                  "(the rods beside the cockpit, fighter1.fbx), left then right.")]
         [SerializeField] Vector3[] muzzles = { new(-0.111f, -0.0074f, 0.116f), new(0.111f, -0.0074f, 0.116f) };
@@ -42,6 +46,7 @@ namespace LuckyNumbers.Core
             public Vector3 Turn;     // unit turn axis it gives about the centre (zero: no useful lever)
             public float Lever;      // 0..1: how much it can turn the ship (arm against the ship's size)
             public float Target, Value;
+            public float Age = 1f;   // gas: through the current puff, 0..1 (1: none showing)
         }
 
         readonly List<Jet> _jets = new();
@@ -49,7 +54,7 @@ namespace LuckyNumbers.Core
         MaterialPropertyBlock _block => _blockStore ??= new MaterialPropertyBlock();   // not in a field initializer (Unity)
         bool _jetsBuilt, _running;
         float _boost = 1f;
-        Material _mainMat, _rcsMat;
+        Material _mainMat, _rcsMat, _gasMat;
         static Mesh _plume;
 
         public Transform Pivot => pivot;
@@ -146,7 +151,8 @@ namespace LuckyNumbers.Core
                     continue;
                 }
                 share += Vector3.Dot(j.Turn, turn) * j.Lever;
-                j.Target = share > cfg.RcsThreshold ? Mathf.Clamp01(share) : 0f;
+                var threshold = j.Def.Gas ? cfg.GasThreshold : cfg.RcsThreshold;
+                j.Target = share > threshold ? Mathf.Clamp01(share) : 0f;
             }
         }
 
@@ -157,7 +163,9 @@ namespace LuckyNumbers.Core
             foreach (var j in _jets)
             {
                 j.Target = 0f;
-                if (instant) j.Value = 0f;
+                if (!instant) continue;
+                j.Value = 0f;
+                j.Age = 1f;
             }
             if (instant) Apply();
         }
@@ -165,7 +173,11 @@ namespace LuckyNumbers.Core
         /// <summary>Flames straight to what's asked, no spooling (previews, which have no frames to ease over).</summary>
         public void SnapEngines()
         {
-            foreach (var j in _jets) j.Value = _running ? j.Target : 0f;
+            foreach (var j in _jets)
+            {
+                j.Value = _running ? j.Target : 0f;
+                if (j.Def.Gas) j.Age = j.Value > 0f ? 0.3f : 1f;   // a puff on its way out
+            }
             Apply();
         }
 
@@ -176,9 +188,23 @@ namespace LuckyNumbers.Core
             var dt = Time.deltaTime;
             var up = 1f - Mathf.Exp(-dt / Mathf.Max(0.01f, cfg.SpoolUpSeconds));
             var down = 1f - Mathf.Exp(-dt / Mathf.Max(0.01f, cfg.SpoolDownSeconds));
+            var life = Mathf.Max(0.05f, cfg.GasLifeSeconds);
+            var repeat = Mathf.Clamp(cfg.GasRepeat, 0.1f, 1f);
             foreach (var j in _jets)
             {
                 var target = _running ? j.Target : 0f;
+                if (j.Def.Gas)
+                {
+                    // A puff runs its course; while still asked, the next one starts part way through it.
+                    j.Age = Mathf.Min(1f, j.Age + dt / life);
+                    if (target > 0f && j.Age >= repeat)
+                    {
+                        j.Age = 0f;
+                        j.Value = Mathf.Max(0.35f, target);   // even a nudge makes a visible puff
+                    }
+                    if (j.Age >= 1f) j.Value = 0f;
+                    continue;
+                }
                 j.Value = Mathf.Lerp(j.Value, target, target > j.Value ? up : down);
                 if (j.Value < 0.002f && target <= 0f) j.Value = 0f;
             }
@@ -197,6 +223,7 @@ namespace LuckyNumbers.Core
                 var boost = j.Def.Main ? 1f + (stretch - 1f) * Mathf.Clamp01(_boost - 1f) : 1f;
                 j.Renderer.GetPropertyBlock(_block);
                 _block.SetFloat(Thrust, j.Value * boost);
+                if (j.Def.Gas) _block.SetFloat(Puff, j.Age);
                 j.Renderer.SetPropertyBlock(_block);
             }
         }
@@ -218,6 +245,11 @@ namespace LuckyNumbers.Core
             _rcsMat = new Material(exhaust) { name = "Exhaust (rcs)" };
             cfg.MainLook?.ApplyTo(_mainMat);
             cfg.RcsLook?.ApplyTo(_rcsMat);
+            if (coldGas != null)
+            {
+                _gasMat = new Material(coldGas) { name = "Cold gas" };
+                cfg.GasLook?.ApplyTo(_gasMat);
+            }
             var centre = layout.Centre.ToVector3();
             // Lever: the arm that counts as a full turn (a jet at the ship's ends turns it hardest).
             var reach = 0.01f;
@@ -227,6 +259,11 @@ namespace LuckyNumbers.Core
             var index = 0;
             foreach (var t in layout.Thrusters)
             {
+                if (t.Gas && _gasMat == null)
+                {
+                    Debug.LogWarning($"[Ship] {name}: no cold-gas material, skipping jet {t.Name} (rebuild the scenes)");
+                    continue;
+                }
                 var dir = t.Direction.ToVector3();
                 if (dir.sqrMagnitude < 1e-6f) dir = Vector3.back;
                 dir.Normalize();
@@ -237,7 +274,7 @@ namespace LuckyNumbers.Core
                 go.transform.localScale = new Vector3(t.Radius, t.Radius, t.Length);
                 go.AddComponent<MeshFilter>().sharedMesh = Plume();
                 var r = go.AddComponent<MeshRenderer>();
-                r.sharedMaterial = t.Main ? _mainMat : _rcsMat;
+                r.sharedMaterial = t.Main ? _mainMat : t.Gas ? _gasMat : _rcsMat;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 r.receiveShadows = false;
                 r.enabled = false;

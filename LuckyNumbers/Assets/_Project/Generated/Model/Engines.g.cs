@@ -14,7 +14,9 @@ namespace LuckyNumbers.Model
     /// helps the move being asked for. Whoever flies the ship says what it wants: a push in the ship's frame and a turn;
     /// each jet works out its own share from where it sits and which way it points, so the mains burn for forward,
     /// the belly jets for up, the side jets for strafing, and pairs at the ends fire against each other to turn and
-    /// roll. Mains idle with a low flame and stretch with boost; the small jets (RCS) puff.
+    /// roll. Mains idle with a low flame and stretch with boost; the small flame jets (RCS) burn short. Cold-gas jets
+    /// (gas) don't burn: they puff compressed air, a short white cloud, again and again while held, for the small
+    /// corrections (under the ship, on its sides).
     /// </summary>
     public sealed class EngineConfig
     {
@@ -44,6 +46,14 @@ namespace LuckyNumbers.Model
         /// How much longer the mains burn at full boost (x their length).
         /// </summary>
         public float BoostStretch { get; set; }
+        /// <summary>
+        /// Cold-gas jets: the cloud's look; they puff above gas_threshold (lower than the flames': small corrections),
+        /// each puff lasts gas_life_seconds and the next starts gas_repeat of the way through it while still asked.
+        /// </summary>
+        public GasLook GasLook { get; set; }
+        public float GasThreshold { get; set; }
+        public float GasLifeSeconds { get; set; }
+        public float GasRepeat { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public EngineConfig Clone() => (EngineConfig)MemberwiseClone();
@@ -89,6 +99,10 @@ namespace LuckyNumbers.Model
         /// A main engine: main_look, idles, stretches with boost. Otherwise a manoeuvring jet (rcs_look).
         /// </summary>
         public bool Main { get; set; }
+        /// <summary>
+        /// A cold-gas jet: puffs of compressed air (gas_look) instead of a flame.
+        /// </summary>
+        public bool Gas { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public Thruster Clone() => (Thruster)MemberwiseClone();
@@ -140,5 +154,35 @@ namespace LuckyNumbers.Model
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public ExhaustLook Clone() => (ExhaustLook)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// Shader properties of LuckyNumbers/ColdGas (alpha-blended puff: a widening cone off the nozzle and a cloud that
+    /// rolls out along it, lit by the scene's sun and sky so it reads on a bright sky as well as in space).
+    /// </summary>
+    public sealed class GasLook
+    {
+        public Rgba Color { get; set; }
+        /// <summary>
+        /// Peak opacity of a full-strength puff.
+        /// </summary>
+        public float Opacity { get; set; }
+        /// <summary>
+        /// Higher = softer edges.
+        /// </summary>
+        public float Softness { get; set; }
+        /// <summary>
+        /// How wide the cone opens at its end (x the nozzle radius), and the cloud's size (x the nozzle radius).
+        /// </summary>
+        public float Expand { get; set; }
+        public float CloudSize { get; set; }
+        /// <summary>
+        /// Wisps: noise size and how fast it churns.
+        /// </summary>
+        public float WispScale { get; set; }
+        public float WispSpeed { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public GasLook Clone() => (GasLook)MemberwiseClone();
     }
 }

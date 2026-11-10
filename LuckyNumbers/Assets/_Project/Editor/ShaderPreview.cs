@@ -125,8 +125,9 @@ namespace LuckyNumbers.Editor
 
         /// <summary>
         /// Engine flames (content/engines.txtpb) on the fighter, one row per manoeuvre, from behind-above (left) and
-        /// below-side (right), to Logs/preview-exhaust.png. Rows: idle, cruise, boost, lift, strafe right + yaw right,
-        /// roll + pitch, brake. LN_EXHAUST_SHIP=freighter renders the museum freighter.
+        /// below-side (right), to Logs/preview-exhaust.png. Rows: idle, small trim (cold gas only), cruise, boost, lift,
+        /// strafe right + yaw right, roll + pitch, brake. LN_EXHAUST_SHIP=freighter renders the museum freighter;
+        /// LN_EXHAUST_SKY=1 puts it against a bright planet sky (does the cold gas still read?).
         /// </summary>
         [MenuItem("LuckyNumbers/Preview/Render Exhaust")]
         public static void RenderExhaust()
@@ -135,7 +136,9 @@ namespace LuckyNumbers.Editor
             RenderSettings.skybox = new Material(Find("LuckyNumbers/Starfield"));
             Shader.SetGlobalVector("_LnSunPosition", new Vector4(40f, 30f, -26f, 1f));
             Shader.SetGlobalVector("_LnSunColor", new Color(1f, 0.95f, 0.85f));
-            Shader.SetGlobalVector("_LnSkyColor", Vector4.zero);
+            var sky = System.Environment.GetEnvironmentVariable("LN_EXHAUST_SKY") == "1";
+            var skyColour = new Color(0.95f, 0.55f, 0.3f);
+            Shader.SetGlobalVector("_LnSkyColor", sky ? new Vector4(1.15f, 0.8f, 0.6f, 1f) : Vector4.zero);
             Shader.SetGlobalVector("_LnGroundColor", Vector4.zero);
             // LN_EXHAUST_SHIP=freighter: the museum freighter instead of the fighter.
             var freighter = System.Environment.GetEnvironmentVariable("LN_EXHAUST_SHIP") == "freighter";
@@ -145,6 +148,7 @@ namespace LuckyNumbers.Editor
             var states = new (Vector3 push, Vector3 turn, float boost)[]
             {
                 (Vector3.zero, Vector3.zero, 1f),                     // idle
+                (new Vector3(0.08f, 0.08f, 0f), new Vector3(0.1f, 0.1f, 0.1f), 1f),   // small trim: cold gas only
                 (Vector3.forward, Vector3.zero, 1f),                  // cruise
                 (Vector3.forward, Vector3.zero, 2f),                  // boost
                 (Vector3.up, Vector3.zero, 1f),                       // lift
@@ -156,7 +160,8 @@ namespace LuckyNumbers.Editor
             {
                 var c = new GameObject("PreviewCamera").AddComponent<Camera>();
                 c.fieldOfView = 40f;
-                c.clearFlags = CameraClearFlags.Skybox;
+                c.clearFlags = sky ? CameraClearFlags.SolidColor : CameraClearFlags.Skybox;
+                c.backgroundColor = skyColour;
                 c.nearClipPlane = 0.05f;
                 c.transform.SetPositionAndRotation(at, Quaternion.LookRotation(look - at));
                 return c;

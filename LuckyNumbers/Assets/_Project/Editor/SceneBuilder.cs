@@ -798,6 +798,7 @@ namespace LuckyNumbers.Editor
             // Engine flames: the fighter's jet layout (content/engines.txtpb), built by ShipView at runtime.
             so.FindProperty("engines").stringValue = "fighter";
             so.FindProperty("exhaust").objectReferenceValue = ExhaustMaterial();
+            so.FindProperty("coldGas").objectReferenceValue = ColdGasMaterial();
             so.ApplyModifiedPropertiesWithoutUndo();
             pivot.gameObject.SetActive(false);
             return view;
@@ -807,6 +808,14 @@ namespace LuckyNumbers.Editor
         static Material ExhaustMaterial()
         {
             var m = MaterialAsset("Exhaust", "LuckyNumbers/Exhaust");
+            EditorUtility.SetDirty(m);
+            return m;
+        }
+
+        /// <summary>The cold-gas puffs' base material (ShipView copies it and applies engines.txtpb's gas look).</summary>
+        static Material ColdGasMaterial()
+        {
+            var m = MaterialAsset("ColdGas", "LuckyNumbers/ColdGas");
             EditorUtility.SetDirty(m);
             return m;
         }
@@ -883,6 +892,7 @@ namespace LuckyNumbers.Editor
             so.FindProperty("skins").arraySize = 0;
             so.FindProperty("engines").stringValue = "freighter";   // content/engines.txtpb
             so.FindProperty("exhaust").objectReferenceValue = ExhaustMaterial();
+            so.FindProperty("coldGas").objectReferenceValue = ColdGasMaterial();
             so.ApplyModifiedPropertiesWithoutUndo();
             Debug.Log($"[SceneBuilder] freighter: {renderers.Length} parts, {bounds.size.x:0.#} x {bounds.size.y:0.#} x {bounds.size.z:0.#} m");
             pivot.gameObject.SetActive(false);

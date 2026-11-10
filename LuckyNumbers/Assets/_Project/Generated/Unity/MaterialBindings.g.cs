@@ -205,5 +205,26 @@ namespace LuckyNumbers.Model
             material.SetFloat(ExhaustLook_HaloIntensity, look.HaloIntensity);
             material.SetFloat(ExhaustLook_Flicker, look.Flicker);
         }
+
+        public const string GasLookShader = "LuckyNumbers/ColdGas";
+        static readonly int GasLook_Color = Shader.PropertyToID("_Color");
+        static readonly int GasLook_Opacity = Shader.PropertyToID("_Opacity");
+        static readonly int GasLook_Softness = Shader.PropertyToID("_Softness");
+        static readonly int GasLook_Expand = Shader.PropertyToID("_Expand");
+        static readonly int GasLook_CloudSize = Shader.PropertyToID("_CloudSize");
+        static readonly int GasLook_WispScale = Shader.PropertyToID("_WispScale");
+        static readonly int GasLook_WispSpeed = Shader.PropertyToID("_WispSpeed");
+
+        /// <summary>Copies every field to the matching LuckyNumbers/ColdGas property.</summary>
+        public static void ApplyTo(this GasLook look, Material material)
+        {
+            material.SetColor(GasLook_Color, look.Color.ToColor());
+            material.SetFloat(GasLook_Opacity, look.Opacity);
+            material.SetFloat(GasLook_Softness, look.Softness);
+            material.SetFloat(GasLook_Expand, look.Expand);
+            material.SetFloat(GasLook_CloudSize, look.CloudSize);
+            material.SetFloat(GasLook_WispScale, look.WispScale);
+            material.SetFloat(GasLook_WispSpeed, look.WispSpeed);
+        }
     }
 }

@@ -846,64 +846,108 @@ namespace LuckyNumbers.Model
                             Name = "down_l",
                             Position = new Vec3(-0.077f, 0.02f, -0.14f),
                             Direction = new Vec3(default(float), 1.0f, default(float)),
-                            Radius = 0.008f,
-                            Length = 0.07f,
+                            Radius = 0.0064f,
+                            Length = 0.126f,
+                            Gas = true,
                         },
                         new Thruster
                         {
                             Name = "down_r",
                             Position = new Vec3(0.077f, 0.02f, -0.14f),
                             Direction = new Vec3(default(float), 1.0f, default(float)),
-                            Radius = 0.008f,
-                            Length = 0.07f,
+                            Radius = 0.0064f,
+                            Length = 0.126f,
+                            Gas = true,
                         },
                         new Thruster
                         {
                             Name = "down_nose_l",
                             Position = new Vec3(-0.035f, -0.002f, 0.2f),
                             Direction = new Vec3(default(float), 1.0f, default(float)),
-                            Radius = 0.005f,
-                            Length = 0.056f,
+                            Radius = 0.004f,
+                            Length = 0.101f,
+                            Gas = true,
                         },
                         new Thruster
                         {
                             Name = "down_nose_r",
                             Position = new Vec3(0.035f, -0.002f, 0.2f),
                             Direction = new Vec3(default(float), 1.0f, default(float)),
+                            Radius = 0.004f,
+                            Length = 0.101f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "under_nose_l",
+                            Position = new Vec3(-0.035f, -0.012f, 0.2f),
+                            Direction = new Vec3(default(float), -1.0f, default(float)),
+                            Radius = 0.004f,
+                            Length = 0.1f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "under_nose_r",
+                            Position = new Vec3(0.035f, -0.012f, 0.2f),
+                            Direction = new Vec3(default(float), -1.0f, default(float)),
+                            Radius = 0.004f,
+                            Length = 0.1f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "under_tail_l",
+                            Position = new Vec3(-0.1f, -0.03f, -0.165f),
+                            Direction = new Vec3(default(float), -1.0f, default(float)),
                             Radius = 0.005f,
-                            Length = 0.056f,
+                            Length = 0.11f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "under_tail_r",
+                            Position = new Vec3(0.1f, -0.03f, -0.165f),
+                            Direction = new Vec3(default(float), -1.0f, default(float)),
+                            Radius = 0.005f,
+                            Length = 0.11f,
+                            Gas = true,
                         },
                         new Thruster
                         {
                             Name = "side_l",
                             Position = new Vec3(-0.104f, -0.007f, -0.13f),
                             Direction = new Vec3(-1.0f, default(float), default(float)),
-                            Radius = 0.008f,
-                            Length = 0.07f,
+                            Radius = 0.0064f,
+                            Length = 0.126f,
+                            Gas = true,
                         },
                         new Thruster
                         {
                             Name = "side_r",
                             Position = new Vec3(0.104f, -0.007f, -0.13f),
                             Direction = new Vec3(1.0f, default(float), default(float)),
-                            Radius = 0.008f,
-                            Length = 0.07f,
+                            Radius = 0.0064f,
+                            Length = 0.126f,
+                            Gas = true,
                         },
                         new Thruster
                         {
                             Name = "side_nose_l",
                             Position = new Vec3(-0.05f, -0.007f, 0.2f),
                             Direction = new Vec3(-1.0f, default(float), default(float)),
-                            Radius = 0.005f,
-                            Length = 0.056f,
+                            Radius = 0.004f,
+                            Length = 0.101f,
+                            Gas = true,
                         },
                         new Thruster
                         {
                             Name = "side_nose_r",
                             Position = new Vec3(0.05f, -0.007f, 0.2f),
                             Direction = new Vec3(1.0f, default(float), default(float)),
-                            Radius = 0.005f,
-                            Length = 0.056f,
+                            Radius = 0.004f,
+                            Length = 0.101f,
+                            Gas = true,
                         },
                     },
                     Centre = new Vec3(default(float), -0.005f, default(float)),
@@ -956,6 +1000,7 @@ namespace LuckyNumbers.Model
                             Direction = new Vec3(default(float), 1.0f, default(float)),
                             Radius = 0.7f,
                             Length = 7.0f,
+                            Gas = true,
                         },
                         new Thruster
                         {
@@ -964,6 +1009,7 @@ namespace LuckyNumbers.Model
                             Direction = new Vec3(default(float), 1.0f, default(float)),
                             Radius = 0.7f,
                             Length = 7.0f,
+                            Gas = true,
                         },
                         new Thruster
                         {
@@ -972,6 +1018,7 @@ namespace LuckyNumbers.Model
                             Direction = new Vec3(default(float), -1.0f, default(float)),
                             Radius = 0.7f,
                             Length = 7.0f,
+                            Gas = true,
                         },
                         new Thruster
                         {
@@ -980,6 +1027,7 @@ namespace LuckyNumbers.Model
                             Direction = new Vec3(default(float), -1.0f, default(float)),
                             Radius = 0.7f,
                             Length = 7.0f,
+                            Gas = true,
                         },
                         new Thruster
                         {
@@ -988,6 +1036,7 @@ namespace LuckyNumbers.Model
                             Direction = new Vec3(-1.0f, default(float), default(float)),
                             Radius = 0.7f,
                             Length = 7.0f,
+                            Gas = true,
                         },
                         new Thruster
                         {
@@ -996,6 +1045,7 @@ namespace LuckyNumbers.Model
                             Direction = new Vec3(1.0f, default(float), default(float)),
                             Radius = 0.7f,
                             Length = 7.0f,
+                            Gas = true,
                         },
                         new Thruster
                         {
@@ -1004,6 +1054,7 @@ namespace LuckyNumbers.Model
                             Direction = new Vec3(-1.0f, default(float), default(float)),
                             Radius = 0.7f,
                             Length = 7.0f,
+                            Gas = true,
                         },
                         new Thruster
                         {
@@ -1012,6 +1063,7 @@ namespace LuckyNumbers.Model
                             Direction = new Vec3(1.0f, default(float), default(float)),
                             Radius = 0.7f,
                             Length = 7.0f,
+                            Gas = true,
                         },
                     },
                     Centre = new Vec3(default(float), default(float), default(float)),
@@ -1056,6 +1108,19 @@ namespace LuckyNumbers.Model
             Idle = 0.15f,
             RcsThreshold = 0.12f,
             BoostStretch = 1.6f,
+            GasLook = new GasLook
+            {
+                Color = new Rgba(0.93f, 0.95f, 0.98f, 1.0f),
+                Opacity = 0.9f,
+                Softness = 1.4f,
+                Expand = 7.0f,
+                CloudSize = 9.0f,
+                WispScale = 3.0f,
+                WispSpeed = 2.0f,
+            },
+            GasThreshold = 0.04f,
+            GasLifeSeconds = 0.55f,
+            GasRepeat = 0.4f,
         };
 
         /// <summary>From <c>content/intro.txtpb</c>.</summary>
