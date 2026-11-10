@@ -4,6 +4,27 @@ Releases are driven by this file: the **top `## x.y.z` entry is the game version
 Bumping it on `main` builds the Web player, uploads it to itch.io with that version,
 and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version does not rebuild.
 
+## 0.2.2 (2026-11-10)
+
+- Your space station: Play now takes you there first (Title, Station, Intro, Planet). You wake in your
+  cabin; walking into the hub rings Dispatch, who names the freighter going down and the planet your
+  station orbits; then your ship waits docked in the bay. Board it (E) to head out
+- The station is laid out from your lucky number: a hub with the observation gallery, docking bay, comms,
+  three crew cabins, storage and engineering around it, joined by corridors, so each universe gets its own
+- Built from the PSX Starship and Sci-Fi Station kits (CC BY 4.0, heyheythere): cream panels, leaning
+  corridor walls, two-storey halls, sliding doors, props, handrails. Windows are real openings onto your
+  universe: the planet below, your star and sky
+- Station map (M) with every room, your ship's dock and where you are; room names as you walk in
+- Lights: on, off or emergency (red, pulsing) from the engineering console, with a soft lamp glow, and an
+  optional PS1 look (vertex wobble, affine textures, 15-bit dither) from the next console
+- Fly your fighter in and land it near the wreck: mouse pitch and turn, A/D roll, W/S throttle, Shift boost,
+  Space lift. A flight HUD and a beacon over the wreck guide you in; land slow and level, or crash and retry
+- Page overlays: an incoming-call panel with Answer, the objective, and Station tools in the dock (lights,
+  PS1 look and a live layout editor that rebuilds the station as you paint it)
+- Smoother textures without losing the PS1 crispness (no more shimmering lines far off), no flicker at wall
+  corners, and the whole station in about 35 draw calls
+- CI: a failed cached build now really retries cold, and the Library is cached only after a good build
+
 ## 0.2.1 (2026-11-10)
 
 - New opening: a museum freighter carrying ancient relics goes down on a planet of your universe, picked by
