@@ -22,6 +22,7 @@ namespace LuckyNumbers.Station
 
         [SerializeField] Material stationMaterial;
         [SerializeField] Material starshipMaterial;
+        [SerializeField] Material glassMaterial;   // StationGlass: window panes, so they look out at the real scene
         [SerializeField] KitPiece[] pieces = Array.Empty<KitPiece>();
 
         public StationPlan Plan { get; private set; }
@@ -55,10 +56,11 @@ namespace LuckyNumbers.Station
         /// <summary>Unset in content (all zero) -> fallback.</summary>
         static Color ToColor(Rgba c, Color fallback) => c.Equals(default) ? fallback : new Color(c.R, c.G, c.B, c.A);
 
-        public void Init(Material station, Material starship, KitPiece[] kitPieces)
+        public void Init(Material station, Material starship, Material glass, KitPiece[] kitPieces)
         {
             stationMaterial = station;
             starshipMaterial = starship;
+            glassMaterial = glass;
             pieces = kitPieces;
         }
 
@@ -83,34 +85,60 @@ namespace LuckyNumbers.Station
             var lean = Mathf.Clamp01(config.RoomLean);
             foreach (var name in new List<string>(parts.Keys)) parts[name + StationPlan.Flat] = Flatten(parts[name], lean);
 
-            var batches = new Dictionary<(Vector2Int chunk, StationPlan.Kit kit), List<CombineInstance>>();
-            var dark = new Dictionary<(Vector2Int, StationPlan.Kit), List<bool>>();   // per CombineInstance: unlit?
+            // Windows: the kits paint stars on their glass. Split those panes off (glassMaterial), so a window
+            // is a real opening onto whatever is outside: the sky, the planet, the rest of the station.
+            var panes = new Dictionary<string, List<(Mesh mesh, Matrix4x4 local)>>();
+            var split = new Dictionary<Mesh, (Mesh frame, Mesh pane)>();
+            if (glassMaterial != null)
+                foreach (var name in new List<string>(parts.Keys))
+                {
+                    if (!name.Contains("porthole") && !name.Contains("viewport")) continue;
+                    var solid = new List<(Mesh, Matrix4x4)>();
+                    var glass = new List<(Mesh, Matrix4x4)>();
+                    foreach (var (mesh, local) in parts[name])
+                    {
+                        if (!split.TryGetValue(mesh, out var s)) split[mesh] = s = SplitGlass(mesh);
+                        solid.Add((s.frame, local));
+                        if (s.pane != null) glass.Add((s.pane, local));
+                    }
+                    parts[name] = solid;
+                    if (glass.Count > 0) panes[name] = glass;
+                }
+
+            var batches = new Dictionary<(Vector2Int chunk, StationPlan.Kit kit, bool glass), List<CombineInstance>>();
+            var dark = new Dictionary<(Vector2Int, StationPlan.Kit, bool), List<bool>>();   // per CombineInstance: unlit?
             var missing = new HashSet<string>();
-            foreach (var piece in Plan.Pieces)
+            void Add((Vector2Int, StationPlan.Kit, bool) key, List<(Mesh mesh, Matrix4x4 local)> meshes, Matrix4x4 world,
+                     bool unlit)
             {
-                if (!parts.TryGetValue(piece.Name, out var meshes)) { missing.Add(piece.Name); continue; }
-                var key = (new Vector2Int(piece.Cell.x / chunk, piece.Cell.y / chunk), piece.Kit);
                 if (!batches.TryGetValue(key, out var list))
                 {
                     batches[key] = list = new List<CombineInstance>();
                     dark[key] = new List<bool>();
                 }
-                var world = Matrix4x4.TRS(piece.Position, piece.Rotation, Vector3.one);
                 foreach (var (mesh, local) in meshes)
                     for (var s = 0; s < mesh.subMeshCount; s++)
                     {
                         list.Add(new CombineInstance { mesh = mesh, subMeshIndex = s, transform = world * local });
-                        dark[key].Add(piece.Unlit);
+                        dark[key].Add(unlit);
                     }
+            }
+            foreach (var piece in Plan.Pieces)
+            {
+                if (!parts.TryGetValue(piece.Name, out var meshes)) { missing.Add(piece.Name); continue; }
+                var c = new Vector2Int(piece.Cell.x / chunk, piece.Cell.y / chunk);
+                var world = Matrix4x4.TRS(piece.Position, piece.Rotation, Vector3.one);
+                Add((c, piece.Kit, false), meshes, world, piece.Unlit);
+                if (panes.TryGetValue(piece.Name, out var glass)) Add((c, piece.Kit, true), glass, world, false);
             }
             if (missing.Count > 0) Debug.LogWarning($"[Station] no model for: {string.Join(", ", missing)}");
 
             var triangles = 0;
-            foreach (var ((c, kit), list) in batches)
+            foreach (var ((c, kit, glass), list) in batches)
             {
-                var mesh = new Mesh { name = $"Station {kit} {c.x},{c.y}", indexFormat = IndexFormat.UInt32 };
+                var mesh = new Mesh { name = $"Station {kit}{(glass ? " Glass" : "")} {c.x},{c.y}", indexFormat = IndexFormat.UInt32 };
                 mesh.CombineMeshes(list.ToArray(), mergeSubMeshes: true, useMatrices: true);
-                MarkUnlit(mesh, list, dark[(c, kit)]);
+                if (!glass) MarkUnlit(mesh, list, dark[(c, kit, glass)]);
                 mesh.RecalculateBounds();
                 mesh.UploadMeshData(markNoLongerReadable: true);
                 triangles += (int)(mesh.GetIndexCount(0) / 3);
@@ -118,7 +146,7 @@ namespace LuckyNumbers.Station
                 go.transform.SetParent(transform, false);
                 go.AddComponent<MeshFilter>().sharedMesh = mesh;
                 var r = go.AddComponent<MeshRenderer>();
-                r.sharedMaterial = kit == StationPlan.Kit.Station ? stationMaterial : starshipMaterial;
+                r.sharedMaterial = glass ? glassMaterial : kit == StationPlan.Kit.Station ? stationMaterial : starshipMaterial;
                 r.shadowCastingMode = ShadowCastingMode.Off;
                 r.receiveShadows = false;
             }
@@ -171,6 +199,41 @@ namespace LuckyNumbers.Station
                 result.Add((flat, local));
             }
             return result;
+        }
+
+        /// <summary>
+        /// A window part -> its frame (everything else) and its pane: the triangles lying in the wall's centre plane
+        /// (local z ~ 0; the frame stands proud at +-0.14 and wall faces sit at +-0.1). No pane: (mesh, null).
+        /// </summary>
+        static (Mesh frame, Mesh pane) SplitGlass(Mesh mesh)
+        {
+            if (!mesh.isReadable) return (mesh, null);
+            var vertices = mesh.vertices;
+            var frameTris = new List<int>();
+            var paneTris = new List<int>();
+            for (var s = 0; s < mesh.subMeshCount; s++)
+            {
+                var tris = mesh.GetTriangles(s);
+                for (var t = 0; t < tris.Length; t += 3)
+                {
+                    var flat = Mathf.Abs(vertices[tris[t]].z) < 0.02f && Mathf.Abs(vertices[tris[t + 1]].z) < 0.02f &&
+                               Mathf.Abs(vertices[tris[t + 2]].z) < 0.02f;
+                    var target = flat ? paneTris : frameTris;
+                    target.Add(tris[t]);
+                    target.Add(tris[t + 1]);
+                    target.Add(tris[t + 2]);
+                }
+            }
+            if (paneTris.Count == 0) return (mesh, null);
+            Mesh Copy(List<int> tris, string suffix)
+            {
+                var m = Instantiate(mesh);
+                m.name = mesh.name + suffix;
+                m.subMeshCount = 1;
+                m.SetTriangles(tris, 0);
+                return m;
+            }
+            return (Copy(frameTris, " frame"), Copy(paneTris, " pane"));
         }
 
         /// <summary>

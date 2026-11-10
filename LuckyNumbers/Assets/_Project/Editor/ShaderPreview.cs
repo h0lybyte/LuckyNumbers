@@ -196,7 +196,20 @@ namespace LuckyNumbers.Editor
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var view = new GameObject("Station").AddComponent<LuckyNumbers.Station.StationView>();
-            view.Init(KitMaterial("StationKit"), KitMaterial("StarshipKit"), KitPieces("StationKit", "StarshipKit"));
+            view.Init(KitMaterial("StationKit"), KitMaterial("StarshipKit"), new Material(Find("LuckyNumbers/StationGlass")),
+                      KitPieces("StationKit", "StarshipKit"));
+
+            // Outside: the seeded sky and a planet the station orbits, north of the hangar (its windows face it),
+            // lit by a sun up and to the east. The windows should show these, not the kits' painted stars.
+            RenderSettings.skybox = new Material(Find("LuckyNumbers/Starfield"));
+            Shader.SetGlobalVector("_LnSunPosition", new Vector4(400f, 160f, 300f, 1f));
+            Shader.SetGlobalColor("_LnSunColor", new Color(1f, 0.95f, 0.88f));
+            var world = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            Object.DestroyImmediate(world.GetComponent<Collider>());
+            world.name = "Planet";
+            world.transform.position = new Vector3(4f, -40f, 140f);
+            world.transform.localScale = Vector3.one * 150f;
+            world.GetComponent<MeshRenderer>().sharedMaterial = new Material(Find("LuckyNumbers/Planet3D"));
             var config = LuckyNumbers.Model.GameContent.Station;
             view.Build(config);
             var plan = view.Plan;
@@ -209,8 +222,8 @@ namespace LuckyNumbers.Editor
                 var cam = new GameObject("Eye").AddComponent<Camera>();
                 cam.fieldOfView = 70f;
                 cam.nearClipPlane = 0.05f;
-                cam.clearFlags = CameraClearFlags.SolidColor;
-                cam.backgroundColor = Color.black;
+                cam.clearFlags = CameraClearFlags.Skybox;   // what's outside shows through the windows
+                cam.farClipPlane = 1000f;
                 cam.transform.SetPositionAndRotation(from, Quaternion.LookRotation(to - from));
                 return cam;
             }
@@ -247,6 +260,15 @@ namespace LuckyNumbers.Editor
                 Eye(At(14.6f, 3.2f, 1.7f), At(15.6f, 2.4f, 2.6f)),     // turn: outer corner (the leans cross)
                 Eye(At(7.4f, 3.3f, 2f), At(8.6f, 2.4f, 2.6f)),         // from the doorway into the corridor: lean ends
             }, "preview-station-corridor.png");
+
+            // Windows up close: they should open onto the sky and the planet (north), not painted stars.
+            SaveGrid(new[]
+            {
+                Eye(At(3f, 1.15f, 1.55f), At(3f, -6f, 1.2f)),       // hangar porthole, nose to the glass, planet ahead
+                Eye(At(4f, 1.6f, 1.5f), At(4.6f, -6f, 1.0f)),       // a step back, two portholes
+                Eye(At(11f, 3.25f, 1.55f), At(11.2f, -6f, 1.3f)),   // corridor porthole
+                Eye(At(15.6f, 8f, 1.55f), At(22f, 8f, 1.6f)),       // viewing room, east window (sky only)
+            }, "preview-station-windows.png");
 
             // Light modes: corridor and hangar, lights on / off / emergency (one row each).
             var corridor = Eye(At(8.5f, 3f), At(15f, 3f, 1.8f));
