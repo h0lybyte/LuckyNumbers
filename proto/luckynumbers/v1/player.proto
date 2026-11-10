@@ -111,4 +111,6 @@ message PlayerVoyage {
   bool returning = 1;
   int32 credits = 2;
   int32 last_payout = 3;
+  // Trips down to a planet so far: the first one plays the intro cutscene, later ones fly straight down.
+  int32 trips = 4;
 }

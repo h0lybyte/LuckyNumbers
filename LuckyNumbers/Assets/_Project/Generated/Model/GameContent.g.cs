@@ -1573,6 +1573,99 @@ namespace LuckyNumbers.Model
             FullPrompt = "No room in your pack for {name}",
         };
 
+        /// <summary>From <c>content/jobs.txtpb</c>.</summary>
+        public static readonly JobConfig Jobs = new JobConfig
+        {
+            Types =
+            {
+                new JobType
+                {
+                    Kind = JobKind.Salvage,
+                    Title = "Salvage on {planet}",
+                    Brief = "A hauler went down on {planet}. {client} pays for anything you bring back.",
+                    Objective = "Salvage relics from the wreck on {planet}, then fly back to the station",
+                    Pay = 300,
+                    PayPerDanger = 150,
+                    DangerMin = 1,
+                    DangerMax = 3,
+                },
+                new JobType
+                {
+                    Kind = JobKind.Retrieve,
+                    Title = "Retrieve: {target}",
+                    Brief = "{client} wants one piece out of a wreck on {planet}: {target}. Nothing else matters.",
+                    Objective = "Find {target} near the wreck on {planet}, then fly back to the station",
+                    Pay = 500,
+                    PayPerDanger = 200,
+                    DangerMin = 2,
+                    DangerMax = 4,
+                },
+                new JobType
+                {
+                    Kind = JobKind.Clear,
+                    Disabled = true,
+                    Title = "Clear the nest on {planet}",
+                    Brief = "Something's nesting by the wreck on {planet}. {client} wants it gone: {count} of them.",
+                    Objective = "Kill {count} creatures on {planet}, then fly back to the station",
+                    Pay = 600,
+                    PayPerDanger = 250,
+                    DangerMin = 2,
+                    DangerMax = 5,
+                    Target = 3,
+                    TargetPerDanger = 1,
+                },
+            },
+            Offers = 3,
+            Clients =
+            {
+                "the Meridian Museum",
+                "Halden Salvage Co.",
+                "a private collector",
+                "the Survey Office",
+                "Station Command",
+            },
+            FirstTitle = "Mayday: museum freighter",
+            FirstObjective = "Salvage the freighter's relics and fly back to the station",
+            RingPrompt = "Dispatch is calling - E to answer",
+            BoardLines =
+            {
+                new StationCallLine
+                {
+                    Speaker = "Dispatch",
+                    Text = "Welcome back. Got a few jobs on the board if you want them.",
+                    Seconds = 3.5f,
+                },
+                new StationCallLine
+                {
+                    Speaker = "Dispatch",
+                    Text = "Pick one and I'll send the coordinates to your ship.",
+                    Seconds = 3.0f,
+                },
+            },
+            CharsPerSecond = 38.0f,
+            BoardObjective = "Pick a job from Dispatch's board (1, 2 or 3)",
+            TakenObjective = "Board your ship in the Docking Bay: {title}",
+            DoneLines =
+            {
+                new StationCallLine
+                {
+                    Speaker = "Dispatch",
+                    Text = "{client} confirms the job's done. {pay} credits, transferred.",
+                    Seconds = 4.0f,
+                },
+            },
+            FailedLines =
+            {
+                new StationCallLine
+                {
+                    Speaker = "Dispatch",
+                    Text = "{client} says the job isn't done. No pay this time.",
+                    Seconds = 4.0f,
+                },
+            },
+            NoJobPrompt = "Take a job from Dispatch first",
+        };
+
         /// <summary>From <c>content/planet.txtpb</c>.</summary>
         public static readonly PlanetScene Planet = new PlanetScene
         {

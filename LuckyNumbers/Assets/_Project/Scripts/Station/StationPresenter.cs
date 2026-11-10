@@ -28,8 +28,11 @@ namespace LuckyNumbers.Station
     /// open as you come near. The page can switch lights, the PS1 look and rebuild the whole plan (layout editor).
     ///
     /// Back from the planet (PlayerVoyage.returning): you step off beside your ship and the museum calls at once
-    /// (StationScene.homecoming), buying every relic in your pack for its value (credits) and XP for each; Dispatch
-    /// doesn't ring again.
+    /// (StationScene.homecoming), buying every relic in your pack for its value (credits) and XP for each.
+    ///
+    /// Jobs (content/jobs.txtpb, PlayerJob): the first call is the first job (the freighter's mayday, then the intro).
+    /// Back from a job, Dispatch says whether it's done (paid) and rings again; its board offers a few seeded jobs
+    /// (JobBoard; the page picks one, JobAcceptRequested), and boarding flies you straight down to that job's planet.
     /// </summary>
     [Presenter]
     public sealed class StationPresenter : IStartable, IPostLateTickable, IDisposable
@@ -56,8 +59,23 @@ namespace LuckyNumbers.Station
         readonly IInventory _pack;
         readonly IPublisher<CharacterXpGained> _xp;
         bool _returning;
+        // Jobs: which call is ringing / playing, the board's offers, the body the station orbits.
+        enum CallKind { Dispatch, Homecoming, Board }
+        CallKind _ringKind, _activeKind;
+        readonly PlayerJob _job;
+        readonly JobBoard _board;
+        readonly LandingSite _landing;
+        readonly ISubscriber<JobAcceptRequested> _accepts;
+        List<Jobs.Offer> _offers = new();
+        string _orbitBody = "";
+        static JobConfig J => GameContent.Jobs;
+        // The first trip plays the intro cutscene (StationScene.next); later ones fly straight down.
+        GameScene NextScene => _voyage.Trips.Value == 0 ? _config.Next : GameScene.Planet;
+        // Later trips need a job from the board first.
+        bool NeedsJob => !_job.Active.Value && _voyage.Trips.Value > 0;
         // The call playing (Dispatch's, or the museum's on your return), and what the museum paid.
         List<StationCallLine> _callLines;
+        GameScene _next;
         float _callCps;
         string _callObjective, _caller = "", _relics = "", _payout = "0";
         int _relicCount;
@@ -85,8 +103,13 @@ namespace LuckyNumbers.Station
                                 ISubscriber<StationLightsRequested> lightRequests, ISubscriber<InputActionPerformed> actions,
                                 ISubscriber<StationCallAnswered> answers, ISubscriber<StationPlanRequested> plans,
                                 ISubscriber<PsxModeRequested> psxRequests, PlayerVoyage voyage, IInventory pack,
-                                IPublisher<CharacterXpGained> xp)
+                                IPublisher<CharacterXpGained> xp, PlayerJob job, JobBoard board, LandingSite landing,
+                                ISubscriber<JobAcceptRequested> accepts)
         {
+            _job = job;
+            _board = board;
+            _landing = landing;
+            _accepts = accepts;
             _voyage = voyage;
             _pack = pack;
             _xp = xp;
@@ -116,6 +139,7 @@ namespace LuckyNumbers.Station
             SetPsx(false);
             _returning = _voyage.Returning.Value;
             _voyage.Returning.Value = false;
+            if (_returning && _voyage.Trips.Value == 0) _voyage.Trips.Value = 1;   // back from a planet: you've been down
             _state.Call.Value = CallPhase.None;
             _caller = _config.Call?.Caller ?? "";
             _state.Caller.Value = _caller;
@@ -131,6 +155,8 @@ namespace LuckyNumbers.Station
             _subscriptions.Add(_answers.Subscribe(_ => Answer()));
             _subscriptions.Add(_plans.Subscribe(e => Rebuild(e.Plan)));
             _subscriptions.Add(_psxRequests.Subscribe(e => SetPsx(e.On)));
+            _subscriptions.Add(_accepts.Subscribe(e => Accept(e.Index)));
+            _board.Open.Value = false;
 
             var spawn = StationPlan.Centre(_station.Plan.Spawn);
             Teleport(spawn, _config.SpawnYaw);
@@ -145,7 +171,7 @@ namespace LuckyNumbers.Station
             _ui.Hint(_config.Hint, _hintAlpha);
             DockShip();
             if (_returning) TeleportBesideShip();
-            _flow.Preload(_config.Next);
+            _flow.Preload(NextScene);
             PlaceInSpace(_cts.Token).Forget();
         }
 
@@ -236,6 +262,7 @@ namespace LuckyNumbers.Station
             while (_space.Worlds.Count == 0) await UniTask.Yield(ct);
             var worlds = _space.Worlds;
             var target = string.IsNullOrEmpty(_config.Orbit) ? SpacePresenter.CrashSite(worlds, _space.Seed) : _config.Orbit;
+            _orbitBody = target;
             float3 at = default;
             var diameter = 1f;
             while (!_space.TryGetBody(target, out at, out diameter)) await UniTask.Yield(ct);
@@ -255,7 +282,8 @@ namespace LuckyNumbers.Station
                 DockShip();
                 if (_returning) TeleportBesideShip();
             }
-            var manifest = LuckyNumbers.Cargo.Manifest.Generate(GameContent.Cargo, _space.Seed);
+            // The freighter of the job you're on (or were on, coming back): its site's own cargo manifest.
+            var manifest = LuckyNumbers.Cargo.Manifest.Generate(GameContent.Cargo, Jobs.SiteSeed(_space.Seed, _job.Seed.Value));
             _freighter = manifest.Ship;
             _museum = manifest.Museum;
 
@@ -310,17 +338,18 @@ namespace LuckyNumbers.Station
             var room = _roomOf.TryGetValue(cell, out var r) ? r : "";
             if (_state.Room.Value != room) _state.Room.Value = room;
             var call = _config.Call;
-            if (call != null && _state.Call.Value == CallPhase.None && room != "" && room == _layout.CallRoom)
+            if (_state.Call.Value == CallPhase.None && room != "" && room == _layout.CallRoom)
             {
-                _state.Call.Value = CallPhase.Ringing;
-                Debug.Log($"[Station] call from {call.Caller}");
+                // The first time: the mayday. Later, without a job: Dispatch with the board.
+                if (_voyage.Trips.Value == 0 && !_job.Active.Value && call != null) Ring(CallKind.Dispatch);
+                else if (NeedsJob && _inSpace) Ring(CallKind.Board);
             }
             TickCall(dt);
 
             // What E would do here: answer a ringing call, use the nearest console, or board the ship.
             var prompt = "";
             StationSwitch console = null;
-            if (_state.Call.Value == CallPhase.Ringing) prompt = Fill(call.RingPrompt);
+            if (_state.Call.Value == CallPhase.Ringing) prompt = Fill(_ringKind == CallKind.Board ? J.RingPrompt : call?.RingPrompt);
             else
             {
                 var best = UseDistance;
@@ -332,7 +361,7 @@ namespace LuckyNumbers.Station
                     if (d < best) { best = d; console = sw; }
                 }
                 if (console != null) prompt = console.Prompt;
-                else if (NearShip(position)) prompt = _layout.Dock.BoardPrompt;
+                else if (NearShip(position)) prompt = NeedsJob ? J.NoJobPrompt : _layout.Dock.BoardPrompt;
             }
             if (_state.Prompt.Value != prompt) _state.Prompt.Value = prompt;
 
@@ -340,7 +369,7 @@ namespace LuckyNumbers.Station
             {
                 if (_state.Call.Value == CallPhase.Ringing) Answer();
                 else if (console != null) Use(console.Action);
-                else if (NearShip(position)) Board();
+                else if (NearShip(position) && !NeedsJob) Board();
             }
             _interact = false;
 
@@ -383,14 +412,25 @@ namespace LuckyNumbers.Station
             }
         }
 
+        void Ring(CallKind kind)
+        {
+            _ringKind = kind;
+            _caller = kind == CallKind.Board ? "Dispatch" : _config.Call?.Caller ?? "Dispatch";
+            _state.Caller.Value = _caller;
+            _state.Call.Value = CallPhase.Ringing;
+            Debug.Log($"[Station] call from {_caller} ({kind})");
+        }
+
         void Answer()
         {
             if (_state.Call.Value != CallPhase.Ringing) return;
-            StartCall(_config.Call.Lines, _config.Call.CharsPerSecond, _config.Call.Objective);
+            if (_ringKind == CallKind.Board) StartCall(J.BoardLines, J.CharsPerSecond, J.BoardObjective, CallKind.Board);
+            else StartCall(_config.Call.Lines, _config.Call.CharsPerSecond, _config.Call.Objective, CallKind.Dispatch);
         }
 
-        void StartCall(IEnumerable<StationCallLine> lines, float cps, string objective)
+        void StartCall(IEnumerable<StationCallLine> lines, float cps, string objective, CallKind kind)
         {
+            _activeKind = kind;
             _callLines = new List<StationCallLine>(lines);
             _callCps = cps > 0f ? cps : 36f;
             _callObjective = objective;
@@ -429,7 +469,31 @@ namespace LuckyNumbers.Station
             _caller = Fill(home.Caller);
             _state.Caller.Value = _caller;
             Debug.Log($"[Station] back from the planet: {sold.Count} relic(s) sold for {total} cr ({_voyage.Credits.Value} cr total)");
-            StartCall(sold.Count > 0 ? home.PaidLines : home.EmptyLines, home.CharsPerSecond, home.Objective);
+            var lines = new List<StationCallLine>(sold.Count > 0 ? home.PaidLines : home.EmptyLines);
+            if (_job.Active.Value)
+            {
+                // The job: done if its goal was met (Clear counts kills on the planet), paid on top of the relics.
+                var done = _job.Done.Value || _job.Kind.Value switch
+                {
+                    JobKind.Salvage => sold.Count > 0,
+                    JobKind.Retrieve => names.Contains(_job.Target.Value),
+                    _ => false,
+                };
+                if (done)
+                {
+                    _job.Completed.Value++;
+                    if (_job.Pay.Value > 0)
+                    {
+                        _voyage.Credits.Value += _job.Pay.Value;
+                        _voyage.LastPayout.Value += _job.Pay.Value;
+                        lines.AddRange(J.DoneLines);
+                    }
+                }
+                else lines.AddRange(J.FailedLines);
+                Debug.Log($"[Station] job \"{_job.Title.Value}\" {(done ? $"done: +{_job.Pay.Value} cr" : "not done")} ({_job.Completed.Value} completed)");
+                _job.Active.Value = false;
+            }
+            StartCall(lines, home.CharsPerSecond, home.Objective, CallKind.Homecoming);
             foreach (var line in _callLines) Debug.Log($"[Station] {Fill(line.Speaker)}: {Fill(line.Text)}");
         }
 
@@ -457,6 +521,7 @@ namespace LuckyNumbers.Station
                 _ui.Dialogue(null, null, 0);
                 _state.Call.Value = CallPhase.Ended;
                 _state.Objective.Value = Fill(_callObjective);
+                CallEnded(_activeKind);
                 return;
             }
             var line = _callLines[_line];
@@ -472,12 +537,72 @@ namespace LuckyNumbers.Station
             }
         }
 
-        string Fill(string s) => (s ?? "").Replace("{caller}", _caller)
-            .Replace("{planet}", _planet).Replace("{ship}", _freighter).Replace("{museum}", _museum)
-            .Replace("{relics}", _relics).Replace("{count}", _relicCount.ToString()).Replace("{credits}", _payout);
+        // {planet} is the job's (if you've had one), else the world the station orbits; then the job's own fields.
+        string Fill(string s) => Jobs.Fill((s ?? "").Replace("{caller}", _caller)
+            .Replace("{planet}", string.IsNullOrEmpty(_job.Planet.Value) ? _planet : _job.Planet.Value)
+            .Replace("{ship}", _freighter).Replace("{museum}", _museum)
+            .Replace("{relics}", _relics).Replace("{count}", _relicCount.ToString()).Replace("{credits}", _payout), _job);
+
+        void CallEnded(CallKind kind)
+        {
+            switch (kind)
+            {
+                case CallKind.Dispatch: TakeFirstJob(); break;
+                case CallKind.Homecoming: if (NeedsJob) Ring(CallKind.Board); break;   // Dispatch, with the board
+                case CallKind.Board: OpenBoard(); break;
+            }
+        }
+
+        /// <summary>The mayday is your first job: salvage on the planet the station orbits (the intro's crash site).</summary>
+        void TakeFirstJob()
+        {
+            if (_job.Active.Value) return;
+            _job.Kind.Value = JobKind.Salvage;
+            _job.Title.Value = J.FirstTitle;
+            _job.Objective.Value = J.FirstObjective;
+            _job.Client.Value = _museum;
+            _job.Body.Value = _orbitBody;
+            _job.Planet.Value = _planet;
+            _job.Danger.Value = 1;
+            _job.Pay.Value = J.FirstPay;
+            _job.Seed.Value = 0;
+            _job.Target.Value = "";
+            _job.Count.Value = _job.Goal.Value = 0;
+            _job.Done.Value = false;
+            _job.Active.Value = true;
+            Debug.Log($"[Station] job: {_job.Title.Value} on {_job.Planet.Value}");
+        }
+
+        void OpenBoard()
+        {
+            _offers = Jobs.Roll(J, GameContent.Cargo, _space.Seed, _voyage.Trips.Value, _space.Worlds);
+            _board.Offers.Clear();
+            foreach (var o in _offers) _board.Offers.Add(Jobs.Encode(o));
+            _board.Open.Value = _offers.Count > 0;
+            _state.Objective.Value = Fill(J.BoardObjective);
+            foreach (var o in _offers) Debug.Log($"[Station] offer: {o.Title} ({o.Type.Kind}, {o.Planet}, danger {o.Danger}, {o.Pay} cr)");
+        }
+
+        void Accept(int index)
+        {
+            if (!_board.Open.Value || index < 0 || index >= _offers.Count) return;
+            Jobs.Take(_job, _offers[index]);
+            _board.Open.Value = false;
+            _state.Objective.Value = Fill(J.TakenObjective);
+            Debug.Log($"[Station] took job: {_job.Title.Value} on {_job.Planet.Value} ({_job.Body.Value}), {_job.Pay.Value} cr");
+        }
 
         void Board()
         {
+            if (_voyage.Trips.Value == 0) TakeFirstJob();   // boarded without taking the call: it's still the mayday
+            // Where the job is: the Planet scene builds that body's site (the intro sets it itself on the first trip).
+            if (!string.IsNullOrEmpty(_job.Body.Value))
+            {
+                _landing.Body.Value = _job.Body.Value;
+                _landing.Valid.Value = true;
+            }
+            _next = NextScene;
+            _voyage.Trips.Value++;
             _leaving = true;
             PlayerShipStats.Refuel(_playerShip);   // docked: the station fills the tank
             Debug.Log($"[Station] refuelled: {_playerShip.Fuel.Value:0} units");
@@ -489,8 +614,8 @@ namespace LuckyNumbers.Station
         async UniTaskVoid Leave(CancellationToken ct)
         {
             await UniTask.Delay(TimeSpan.FromSeconds(0.6), cancellationToken: ct);
-            Debug.Log($"[Station] to {_config.Next}");
-            _scenes.Publish(new SceneChangeRequested(_config.Next));
+            Debug.Log($"[Station] to {_next} ({_job.Title.Value})");
+            _scenes.Publish(new SceneChangeRequested(_next));
         }
 
         /// <summary>The page's layout editor: rebuild from a new plan; back on the old one if it fails.</summary>

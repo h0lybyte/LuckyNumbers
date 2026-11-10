@@ -1303,3 +1303,66 @@ kbd {
 
 /* Credits (sheet.tsx chips): what the museum has paid you. */
 .chip.credits { cursor: default; color: var(--gold, #ffd166); border-color: rgba(255, 209, 102, 0.5); }
+
+/* Dispatch's job board and the job line on the planet (jobs.tsx). */
+.job-board {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, calc(100% - 2 * var(--gap)));
+  max-height: calc(100% - 2 * var(--gap));
+  overflow: auto;
+  padding: 12px 16px;
+  border: 1px solid var(--edge);
+  background: var(--scan), var(--panel);
+  clip-path: var(--chamfer);
+}
+.job-kicker { font: 10px var(--font-mono); letter-spacing: 0.2em; text-transform: uppercase; color: var(--neon); }
+.job-board ol { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.job-offer {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--edge);
+  background: rgba(0, 229, 255, 0.04);
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.job-offer:hover, .job-offer:focus-visible { border-color: var(--neon); background: rgba(0, 229, 255, 0.1); }
+.job-main { display: grid; gap: 2px; min-width: 0; }
+.job-main b { font: 600 15px var(--font-mono); color: #e8fbff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.job-main small { color: var(--muted); font-size: 12px; }
+.job-kind { font: 700 10px var(--font-mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--neon); }
+.job-meta { display: grid; justify-items: end; gap: 2px; font: 11px var(--font-mono); }
+.job-planet { color: var(--muted); }
+.job-danger { color: var(--warn); letter-spacing: 1px; }
+.job-danger .dim { opacity: 0.25; }
+.job-pay { color: var(--gold, #ffd166); font-weight: 600; font-size: 13px; }
+@media (max-width: 520px) {
+  .job-offer { grid-template-columns: auto 1fr; }
+  .job-meta { grid-column: 2; justify-items: start; grid-auto-flow: column; gap: 10px; }
+}
+.job-line {
+  position: absolute;
+  left: 50%;
+  bottom: calc(max(var(--gap), env(safe-area-inset-bottom)) + 44px);
+  transform: translateX(-50%);
+  max-width: calc(100% - 2 * var(--gap));
+  padding: 4px 12px;
+  border: 1px solid var(--edge);
+  background: var(--scan), rgba(2, 8, 16, 0.8);
+  font: 12px var(--font-mono);
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+.job-line.done { border-color: var(--good); }
+.job-line.done .job-kind { color: var(--good); }

@@ -1,0 +1,46 @@
+# proto-file: luckynumbers/v1/job.proto
+# proto-message: luckynumbers.v1.JobConfig
+# Dispatch's work. The first job is the museum freighter's mayday (content/station.txtpb call + the intro);
+# after that, each time you're back Dispatch rings with a board of offers on seeded planets.
+# Fills: {client} {planet} {target} {count} {pay}. Placeholder values; tune with gameplay.
+
+offers: 3
+clients: ["the Meridian Museum", "Halden Salvage Co.", "a private collector", "the Survey Office", "Station Command"]
+
+first_title: "Mayday: museum freighter"
+first_objective: "Salvage the freighter's relics and fly back to the station"
+first_pay: 0
+
+ring_prompt: "Dispatch is calling - E to answer"
+chars_per_second: 38
+board_lines { speaker: "Dispatch" text: "Welcome back. Got a few jobs on the board if you want them." seconds: 3.5 }
+board_lines { speaker: "Dispatch" text: "Pick one and I'll send the coordinates to your ship." seconds: 3 }
+board_objective: "Pick a job from Dispatch's board (1, 2 or 3)"
+taken_objective: "Board your ship in the Docking Bay: {title}"
+done_lines { speaker: "Dispatch" text: "{client} confirms the job's done. {pay} credits, transferred." seconds: 4 }
+failed_lines { speaker: "Dispatch" text: "{client} says the job isn't done. No pay this time." seconds: 4 }
+no_job_prompt: "Take a job from Dispatch first"
+
+types {
+  kind: JOB_KIND_SALVAGE
+  title: "Salvage on {planet}"
+  brief: "A hauler went down on {planet}. {client} pays for anything you bring back."
+  objective: "Salvage relics from the wreck on {planet}, then fly back to the station"
+  pay: 300 pay_per_danger: 150 danger_min: 1 danger_max: 3
+}
+types {
+  kind: JOB_KIND_RETRIEVE
+  title: "Retrieve: {target}"
+  brief: "{client} wants one piece out of a wreck on {planet}: {target}. Nothing else matters."
+  objective: "Find {target} near the wreck on {planet}, then fly back to the station"
+  pay: 500 pay_per_danger: 200 danger_min: 2 danger_max: 4
+}
+types {
+  kind: JOB_KIND_CLEAR
+  disabled: true   # needs monsters (the combat update)
+  title: "Clear the nest on {planet}"
+  brief: "Something's nesting by the wreck on {planet}. {client} wants it gone: {count} of them."
+  objective: "Kill {count} creatures on {planet}, then fly back to the station"
+  pay: 600 pay_per_danger: 250 danger_min: 2 danger_max: 5
+  target: 3 target_per_danger: 1
+}

@@ -40,11 +40,12 @@ namespace LuckyNumbers.Planet
             public Relic Relic;
             public Transform Shape, Beam;
             public Vector3 Rest;
-            public bool Taken;
+            public bool Taken, Target;   // Target: the job's (Retrieve), its beam always on
         }
 
         readonly ICrashSite _site;
         readonly IFighter _fighter;
+        readonly PlayerJob _job;
         readonly PlanetView _view;
         readonly PlayerView _player;
         readonly GroundView _ground;
@@ -74,8 +75,9 @@ namespace LuckyNumbers.Planet
         public RelicsPresenter(ICrashSite site, PlanetView view, PlayerView player, GroundView ground, IFirstPerson firstPerson,
                                IPublisher<CharacterXpGained> xp, IInventory pack, PlayerInventory packState,
                                ISubscriber<ItemEffectRequested> itemEffects, RelicSite relicSite, ISubscriber<RelicRolled> rolled,
-                               ISubscriber<InputActionPerformed> actions, ISubscriber<DevWarpRequested> warps, IFighter fighter)
+                               ISubscriber<InputActionPerformed> actions, ISubscriber<DevWarpRequested> warps, IFighter fighter, PlayerJob job)
         {
+            _job = job;
             _fighter = fighter;
             _warps = warps;
             _site = site;
@@ -213,7 +215,10 @@ namespace LuckyNumbers.Planet
                     beam.position = at + Vector3.up * beam.localScale.y;   // a cylinder is 2 high: base at the relic
                     beam.gameObject.SetActive(false);
                 }
-                _lying.Add(new Lying { Relic = relic, Shape = shape, Beam = beam, Rest = at });
+                var target = _job.Active.Value && _job.Kind.Value == JobKind.Retrieve && relic.Name == _job.Target.Value;
+                _lying.Add(new Lying { Relic = relic, Shape = shape, Beam = beam, Rest = at, Target = target });
+                if (target && beam != null) beam.gameObject.SetActive(true);
+                if (target) Debug.Log($"[Relics] job target {relic.Name}, {Vector3.Distance(at, wreck):0} m from the wreck");
             }
             _relicSite.Lying.Value = _lying.Count;
             Debug.Log($"[Relics] {_lying.Count} relics round the wreck ({manifest.Relics.Count} aboard)");
@@ -263,6 +268,13 @@ namespace LuckyNumbers.Planet
             if (l.Beam != null) l.Beam.gameObject.SetActive(false);
             _relicSite.Lying.Value = _lying.FindAll(x => !x.Taken).Count;
             Debug.Log($"[Relics] picked up {def.Name} ({def.Value} cr)");
+            // The job: a Retrieve's target, or any relic for a Salvage, meets its goal (paid back at the station).
+            if (_job.Active.Value && !_job.Done.Value &&
+                (l.Target || _job.Kind.Value == JobKind.Salvage))
+            {
+                _job.Done.Value = true;
+                Debug.Log($"[Relics] job goal met: {_job.Title.Value}");
+            }
             var lore = def.Lore;
             var xp = lore != null ? GameContent.Character.XpPerArtifact : GameContent.Character.XpPerRelic;
             if (xp > 0) _xp.Publish(new CharacterXpGained(xp, def.Name));
@@ -305,7 +317,7 @@ namespace LuckyNumbers.Planet
                 if (d < best) { best = d; nearest = l; }
             }
             foreach (var l in _lying)
-                if (l.Beam != null) l.Beam.gameObject.SetActive(on && !l.Taken && (_revealAll || l == nearest));
+                if (l.Beam != null) l.Beam.gameObject.SetActive(!l.Taken && (l.Target || on && (_revealAll || l == nearest)));
             var text = "";
             // Nothing left lying out: the pearl points back to the wreck instead.
             var at = nearest != null ? nearest.Rest : _view.Wreck != null ? _view.Wreck.Pivot.position : me;
