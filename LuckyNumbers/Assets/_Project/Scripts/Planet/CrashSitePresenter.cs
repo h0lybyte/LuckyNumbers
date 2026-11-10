@@ -135,7 +135,7 @@ namespace LuckyNumbers.Planet
             m.SetFloat("_Haze", _config.Haze);
             m.SetFloat("_HazeDistance", _config.ChunkSize * math.max(1, _config.ViewChunks) * 1.1f);   // thick before the last chunks
             _ground.Configure(_config.ChunkSize, _config.ChunkResolution, _config.ViewChunks, _config.GroundHeight,
-                              _config.GroundNoiseScale, rng.NextFloat2(0f, 100f), _config.WreckDistance + 6f);
+                              _config.GroundNoiseScale, rng.NextFloat2(0f, 100f), _config.WreckDistance + _config.WreckLength * 0.6f);   // flat out past the wreck
             _ground.Stream(Vector3.zero, int.MaxValue);   // everything around the spawn, now
 
             // Boulders: squashed, tilted spheres half sunk into the ground; the first right beside your path.
@@ -144,7 +144,7 @@ namespace LuckyNumbers.Planet
                 var size = rng.NextFloat(_config.BoulderSizeMin, _config.BoulderSizeMax);
                 var p = i == 0 ? new float2(0.9f, 1.4f)    // a standing stone just ahead-right of where you wake
                               : rng.NextFloat2Direction() * rng.NextFloat(6f, math.max(8f, _config.BoulderSpread));
-                if (i > 0 && math.distance(p, new float2(0f, _config.WreckDistance)) < 6f) continue;   // keep the wreck clear
+                if (i > 0 && math.distance(p, new float2(0f, _config.WreckDistance)) < _config.WreckLength * 0.6f) continue;   // keep the wreck clear
                 var rock = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 rock.name = $"Boulder {i}";
                 var scale = i == 0 ? new Vector3(1.5f, 2.6f, 1.3f)
@@ -204,7 +204,7 @@ namespace LuckyNumbers.Planet
             var at = new Vector3(0f, 0f, _config.WreckDistance);
             at.y = _ground.HeightAt(at) + _config.WreckLength * 0.04f;            // nose dug in, hull above ground
             _wreck.Pose(at, Quaternion.Euler(14f, rng.NextFloat(-160f, -110f), rng.NextFloat(-18f, 18f)));
-            _wreck.SetHeat(0.04f, 0.4f);                                            // hull cooled, lights flickering on
+            _wreck.SetHeat(0f, 0.4f);                                               // hull cooled (any heat tints the dark hull orange), lights on
         }
 
         /// <summary>Lying on your back, eyes open (fade in), sit up, stand, turn to the wreck; then you're in control.</summary>
@@ -272,9 +272,11 @@ namespace LuckyNumbers.Planet
                 var floor = _ground.HeightAt(body.position);
                 if (body.position.y < floor - 2f)
                 {
+                    // Back onto the mesh's own surface (HeightAt can sit under it), so it doesn't fall again.
                     _player.Body.enabled = false;
-                    body.position = new Vector3(body.position.x, floor + 0.2f, body.position.z);
+                    body.position = new Vector3(body.position.x, _ground.SurfaceAt(body.position) + 0.3f, body.position.z);
                     _player.Body.enabled = true;
+                    Debug.LogWarning($"[CrashSite] under the ground at {body.position}: put back on it");
                 }
             }
             // Sun at "infinity": a fixed direction from wherever the player is.

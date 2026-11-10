@@ -5,8 +5,10 @@
 ship_names: ["MSV Curator", "MSV Long Memory", "MSV Patient Archive", "MSV Quiet Reliquary", "MSV Old Light"]
 museums: ["Galactic Museum of Antiquities", "Hall of Lost Worlds", "Interstellar Heritage Trust", "Museum of Before"]
 
-min_relics: 6
-max_relics: 11
+# Procedural relics (cultures x kinds below): none for now. The hold carries only the named artifacts
+# (artifact_refs), each with its own model. Raise these to scatter generated relics again.
+min_relics: 0
+max_relics: 0
 
 cultures {
   id: "tibetan"
@@ -39,5 +41,29 @@ cultures {
   color_b { r: 0.55 g: 0.2 b: 0.95 a: 1 }    # violet
 }
 
+cultures {
+  id: "han"
+  name: "Han Chinese"
+  materials: ["jade", "bronze", "lacquered bronze", "celadon"]
+  origins: ["a Luoyang observatory", "a Nanyang tomb", "the Han imperial archive"]
+  weight: 0.8
+  value_scale: 1.6
+  color_a { r: 0.18 g: 0.62 b: 0.52 a: 1 }   # jade
+  color_b { r: 0.72 g: 0.52 b: 0.25 a: 1 }   # bronze
+}
+
 kinds { id: "amulet" name: "amulet" value_min: 300 value_max: 900 }
 kinds { id: "vase" name: "vase" value_min: 500 value_max: 1500 }
+
+# Named artifacts, always aboard (content/relics/<id>.txtpb).
+artifact_refs: ["relics/zhang_heng_water_amulet"]
+
+# Using a relic rolls a d20; your luck die from the title adds up to this.
+luck_bonus: 3
+
+# At the crash site: scattered round the wreck, picked up with E, used with R.
+scatter_min: 10
+scatter_max: 34
+pickup_distance: 2.2
+pickup_prompt: "E: pick up the {name}"
+use_prompt: "R: use the {name}"

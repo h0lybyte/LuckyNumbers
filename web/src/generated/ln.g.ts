@@ -20,7 +20,8 @@ export type InputAction =
   | "Interact"
   | "Sprint"
   | "AnyButton"
-  | "Map";
+  | "Map"
+  | "UseRelic";
 
 export type CallPhase =
   | "None"
@@ -40,6 +41,18 @@ export type MenuAction =
   | "Settings"
   | "Credits";
 
+/**
+ * What you carry (mirrored to the page's inventory strip): each item "id|name|figure|culture", the selected one,
+ * seconds until it's ready again, relics still lying out, and the bearing of a revealed relic.
+ */
+export interface RelicInventory {
+  items: string[];
+  selected: number;
+  cooldown: number;
+  lying: number;
+  reveal: string;
+}
+
 export interface FlowState {
   scene: GameScene;
 }
@@ -48,6 +61,36 @@ export interface FlowState {
 export interface LoadingState {
   progress: number;
   ready: boolean;
+}
+
+/**
+ * Flying in, for the page's flight HUD (the steps, the pad arrow, instruments, landing gauges): in the air /
+ * crashed / landed; altitude, climb, speed and the set speed (m, m/s); hovering, boost; the pad's distance and
+ * bearing from your nose (degrees, + right); descent, drift and tilt against the touchdown limits; why you
+ * crashed ("descent", "drift", "tilt", "hit", comma-separated); the assist on or not.
+ */
+export interface FlightState {
+  flying: boolean;
+  crashed: boolean;
+  landed: boolean;
+  altitude: number;
+  climb: number;
+  speed: number;
+  setSpeed: number;
+  hovering: boolean;
+  boost: boolean;
+  padDistance: number;
+  padBearing: number;
+  descent: number;
+  drift: number;
+  tilt: number;
+  maxDescent: number;
+  maxDrift: number;
+  maxTilt: number;
+  crashReason: string;
+  assisted: boolean;
+  /** Hover-ship controls (the HUD's steps and keys follow them). */
+  hoverShip: boolean;
 }
 
 /**
@@ -108,6 +151,29 @@ export interface DiceState {
   seed: number;
 }
 
+/** A relic was used: the d20, your luck bonus, the total, and what it did. */
+export interface RelicRolled {
+  relic: string;
+  roll: number;
+  bonus: number;
+  total: number;
+  title: string;
+  text: string;
+}
+
+/**
+ * Dev (the page's inspector): put you on foot beside "artifact" (the nearest named one still lying out), "relic"
+ * (the nearest of any) or the "wreck". For trying things out quickly.
+ */
+export interface DevWarpRequested {
+  to: string;
+}
+
+/** The page's inventory: use (and select) item `index`. */
+export interface RelicUseRequested {
+  index: number;
+}
+
 export interface SceneChangeRequested {
   target: GameScene;
 }
@@ -136,6 +202,11 @@ export interface CutsceneFinished {
 
 export interface InputActionPerformed {
   action: InputAction;
+}
+
+/** The page draws the flight HUD: Unity's own text readout and controls line step aside. */
+export interface FlightHudReady {
+  on: boolean;
 }
 
 export interface PlayerDamaged {
@@ -176,8 +247,10 @@ export interface MenuItemSelected {
 
 /** Every (ln.web) state, by name: the page holds the latest snapshot of each. */
 export interface WebStates {
+  RelicInventory: RelicInventory;
   FlowState: FlowState;
   LoadingState: LoadingState;
+  FlightState: FlightState;
   MapState: MapState;
   LandingSite: LandingSite;
   PlayerShip: PlayerShip;
@@ -188,12 +261,16 @@ export interface WebStates {
 
 /** Every (ln.web) event, by name: Unity -> page as they happen. */
 export interface WebEvents {
+  RelicRolled: RelicRolled;
+  DevWarpRequested: DevWarpRequested;
+  RelicUseRequested: RelicUseRequested;
   SceneChangeRequested: SceneChangeRequested;
   SceneEntered: SceneEntered;
   UniverseSeedChanged: UniverseSeedChanged;
   CutsceneStepStarted: CutsceneStepStarted;
   CutsceneFinished: CutsceneFinished;
   InputActionPerformed: InputActionPerformed;
+  FlightHudReady: FlightHudReady;
   PlayerDamaged: PlayerDamaged;
   PlayerHealed: PlayerHealed;
   PlayerDied: PlayerDied;
@@ -205,6 +282,6 @@ export interface WebEvents {
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "SceneChangeRequested" | "InputActionPerformed" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
+export type InboundEvent = "DevWarpRequested" | "RelicUseRequested" | "SceneChangeRequested" | "InputActionPerformed" | "FlightHudReady" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
 
-export const STATE_NAMES = ["FlowState", "LoadingState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "StationState", "DiceState"] as const;
+export const STATE_NAMES = ["RelicInventory", "FlowState", "LoadingState", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "StationState", "DiceState"] as const;

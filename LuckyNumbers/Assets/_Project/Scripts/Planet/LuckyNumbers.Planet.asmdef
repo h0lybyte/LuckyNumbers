@@ -14,7 +14,8 @@
         "LuckyNumbers.Title",
         "Unity.Mathematics",
         "LuckyNumbers.Intro",
-        "LuckyNumbers.Hands"
+        "LuckyNumbers.Hands",
+        "LuckyNumbers.Cargo"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

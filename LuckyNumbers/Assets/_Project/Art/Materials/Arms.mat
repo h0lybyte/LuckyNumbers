@@ -34,7 +34,9 @@ Material:
     - _Cutoff: 0
     - _Fill: 0.45
     - _Glow: 0
+    - _GlowMin: 0.5
     - _Heat: 0
+    - _Lift: 1
     - _Rim: 0.15
     m_Colors: []
   m_BuildTextureStacks: []

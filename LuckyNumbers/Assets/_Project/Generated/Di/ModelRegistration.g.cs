@@ -12,12 +12,16 @@ namespace LuckyNumbers.Model
         /// <summary>Registers a MessagePipe broker for every (ln.event) message.</summary>
         public static void RegisterModelEvents(this IContainerBuilder builder, MessagePipeOptions options)
         {
+            builder.RegisterMessageBroker<RelicRolled>(options);
+            builder.RegisterMessageBroker<DevWarpRequested>(options);
+            builder.RegisterMessageBroker<RelicUseRequested>(options);
             builder.RegisterMessageBroker<SceneChangeRequested>(options);
             builder.RegisterMessageBroker<SceneEntered>(options);
             builder.RegisterMessageBroker<UniverseSeedChanged>(options);
             builder.RegisterMessageBroker<CutsceneStepStarted>(options);
             builder.RegisterMessageBroker<CutsceneFinished>(options);
             builder.RegisterMessageBroker<InputActionPerformed>(options);
+            builder.RegisterMessageBroker<FlightHudReady>(options);
             builder.RegisterMessageBroker<PlayerDamaged>(options);
             builder.RegisterMessageBroker<PlayerHealed>(options);
             builder.RegisterMessageBroker<PlayerDied>(options);
@@ -31,10 +35,12 @@ namespace LuckyNumbers.Model
         /// <summary>Registers every (ln.state) class as a singleton.</summary>
         public static void RegisterModelState(this IContainerBuilder builder)
         {
+            builder.Register<RelicInventory>(Lifetime.Singleton);
             builder.Register<FlowState>(Lifetime.Singleton);
             builder.Register<LoadingState>(Lifetime.Singleton);
             builder.Register<CameraHandoff>(Lifetime.Singleton);
             builder.Register<PlayerInput>(Lifetime.Singleton);
+            builder.Register<FlightState>(Lifetime.Singleton);
             builder.Register<MapState>(Lifetime.Singleton);
             builder.Register<LandingSite>(Lifetime.Singleton);
             builder.Register<PlayerShip>(Lifetime.Singleton);

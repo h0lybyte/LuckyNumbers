@@ -3,6 +3,8 @@ import { createPortal } from "react-dom";
 import { LN, useLNEvent, useLNReady, useLNState } from "./ln";
 import { installFreeMouseKey, usePointerLocked } from "./pointer";
 import { StationHud, StationTools } from "./station";
+import { RelicHud } from "./relics";
+import { FlightHud } from "./flight";
 import type { GameScene, InboundEvent, WebEvents } from "./ln";
 
 export function App({ dock }: { dock: HTMLElement | null }) {
@@ -34,7 +36,15 @@ export function App({ dock }: { dock: HTMLElement | null }) {
 
 function StationHudGate() {
   const flow = useLNState("FlowState");
-  return flow?.scene === "Station" ? <StationHud /> : null;
+  if (flow?.scene === "Station") return <StationHud />;
+  if (flow?.scene === "Planet")
+    return (
+      <>
+        <FlightHud />
+        <RelicHud />
+      </>
+    );
+  return null;
 }
 
 // ---- HUD ------------------------------------------------------------------------------------------

@@ -1,0 +1,46 @@
+# proto-file: luckynumbers/v1/cargo.proto
+# proto-message: luckynumbers.v1.RelicArtifact
+# The first named artifact. Zhang Heng (78-139 CE): astronomer, mathematician and inventor at the Eastern Han
+# court (https://en.wikipedia.org/wiki/Zhang_Heng). His water-driven armillary sphere turned with the sky; his
+# seismoscope (132 CE) dropped a bronze ball from a dragon's mouth into a toad's, pointing to a distant quake.
+
+id: "zhang_heng_water_amulet"
+name: "Water Amulet"
+figure: "Zhang Heng"
+era: "Eastern Han, 2nd century CE"
+lore: "Jade carved for Zhang Heng, whose water-driven sphere turned with the heavens and whose bronze dragons pointed the way to distant quakes."
+culture: "han"
+kind: "amulet"
+value: 4800
+color_a { r: 0.18 g: 0.62 b: 0.52 a: 1 }   # jade
+color_b { r: 0.35 g: 0.75 b: 0.95 a: 1 }   # water
+cooldown_seconds: 12
+# Model: "Amulet" by Mierenttt (Blend Swap, https://blendswap.com/blend/15782, CC BY 3.0), low-poly export
+# (tools/blender/export_relic.py).
+model: "water_amulet"
+
+rolls {
+  min: 1 max: 1 title: "Flood"
+  text: "Water bursts from the jade and soaks you through. You slog on, slowed."
+  effects: [RELIC_EFFECT_SLOW] amount: 0.5 seconds: 8
+}
+rolls {
+  min: 2 max: 7 title: "Trickle"
+  text: "A cool trickle runs over your hands. A little strength comes back."
+  effects: [RELIC_EFFECT_HEAL] amount: 10
+}
+rolls {
+  min: 8 max: 14 title: "Spring"
+  text: "A clear spring wells up from the amulet. You feel much better."
+  effects: [RELIC_EFFECT_HEAL] amount: 35
+}
+rolls {
+  min: 15 max: 19 title: "Dragon's Pearl"
+  text: "A bronze dragon's pearl drops and rolls, pointing to the nearest relic."
+  effects: [RELIC_EFFECT_REVEAL_NEAREST] seconds: 25
+}
+rolls {
+  min: 20 max: 20 title: "Heavenly Tide"
+  text: "The sky turns like Zhang Heng's sphere: you are whole again, and every relic shines."
+  effects: [RELIC_EFFECT_FULL_HEAL, RELIC_EFFECT_REVEAL_ALL] seconds: 30
+}

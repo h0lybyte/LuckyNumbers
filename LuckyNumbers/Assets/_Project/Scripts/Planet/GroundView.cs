@@ -101,10 +101,12 @@ namespace LuckyNumbers.Planet
             c.Mesh.normals = normals;
             c.Mesh.triangles = tris;
             c.Mesh.RecalculateBounds();
-            c.Collider.sharedMesh = null;      // re-bake
-            c.Collider.sharedMesh = c.Mesh;
             c.Go.name = $"Chunk {key.x},{key.y}";
             c.Go.SetActive(true);
+            // Re-bake once active: baked while a recycled chunk was still inactive, it ended up with no collision
+            // (you could land out there and step straight through the ground).
+            c.Collider.sharedMesh = null;
+            c.Collider.sharedMesh = c.Mesh;
             return c;
         }
 
@@ -131,6 +133,24 @@ namespace LuckyNumbers.Planet
         }
 
         public float HeightAt(Vector3 world) => Height(new float2(world.x, world.z));
+
+        /// <summary>
+        /// The ground you actually stand on: the chunk mesh's surface (a ray down onto its collider). Between its
+        /// vertices the mesh runs a little above the smooth height function on a hill's curve, so placing a body by
+        /// HeightAt alone can start it inside the mesh, where it falls through. Falls back to HeightAt.
+        /// </summary>
+        /// <param name="missMargin">If no chunk is there yet (still streaming in), HeightAt plus this: placing things a
+        /// little above where the mesh could be beats placing them inside it.</param>
+        public float SurfaceAt(Vector3 world, float missMargin = 0.6f)
+        {
+            var h = HeightAt(world);
+            var from = new Vector3(world.x, h + 40f, world.z);
+            var hits = Physics.RaycastAll(from, Vector3.down, 80f, ~0, QueryTriggerInteraction.Ignore);
+            var best = float.MinValue;
+            foreach (var hit in hits)
+                if (hit.collider.GetComponentInParent<GroundView>() == this) best = Mathf.Max(best, hit.point.y);
+            return best > float.MinValue ? best : h + missMargin;
+        }
         /// <summary>Ground normal under a world point (from the height function, like the chunk normals).</summary>
         public Vector3 NormalAt(Vector3 world) => Normal(new float2(world.x, world.z), 0.5f);
 
