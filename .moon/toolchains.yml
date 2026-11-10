@@ -1,0 +1,11 @@
+# moon toolchains: https://moonrepo.dev/docs/config/toolchain
+# Node matches CI (.github/workflows/web.yml). Python and Unity come from the system (see docs/moon.md).
+$schema: "./cache/schemas/toolchains.json"
+
+javascript:
+  packageManager: "npm"
+
+node:
+  version: "24"
+
+npm: {}
