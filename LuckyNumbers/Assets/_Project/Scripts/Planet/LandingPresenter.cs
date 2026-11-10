@@ -284,7 +284,7 @@ namespace LuckyNumbers.Planet
                 _state.Assisted.Value = Assisted || HoverShip;
                 _state.HoverShip.Value = HoverShip;
                 _state.Altitude.Value = altitude;
-                _state.Climb.Value = -vertical;
+                _state.Climb.Value = _velocity.y;   // true vertical speed (the gauges below stay relative to the slope)
                 _state.Speed.Value = _velocity.magnitude;
                 _state.SetSpeed.Value = HoverShip ? 0f : Assisted ? _throttle * A.MaxSpeed * (_input.Sprinting.Value ? math.max(1f, A.BoostSpeed) : 1f) : _throttle * 100f;
                 _state.Hovering.Value = hovering;
