@@ -86,6 +86,10 @@ namespace LuckyNumbers.Model
         /// Shown under the dice; {0} = the lucky number.
         /// </summary>
         public string SeedFormat { get; set; }
+        /// <summary>
+        /// Open every launch on the initial faces (the same universe each time). Off: each launch rolls its own.
+        /// </summary>
+        public bool FixedStart { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public DiceRoller Clone() => (DiceRoller)MemberwiseClone();

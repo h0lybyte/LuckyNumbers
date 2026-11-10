@@ -40,6 +40,8 @@ message DiceRoller {
   float roll_seconds = 3;
   // Shown under the dice; {0} = the lucky number.
   string seed_format = 4;
+  // Open every launch on the initial faces (the same universe each time). Off: each launch rolls its own.
+  bool fixed_start = 5;
 }
 
 message Die {
