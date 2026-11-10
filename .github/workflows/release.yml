@@ -1,0 +1,61 @@
+# One-click release: Actions -> Cut release -> Run workflow.
+#
+#   -> tools/ln.py bump <part>: next version (patch by default: 0.3.1 -> 0.3.2) with the PRs merged since the
+#      last tag as its notes, on top of CHANGELOG.md
+#   -> commit + push that to main
+#   -> run Web release (web.yml) on it: build, itch.io, tag + GitHub release
+#
+# web.yml is started here instead of by the push: pushes made with GITHUB_TOKEN don't trigger other workflows.
+# Hand-written notes still work the old way: put the entry in CHANGELOG.md yourself and merge it.
+name: Cut release
+
+on:
+  workflow_dispatch:
+    inputs:
+      part:
+        description: "Which number to bump"
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+
+concurrency:
+  group: cut-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write # push the CHANGELOG.md commit
+  actions: write # start web.yml
+
+jobs:
+  cut:
+    name: Cut ${{ inputs.part }} release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0 # tags + history, for the notes
+
+      - id: bump
+        run: |
+          version="$(python3 tools/ln.py bump "${{ inputs.part }}")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Cutting $version"
+            echo
+            python3 tools/ln.py version --notes
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit and push
+        env:
+          VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "release: $VERSION"
+          git push origin HEAD:main
+
+      - name: Start Web release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run web.yml --ref main -f deploy=true

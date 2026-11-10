@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+import "luckynumbers/v1/common.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Your fighter (content/ships.txtpb): each skin's stats, the fuel it flies on and the guns in its barrels.
+message ShipConfig {
+  option (ln.config) = true;
+  // One per skin (file name in Art/Models/Fighter/Skins). A skin with no entry flies `default_stats`.
+  repeated ShipStats ships = 1;
+  ShipStats default_stats = 2;
+  ShipFuel fuel = 3;
+  // Guns a ship can carry (ShipStats.guns names them).
+  repeated ShipGun guns = 4;
+}
+
+// One skin's stats. Multipliers on the planet's flight (content/planet.txtpb landing.hover), 1 = the baseline;
+// 0 (unset) counts as 1.
+message ShipStats {
+  string skin = 1;
+  // Shown in the hangar.
+  string name = 2;
+  string role = 3;
+  string description = 4;
+  // Top speed (forward, strafe, climb; boost multiplies it).
+  float speed = 5;
+  // Turn and roll rates, and how quickly it speeds up and stops.
+  float agility = 6;
+  // Tank size (x ShipFuel.capacity).
+  float fuel = 7;
+  // Fuel per second of thrust divides by this: higher burns less.
+  float efficiency = 8;
+  // Landing gear: the touchdown limits (descent, drift, tilt) multiply by it.
+  float toughness = 9;
+  // Gun fire rate.
+  float firepower = 10;
+  // One ShipGun id per barrel (left, right). Empty: default_stats' guns.
+  repeated string guns = 11;
+}
+
+// Fuel, in units. Flying burns it (holding in the air a little, thrust a lot more, boost more again); with the tank
+// dry the engines cut out and the ship's reserve cells let it down slowly, wherever it is. Landed, its solar cells
+// top it up to `recharge_to` (share of the tank), so you're never stranded; the station fills it.
+message ShipFuel {
+  float capacity = 1;
+  float idle_burn = 2;
+  float thrust_burn = 3;
+  // Share of the tank: below it the HUD warns.
+  float low = 4;
+  // m/s: dry, how fast the reserve cells let you down.
+  float empty_descent = 5;
+  float recharge_per_second = 6;
+  float recharge_to = 7;
+}
+
+// A ship's gun: bolts from a barrel's muzzle straight down the nose, pushing what they hit.
+message ShipGun {
+  string id = 1;
+  string name = 2;
+  // Seconds between shots from one barrel (the pair alternate, so the ship fires twice as often).
+  float cooldown = 3;
+  // m/s, metres.
+  float speed = 4;
+  float range = 5;
+  // Push on what it hits (N s).
+  float impulse = 6;
+  // The bolt's size (metres).
+  float length = 7;
+  float width = 8;
+  // HDR: blooms.
+  Rgba color = 9;
+}

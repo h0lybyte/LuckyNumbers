@@ -160,8 +160,14 @@ namespace LuckyNumbers.Model
                 d.Add(s.CrashReason.Subscribe(_ => sink.MarkState(5)));
                 d.Add(s.Assisted.Subscribe(_ => sink.MarkState(5)));
                 d.Add(s.HoverShip.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.Leaving.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.Roaming.Subscribe(_ => sink.MarkState(5)));
                 d.Add(s.OrbitAltitude.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.CanLeave.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.FuelMax.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.FuelLow.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.FuelEmpty.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.Shots.Subscribe(_ => sink.MarkState(5)));
                 sink.MarkState(5);
             }
             {
@@ -178,6 +184,8 @@ namespace LuckyNumbers.Model
             {
                 var s = c.Resolve<PlayerShip>();
                 d.Add(s.Skin.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.FuelMax.Subscribe(_ => sink.MarkState(8)));
                 sink.MarkState(8);
             }
             {
@@ -192,6 +200,16 @@ namespace LuckyNumbers.Model
                 d.Add(s.Skin.Subscribe(_ => sink.MarkState(10)));
                 d.Add(s.Index.Subscribe(_ => sink.MarkState(10)));
                 d.Add(s.Count.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Name.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Role.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Description.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Speed.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Agility.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Efficiency.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Toughness.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Firepower.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Guns.Subscribe(_ => sink.MarkState(10)));
                 sink.MarkState(10);
             }
             {
@@ -785,10 +803,22 @@ namespace LuckyNumbers.Model
             b.Append(s.Assisted.Value ? "true" : "false");
             b.Append(",\"hoverShip\":");
             b.Append(s.HoverShip.Value ? "true" : "false");
-            b.Append(",\"leaving\":");
-            b.Append(s.Leaving.Value ? "true" : "false");
+            b.Append(",\"roaming\":");
+            b.Append(s.Roaming.Value ? "true" : "false");
             b.Append(",\"orbitAltitude\":");
             Json.Num(b, s.OrbitAltitude.Value);
+            b.Append(",\"canLeave\":");
+            b.Append(s.CanLeave.Value ? "true" : "false");
+            b.Append(",\"fuel\":");
+            Json.Num(b, s.Fuel.Value);
+            b.Append(",\"fuelMax\":");
+            Json.Num(b, s.FuelMax.Value);
+            b.Append(",\"fuelLow\":");
+            b.Append(s.FuelLow.Value ? "true" : "false");
+            b.Append(",\"fuelEmpty\":");
+            b.Append(s.FuelEmpty.Value ? "true" : "false");
+            b.Append(",\"shots\":");
+            Json.Num(b, s.Shots.Value);
             b.Append('}');
         }
 
@@ -815,6 +845,10 @@ namespace LuckyNumbers.Model
             b.Append('{');
             b.Append("\"skin\":");
             Json.Str(b, s.Skin.Value);
+            b.Append(",\"fuel\":");
+            Json.Num(b, s.Fuel.Value);
+            b.Append(",\"fuelMax\":");
+            Json.Num(b, s.FuelMax.Value);
             b.Append('}');
         }
 
@@ -839,6 +873,26 @@ namespace LuckyNumbers.Model
             Json.Num(b, s.Index.Value);
             b.Append(",\"count\":");
             Json.Num(b, s.Count.Value);
+            b.Append(",\"name\":");
+            Json.Str(b, s.Name.Value);
+            b.Append(",\"role\":");
+            Json.Str(b, s.Role.Value);
+            b.Append(",\"description\":");
+            Json.Str(b, s.Description.Value);
+            b.Append(",\"speed\":");
+            Json.Num(b, s.Speed.Value);
+            b.Append(",\"agility\":");
+            Json.Num(b, s.Agility.Value);
+            b.Append(",\"fuel\":");
+            Json.Num(b, s.Fuel.Value);
+            b.Append(",\"efficiency\":");
+            Json.Num(b, s.Efficiency.Value);
+            b.Append(",\"toughness\":");
+            Json.Num(b, s.Toughness.Value);
+            b.Append(",\"firepower\":");
+            Json.Num(b, s.Firepower.Value);
+            b.Append(",\"guns\":");
+            Json.Str(b, s.Guns.Value);
             b.Append('}');
         }
 

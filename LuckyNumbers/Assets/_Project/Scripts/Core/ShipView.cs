@@ -16,6 +16,9 @@ namespace LuckyNumbers.Core
         [SerializeField] Renderer[] renderers;
         [SerializeField] Texture2D[] skins;   // Art/Models/Fighter/Skins, set by the scene builder
         [SerializeField] float modelLength = 0.49f;
+        [Tooltip("Gun muzzles (the pivot's space, model units: +Z the nose): the tips of the fighter's twin gun barrels " +
+                 "(the rods beside the cockpit, fighter1.fbx), left then right.")]
+        [SerializeField] Vector3[] muzzles = { new(-0.111f, -0.0074f, 0.116f), new(0.111f, -0.0074f, 0.116f) };
         Material _material;                                         // skinned ships: the one shared material
         readonly System.Collections.Generic.List<(Material material, float glow)> _parts = new();
 
@@ -49,6 +52,11 @@ namespace LuckyNumbers.Core
             pivot.localScale = Vector3.one * (length / Mathf.Max(modelLength, 1e-4f));
             pivot.gameObject.SetActive(true);
         }
+
+        public int MuzzleCount => muzzles.Length;
+
+        /// <summary>A barrel's muzzle in the world (where its gun's bolts leave).</summary>
+        public Vector3 Muzzle(int index) => pivot.TransformPoint(muzzles[index]);
 
         public void Hide() => pivot.gameObject.SetActive(false);
 

@@ -2,7 +2,12 @@
 
 Version = top `## x.y.z` heading in `CHANGELOG.md` ([0002](decisions/0002-changelog-driven-releases.md)).
 
-**Release:** add `## x.y.z (date)` + notes at the top, merge to `main`. Workflow `.github/workflows/web.yml`:
+**One click:** Actions → Cut release → Run workflow (patch by default; minor / major). It runs
+`ln.py bump`, which adds the next `## x.y.z` entry with the PRs merged since the last tag as notes, pushes
+that to `main` and starts Web release. Edit the notes afterwards if you like: a notes-only change doesn't
+rebuild. Locally: `python3 tools/ln.py bump [patch|minor|major] [--notes-file F]`.
+
+**By hand:** add `## x.y.z (date)` + notes at the top, merge to `main`. Workflow `.github/workflows/web.yml`:
 1. Read version; stop if tag `vx.y.z` exists.
 2. GameCI WebGL build (`unityci/editor:ubuntu-6000.6.8f1-webgl-3`) via `WebBuild.Build`.
 3. `ln.py deploy` → itch.io `ITCH_TARGET:html5`, version `x.y.z`.

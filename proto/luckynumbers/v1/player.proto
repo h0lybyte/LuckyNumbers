@@ -18,6 +18,10 @@ message PlayerShip {
   option (ln.state) = true;
   option (ln.web) = true;
   string skin = 1;
+  // Fuel in the tank and the tank's size (units; content/ships.txtpb fuel x the skin's stats). Kept between
+  // scenes: the station fills it, flying burns it.
+  float fuel = 2;
+  float fuel_max = 3;
 }
 
 message PlayerHealth {
@@ -65,6 +69,17 @@ message ShipPicker {
   string skin = 2;
   int32 index = 3;
   int32 count = 4;
+  // That skin's stats (content/ships.txtpb; multipliers, 1 = baseline) and the guns in its barrels.
+  string name = 5;
+  string role = 6;
+  string description = 7;
+  float speed = 8;
+  float agility = 9;
+  float fuel = 10;
+  float efficiency = 11;
+  float toughness = 12;
+  float firepower = 13;
+  string guns = 14;
 }
 
 // The page has a ship picker (sent when it mounts): Play then opens the hangar after character creation.
