@@ -294,7 +294,14 @@ namespace LuckyNumbers.Editor
                 EditorUtility.SetDirty(mat);
                 r.sharedMaterial = mat;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                if (collide && r.TryGetComponent<MeshFilter>(out var mf)) r.gameObject.AddComponent<MeshCollider>().sharedMesh = mf.sharedMesh;
+                // Convex per part: the model is open shells and panels, so exact mesh colliders let you slip through a
+                // gap into the hollow hull and get stuck. A convex hull has no inside (gaps fill in; you walk over them).
+                if (collide && r.TryGetComponent<MeshFilter>(out var mf))
+                {
+                    var c = r.gameObject.AddComponent<MeshCollider>();
+                    c.sharedMesh = mf.sharedMesh;
+                    c.convex = true;
+                }
                 var b = r.bounds;
                 if (i == 0) bounds = b; else bounds.Encapsulate(b);
             }
