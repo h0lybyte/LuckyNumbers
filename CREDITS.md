@@ -22,11 +22,11 @@
 
 - Space station rooms (walls, viewports, doorways, posts, floors; `Art/Models/StationKit/`):
   "PSX Sci-Fi Station Kit Free" by **heyheythere**, https://heyheythere.itch.io/psx-sci-fi-station-kit-free
-  (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; licence: `LuckyNumbers/Assets/_Project/Art/Models/StationKit/LICENSE.txt`)
+  (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; licence: `LuckyNumbers/Assets/_Project/Art/Models/StationKit/LICENSE.txt`; modified: an alpha channel added to `atlas.png` as a light mask by `tools/kitmask.py`, RGB unchanged)
 
 - Space station corridors (leaning walls, ribs, ceiling, porthole, deck; `Art/Models/StarshipKit/`):
   "PSX Starship Kit Free" by **heyheythere**, https://heyheythere.itch.io/psx-starship-kit-free
-  (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; licence: `LuckyNumbers/Assets/_Project/Art/Models/StarshipKit/LICENSE.txt`)
+  (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; licence: `LuckyNumbers/Assets/_Project/Art/Models/StarshipKit/LICENSE.txt`; modified: an alpha channel added to `atlas.png` as a light mask by `tools/kitmask.py`, RGB unchanged)
 
 ## Fonts
 
