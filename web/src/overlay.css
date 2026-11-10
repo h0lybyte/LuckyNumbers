@@ -55,6 +55,28 @@ kbd {
   color: var(--muted);
 }
 
+.hud.locked .chip { opacity: 0.45; }
+
+.pointer-hint {
+  position: absolute;
+  right: max(var(--gap), env(safe-area-inset-right));
+  bottom: max(var(--gap), env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+}
+.pointer-hint kbd { color: var(--fg); }
+.pointer-hint .sep { color: var(--muted); }
+
 /* ---- toasts ---- */
 
 .toasts {

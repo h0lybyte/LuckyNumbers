@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { LN, useLNEvent, useLNReady, useLNState } from "./ln";
+import { installFreeMouseKey, usePointerLocked } from "./pointer";
 import type { GameScene, WebEvents } from "./ln";
 
 export function App({ dock }: { dock: HTMLElement | null }) {
@@ -34,23 +35,47 @@ export function App({ dock }: { dock: HTMLElement | null }) {
 function Hud() {
   const flow = useLNState("FlowState");
   const health = useLNState("PlayerHealth");
+  const mapOpen = useLNState("MapState")?.open ?? false;
+  const locked = usePointerLocked();
+  useEffect(installFreeMouseKey, []);
   if (flow?.scene !== "Planet") return null;
 
   return (
-    <div className="hud">
-      {health && health.max > 0 && (
-        <div className="health" title={`${health.current} / ${health.max}`}>
-          <div className="health-fill" style={{ width: `${(100 * health.current) / health.max}%` }} />
-        </div>
+    <>
+      {!mapOpen && <PointerHint locked={locked} />}
+      {/* While the pointer is locked, HTML can't be clicked: dim the buttons so they read as unavailable. */}
+      <div className={`hud${locked ? " locked" : ""}`}>
+        {health && health.max > 0 && (
+          <div className="health" title={`${health.current} / ${health.max}`}>
+            <div className="health-fill" style={{ width: `${(100 * health.current) / health.max}%` }} />
+          </div>
+        )}
+        <button
+          type="button"
+          className="ui chip"
+          onClick={() => LN.send("InputActionPerformed", { action: "Map" })}
+          title={mapOpen ? "Close the map (M)" : "Open the map (M)"}
+        >
+          {mapOpen ? "Close map" : "Map"} <kbd>M</kbd>
+        </button>
+      </div>
+    </>
+  );
+}
+
+/** Corner badge: which keys free the mouse (locked), or that a click takes it (free). Always shown on Planet. */
+function PointerHint({ locked }: { locked: boolean }) {
+  return (
+    <div className="pointer-hint" aria-live="polite">
+      {locked ? (
+        <>
+          <kbd>Tab</kbd>
+          <span className="sep">/</span>
+          <kbd>Esc</kbd> free mouse
+        </>
+      ) : (
+        <>Click to look</>
       )}
-      <button
-        type="button"
-        className="ui chip"
-        onClick={() => LN.send("InputActionPerformed", { action: "Map" })}
-        title="Open the map (M)"
-      >
-        Map <kbd>M</kbd>
-      </button>
     </div>
   );
 }

@@ -30,6 +30,7 @@ namespace LuckyNumbers.Model
         {
             "FlowState",
             "LoadingState",
+            "MapState",
             "LandingSite",
             "PlayerShip",
             "PlayerHealth",
@@ -52,30 +53,35 @@ namespace LuckyNumbers.Model
                 sink.MarkState(1);
             }
             {
-                var s = c.Resolve<LandingSite>();
-                d.Add(s.Valid.Subscribe(_ => sink.MarkState(2)));
-                d.Add(s.Body.Subscribe(_ => sink.MarkState(2)));
+                var s = c.Resolve<MapState>();
+                d.Add(s.Open.Subscribe(_ => sink.MarkState(2)));
                 sink.MarkState(2);
             }
             {
-                var s = c.Resolve<PlayerShip>();
-                d.Add(s.Skin.Subscribe(_ => sink.MarkState(3)));
+                var s = c.Resolve<LandingSite>();
+                d.Add(s.Valid.Subscribe(_ => sink.MarkState(3)));
+                d.Add(s.Body.Subscribe(_ => sink.MarkState(3)));
                 sink.MarkState(3);
             }
             {
-                var s = c.Resolve<PlayerHealth>();
-                d.Add(s.Current.Subscribe(_ => sink.MarkState(4)));
-                d.Add(s.Max.Subscribe(_ => sink.MarkState(4)));
+                var s = c.Resolve<PlayerShip>();
+                d.Add(s.Skin.Subscribe(_ => sink.MarkState(4)));
                 sink.MarkState(4);
             }
             {
+                var s = c.Resolve<PlayerHealth>();
+                d.Add(s.Current.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.Max.Subscribe(_ => sink.MarkState(5)));
+                sink.MarkState(5);
+            }
+            {
                 var s = c.Resolve<DiceState>();
-                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(5);
+                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(6);
                 s.Faces.CollectionChanged += hFaces;
                 d.Add(Disposable.Create(() => s.Faces.CollectionChanged -= hFaces));
-                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.Seed.Subscribe(_ => sink.MarkState(5)));
-                sink.MarkState(5);
+                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.Seed.Subscribe(_ => sink.MarkState(6)));
+                sink.MarkState(6);
             }
             d.Add(c.Resolve<ISubscriber<SceneChangeRequested>>().Subscribe(e =>
             {
@@ -137,10 +143,11 @@ namespace LuckyNumbers.Model
             {
                 case 0: Write(b, c.Resolve<FlowState>()); break;
                 case 1: Write(b, c.Resolve<LoadingState>()); break;
-                case 2: Write(b, c.Resolve<LandingSite>()); break;
-                case 3: Write(b, c.Resolve<PlayerShip>()); break;
-                case 4: Write(b, c.Resolve<PlayerHealth>()); break;
-                case 5: Write(b, c.Resolve<DiceState>()); break;
+                case 2: Write(b, c.Resolve<MapState>()); break;
+                case 3: Write(b, c.Resolve<LandingSite>()); break;
+                case 4: Write(b, c.Resolve<PlayerShip>()); break;
+                case 5: Write(b, c.Resolve<PlayerHealth>()); break;
+                case 6: Write(b, c.Resolve<DiceState>()); break;
             }
         }
 
@@ -178,6 +185,14 @@ namespace LuckyNumbers.Model
             Json.Num(b, s.Progress.Value);
             b.Append(",\"ready\":");
             b.Append(s.Ready.Value ? "true" : "false");
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, MapState s)
+        {
+            b.Append('{');
+            b.Append("\"open\":");
+            b.Append(s.Open.Value ? "true" : "false");
             b.Append('}');
         }
 
