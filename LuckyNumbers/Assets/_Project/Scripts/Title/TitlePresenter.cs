@@ -62,6 +62,8 @@ namespace LuckyNumbers.Title
             }
             _view.SetSettings(content.Settings.Title, content.Settings.Body, content.Settings.BackLabel, CloseSettings);
             _view.ShowSettings(false);
+            _view.SetCredits(GameContent.Credits, CloseSettings, url => { Debug.Log($"[Title] open {url}"); Application.OpenURL(url); });
+            _view.ShowCredits(false);
 
             _flow.Preload(content.Next);
             _loading.Ready
@@ -82,9 +84,10 @@ namespace LuckyNumbers.Title
                 Debug.Log($"[Title] menu: {e.Action}");
                 if (e.Action == MenuAction.Play) Play(content.Next);
                 else if (e.Action == MenuAction.Settings) { _settingsOpen = true; _view.ShowSettings(true); }
+                else if (e.Action == MenuAction.Credits) { _settingsOpen = true; _view.ShowCredits(true); }
             }).AddTo(_disposables);
 
-            // Keyboard/gamepad: Confirm = Play, Cancel = close settings.
+            // Keyboard/gamepad: Confirm = Play, Cancel = close the open panel.
             _input.Subscribe(e =>
             {
                 if (e.Action == Model.InputAction.Confirm && !_settingsOpen) Play(content.Next);
@@ -132,10 +135,12 @@ namespace LuckyNumbers.Title
             _sceneRequests.Publish(new SceneChangeRequested(next));
         }
 
+        /// <summary>Close whichever panel is open (Settings or Credits).</summary>
         void CloseSettings()
         {
             _settingsOpen = false;
             _view.ShowSettings(false);
+            _view.ShowCredits(false);
         }
 
         public void Dispose() => _disposables.Dispose();

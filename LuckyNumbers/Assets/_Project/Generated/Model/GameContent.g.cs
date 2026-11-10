@@ -119,6 +119,173 @@ namespace LuckyNumbers.Model
             },
         };
 
+        /// <summary>From <c>content/credits.txtpb</c>.</summary>
+        public static readonly CreditsConfig Credits = new CreditsConfig
+        {
+            Title = "Credits",
+            Intro = "Lucky Numbers is made with the work of these people. Thank you.",
+            BackLabel = "Back",
+            Sections =
+            {
+                new CreditSection
+                {
+                    Name = "Models",
+                    Credits =
+                    {
+                        new Credit
+                        {
+                            What = "Museum freighter (the cargo ship that crashes)",
+                            Title = "Deep Space Science Survey Vessel (PSX lo-fi)",
+                            Author = "Vaportrash",
+                            License = "CC BY 4.0",
+                            Url = "https://sketchfab.com/3d-models/deep-space-science-survey-vessel-psx-lo-fi-925a09ef43fe4675acd0a935d61dcd43",
+                            LicenseUrl = "https://creativecommons.org/licenses/by/4.0/",
+                            Notes = "Changes: converted from glTF to FBX split into one part per material (tools/blender/gltf_to_fbx_by_material.py), textures downsized to 512 px, and a convex collision mesh generated from it (tools/collision/decompose.py).",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Models/CargoShip/",
+                        },
+                        new Credit
+                        {
+                            What = "Fighter ship and skins",
+                            Title = "FREE Low Poly Space ship pack (fighter1)",
+                            Author = "RetroVandal (formerly Psionic Games)",
+                            License = "Free for freeware, shareware and commercial games",
+                            Url = "https://retrovandal.itch.io/low-poly-space-ship-pack",
+                            Notes = "From a 2005 3D Game Resources skinning competition. Skins (named after their authors): IdolKnight (1st), Krulspeld (2nd), Kaos Kiwi (3rd), Lordshadow (4th), Wilko, Cinfa, Crono782, Cubik, Freelancer, Jodomatis, NMT3000, Psychic Parrot, Robin, Shadee, Snaz, Thor and Psionic.",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Models/Fighter/README-psionic.txt",
+                        },
+                        new Credit
+                        {
+                            What = "First-person arms (rig, 13 animations, skin and glove textures)",
+                            Title = "PSX First Person Arms",
+                            Author = "DrillImpact",
+                            License = "CC0, public domain",
+                            Url = "https://drillimpact.itch.io/psx-first-person-arms-free",
+                        },
+                    },
+                },
+                new CreditSection
+                {
+                    Name = "Shaders",
+                    Credits =
+                    {
+                        new Credit
+                        {
+                            What = "Planet shader look",
+                            Title = "Simple 2D Planet shader",
+                            Author = "Ikkemcwood",
+                            License = "Shadertoy",
+                            Url = "https://www.shadertoy.com/view/Wcf3W7",
+                            Notes = "Adapted to 3D spheres.",
+                        },
+                        new Credit
+                        {
+                            What = "Seeded nebula sky (layered gas, dark dust, emission knots)",
+                            Title = "Nebula Background Shadertoy Study (inspiration)",
+                            Author = "guinetik",
+                            Url = "https://github.com/guinetik",
+                            Notes = "Written fresh, no code copied.",
+                        },
+                        new Credit
+                        {
+                            What = "Forming-system dust disk",
+                            Title = "Protoplanetary disk (inspiration)",
+                            Author = "Duke",
+                            License = "Shadertoy",
+                            Url = "https://www.shadertoy.com/view/MdtGRl",
+                            Notes = "Written fresh, no code copied.",
+                        },
+                        new Credit
+                        {
+                            What = "Noise and fBm techniques",
+                            Title = "The Book of Shaders",
+                            Author = "Patricio Gonzalez Vivo and Jen Lowe",
+                            Url = "https://thebookofshaders.com",
+                        },
+                        new Credit
+                        {
+                            What = "3D simplex noise",
+                            Title = "webgl-noise",
+                            Author = "Ian McEwan, Stefan Gustavson and Ashima Arts",
+                            License = "MIT",
+                            Url = "https://github.com/ashima/webgl-noise",
+                        },
+                    },
+                },
+                new CreditSection
+                {
+                    Name = "Fonts",
+                    Credits =
+                    {
+                        new Credit
+                        {
+                            What = "UI font",
+                            Title = "Exo 2",
+                            Author = "Natanael Gama / The Exo 2 Project Authors",
+                            License = "SIL Open Font License 1.1",
+                            Url = "https://github.com/googlefonts/Exo-2.0",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Fonts/Exo2/OFL.txt",
+                        },
+                    },
+                },
+                new CreditSection
+                {
+                    Name = "Libraries",
+                    Credits =
+                    {
+                        new Credit
+                        {
+                            What = "Async/await",
+                            Title = "UniTask",
+                            Author = "Cysharp",
+                            License = "MIT",
+                            Url = "https://github.com/Cysharp/UniTask",
+                        },
+                        new Credit
+                        {
+                            What = "Reactive state",
+                            Title = "R3",
+                            Author = "Cysharp",
+                            License = "MIT",
+                            Url = "https://github.com/Cysharp/R3",
+                        },
+                        new Credit
+                        {
+                            What = "Observable collections",
+                            Title = "ObservableCollections",
+                            Author = "Cysharp",
+                            License = "MIT",
+                            Url = "https://github.com/Cysharp/ObservableCollections",
+                        },
+                        new Credit
+                        {
+                            What = "Messaging",
+                            Title = "MessagePipe",
+                            Author = "Cysharp",
+                            License = "MIT",
+                            Url = "https://github.com/Cysharp/MessagePipe",
+                        },
+                        new Credit
+                        {
+                            What = "Dependency injection",
+                            Title = "VContainer",
+                            Author = "hadashiA",
+                            License = "MIT",
+                            Url = "https://github.com/hadashiA/VContainer",
+                        },
+                        new Credit
+                        {
+                            What = "NuGet packages in Unity",
+                            Title = "NuGetForUnity",
+                            Author = "GlitchEnzo",
+                            License = "MIT",
+                            Url = "https://github.com/GlitchEnzo/NuGetForUnity",
+                        },
+                    },
+                    Compact = true,
+                },
+            },
+        };
+
         /// <summary>From <c>content/intro.txtpb</c>.</summary>
         public static readonly Cutscene Intro = new Cutscene
         {
@@ -1890,6 +2057,11 @@ namespace LuckyNumbers.Model
                 {
                     Label = "Settings",
                     Action = MenuAction.Settings,
+                },
+                new MenuItem
+                {
+                    Label = "Credits",
+                    Action = MenuAction.Credits,
                 },
             },
             Settings = new SettingsPanel

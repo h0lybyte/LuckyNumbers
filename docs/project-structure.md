@@ -5,6 +5,7 @@ LuckyNumbers/            Unity project
   Assets/_Project/       all our assets and code
     Art/Shaders/         Starfield (skybox), Planet3D, Star, Galaxy, Disk, Ship, Include/Noise.hlsl; Art/Materials/
     Art/Models/Fighter/  fighter1.fbx + Skins/ (RetroVandal, see CREDITS.md)
+    Art/Models/CargoShip/ museum freighter (Vaportrash, CC BY): cargo_ship.fbx (part per material), Textures/, cargo_ship_collision.obj
     Art/Characters/Arms/ first-person arms rig + 18 clips (DrillImpact, CC0)
     Art/Fonts/Exo2/      UI font + SDF assets
     Editor/              WebBuild, SceneBuilder, ShaderPreview, FontSetup, ArtImport (model/skin import rules)
@@ -17,6 +18,7 @@ LuckyNumbers/            Unity project
                          disk), SpaceView, SpacePresenter (orbit camera, big bang, ISpaceDirector for cutscenes)
     Scripts/Title/       TitleView, TitlePresenter (Play transition), DiceView, DicePresenter, TitleScope
     Scripts/Intro/       IntroPresenter (cutscene player), IntroView, ShipView, IntroScope
+    Scripts/Cargo/       Manifest: the freighter's seeded ship, museum and relics (content/cargo.txtpb)
     Scripts/Hands/       HandRigMap (bone map, palm + finger axes), TwoBoneIK (reach, elbow pole, shrug, palm), HandPoser (finger poses)
     Scripts/Planet/      CrashSitePresenter (ground, sky, sun, wreck, wake-up), FirstPersonPresenter (walk/look),
                          GroundView, ArmsView, PlayerView, PlanetView, PlanetScope

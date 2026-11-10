@@ -9,6 +9,7 @@ prompt_pulse_seconds: 1.6
 
 menu { label: "Play" action: MENU_ACTION_PLAY }
 menu { label: "Settings" action: MENU_ACTION_SETTINGS }
+menu { label: "Credits" action: MENU_ACTION_CREDITS }
 
 settings {
   title: "Settings"

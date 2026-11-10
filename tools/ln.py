@@ -533,6 +533,14 @@ def cmd_gen(args) -> int:
         return fail(str(e))
 
     wanted = {generated_path(rel): text for rel, text in files.items()}
+    # Docs from content: CREDITS.md and README.md's credits block (tools/credits.py).
+    import credits
+    model, resolved, _ = protogen.load(str(protoc), include, PROTO_DIR, CONTENT_DIR, CONTENT_HEADER)
+    if "credits" in resolved:
+        cfg = protogen.decode(model, *resolved["credits"])
+        wanted[ROOT / "CREDITS.md"] = credits.credits_md(cfg)
+        readme = ROOT / "README.md"
+        wanted[readme] = credits.readme(readme.read_text(encoding="utf-8") if readme.is_file() else "", cfg)
     existing = {p for d in (GENERATED_DIR, WEB_GENERATED_DIR) if d.exists()
                 for p in d.rglob("*") if p.is_file() and not p.name.endswith(".meta")}
     changed = [p for p, t in wanted.items() if not p.is_file() or p.read_text(encoding="utf-8") != t]

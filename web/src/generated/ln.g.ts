@@ -24,7 +24,8 @@ export type InputAction =
 export type MenuAction =
   | "Unspecified"
   | "Play"
-  | "Settings";
+  | "Settings"
+  | "Credits";
 
 export interface FlowState {
   scene: GameScene;
