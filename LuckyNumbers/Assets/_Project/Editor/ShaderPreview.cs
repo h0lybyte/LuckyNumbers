@@ -247,6 +247,15 @@ namespace LuckyNumbers.Editor
                 Eye(At(14.6f, 3.2f, 1.7f), At(15.6f, 2.4f, 2.6f)),     // turn: outer corner (the leans cross)
                 Eye(At(7.4f, 3.3f, 2f), At(8.6f, 2.4f, 2.6f)),         // from the doorway into the corridor: lean ends
             }, "preview-station-corridor.png");
+
+            // Light modes: corridor and hangar, lights on / off / emergency (one row each).
+            var corridor = Eye(At(8.5f, 3f), At(15f, 3f, 1.8f));
+            var hangar = Eye(At(5.3f, 5.3f), At(2f, 1f, 1.9f));
+            var modes = new[] { LuckyNumbers.Model.StationLightMode.On, LuckyNumbers.Model.StationLightMode.Off,
+                                LuckyNumbers.Model.StationLightMode.Emergency };
+            SaveGrid(new[] { corridor, hangar }, modes.Length, "preview-station-lights.png",
+                     row => view.SetLights(modes[row]));
+            view.SetLights(LuckyNumbers.Model.StationLightMode.On);
         }
 
         static Material KitMaterial(string kit)
@@ -270,19 +279,29 @@ namespace LuckyNumbers.Editor
         }
 
         /// <summary>Cameras rendered into a 2 x 2 grid (each at half size), saved to Logs/.</summary>
-        static void SaveGrid(Camera[] cams, string file)
+        static void SaveGrid(Camera[] cams, string file) => SaveGrid(cams, 2, file, null, rowsAreCams: true);
+
+        /// <summary>
+        /// Grid of half-size tiles, 2 per row: either the cameras two by two (rowsAreCams), or the same cameras
+        /// on every row with <paramref name="beforeRow"/> run first (e.g. switching a look per row).
+        /// </summary>
+        static void SaveGrid(Camera[] cams, int rows, string file, System.Action<int> beforeRow, bool rowsAreCams = false)
         {
             int w = Width / 2, h = Height / 2;
-            var sheet = new Texture2D(Width, Height, TextureFormat.RGB24, false);
+            var count = rowsAreCams ? Mathf.Min(cams.Length, rows * 2) : rows * 2;
+            var sheet = new Texture2D(Width, h * rows, TextureFormat.RGB24, false);
             var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
-            for (var i = 0; i < cams.Length && i < 4; i++)
+            for (var i = 0; i < count; i++)
             {
+                var row = i / 2;
+                if (!rowsAreCams && i % 2 == 0) beforeRow?.Invoke(row);
+                var cam = rowsAreCams ? cams[i] : cams[i % 2];
                 var request = new RenderPipeline.StandardRequest { destination = rt };
-                if (RenderPipeline.SupportsRenderRequest(cams[i], request)) RenderPipeline.SubmitRenderRequest(cams[i], request);
-                else { cams[i].targetTexture = rt; cams[i].Render(); cams[i].targetTexture = null; }
+                if (RenderPipeline.SupportsRenderRequest(cam, request)) RenderPipeline.SubmitRenderRequest(cam, request);
+                else { cam.targetTexture = rt; cam.Render(); cam.targetTexture = null; }
                 var prev = RenderTexture.active;
                 RenderTexture.active = rt;
-                sheet.ReadPixels(new Rect(0, 0, w, h), (i % 2) * w, (1 - i / 2) * h);
+                sheet.ReadPixels(new Rect(0, 0, w, h), (i % 2) * w, (rows - 1 - row) * h);
                 RenderTexture.active = prev;
             }
             sheet.Apply();

@@ -25,6 +25,35 @@ namespace LuckyNumbers.Station
         [SerializeField] KitPiece[] pieces = Array.Empty<KitPiece>();
 
         public StationPlan Plan { get; private set; }
+        StationScene _config;
+
+        static readonly int Ambient = Shader.PropertyToID("_Ambient");
+        static readonly int LightColor = Shader.PropertyToID("_LightColor");
+        static readonly int LightDesaturate = Shader.PropertyToID("_LightDesaturate");
+        static readonly int Pulse = Shader.PropertyToID("_Pulse");
+
+        /// <summary>Switch every light in the station (both kits' materials, so every chunk at once).</summary>
+        public void SetLights(StationLightMode mode)
+        {
+            var look = mode switch
+            {
+                StationLightMode.Off => _config?.LightsOff,
+                StationLightMode.Emergency => _config?.Emergency,
+                _ => _config?.LightsOn,
+            };
+            if (look == null) return;
+            foreach (var m in new[] { stationMaterial, starshipMaterial })
+            {
+                if (m == null) continue;
+                m.SetColor(Ambient, ToColor(look.Ambient, Color.white));
+                m.SetColor(LightColor, ToColor(look.Light, new Color(1, 1, 1, 1.15f)));
+                m.SetFloat(LightDesaturate, look.Desaturate);
+                m.SetVector(Pulse, new Vector4(look.PulseHz, look.PulseDepth, 0, 0));
+            }
+        }
+
+        /// <summary>Unset in content (all zero) -> fallback.</summary>
+        static Color ToColor(Rgba c, Color fallback) => c.Equals(default) ? fallback : new Color(c.R, c.G, c.B, c.A);
 
         public void Init(Material station, Material starship, KitPiece[] kitPieces)
         {
@@ -36,6 +65,7 @@ namespace LuckyNumbers.Station
         public void Build(StationScene config)
         {
             Clear();
+            _config = config;
             Plan = new StationPlan(config.Plan, config.LightEvery);
             var chunk = Math.Max(1, config.ChunkCells);
 
@@ -90,6 +120,7 @@ namespace LuckyNumbers.Station
                 b.center = box.Center;
                 b.size = box.Size;
             }
+            SetLights(StationLightMode.On);
             Debug.Log($"[Station] {Plan.Width}x{Plan.Depth} cells, {Plan.Pieces.Count} pieces -> {batches.Count} meshes " +
                       $"({triangles} tris), {Plan.Boxes.Count} boxes");
         }

@@ -1375,6 +1375,25 @@ namespace LuckyNumbers.Model
             },
             LightEvery = 2,
             ChunkCells = 4,
+            LightsOn = new StationLightLook
+            {
+                Ambient = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                Light = new Rgba(1.0f, 1.0f, 1.0f, 1.15f),
+            },
+            LightsOff = new StationLightLook
+            {
+                Ambient = new Rgba(0.42f, 0.44f, 0.5f, 1.0f),
+                Light = new Rgba(0.3f, 0.29f, 0.27f, 1.0f),
+                Desaturate = 0.7f,
+            },
+            Emergency = new StationLightLook
+            {
+                Ambient = new Rgba(0.55f, 0.3f, 0.28f, 1.0f),
+                Light = new Rgba(1.0f, 0.12f, 0.06f, 1.6f),
+                Desaturate = 1.0f,
+                PulseHz = 0.8f,
+                PulseDepth = 0.55f,
+            },
         };
 
         /// <summary>From <c>content/title.txtpb</c>.</summary>

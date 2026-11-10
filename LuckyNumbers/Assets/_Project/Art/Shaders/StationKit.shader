@@ -2,6 +2,11 @@
 // colours, which carry the baked shading. The kits' lights are painted into the atlas, so there are no
 // real lights: a soft overhead term keeps floors brighter than ceilings, and distance fades to _FogColor
 // (PS1-style depth cue, also hides the far end of long corridors). One material per kit, every chunk.
+//
+// Light modes: the atlas alpha masks the painted lights (tools/kitmask.py). Surfaces are multiplied by
+// _Ambient; light texels are desaturated by _LightDesaturate, then tinted by _LightColor (rgb x a), unlit
+// by the baked shading. _Pulse (x = Hz, y = depth) pulses lights fully and surfaces at half depth.
+// StationView sets these from content/station.txtpb (on / off / emergency).
 Shader "LuckyNumbers/StationKit"
 {
     Properties
@@ -12,6 +17,10 @@ Shader "LuckyNumbers/StationKit"
         _FogColor ("Fog Color", Color) = (0.02, 0.025, 0.035, 1)
         _FogStart ("Fog Start", Float) = 10
         _FogEnd ("Fog End", Float) = 38
+        _Ambient ("Ambient (surfaces)", Color) = (1, 1, 1, 1)
+        _LightColor ("Light Color (rgb x a)", Color) = (1, 1, 1, 1.15)
+        _LightDesaturate ("Light Desaturate", Range(0, 1)) = 0
+        _Pulse ("Pulse (Hz, depth)", Vector) = (0, 0, 0, 0)
     }
 
     SubShader
@@ -29,8 +38,8 @@ Shader "LuckyNumbers/StationKit"
             SAMPLER(sampler_MainTex);
 
             CBUFFER_START(UnityPerMaterial)
-                float4 _MainTex_ST, _Tint, _FogColor;
-                float _Brightness, _FogStart, _FogEnd;
+                float4 _MainTex_ST, _Tint, _FogColor, _Ambient, _LightColor, _Pulse;
+                float _Brightness, _FogStart, _FogEnd, _LightDesaturate;
             CBUFFER_END
 
             struct Attributes
@@ -66,9 +75,16 @@ Shader "LuckyNumbers/StationKit"
 
             float4 frag(Varyings i) : SV_Target
             {
-                float3 albedo = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv).rgb;
-                float3 color = albedo * i.color.rgb * _Tint.rgb * _Brightness;
-                color = lerp(color, _FogColor.rgb, i.fog * i.fog);
+                float4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
+                float3 albedo = tex.rgb;
+                float pulse = _Pulse.x > 0 ? 1.0 - _Pulse.y * (0.5 + 0.5 * sin(_Time.y * _Pulse.x * 6.2831853)) : 1.0;
+
+                float3 surface = albedo * i.color.rgb * _Tint.rgb * _Brightness * _Ambient.rgb * lerp(1.0, pulse, 0.5);
+                float grey = dot(albedo, float3(0.3, 0.59, 0.11));
+                float3 lamp = lerp(albedo, grey.xxx, _LightDesaturate) * _LightColor.rgb * _LightColor.a * pulse;
+                float3 color = lerp(surface, lamp, tex.a);
+                // Lit lamps cut through the fog a little (they're emitters); dark ones fog like walls.
+                color = lerp(color, _FogColor.rgb, i.fog * i.fog * (1.0 - 0.5 * tex.a * saturate(_LightColor.a - 1.0)));
                 return float4(color, 1);
             }
             ENDHLSL

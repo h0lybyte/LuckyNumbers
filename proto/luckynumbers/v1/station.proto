@@ -3,6 +3,7 @@ syntax = "proto3";
 package luckynumbers.v1;
 
 import "ln/options.proto";
+import "luckynumbers/v1/common.proto";
 
 option csharp_namespace = "LuckyNumbers.Model";
 
@@ -21,4 +22,32 @@ message StationScene {
   int32 light_every = 2;
   // Cells per side of a mesh chunk: each chunk is one mesh per kit (one draw call each).
   int32 chunk_cells = 4;
+  // How the station looks in each light mode (StationLightMode).
+  StationLightLook lights_on = 5;
+  StationLightLook lights_off = 6;
+  StationLightLook emergency = 7;
+}
+
+enum StationLightMode {
+  STATION_LIGHT_MODE_UNSPECIFIED = 0;
+  STATION_LIGHT_MODE_ON = 1;
+  // Power down: the painted lights go dark and the station dims.
+  STATION_LIGHT_MODE_OFF = 2;
+  // Red alert: every light turns red and pulses, the rest dims under a red cast.
+  STATION_LIGHT_MODE_EMERGENCY = 3;
+}
+
+// One light mode's look. The kits' painted lights are masked in their atlases' alpha (tools/kitmask.py);
+// the StationKit shader treats those texels as lights and everything else as surface.
+message StationLightLook {
+  // Surfaces (not lights): multiplies the atlas x baked shading. White = as the kit painted it.
+  Rgba ambient = 1;
+  // Light texels: tint (rgb) times intensity (a).
+  Rgba light = 2;
+  // Light texels go this far towards grey before the tint (1 = only the tint's colour shows).
+  float desaturate = 3;
+  // Pulse (lights, and surfaces at half depth): cycles per second; 0 = steady.
+  float pulse_hz = 4;
+  // How deep the pulse dips, 0..1.
+  float pulse_depth = 5;
 }

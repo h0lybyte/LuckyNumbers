@@ -9,6 +9,20 @@ using R3;
 
 namespace LuckyNumbers.Model
 {
+    public enum StationLightMode
+    {
+        Unspecified = 0,
+        On = 1,
+        /// <summary>
+        /// Power down: the painted lights go dark and the station dims.
+        /// </summary>
+        Off = 2,
+        /// <summary>
+        /// Red alert: every light turns red and pulses, the rest dims under a red cast.
+        /// </summary>
+        Emergency = 3,
+    }
+
     /// <summary>
     /// The player's space station (where their ship docks), built from the PSX station kit (rooms) and the
     /// PSX starship kit (corridors) on their shared grid: 2 m cells, 3 m high. Laid out as an ASCII plan.
@@ -32,8 +46,45 @@ namespace LuckyNumbers.Model
         /// Cells per side of a mesh chunk: each chunk is one mesh per kit (one draw call each).
         /// </summary>
         public int ChunkCells { get; set; }
+        /// <summary>
+        /// How the station looks in each light mode (StationLightMode).
+        /// </summary>
+        public StationLightLook LightsOn { get; set; }
+        public StationLightLook LightsOff { get; set; }
+        public StationLightLook Emergency { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public StationScene Clone() => (StationScene)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// One light mode's look. The kits' painted lights are masked in their atlases' alpha (tools/kitmask.py);
+    /// the StationKit shader treats those texels as lights and everything else as surface.
+    /// </summary>
+    public sealed class StationLightLook
+    {
+        /// <summary>
+        /// Surfaces (not lights): multiplies the atlas x baked shading. White = as the kit painted it.
+        /// </summary>
+        public Rgba Ambient { get; set; }
+        /// <summary>
+        /// Light texels: tint (rgb) times intensity (a).
+        /// </summary>
+        public Rgba Light { get; set; }
+        /// <summary>
+        /// Light texels go this far towards grey before the tint (1 = only the tint's colour shows).
+        /// </summary>
+        public float Desaturate { get; set; }
+        /// <summary>
+        /// Pulse (lights, and surfaces at half depth): cycles per second; 0 = steady.
+        /// </summary>
+        public float PulseHz { get; set; }
+        /// <summary>
+        /// How deep the pulse dips, 0..1.
+        /// </summary>
+        public float PulseDepth { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public StationLightLook Clone() => (StationLightLook)MemberwiseClone();
     }
 }
