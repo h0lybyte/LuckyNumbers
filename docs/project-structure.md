@@ -29,6 +29,7 @@ LuckyNumbers/            Unity project
   Builds/                build output (gitignored)
 proto/, content/         schema + authored data (source of truth)
 tools/ln.py              dev CLI (protogen.py, webshot.mjs, roslyn/)
+.moon/, */moon.yml       moon workspace + per-project tasks wrapping ln.py (docs/moon.md)
 CHANGELOG.md             version source, triggers releases
 .env.example             template for CI secrets (.env gitignored)
 ```

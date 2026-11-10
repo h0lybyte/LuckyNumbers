@@ -475,6 +475,8 @@ namespace LuckyNumbers.Station
         void Board()
         {
             _leaving = true;
+            PlayerShipStats.Refuel(_playerShip);   // docked: the station fills the tank
+            Debug.Log($"[Station] refuelled: {_playerShip.Fuel.Value:0} units");
             _firstPerson.Active = false;
             _state.Prompt.Value = "";
             Leave(_cts.Token).Forget();

@@ -14,10 +14,11 @@ const HOVER_STEPS = [
   { title: "Touch down", how: "Keep holding C, hands off the mouse" },
 ];
 
-// Flying back out (boarded after landing): lift off, then climb out of the atmosphere to the station.
-const LEAVE_STEPS = [
+// Flying about (boarded after landing): lift off, fly anywhere and land, or climb high and break orbit (E).
+const ROAM_STEPS = [
   { title: "Lift off", how: "Hold SPACE to rise off the ground" },
-  { title: "Climb to orbit", how: "Keep holding SPACE, Shift to climb faster (or nose up and W)" },
+  { title: "Fly anywhere", how: "Land with C wherever it's flat, or climb above orbit height to leave" },
+  { title: "Break orbit", how: "Press E to fly back to the station" },
 ];
 
 const STEPS = [
@@ -40,10 +41,10 @@ export function FlightHud() {
   // Follow what you're doing: hovering low = touch down, hovering = hover down, slow = hover down,
   // fast and near the pad = slow down, else fly to the pad. Landing anywhere counts.
   const slow = f.speed <= f.maxDrift * 0.85;
-  const leaving = f.leaving;
-  const steps = leaving ? LEAVE_STEPS : f.hoverShip ? HOVER_STEPS : STEPS;
-  const step = leaving
-    ? f.altitude < 20 ? 0 : 1
+  const roaming = f.roaming;
+  const steps = roaming ? ROAM_STEPS : f.hoverShip ? HOVER_STEPS : STEPS;
+  const step = roaming
+    ? f.canLeave ? 2 : f.altitude < 20 && f.speed < 3 ? 0 : 1
     : !f.assisted
     ? -1
     : f.hoverShip
@@ -51,11 +52,11 @@ export function FlightHud() {
         ? f.altitude < 5 ? 3 : 2
         : f.padDistance > 18 ? 0 : f.speed > 2.5 ? 1 : 2
       : f.hovering ? (f.altitude < 15 ? 3 : 2) : slow ? 2 : f.padDistance > 45 ? 0 : 1;
-  const offPad = !leaving && step >= 2 && f.padDistance > (f.hoverShip ? 18 : 45);
-  const low = !leaving && f.altitude < 40;
-  const warnings = low ? warn(f) : [];
+  const offPad = !roaming && step >= 2 && f.padDistance > (f.hoverShip ? 18 : 45);
+  const low = f.altitude < 40 && (!roaming || f.climb < -0.8);
+  const warnings = [...(low ? warn(f) : []), ...fuelWarn(f)];
   const keys = f.hoverShip
-    ? [["Mouse", "aim"], ["W S", "thrust"], ["A D", "strafe"], ["Q E", "roll"], ["Space C", "up / down"], ["Shift", "boost"], ["X", "brake"]]
+    ? [["Mouse", "aim"], ["Click", "lasers"], ["W S", "thrust"], ["A D", "strafe"], ["Q E", "roll"], ["Space C", "up / down"], ["Shift", "boost"], ["X", "brake"]]
     : [["Mouse", "steer"], ["W S", "speed"], ["A D", "roll"], ["Shift", "boost"], ["Space", "hover down"]];
   return (
     <div className="flight-hud">
@@ -81,8 +82,15 @@ export function FlightHud() {
         </div>
       )}
 
-      {leaving ? (
-        <div className="flight-orbit" title="Climb this high to leave the atmosphere">
+      <Crosshair shots={f.shots} />
+      {f.canLeave && (
+        <div className="flight-leave">
+          <kbd>E</kbd> Break orbit: back to the station
+        </div>
+      )}
+
+      {roaming ? (
+        <div className={`flight-orbit${f.canLeave ? " ready" : ""}`} title="Above this height, E flies you back to the station">
           <span>ORBIT</span>
           <div className="flight-orbit-bar">
             <div style={{ width: `${Math.min(100, (100 * Math.max(0, f.altitude)) / Math.max(1, f.orbitAltitude))}%` }} />
@@ -100,6 +108,7 @@ export function FlightHud() {
         <Instrument label="SPEED" value={f.speed} unit="m/s"
           sub={f.hoverShip ? (f.boost ? "BOOST" : undefined) : f.assisted ? `SET ${f.setSpeed.toFixed(0)}${f.boost ? " BOOST" : ""}` : undefined} />
         <Instrument label="CLIMB" value={f.climb} unit="m/s" signed />
+        {f.fuelMax > 0 && <FuelGauge fuel={f.fuel} max={f.fuelMax} low={f.fuelLow} empty={f.fuelEmpty} />}
         {f.hovering && <div className="flight-tag">{f.hoverShip ? "DESCENDING" : "HOVER"}</div>}
       </div>
 
@@ -137,6 +146,36 @@ function warn(f: FlightState): string[] {
   if (f.descent > f.maxDescent) out.push("Coming down too fast: hold SPACE");
   if (f.tilt > f.maxTilt) out.push("Tilted: hold SPACE to level out");
   return out;
+}
+
+function fuelWarn(f: FlightState): string[] {
+  if (f.fuelEmpty) return ["Out of fuel: engines out, the reserve cells are letting you down. Land, and the solar cells top it up"];
+  if (f.fuelLow) return ["Fuel low: land soon (the station fills the tank)"];
+  return [];
+}
+
+/** The tank: a bar that goes amber when low and red when dry. */
+function FuelGauge({ fuel, max, low, empty }: { fuel: number; max: number; low: boolean; empty: boolean }) {
+  const share = Math.max(0, Math.min(1, fuel / Math.max(1, max)));
+  return (
+    <div className={`flight-inst flight-fuel${empty ? " empty" : low ? " low" : ""}`}>
+      <span className="label">FUEL</span>
+      <span className="value">{empty ? "EMPTY" : `${(share * 100).toFixed(0)}`}{!empty && <small> %</small>}</span>
+      <div className="flight-fuel-bar">
+        <div style={{ width: `${share * 100}%` }} />
+      </div>
+    </div>
+  );
+}
+
+/** Where the guns point (the chase camera looks down the nose); flashes as a shot goes. */
+function Crosshair({ shots }: { shots: number }) {
+  return (
+    <svg key={shots} className={`flight-cross${shots > 0 ? " fired" : ""}`} viewBox="-20 -20 40 40" aria-hidden="true">
+      <path d="M -14 0 H -5 M 5 0 H 14 M 0 -14 V -5 M 0 5 V 14" />
+      <circle r="1.5" />
+    </svg>
+  );
 }
 
 /** The pad, relative to your nose: up = ahead, right = to your right. */

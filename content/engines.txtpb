@@ -48,15 +48,15 @@ rcs_look {
 }
 
 # The fighter (Art/Models/Fighter/fighter1.fbx, 0.49 long): two main pods at the back, lift jets under the belly
-# and the pods, down jets on top, side jets on the pods and the nose prongs, retros beside the cockpit.
+# and the pods, down jets on top, side jets on the pods and the nose prongs, retros under the front of the pods (clear of the gun rods).
 ships {
   ship: "fighter"
   centre { x: 0 y: -0.005 z: 0 }
   thrusters { name: "main_l" main: true position { x: -0.077 y: -0.007 z: -0.171 } direction { z: -1 } radius: 0.022 length: 0.3 }
   thrusters { name: "main_r" main: true position { x: 0.077 y: -0.007 z: -0.171 } direction { z: -1 } radius: 0.022 length: 0.3 }
 
-  thrusters { name: "retro_l" position { x: -0.112 y: -0.007 z: 0.1 } direction { z: 1 } radius: 0.007 length: 0.084 }
-  thrusters { name: "retro_r" position { x: 0.112 y: -0.007 z: 0.1 } direction { z: 1 } radius: 0.007 length: 0.084 }
+  thrusters { name: "retro_l" position { x: -0.077 y: -0.034 z: -0.08 } direction { z: 1 } radius: 0.007 length: 0.084 }
+  thrusters { name: "retro_r" position { x: 0.077 y: -0.034 z: -0.08 } direction { z: 1 } radius: 0.007 length: 0.084 }
 
   thrusters { name: "lift_belly" position { x: 0 y: -0.029 z: 0.07 } direction { y: -1 } radius: 0.013 length: 0.098 }
   thrusters { name: "lift_l" position { x: -0.077 y: -0.035 z: -0.14 } direction { y: -1 } radius: 0.011 length: 0.091 }

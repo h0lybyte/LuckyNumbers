@@ -1,0 +1,77 @@
+$schema: "../.moon/cache/schemas/project.json"
+
+project:
+  title: "LuckyNumbers"
+  description: "Unity 6 (URP) Web game. Tasks wrap tools/ln.py; Unity ones need the editor closed."
+layer: "application"
+stack: "frontend"
+language: "csharp"
+toolchains:
+  default: "system"
+
+dependsOn: ["content", "web"]
+
+fileGroups:
+  unity:
+    - "Assets/**/*"
+    - "Packages/**/*"
+    - "ProjectSettings/**/*"
+
+# ln.py resolves paths from the repo root.
+taskOptions:
+  runFromWorkspaceRoot: true
+
+# Unity tasks share mutex "unity": Unity holds a project lock, never run two at once.
+tasks:
+  check:
+    description: "Headless compile; prints C# errors (editor closed)."
+    command: "python3 tools/ln.py check"
+    deps: ["content:check"]
+    inputs: ["@group(unity)", "/tools/ln.py"]
+    options:
+      mutex: "unity"
+      runInCI: false # needs a Unity license; web.yml builds with game-ci
+
+  build-web:
+    type: "build"
+    description: "Headless Web build (WebGPU + WebGL 2) + overlay -> Builds/WebGL (editor closed)."
+    command: "python3 tools/ln.py build-web"
+    deps: ["content:check", "web:typecheck"]
+    inputs: ["@group(unity)", "/web/src/**/*", "/tools/ln.py", "/CHANGELOG.md"]
+    options:
+      mutex: "unity"
+      cache: false # multi-GB output, Unity's Library is the real cache
+      runInCI: false
+
+  scenes:
+    type: "build"
+    description: "Rebuild game scenes from code (Editor/SceneBuilder.cs), editor closed."
+    command: "python3 tools/ln.py scenes"
+    options:
+      mutex: "unity"
+      cache: false
+      runInCI: false
+
+  roslyn:
+    type: "build"
+    description: "Build the Roslyn source generator into Assets/_Project/Generators."
+    command: "python3 tools/ln.py roslyn"
+    inputs: ["/tools/roslyn/**/*"]
+    options:
+      cache: false # output is committed under Assets/
+      runInCI: false
+
+  serve:
+    type: "run"
+    description: "Serve Builds/WebGL with COOP/COEP headers on :8080."
+    command: "python3 tools/ln.py serve"
+    preset: "server"
+
+  deploy:
+    type: "run"
+    description: "butler push the Web build to itch.io (CI does this on release)."
+    command: "python3 tools/ln.py deploy"
+    options:
+      cache: false
+      runInCI: false
+      interactive: true

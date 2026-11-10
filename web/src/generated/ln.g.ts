@@ -166,9 +166,20 @@ export interface FlightState {
   assisted: boolean;
   /** Hover-ship controls (the HUD's steps and keys follow them). */
   hoverShip: boolean;
-  /** Flying out (boarded after landing): climb to orbit_altitude to leave. */
-  leaving: boolean;
+  /**
+   * Flying about (boarded after landing): land anywhere, or above orbit_altitude E goes back to the station
+   * (`can_leave`).
+   */
+  roaming: boolean;
   orbitAltitude: number;
+  canLeave: boolean;
+  /** Fuel (units) and the tank; low (warn) and dry (engines out, the reserve cells letting you down). */
+  fuel: number;
+  fuelMax: number;
+  fuelLow: boolean;
+  fuelEmpty: boolean;
+  /** Guns: shots fired this flight (the HUD flashes its crosshair on a change). */
+  shots: number;
 }
 
 /**
@@ -189,6 +200,12 @@ export interface LandingSite {
 /** The player's ship as they've set it up (starts from PlayerConfig; a customise screen / save file sets it). */
 export interface PlayerShip {
   skin: string;
+  /**
+   * Fuel in the tank and the tank's size (units; content/ships.txtpb fuel x the skin's stats). Kept between
+   * scenes: the station fills it, flying burns it.
+   */
+  fuel: number;
+  fuelMax: number;
 }
 
 export interface PlayerHealth {
@@ -206,6 +223,17 @@ export interface ShipPicker {
   skin: string;
   index: number;
   count: number;
+  /** That skin's stats (content/ships.txtpb; multipliers, 1 = baseline) and the guns in its barrels. */
+  name: string;
+  role: string;
+  description: string;
+  speed: number;
+  agility: number;
+  fuel: number;
+  efficiency: number;
+  toughness: number;
+  firepower: number;
+  guns: string;
 }
 
 /**

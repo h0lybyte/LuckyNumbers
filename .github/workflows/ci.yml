@@ -1,0 +1,31 @@
+# PR checks through moon: only tasks affected by the change run (content:validate, content:check,
+# web:typecheck). Unity tasks are runInCI: false; the Unity build stays in web.yml (game-ci).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  moon:
+    name: moon ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # moon compares against main to find affected projects
+
+      - uses: moonrepo/setup-toolchain@v0
+        with:
+          auto-install: true # moon from .prototools, Node from .moon/toolchains.yml
+
+      - run: moon ci

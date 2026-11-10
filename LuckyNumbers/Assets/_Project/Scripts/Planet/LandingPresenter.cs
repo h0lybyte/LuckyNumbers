@@ -18,7 +18,7 @@ namespace LuckyNumbers.Planet
         /// <summary>The board prompt when `feet` is close enough to the landed ship to board it, else "".</summary>
         string BoardPrompt(Vector3 feet);
 
-        /// <summary>Climb aboard and lift off: past FlightLanding.orbit_altitude you're back at the station.</summary>
+        /// <summary>Climb aboard and lift off: fly anywhere; above FlightLanding.orbit_altitude E goes back to the station.</summary>
         void Board();
 
         /// <summary>Where you step out beside the landed ship (the dev warp "ship"); null while it isn't landed.</summary>
@@ -30,8 +30,13 @@ namespace LuckyNumbers.Planet
     /// mouse pitches and yaws, A/D roll (wings level themselves when you let go), W/S throttle, Shift boost,
     /// Space lift thrusters, under gravity and air drag. Touch down slow, level and gentle, or crash and start
     /// over. Landed: you step out beside your ship and walk (first person). Back beside it, E boards it (IFighter):
-    /// lift off and climb, and past orbit_altitude you fly out of the atmosphere, back to the station
-    /// (PlayerVoyage.returning, so it knows you're back).
+    /// fly it anywhere and set it down wherever you like (step out again there). Above orbit_altitude, E breaks orbit
+    /// and you're back at the station (PlayerVoyage.returning, so it knows you're back); climbing stops at the ceiling.
+    ///
+    /// Fuel (content/ships.txtpb, PlayerShip.fuel): holding in the air burns a little, thrust more, boost more again.
+    /// Dry, the engines cut out and the reserve cells let you down slowly wherever you are; landed, the solar cells
+    /// top it up a little; the station fills it. The skin's stats (ShipStats) scale speed, handling, the tank, the
+    /// burn and the touchdown limits. Click fires its guns (ShipGuns), the barrels in turn.
     ///
     /// Flight assist (FlightLanding.assist, on by default): W/S set a speed the ship holds, the engine pushing
     /// forward and air brakes pulling back, so letting off really slows you; Space hovers: the thrusters hold a
@@ -55,10 +60,18 @@ namespace LuckyNumbers.Planet
         readonly ISubscriber<FlightHudReady> _hudReady;
         readonly PlayerVoyage _voyage;
         readonly IPublisher<SceneChangeRequested> _scenes;
-        // Flying out: boarded after landing (`_leaving`), still lifting clear of the ground (`_clearing`: no touchdown
-        // or crash yet), past orbit and fading out (`_exiting`); where it was parked (a crash on the way up restarts there).
-        bool _leaving, _clearing, _exiting, _boarding;
+        // Flying about: boarded after landing (`_roaming`), still lifting clear of the ground (`_clearing`: no touchdown
+        // or crash yet), breaking orbit and fading out (`_exiting`); where it was last parked (a crash restarts there).
+        bool _roaming, _clearing, _exiting, _boarding;
         Vector3 _parked;
+        readonly ISubscriber<InputActionPerformed> _actions;
+        IDisposable _actionSubscription;
+        ShipStats _stats = new();
+        ShipGuns _guns;
+        float _altitude, _demand, _arrivalFuel;   // metres above the ground; thrust asked for (0..~2, burns fuel)
+        bool _dry;                                 // no fuel: engines out, the reserve cells let you down
+        bool _lockClick, _canFire;                 // the pointer-locking click is pressed; presses fire the guns
+        int _landings;
         readonly ISubscriber<DevWarpRequested> _warps;
         IDisposable _warpSubscription;
         IDisposable _hudSubscription;
@@ -85,8 +98,15 @@ namespace LuckyNumbers.Planet
         public LandingPresenter(PlanetScene config, PlanetView view, PlayerView player, GroundView ground,
                                 IFirstPerson firstPerson, PlayerInput input, PlayerShip playerShip, FlightState state,
                                 ISubscriber<FlightHudReady> hudReady, ISubscriber<DevWarpRequested> warps,
-                                PlayerVoyage voyage, IPublisher<SceneChangeRequested> scenes)
+                                PlayerVoyage voyage, IPublisher<SceneChangeRequested> scenes,
+                                ISubscriber<InputActionPerformed> actions)
         {
+            _actions = actions;
+            // Above orbit_altitude, E breaks orbit: back to the station.
+            _actionSubscription = _actions.Subscribe(e =>
+            {
+                if (e.Action == InputAction.Interact && CanLeave) ExitAsync().Forget();
+            });
             _voyage = voyage;
             _scenes = scenes;
             _config = config;
@@ -120,6 +140,13 @@ namespace LuckyNumbers.Planet
         FlightHover H => _config.Landing.Hover;
         bool HoverShip => H != null && H.Enabled;
         ShipView Ship => _view.Fighter;
+        ShipFuel F => GameContent.Ships?.Fuel;
+        // The skin's landing gear: the touchdown limits scale with its toughness.
+        float Tough => math.max(0.1f, _stats.Toughness);
+        float MaxVertical => L.MaxTouchdownVertical * Tough;
+        float MaxHorizontal => L.MaxTouchdownHorizontal * Tough;
+        float MaxTilt => L.MaxTouchdownTilt * Tough;
+        bool CanLeave => _phase == Phase.Flying && !_exiting && !_boarding && L.OrbitAltitude > 0f && _altitude >= L.OrbitAltitude;
         Vector3 Wreck => _view.Wreck.Pivot.position;
 
         public async UniTask ArriveAsync(ICrashSite site, CancellationToken ct)
@@ -130,6 +157,16 @@ namespace LuckyNumbers.Planet
             _view.FlightCamera.gameObject.SetActive(true);
             Ship.Show(PlayerShipSkin.Current(_playerShip), L.ShipLength);
             _ownColliders = Ship.Pivot.GetComponentsInChildren<Collider>(true);
+            _stats = PlayerShipStats.Of(_playerShip);
+            PlayerShipStats.EnsureFuel(_playerShip);
+            _arrivalFuel = _playerShip.Fuel.Value;
+            // Lasers: unlit, like the wreck's beacon (its material is in the build; tinted per gun).
+            var beam = _view.WreckBeacon != null ? _view.WreckBeacon.GetComponent<Renderer>() : null;
+            _guns?.Dispose();
+            _guns = new ShipGuns(Ship, beam != null ? new Material(beam.sharedMaterial) : null);
+            _guns.Arm(_stats);
+            Debug.Log($"[Landing] {_stats.Name} ({_stats.Role}): fuel {_playerShip.Fuel.Value:0}/{_playerShip.FuelMax.Value:0}, " +
+                      $"speed x{_stats.Speed:0.00}, agility x{_stats.Agility:0.00}, toughness x{_stats.Toughness:0.00}");
             Beacon();
             Pad();
             Restart();
@@ -144,9 +181,10 @@ namespace LuckyNumbers.Planet
         /// <summary>Back to the start: up high, some way off, heading for the wreck (seeded bearing).</summary>
         void Restart()
         {
-            if (_leaving)
+            if (_roaming)
             {
-                // Crashed on the way out: hovering above where you'd parked, still leaving.
+                // Crashed flying about: hovering above where you last parked, enough fuel to set down again.
+                if (F != null) _playerShip.Fuel.Value = math.max(_playerShip.Fuel.Value, _playerShip.FuelMax.Value * F.RechargeTo);
                 _position = _parked + Vector3.up * 40f;
                 _velocity = Vector3.zero;
                 _spin = _jetSpin = Vector3.zero;
@@ -157,9 +195,10 @@ namespace LuckyNumbers.Planet
                 _phase = Phase.Flying;
                 _phaseTime = 0f;
                 _view.Flight("", null);
-                Debug.Log("[Landing] restart over the parking spot, leaving");
+                Debug.Log("[Landing] restart over the parking spot");
                 return;
             }
+            _playerShip.Fuel.Value = math.max(_playerShip.Fuel.Value, _arrivalFuel);   // a retry starts as the first try did
             var bearing = Quaternion.Euler(0f, (_site.Seed % 360u) * 1f, 0f) * Vector3.forward;
             var start = Wreck - bearing * L.StartDistance;
             start.y = _ground.HeightAt(start) + L.StartAltitude;
@@ -183,9 +222,11 @@ namespace LuckyNumbers.Planet
 
         public void Tick()
         {
-            if (_phase == Phase.Idle || _phase == Phase.Landed) return;
             var dt = Time.deltaTime;
             if (dt <= 0f) return;
+            _guns?.Tick(dt);   // bolts keep flying after you land
+            if (_phase == Phase.Landed) Recharge(dt);
+            if (_phase == Phase.Idle || _phase == Phase.Landed) return;
             _phaseTime += dt;
             if (_phase == Phase.Flying) Fly(dt);
             else if (_phase == Phase.Crashed && _phaseTime > 2.2f) Restart();
@@ -197,10 +238,20 @@ namespace LuckyNumbers.Planet
         {
             // Pointer lock like on foot: a click locks it; while locked (or dragging) the mouse steers.
             var pressed = _input.PointerPressed.Value;
-            if (pressed && Cursor.lockState != CursorLockMode.Locked) Cursor.lockState = CursorLockMode.Locked;
+            var locked = Cursor.lockState == CursorLockMode.Locked;
+            if (pressed && !locked) Cursor.lockState = CursorLockMode.Locked;
+            // The click that first locks the pointer doesn't also fire; after that any press does (even where the
+            // browser refuses the lock and you steer by dragging).
+            if (!pressed && _lockClick) { _lockClick = false; _canFire = true; }
+            if (pressed && !locked && !_canFire) _lockClick = true;
+            if (locked && !pressed) _canFire = true;
             var steering = Cursor.lockState == CursorLockMode.Locked || pressed;
             var look = steering ? new Vector2(_input.Look.Value.X, _input.Look.Value.Y) : Vector2.zero;
             var move = _input.Move.Value;
+            // Guns: hold the button and the barrels fire in turn (carried along at the ship's forward speed).
+            if (pressed && _canFire && !_boarding && !_clearing) _guns?.TryFire(Vector3.Dot(_velocity, _rotation * Vector3.forward));
+            _dry = F != null && _playerShip.Fuel.Value <= 0f;
+            _demand = 0f;
 
             var hovering = false;
             var boost = 1f;
@@ -208,7 +259,7 @@ namespace LuckyNumbers.Planet
             else
             {
                 var altitudeNow = _position.y - _ground.HeightAt(_position);
-                hovering = Assisted && _input.Lifting.Value;
+                hovering = Assisted && _input.Lifting.Value && !_dry;
                 if (Assisted) Steer(look, move.X, hovering, altitudeNow, dt);
                 else
                 {
@@ -226,8 +277,9 @@ namespace LuckyNumbers.Planet
                 }
 
                 // Forces: main engine (throttle, boost), lift thrusters, gravity, drag.
-                _throttle = math.saturate(_throttle + move.Y * L.ThrottlePerSecond * dt);
-                boost = _input.Sprinting.Value ? L.Boost : 1f;
+                _throttle = _dry ? 0f : math.saturate(_throttle + move.Y * L.ThrottlePerSecond * dt);
+                boost = _input.Sprinting.Value && !_dry ? L.Boost : 1f;
+                _demand = _throttle * boost + (_input.Lifting.Value ? 0.5f : 0f);
                 var forward = _rotation * Vector3.forward;
                 var airspeed = math.max(0f, Vector3.Dot(_velocity, forward));
                 Vector3 accel;
@@ -235,7 +287,7 @@ namespace LuckyNumbers.Planet
                 {
                     // Speed hold: the engine pushes towards the throttle's speed, the air brakes pull back down to it.
                     var target = _throttle * A.MaxSpeed * (_input.Sprinting.Value ? math.max(1f, A.BoostSpeed) : 1f);
-                    if (hovering) target = math.min(target, L.MaxTouchdownHorizontal * 0.6f);   // creep: safe to touch down
+                    if (hovering) target = math.min(target, MaxHorizontal * 0.6f);   // creep: safe to touch down
                     var push = math.clamp((target - airspeed) * A.SpeedGain, -A.Brake, L.Thrust * boost);
                     accel = forward * push
                           + _rotation * Vector3.up * (L.WingLift * airspeed * airspeed)
@@ -259,7 +311,7 @@ namespace LuckyNumbers.Planet
                 {
                     accel = forward * (L.Thrust * _throttle * boost)
                           + _rotation * Vector3.up * (L.WingLift * airspeed * airspeed)            // wings: glide fast, sink slow
-                          + (_input.Lifting.Value ? _rotation * Vector3.up * L.Lift : Vector3.zero)
+                          + (_input.Lifting.Value && !_dry ? _rotation * Vector3.up * L.Lift : Vector3.zero)
                           + Vector3.down * L.Gravity;
                 }
                 _velocity += accel * dt;
@@ -271,7 +323,8 @@ namespace LuckyNumbers.Planet
                 _position += _velocity * dt;
                 Ship.SetHeat(0f, 0.6f + 1.4f * _throttle * boost + (_input.Lifting.Value ? 0.6f : 0f));   // engines glow with thrust
                 // Jets: the mains with the throttle, the belly with the lift thrusters, the small ones to turn.
-                Ship.SetThrust(new Vector3(0f, _input.Lifting.Value ? 1f : 0f, _throttle), JetTurn(dt, math.max(90f, L.RollDegreesPerSecond)), boost);
+                if (_dry) Ship.EnginesOff();
+                else Ship.SetThrust(new Vector3(0f, _input.Lifting.Value ? 1f : 0f, _throttle), JetTurn(dt, math.max(90f, L.RollDegreesPerSecond)), boost);
             }
 
             // Touchdown: the lowest of three gear points reaches the ground.
@@ -285,7 +338,11 @@ namespace LuckyNumbers.Planet
             var horizontal = Vector3.ProjectOnPlane(_velocity, normal).magnitude;
             var tilt = Vector3.Angle(_rotation * Vector3.up, normal);
             var altitude = _position.y - _ground.HeightAt(_position);
-            if (_leaving && !_exiting && altitude >= L.OrbitAltitude && L.OrbitAltitude > 0f) ExitAsync().Forget();
+            _altitude = altitude;
+            Burn(dt);
+            // The ceiling: climbing fades out above orbit_altitude x ceiling (break orbit with E instead).
+            var top = L.OrbitAltitude * math.max(1f, L.Ceiling);
+            if (L.OrbitAltitude > 0f && altitude > top && _velocity.y > 0f) _velocity.y = math.max(0f, _velocity.y - (altitude - top + 2f) * 4f * dt);
             // Lifting off: no touchdown (you're sitting on the ground) or bumps until the gear is well clear.
             if (_clearing)
             {
@@ -294,13 +351,13 @@ namespace LuckyNumbers.Planet
             }
             if (lowest <= 0f)
             {
-                if (vertical <= L.MaxTouchdownVertical && horizontal <= L.MaxTouchdownHorizontal && tilt <= L.MaxTouchdownTilt) Land(normal);
+                if (vertical <= MaxVertical && horizontal <= MaxHorizontal && tilt <= MaxTilt) Land(normal);
                 else
                 {
                     var why = new System.Collections.Generic.List<string>();
-                    if (vertical > L.MaxTouchdownVertical) why.Add("descent");
-                    if (horizontal > L.MaxTouchdownHorizontal) why.Add("drift");
-                    if (tilt > L.MaxTouchdownTilt) why.Add("tilt");
+                    if (vertical > MaxVertical) why.Add("descent");
+                    if (horizontal > MaxHorizontal) why.Add("drift");
+                    if (tilt > MaxTilt) why.Add("tilt");
                     Crash($"{vertical:0.0} m/s down, {horizontal:0.0} m/s along, {tilt:0} deg tilt", string.Join(",", why));
                 }
                 return;
@@ -331,8 +388,11 @@ namespace LuckyNumbers.Planet
                       (Assisted ? $"<color=#46a758>PAD {padFlat.magnitude:0} m {padTurn}</color>" : $"WRECK {flat.magnitude:0} m {turn}");
             // Low down: the three touchdown limits, each green (fine), amber (close) or red (would crash).
             if (altitude < 40f)
-                hud += $"\n{Gauge("DESCENT", vertical, L.MaxTouchdownVertical, "m/s")}    " +
-                       $"{Gauge("DRIFT", horizontal, L.MaxTouchdownHorizontal, "m/s")}    {Gauge("TILT", tilt, L.MaxTouchdownTilt, "deg")}";
+                hud += $"\n{Gauge("DESCENT", vertical, MaxVertical, "m/s")}    " +
+                       $"{Gauge("DRIFT", horizontal, MaxHorizontal, "m/s")}    {Gauge("TILT", tilt, MaxTilt, "deg")}";
+            if (F != null)
+                hud += $"    FUEL {(_dry ? "<color=#e5484d>EMPTY</color>" : $"{100f * _playerShip.Fuel.Value / math.max(1f, _playerShip.FuelMax.Value):0}%")}";
+            if (CanLeave) hud += $"\n<color=#46a758>{L.LeavePrompt ?? "E: back to the station"}</color>";
             _view.Flight(_pageHud ? "" : hud, null);
 
             // For the page's HUD (15 times a second is plenty).
@@ -345,8 +405,14 @@ namespace LuckyNumbers.Planet
                 _state.Landed.Value = false;
                 _state.Assisted.Value = Assisted || HoverShip;
                 _state.HoverShip.Value = HoverShip;
-                _state.Leaving.Value = _leaving;
+                _state.Roaming.Value = _roaming;
                 _state.OrbitAltitude.Value = L.OrbitAltitude;
+                _state.CanLeave.Value = CanLeave;
+                _state.Fuel.Value = _playerShip.Fuel.Value;
+                _state.FuelMax.Value = _playerShip.FuelMax.Value;
+                _state.FuelLow.Value = F != null && _playerShip.Fuel.Value < _playerShip.FuelMax.Value * F.Low;
+                _state.FuelEmpty.Value = _dry;
+                _state.Shots.Value = _guns?.Shots ?? 0;
                 _state.Altitude.Value = altitude;
                 _state.Climb.Value = _velocity.y;   // true vertical speed (the gauges below stay relative to the slope)
                 _state.Speed.Value = _velocity.magnitude;
@@ -358,9 +424,9 @@ namespace LuckyNumbers.Planet
                 _state.Descent.Value = vertical;
                 _state.Drift.Value = horizontal;
                 _state.Tilt.Value = tilt;
-                _state.MaxDescent.Value = L.MaxTouchdownVertical;
-                _state.MaxDrift.Value = L.MaxTouchdownHorizontal;
-                _state.MaxTilt.Value = L.MaxTouchdownTilt;
+                _state.MaxDescent.Value = MaxVertical;
+                _state.MaxDrift.Value = MaxHorizontal;
+                _state.MaxTilt.Value = MaxTilt;
             }
         }
 
@@ -432,15 +498,18 @@ namespace LuckyNumbers.Planet
         /// </summary>
         void HoverMove(Vector2 look, Vec2 move, float dt, out bool descending, out float boost)
         {
-            boost = _input.Sprinting.Value ? math.max(1f, H.Boost) : 1f;
-            descending = _input.Descending.Value;
+            var sp = math.max(0.1f, _stats.Speed);
+            var ag = math.max(0.1f, _stats.Agility);
+            boost = _input.Sprinting.Value && !_dry ? math.max(1f, H.Boost) : 1f;
+            descending = _input.Descending.Value || _dry;
             var roll = _input.Roll.Value;
 
             // Aim.
             var settle = 1f - math.exp(-math.max(0.5f, H.TurnSmoothing) * dt);
-            var want = new Vector3(math.clamp(-look.y * L.TurnDegreesPerPixel / dt, -H.TurnRate, H.TurnRate),
-                                   math.clamp(look.x * L.TurnDegreesPerPixel / dt, -H.TurnRate, H.TurnRate),
-                                   -roll * H.RollRate);
+            var turn = H.TurnRate * ag;
+            var want = new Vector3(math.clamp(-look.y * L.TurnDegreesPerPixel / dt, -turn, turn),
+                                   math.clamp(look.x * L.TurnDegreesPerPixel / dt, -turn, turn),
+                                   -roll * H.RollRate * ag);
             _spin = Vector3.Lerp(_spin, want, settle);
             _rotation = _rotation * Quaternion.Euler(_spin * dt);
             var altitude = _position.y - _ground.HeightAt(_position);
@@ -454,20 +523,25 @@ namespace LuckyNumbers.Planet
             }
 
             // Travel: the velocity the keys ask for, in the ship's frame; the assist eases towards it.
-            var forward = move.Y > 0.1f ? H.MaxSpeed * boost * move.Y : move.Y < -0.1f ? H.ReverseSpeed * move.Y : 0f;
-            var side = math.abs(move.X) > 0.1f ? H.StrafeSpeed * move.X : 0f;
+            var forward = move.Y > 0.1f ? H.MaxSpeed * sp * boost * move.Y : move.Y < -0.1f ? H.ReverseSpeed * sp * move.Y : 0f;
+            var side = math.abs(move.X) > 0.1f ? H.StrafeSpeed * sp * move.X : 0f;
             // Flying out, Shift boosts the climb too (orbit is a long way up).
-            var vertical = _input.Lifting.Value ? H.ClimbSpeed * (_leaving ? boost : 1f) : descending ? -H.DescendSpeed : 0f;
+            // Flying about, Shift boosts the climb too (orbit is a long way up).
+            var vertical = _input.Lifting.Value ? H.ClimbSpeed * sp * (_roaming ? boost : 1f) : descending ? -H.DescendSpeed : 0f;
             var target = _input.Braking.Value ? Vector3.zero : _rotation * new Vector3(side, vertical, forward);
+            // Dry: no thrust, just the reserve cells letting you straight down, slowly (keys do nothing).
+            if (_dry) target = Vector3.down * math.max(0.5f, F.EmptyDescent);
             var change = target - _velocity;
             var pushing = target.sqrMagnitude > 0.01f && Vector3.Dot(change, target) > 0f;
-            var rate = (_input.Braking.Value ? H.HardBrake : pushing ? H.Accel : H.Brake) * dt;
+            var rate = (_input.Braking.Value ? H.HardBrake : pushing ? H.Accel : H.Brake) * ag * dt;
+            // Fuel: the thrust asked for, against the baseline top speed.
+            if (!_dry) _demand = target.magnitude / math.max(1f, H.MaxSpeed) * (pushing ? 1f : 0.5f);
             if (change.magnitude > rate) change = change.normalized * rate;
             _velocity += change;
 
             // Near the ground, however you're heading down, the descent eases to a safe touchdown: inside 80% of the
             // touchdown limit all the way through the flare (so the gauge stays green), and down to touchdown_speed.
-            var safe = L.MaxTouchdownVertical * 0.8f;
+            var safe = MaxVertical * 0.8f;
             var flare = math.max(1f, H.FlareHeight);
             var cap = altitude < flare ? math.lerp(H.TouchdownSpeed, safe, altitude / flare) : safe + (altitude - flare) * 1.2f;
             // Closing on the ground, not just sinking: drifting over rising ground brings it up at you (slope x
@@ -476,13 +550,14 @@ namespace LuckyNumbers.Planet
             var groundRate = n.y > 0.2f ? -(_velocity.x * n.x + _velocity.z * n.z) / n.y : 0f;
             if (_velocity.y - groundRate < -cap) _velocity.y = groundRate - cap;
             _position += _velocity * dt;
-            Ship.SetHeat(0f, 0.6f + 0.9f * (_velocity.magnitude / math.max(1f, H.MaxSpeed)) * boost + (pushing ? 0.5f : 0.2f));
+            Ship.SetHeat(0f, _dry ? 0.1f : 0.6f + 0.9f * (_velocity.magnitude / math.max(1f, H.MaxSpeed * sp)) * boost + (pushing ? 0.5f : 0.2f));
             // Jets, in the ship's frame: this frame's change of velocity (its share of what the assist can do in a
             // frame, so a hard push or brake burns full), plus holding the ship up and its speed against the air.
             var toShip = Quaternion.Inverse(_rotation);
             var ask = toShip * (change / math.max(rate, 1e-4f));
-            var hold = toShip * (Vector3.up * 0.3f + _velocity / math.max(1f, H.MaxSpeed) * 0.5f);
-            Ship.SetThrust(ask + hold, JetTurn(dt, H.TurnRate), boost);
+            var hold = toShip * (Vector3.up * 0.3f + _velocity / math.max(1f, H.MaxSpeed * sp) * 0.5f);
+            if (_dry) Ship.EnginesOff();   // out of fuel: the flames die, the reserve cells let you down
+            else Ship.SetThrust(ask + hold, JetTurn(dt, H.TurnRate), boost);
         }
 
         /// <summary>
@@ -529,8 +604,8 @@ namespace LuckyNumbers.Planet
         void Land(Vector3 normal)
         {
             _phase = Phase.Landed;
-            _leaving = _clearing = false;
-            _state.Leaving.Value = false;
+            _clearing = false;   // still roaming if you were: board again to fly on
+            _state.CanLeave.Value = false;
             _state.Flying.Value = false;
             _state.Landed.Value = true;
             _velocity = Vector3.zero;
@@ -572,7 +647,8 @@ namespace LuckyNumbers.Planet
             for (var t = 0f; t < 0.6f; t += Time.deltaTime) { _view.Fade(1f - t / 0.6f); await UniTask.Yield(); }
             _view.Fade(0f);
             _view.Hint(_config.Hint, 1f);
-            foreach (var line in L.LandedLines) await DialogueLine.Play(line, _view.Dialogue, default);
+            if (_landings++ == 0)   // the first landing only
+                foreach (var line in L.LandedLines) await DialogueLine.Play(line, _view.Dialogue, default);
             _done?.TrySetResult();
         }
 
@@ -615,28 +691,50 @@ namespace LuckyNumbers.Planet
             _pitch = _bank = _yawRate = _pitchRate = 0f;
             var flatForward = Vector3.ProjectOnPlane(_rotation * Vector3.forward, Vector3.up).normalized;
             _camPos = _position - flatForward * (L.ShipLength * L.ChaseDistance) + Vector3.up * (L.ShipLength * L.ChaseHeight);
-            _leaving = _clearing = true;
+            _roaming = _clearing = true;
             _phase = Phase.Flying;
             _phaseTime = 0f;
             _state.Landed.Value = false;
-            Debug.Log($"[Landing] boarded: climb to {L.OrbitAltitude:0} m to leave");
+            Debug.Log($"[Landing] boarded: fly anywhere; above {L.OrbitAltitude:0} m, E goes back to the station " +
+                      $"(fuel {_playerShip.Fuel.Value:0}/{_playerShip.FuelMax.Value:0})");
             for (var t = 0f; t < 0.6f; t += Time.deltaTime) { _view.Fade(1f - t / 0.6f); await UniTask.Yield(); }
             _view.Fade(0f);
             if (!_pageHud) _view.Hint(L.TakeoffHint, 1f);
             _boarding = false;
         }
 
-        /// <summary>Out of the atmosphere: the sky fades to white and you're back at the station, docked.</summary>
+        /// <summary>Breaking orbit (E, high enough): the sky fades to white and you're back at the station, docked.</summary>
         async UniTaskVoid ExitAsync()
         {
             _exiting = true;
-            Debug.Log($"[Landing] reached orbit ({L.OrbitAltitude:0} m): back to the station");
+            Debug.Log($"[Landing] breaking orbit at {_altitude:0} m: back to the station");
             for (var t = 0f; t < 1.2f; t += Time.deltaTime) { _view.Fade(t / 1.2f); await UniTask.Yield(); }
             _view.Fade(1f);
             _voyage.Returning.Value = true;
             _state.Flying.Value = false;
-            _state.Leaving.Value = false;
+            _state.Roaming.Value = false;
+            _state.CanLeave.Value = false;
             _scenes.Publish(new SceneChangeRequested(GameScene.Station));
+        }
+
+        /// <summary>Burn fuel for the thrust asked for this frame (idle just to stay up); the skin's efficiency divides it.</summary>
+        void Burn(float dt)
+        {
+            if (F == null || _dry || _clearing && _demand <= 0f) return;
+            var burn = (F.IdleBurn + F.ThrustBurn * _demand) / math.max(0.1f, _stats.Efficiency);
+            var before = _playerShip.Fuel.Value;
+            _playerShip.Fuel.Value = math.max(0f, before - burn * dt);
+            var low = _playerShip.FuelMax.Value * F.Low;
+            if (before >= low && _playerShip.Fuel.Value < low) Debug.Log("[Landing] fuel low");
+            if (_playerShip.Fuel.Value <= 0f) Debug.Log("[Landing] out of fuel: engines out, coming down on the reserve cells");
+        }
+
+        /// <summary>Landed: the solar cells top the tank up to recharge_to (never stranded).</summary>
+        void Recharge(float dt)
+        {
+            if (F == null) return;
+            var to = _playerShip.FuelMax.Value * F.RechargeTo;
+            if (_playerShip.Fuel.Value < to) _playerShip.Fuel.Value = math.min(to, _playerShip.Fuel.Value + F.RechargePerSecond * dt);
         }
 
         void Chase(float dt)
@@ -674,6 +772,8 @@ namespace LuckyNumbers.Planet
             _state.Flying.Value = false;
             _hudSubscription?.Dispose();
             _warpSubscription?.Dispose();
+            _actionSubscription?.Dispose();
+            _guns?.Dispose();
             _done?.TrySetCanceled();
         }
     }

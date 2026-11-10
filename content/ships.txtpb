@@ -1,0 +1,75 @@
+# proto-file: luckynumbers/v1/ship.proto
+# proto-message: luckynumbers.v1.ShipConfig
+# Your fighter: every skin is the same hull, tuned differently. Stats are multipliers on the planet's flight
+# (content/planet.txtpb landing.hover), 1 = baseline; each ship's six add up to about 6, so none is simply best.
+#   speed       top speed (forward, strafe, climb)      agility     turn/roll rates, how fast it speeds up and stops
+#   fuel        tank size (x fuel.capacity)             efficiency  fuel per second of thrust divides by it
+#   toughness   landing gear: touchdown limits x it     firepower   gun fire rate
+# Placeholder values; tune with gameplay.
+
+fuel {
+  capacity: 100          # units in a baseline tank
+  idle_burn: 0.15        # per second just holding in the air
+  thrust_burn: 0.9       # per second at full thrust (x boost while boosting)
+  low: 0.2               # warn below a fifth of the tank
+  empty_descent: 3       # m/s: dry, the reserve cells let you down this slowly
+  recharge_per_second: 0.6
+  recharge_to: 0.3       # landed, the solar cells top it up to this share: never stranded
+}
+
+guns {
+  id: "basic_laser" name: "Basic laser rifle"
+  cooldown: 0.28 speed: 150 range: 450 impulse: 40 length: 9 width: 0.5
+  color { r: 2.6 g: 0.35 b: 0.3 a: 1 }
+}
+
+default_stats {
+  name: "Fighter" role: "Standard"
+  speed: 1 agility: 1 fuel: 1 efficiency: 1 toughness: 1 firepower: 1
+  guns: ["basic_laser", "basic_laser"]
+}
+
+ships { skin: "idolknight"    name: "Idol Knight"   role: "Standard"     description: "The yard's default fit. Does everything well enough."
+        speed: 1    agility: 1    fuel: 1    efficiency: 1    toughness: 1    firepower: 1 }
+ships { skin: "krulspeld1"    name: "Ember Wasp"    role: "Interceptor"  description: "Light and twitchy. Thirsty, and hard on its gear."
+        speed: 1.25 agility: 1.25 fuel: 0.85 efficiency: 0.85 toughness: 0.85 firepower: 0.95 }
+ships { skin: "krulspeld2"    name: "Rust Hornet"   role: "Interceptor"  description: "A stripped racer with a bigger tank than it should have."
+        speed: 1.3  agility: 1.1  fuel: 1    efficiency: 0.8  toughness: 0.8  firepower: 1 }
+ships { skin: "krulspeld3"    name: "Saltmarsh"     role: "Lander"       description: "Heavy legs, soft shocks. Sets down on almost anything."
+        speed: 0.85 agility: 0.9  fuel: 1.05 efficiency: 1    toughness: 1.4  firepower: 0.8 }
+ships { skin: "krulspeld4"    name: "Long Watch"    role: "Scout"        description: "Sips fuel and goes a long way. Slow to turn."
+        speed: 1    agility: 0.85 fuel: 1.35 efficiency: 1.25 toughness: 0.85 firepower: 0.7 }
+ships { skin: "krulspeld5"    name: "Red Tally"     role: "Gunship"      description: "Cooled barrels, fast trigger. Burns hot and lands heavy."
+        speed: 0.95 agility: 0.95 fuel: 0.95 efficiency: 0.85 toughness: 0.95 firepower: 1.35 }
+ships { skin: "kaoskiwi"      name: "Kiwi Run"      role: "Scout"        description: "Long-range tanks on a nimble frame."
+        speed: 1    agility: 1.05 fuel: 1.3  efficiency: 1.15 toughness: 0.8  firepower: 0.7 }
+ships { skin: "lordshadow"    name: "Nightjar"      role: "Interceptor"  description: "Quiet, quick and short on fuel."
+        speed: 1.2  agility: 1.2  fuel: 0.8  efficiency: 0.9  toughness: 0.9  firepower: 1 }
+ships { skin: "cinfa"         name: "Copperline"    role: "Hauler"       description: "Built to carry: big tank, sturdy gear, slow."
+        speed: 0.85 agility: 0.8  fuel: 1.3  efficiency: 1.1  toughness: 1.25 firepower: 0.7 }
+ships { skin: "crono782"      name: "Clockwork"     role: "Standard"     description: "Even-tempered and easy to fly."
+        speed: 1    agility: 1.05 fuel: 1    efficiency: 1.05 toughness: 1    firepower: 0.9 }
+ships { skin: "cubik"         name: "Blockhead"     role: "Lander"       description: "Ugly, slow and almost impossible to crash."
+        speed: 0.8  agility: 0.85 fuel: 1.1  efficiency: 1.05 toughness: 1.5  firepower: 0.7 }
+ships { skin: "freelancer"    name: "Free Lance"    role: "Gunship"      description: "A contractor's fit: guns first, then everything else."
+        speed: 1.05 agility: 1    fuel: 0.9  efficiency: 0.9  toughness: 0.9  firepower: 1.25 }
+ships { skin: "jodomatis"     name: "Jade Comet"    role: "Interceptor"  description: "Very fast in a straight line, wide in the turns."
+        speed: 1.35 agility: 0.95 fuel: 0.9  efficiency: 0.85 toughness: 0.9  firepower: 1.05 }
+ships { skin: "nmt3000"       name: "Unit 3000"     role: "Scout"        description: "Survey hull. Frugal engines, almost no teeth."
+        speed: 0.95 agility: 0.95 fuel: 1.25 efficiency: 1.35 toughness: 0.9  firepower: 0.6 }
+ships { skin: "psionic"       name: "Mindglass"     role: "Standard"     description: "The prototype every other fit was cut from."
+        speed: 1.05 agility: 1.05 fuel: 0.95 efficiency: 0.95 toughness: 1   firepower: 1 }
+ships { skin: "pyschicparrot" name: "Loud Parrot"   role: "Gunship"      description: "Bright, noisy and all trigger."
+        speed: 0.95 agility: 1.1  fuel: 0.85 efficiency: 0.85 toughness: 0.85 firepower: 1.4 }
+ships { skin: "robin"         name: "Redbreast"     role: "Scout"        description: "Small and light. Goes far, turns sharp, lands soft."
+        speed: 0.95 agility: 1.15 fuel: 1.15 efficiency: 1.1  toughness: 1   firepower: 0.65 }
+ships { skin: "shadee"        name: "Shade"         role: "Interceptor"  description: "Twitchy controls, light frame, a decent sting."
+        speed: 1.15 agility: 1.3  fuel: 0.85 efficiency: 0.85 toughness: 0.8  firepower: 1.05 }
+ships { skin: "snaz12"        name: "Snapdragon"    role: "Gunship"      description: "Heavy barrels on a heavy frame."
+        speed: 0.9  agility: 0.85 fuel: 1    efficiency: 0.9  toughness: 1.1  firepower: 1.25 }
+ships { skin: "snazf1"        name: "Snapdragon F"  role: "Interceptor"  description: "The Snapdragon with the armour stripped for speed."
+        speed: 1.25 agility: 1.1  fuel: 0.9  efficiency: 0.9  toughness: 0.75 firepower: 1.1 }
+ships { skin: "thor"          name: "Thunderhead"   role: "Hauler"       description: "Big tank, big gear, big guns. Turns like a barge."
+        speed: 0.85 agility: 0.75 fuel: 1.2  efficiency: 0.95 toughness: 1.2  firepower: 1.05 }
+ships { skin: "wilko"         name: "Wilco"         role: "Lander"       description: "Steady, forgiving, a little thirsty."
+        speed: 0.95 agility: 1    fuel: 1.05 efficiency: 0.9  toughness: 1.3  firepower: 0.8 }

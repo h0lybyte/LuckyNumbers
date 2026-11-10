@@ -145,13 +145,16 @@ message FlightLanding {
   // Hover-ship controls (when enabled, instead of the flight model above): the ship hovers, holds its height and
   // stops when you let go; you fly it about and set it down. Easiest to land.
   FlightHover hover = 27;
-  // Leaving: on foot within board_distance (metres from the hull) of your landed ship, E boards it (board_prompt);
-  // you lift off and fly it out, and past orbit_altitude (metres above the ground) you're back at the station.
+  // Boarding: on foot within board_distance (metres from the hull) of your landed ship, E boards it (board_prompt)
+  // and you fly it anywhere, landing wherever you like. Above orbit_altitude (metres above the ground) E breaks
+  // orbit, back to the station (leave_prompt); the climb fades out at ceiling (x orbit_altitude).
   float orbit_altitude = 28;
   string board_prompt = 29;
   float board_distance = 30;
-  // Without the page's HUD: shown once you're aboard and climbing.
+  // Without the page's HUD: shown once you're aboard.
   string takeoff_hint = 31;
+  string leave_prompt = 32;
+  float ceiling = 33;
 }
 
 // Six-axis ship controls with flight assist: the mouse aims the nose (yaw, pitch), Q/E roll; W/S thrust
@@ -217,9 +220,18 @@ message FlightState {
   bool assisted = 19;
   // Hover-ship controls (the HUD's steps and keys follow them).
   bool hover_ship = 20;
-  // Flying out (boarded after landing): climb to orbit_altitude to leave.
-  bool leaving = 21;
+  // Flying about (boarded after landing): land anywhere, or above orbit_altitude E goes back to the station
+  // (`can_leave`).
+  bool roaming = 21;
   float orbit_altitude = 22;
+  bool can_leave = 23;
+  // Fuel (units) and the tank; low (warn) and dry (engines out, the reserve cells letting you down).
+  float fuel = 24;
+  float fuel_max = 25;
+  bool fuel_low = 26;
+  bool fuel_empty = 27;
+  // Guns: shots fired this flight (the HUD flashes its crosshair on a change).
+  int32 shots = 28;
 }
 
 // The page draws the flight HUD: Unity's own text readout and controls line step aside.

@@ -6,9 +6,10 @@
 //
 // --steps: JSON list run after --wait, coordinates are fractions of the game canvas (0..1, top-left):
 //   [{"drag":[x1,y1,x2,y2]}, {"scroll":[x,y,notches]}, {"sleep":1}, {"shot":"a.png"}, {"click":[x,y]}, {"wait":"text"},
-//    {"fps":5}, {"key":["KeyW",2]}, {"key":["ShiftLeft+KeyW",2]}, {"down":"KeyW"}, {"up":"KeyW"}, {"js":"LN.send(...)"}]
-//   (fps: measure 5 s; key: hold for 2 s; down / up: press / release and go on; sleep is in seconds; js: run in
-//   the page, prints the result)
+//    {"fps":5}, {"key":["KeyW",2]}, {"key":["ShiftLeft+KeyW",2]}, {"down":"KeyW"}, {"up":"KeyW"}, {"hold":[x,y,2]},
+//    {"js":"LN.send(...)"}]
+//   (fps: measure 5 s; key: hold for 2 s; down / up: press / release and go on; hold: the left button down for 2 s;
+//    sleep is in seconds; js: run in the page, prints the result)
 // Prints the page's console lines (cut at 400 characters; --full keeps them whole). Without --steps it takes one
 // screenshot to <out.png>.
 import { spawn } from "node:child_process";
@@ -95,6 +96,12 @@ for (const step of steps) {
     const p = px(step.click);
     await mouse("mouseMoved", p); await sleep(100);
     await mouse("mousePressed", p, 1); await sleep(120);
+    await mouse("mouseReleased", p); await sleep(200);
+  }
+  if (step.hold) { // [x, y, seconds]: the left button held down (e.g. firing)
+    const [x, y, seconds] = step.hold, p = px([x, y]);
+    await mouse("mouseMoved", p); await sleep(100);
+    await mouse("mousePressed", p, 1); await sleep((seconds ?? 1) * 1000);
     await mouse("mouseReleased", p); await sleep(200);
   }
   if (step.scroll) { // [x, y, notches]: positive = scroll down (zoom out)

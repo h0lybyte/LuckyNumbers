@@ -28,6 +28,9 @@ namespace LuckyNumbers.Core
         [SerializeField] float modelLength = 0.49f;
         [SerializeField] string engines;      // EngineConfig.ships[].ship ("fighter"); empty: no flames
         [SerializeField] Material exhaust;    // LuckyNumbers/Exhaust, set by the scene builder
+        [Tooltip("Gun muzzles (the pivot's space, model units: +Z the nose): the tips of the fighter's twin gun barrels " +
+                 "(the rods beside the cockpit, fighter1.fbx), left then right.")]
+        [SerializeField] Vector3[] muzzles = { new(-0.111f, -0.0074f, 0.116f), new(0.111f, -0.0074f, 0.116f) };
         Material _material;                                         // skinned ships: the one shared material
         readonly List<(Material material, float glow)> _parts = new();
 
@@ -53,6 +56,9 @@ namespace LuckyNumbers.Core
         public int SkinCount => skins.Length;
         public string SkinAt(int index) => skins[index].name;
         public string SkinName => _material != null && _material.mainTexture != null ? _material.mainTexture.name : "";
+
+        /// <summary>The hull's renderers (its model, not the flames).</summary>
+        public IReadOnlyList<Renderer> HullRenderers => renderers;
 
         /// <summary>World bounds of the hull (its model only, not the flames).</summary>
         public Bounds Hull
@@ -97,6 +103,11 @@ namespace LuckyNumbers.Core
             pivot.localScale = Vector3.one * (length / Mathf.Max(modelLength, 1e-4f));
             pivot.gameObject.SetActive(true);
         }
+
+        public int MuzzleCount => muzzles.Length;
+
+        /// <summary>A barrel's muzzle in the world (where its gun's bolts leave).</summary>
+        public Vector3 Muzzle(int index) => pivot.TransformPoint(muzzles[index]);
 
         public void Hide()
         {
