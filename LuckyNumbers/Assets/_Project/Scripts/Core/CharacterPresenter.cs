@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using LuckyNumbers.Model;
 using MessagePipe;
 using ObservableCollections;
@@ -10,16 +12,24 @@ using VContainer.Unity;
 
 namespace LuckyNumbers.Core
 {
+    /// <summary>Character creation, between the title's Play and the station.</summary>
+    public interface ICharacterSetup
+    {
+        /// <summary>Opens the page's sheet for character creation and completes on its Ready (at once with no page).</summary>
+        UniTask RunAsync(CancellationToken ct);
+    }
+
     /// <summary>
     /// The player's character sheet (content/character.txtpb), app-wide. Abilities roll from the lucky number
     /// (4d6 drop the lowest, seeded, so a universe always gives the same character); until you leave the station
     /// the page's sheet can move points between them (CharacterAbilityAdjustRequested: a point taken off goes to the
     /// pool, up to shift_budget; the pool also starts with free_points) and pick a class and origin. Scores, modifiers,
     /// Stamina, skills and the relic bonus go to CharacterSheet; HP goes to PlayerHealth. Back on the title it's a new
-    /// run: unlocked, level 1, rolled again from the next lucky number.
+    /// run: unlocked, level 1, rolled again from the next lucky number. Play runs character creation first
+    /// (ICharacterSetup): CharacterSheet.setup opens the page's sheet until its Ready.
     /// </summary>
     [Presenter]
-    public sealed class CharacterPresenter : IStartable, IDisposable
+    public sealed class CharacterPresenter : ICharacterSetup, IStartable, IDisposable
     {
         readonly CharacterSheet _sheet;
         readonly PlayerHealth _health;
@@ -30,7 +40,11 @@ namespace LuckyNumbers.Core
         readonly ISubscriber<CharacterOriginRequested> _origins;
         readonly ISubscriber<CharacterResetRequested> _resets;
         readonly ISubscriber<CharacterXpGained> _xp;
+        readonly ISubscriber<CharacterSheetReady> _pageReady;
+        readonly ISubscriber<CharacterSetupDone> _setupDone;
         readonly List<IDisposable> _subscriptions = new();
+        bool _page;
+        UniTaskCompletionSource _setup;
 
         int[] _rolled = Array.Empty<int>(), _moved = Array.Empty<int>();
         string _classId, _originId;
@@ -47,7 +61,9 @@ namespace LuckyNumbers.Core
                                   ISubscriber<CharacterClassRequested> classes,
                                   ISubscriber<CharacterOriginRequested> origins,
                                   ISubscriber<CharacterResetRequested> resets,
-                                  ISubscriber<CharacterXpGained> xp)
+                                  ISubscriber<CharacterXpGained> xp,
+                                  ISubscriber<CharacterSheetReady> pageReady,
+                                  ISubscriber<CharacterSetupDone> setupDone)
         {
             _sheet = sheet;
             _health = health;
@@ -58,6 +74,8 @@ namespace LuckyNumbers.Core
             _origins = origins;
             _resets = resets;
             _xp = xp;
+            _pageReady = pageReady;
+            _setupDone = setupDone;
         }
 
         public void Start()
@@ -102,8 +120,28 @@ namespace LuckyNumbers.Core
                 Publish();
             }));
             _subscriptions.Add(_xp.Subscribe(e => Gain(e.Amount)));
+            _subscriptions.Add(_pageReady.Subscribe(e => _page = e.On));
+            _subscriptions.Add(_setupDone.Subscribe(_ => FinishSetup()));
             _subscriptions.Add(_flow.Scene.Subscribe(OnScene));
             Publish();
+        }
+
+        public UniTask RunAsync(CancellationToken ct)
+        {
+            if (!_page || _rolled.Length == 0 || _locked) return UniTask.CompletedTask;
+            _setup?.TrySetCanceled();
+            _setup = new UniTaskCompletionSource();
+            _sheet.Setup.Value = true;
+            ct.Register(FinishSetup);
+            Debug.Log("[Character] setup: waiting for Ready");
+            return _setup.Task;
+        }
+
+        void FinishSetup()
+        {
+            _sheet.Setup.Value = false;
+            _setup?.TrySetResult();
+            _setup = null;
         }
 
         void OnScene(GameScene scene)
@@ -322,6 +360,7 @@ namespace LuckyNumbers.Core
         {
             foreach (var s in _subscriptions) s.Dispose();
             _subscriptions.Clear();
+            _setup?.TrySetCanceled();
         }
     }
 }

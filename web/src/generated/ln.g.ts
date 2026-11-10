@@ -94,6 +94,8 @@ export interface CharacterSheet {
   /** Total XP at the start of this level (for the bar), and the relic ability's abbreviation. */
   xpLevelStart: number;
   relicAbility: string;
+  /** Character creation: Play was pressed and the title waits for the page's Ready (CharacterSetupDone). */
+  setup: boolean;
 }
 
 export interface FlowState {
@@ -217,6 +219,18 @@ export interface RelicUseRequested {
   index: number;
 }
 
+/**
+ * The page has a character sheet (sent when it mounts): Play then waits for character creation.
+ * Without it (no page, e.g. the editor) Play goes straight on.
+ */
+export interface CharacterSheetReady {
+  on: boolean;
+}
+
+/** The page's sheet: Ready pressed during character creation. */
+export interface CharacterSetupDone {
+}
+
 /** The page's sheet: +1 / -1 on ability `index` (moving a point to or from the pool). */
 export interface CharacterAbilityAdjustRequested {
   index: number;
@@ -334,6 +348,8 @@ export interface WebEvents {
   RelicRolled: RelicRolled;
   DevWarpRequested: DevWarpRequested;
   RelicUseRequested: RelicUseRequested;
+  CharacterSheetReady: CharacterSheetReady;
+  CharacterSetupDone: CharacterSetupDone;
   CharacterAbilityAdjustRequested: CharacterAbilityAdjustRequested;
   CharacterClassRequested: CharacterClassRequested;
   CharacterOriginRequested: CharacterOriginRequested;
@@ -357,6 +373,6 @@ export interface WebEvents {
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "DevWarpRequested" | "RelicUseRequested" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "InputActionPerformed" | "FlightHudReady" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
+export type InboundEvent = "DevWarpRequested" | "RelicUseRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "InputActionPerformed" | "FlightHudReady" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
 
 export const STATE_NAMES = ["RelicInventory", "CharacterSheet", "FlowState", "LoadingState", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "StationState", "DiceState"] as const;

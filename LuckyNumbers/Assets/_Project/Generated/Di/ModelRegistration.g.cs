@@ -15,6 +15,8 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<RelicRolled>(options);
             builder.RegisterMessageBroker<DevWarpRequested>(options);
             builder.RegisterMessageBroker<RelicUseRequested>(options);
+            builder.RegisterMessageBroker<CharacterSheetReady>(options);
+            builder.RegisterMessageBroker<CharacterSetupDone>(options);
             builder.RegisterMessageBroker<CharacterAbilityAdjustRequested>(options);
             builder.RegisterMessageBroker<CharacterClassRequested>(options);
             builder.RegisterMessageBroker<CharacterOriginRequested>(options);

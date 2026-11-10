@@ -208,6 +208,10 @@ namespace LuckyNumbers.Model
         /// </summary>
         public readonly ReactiveProperty<int> XpLevelStart = new ReactiveProperty<int>();
         public readonly ReactiveProperty<string> RelicAbility = new ReactiveProperty<string>();
+        /// <summary>
+        /// Character creation: Play was pressed and the title waits for the page's Ready (CharacterSetupDone).
+        /// </summary>
+        public readonly ReactiveProperty<bool> Setup = new ReactiveProperty<bool>();
 
         public void Dispose()
         {
@@ -226,7 +230,29 @@ namespace LuckyNumbers.Model
             Seed.Dispose();
             XpLevelStart.Dispose();
             RelicAbility.Dispose();
+            Setup.Dispose();
         }
+    }
+
+    /// <summary>
+    /// The page has a character sheet (sent when it mounts): Play then waits for character creation.
+    /// Without it (no page, e.g. the editor) Play goes straight on.
+    /// </summary>
+    public readonly struct CharacterSheetReady
+    {
+        public readonly bool On;
+
+        public CharacterSheetReady(bool on)
+        {
+            On = on;
+        }
+    }
+
+    /// <summary>
+    /// The page's sheet: Ready pressed during character creation.
+    /// </summary>
+    public readonly struct CharacterSetupDone
+    {
     }
 
     /// <summary>

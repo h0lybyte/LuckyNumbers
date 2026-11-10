@@ -127,6 +127,22 @@ message CharacterSheet {
   // Total XP at the start of this level (for the bar), and the relic ability's abbreviation.
   int32 xp_level_start = 23;
   string relic_ability = 24;
+  // Character creation: Play was pressed and the title waits for the page's Ready (CharacterSetupDone).
+  bool setup = 25;
+}
+
+// The page has a character sheet (sent when it mounts): Play then waits for character creation.
+// Without it (no page, e.g. the editor) Play goes straight on.
+message CharacterSheetReady {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  bool on = 1;
+}
+
+// The page's sheet: Ready pressed during character creation.
+message CharacterSetupDone {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
 }
 
 // The page's sheet: +1 / -1 on ability `index` (moving a point to or from the pool).

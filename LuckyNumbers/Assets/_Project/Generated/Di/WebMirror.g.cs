@@ -100,6 +100,7 @@ namespace LuckyNumbers.Model
                 d.Add(Disposable.Create(() => s.Adjust.CollectionChanged -= hAdjust));
                 d.Add(s.XpLevelStart.Subscribe(_ => sink.MarkState(1)));
                 d.Add(s.RelicAbility.Subscribe(_ => sink.MarkState(1)));
+                d.Add(s.Setup.Subscribe(_ => sink.MarkState(1)));
                 sink.MarkState(1);
             }
             {
@@ -202,6 +203,16 @@ namespace LuckyNumbers.Model
             d.Add(c.Resolve<ISubscriber<RelicUseRequested>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("RelicUseRequested"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<CharacterSheetReady>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("CharacterSheetReady"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<CharacterSetupDone>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("CharacterSetupDone"), e);
                 sink.EndEvent();
             }));
             d.Add(c.Resolve<ISubscriber<CharacterAbilityAdjustRequested>>().Subscribe(e =>
@@ -336,6 +347,12 @@ namespace LuckyNumbers.Model
                     return true;
                 case "RelicUseRequested":
                     c.Resolve<IPublisher<RelicUseRequested>>().Publish(new RelicUseRequested((int)Json.Number(Json.Get(o, "index"))));
+                    return true;
+                case "CharacterSheetReady":
+                    c.Resolve<IPublisher<CharacterSheetReady>>().Publish(new CharacterSheetReady(Json.Get(o, "on") is bool characterSheetReadyOn && characterSheetReadyOn));
+                    return true;
+                case "CharacterSetupDone":
+                    c.Resolve<IPublisher<CharacterSetupDone>>().Publish(new CharacterSetupDone());
                     return true;
                 case "CharacterAbilityAdjustRequested":
                     c.Resolve<IPublisher<CharacterAbilityAdjustRequested>>().Publish(new CharacterAbilityAdjustRequested((int)Json.Number(Json.Get(o, "index")), (int)Json.Number(Json.Get(o, "delta"))));
@@ -545,6 +562,8 @@ namespace LuckyNumbers.Model
             Json.Num(b, s.XpLevelStart.Value);
             b.Append(",\"relicAbility\":");
             Json.Str(b, s.RelicAbility.Value);
+            b.Append(",\"setup\":");
+            b.Append(s.Setup.Value ? "true" : "false");
             b.Append('}');
         }
 
@@ -747,6 +766,20 @@ namespace LuckyNumbers.Model
             b.Append('{');
             b.Append("\"index\":");
             Json.Num(b, e.Index);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, CharacterSheetReady e)
+        {
+            b.Append('{');
+            b.Append("\"on\":");
+            b.Append(e.On ? "true" : "false");
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, CharacterSetupDone e)
+        {
+            b.Append('{');
             b.Append('}');
         }
 

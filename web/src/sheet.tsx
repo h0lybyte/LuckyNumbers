@@ -6,25 +6,22 @@ import { LN, useLNState } from "./ln";
 
 const sign = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`);
 
-/** C toggles the sheet (not while flying: C is descend there). Esc closes it. Each run it opens by itself when you
- *  first reach the station, so you set up your character before it locks. */
+/** C toggles the sheet (not while flying: C is descend there); Esc closes it. Play opens it for character creation
+ *  (CharacterSheet.setup): only Ready closes it then, and the title carries on to the station. */
 export function CharacterSheetGate() {
   const [open, setOpen] = useState(false);
   const flow = useLNState("FlowState");
-  const sheetLocked = useLNState("CharacterSheet")?.locked ?? true;
-  const shownThisRun = useRef(false);
-  useEffect(() => {
-    if (flow?.scene === "Title") shownThisRun.current = false;   // a new run
-    if (flow?.scene === "Station" && !sheetLocked && !shownThisRun.current) {
-      shownThisRun.current = true;
-      setOpen(true);
-    }
-  }, [flow?.scene, sheetLocked]);
+  const setup = useLNState("CharacterSheet")?.setup ?? false;
+  const setupRef = useRef(setup);
+  setupRef.current = setup;
+  // Tell Unity there's a sheet, so Play waits for character creation.
+  useEffect(() => LN.send("CharacterSheetReady", { on: true }), []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
       const t = document.activeElement;
       if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement) return;
+      if (setupRef.current) return;   // creation: Ready only
       if (e.code === "KeyC") {
         if (LN.states.FlightState?.flying) return;
         e.stopImmediatePropagation();
@@ -35,26 +32,31 @@ export function CharacterSheetGate() {
     return () => window.removeEventListener("keydown", onKey, { capture: true });
   }, []);
   // The sheet needs the mouse.
+  const shown = open || setup;
   useEffect(() => {
-    if (open && document.pointerLockElement) document.exitPointerLock();
-  }, [open]);
+    if (shown && document.pointerLockElement) document.exitPointerLock();
+  }, [shown]);
+  const close = () => {
+    if (setup) LN.send("CharacterSetupDone", {});
+    setOpen(false);
+  };
 
   const flying = useLNState("FlightState")?.flying ?? false;
   const scene = flow?.scene;
   if (scene !== "Station" && scene !== "Planet" && scene !== "Title") return null;
   return (
     <>
-      {!flying && !open && scene !== "Title" && (
+      {!flying && !shown && scene !== "Title" && (
         <button type="button" className="ui chip sheet-chip" onClick={() => setOpen(true)}>
           Sheet <kbd>C</kbd>
         </button>
       )}
-      {open && <Sheet onClose={() => setOpen(false)} />}
+      {shown && <Sheet onClose={close} setup={setup} />}
     </>
   );
 }
 
-function Sheet({ onClose }: { onClose: () => void }) {
+function Sheet({ onClose, setup }: { onClose: () => void; setup: boolean }) {
   const s = useLNState("CharacterSheet");
   const hp = useLNState("PlayerHealth");
   if (!s) return null;
@@ -79,7 +81,7 @@ function Sheet({ onClose }: { onClose: () => void }) {
     <div className="sheet ui" role="dialog" aria-label="Character sheet">
       <header className="sheet-head">
         <div>
-          <div className="sheet-kicker">Personnel file // seed {s.seed}</div>
+          <div className="sheet-kicker">{setup ? "Character creation" : "Personnel file"} // seed {s.seed}</div>
           <h2>{s.callsign}</h2>
           <div className="sheet-sub">
             {cls?.name ?? s.classId} &middot; {origin?.name ?? s.originId} &middot; Level {s.level}
@@ -87,9 +89,11 @@ function Sheet({ onClose }: { onClose: () => void }) {
         </div>
         <div className="sheet-head-right">
           <span className={`sheet-badge${s.locked ? " locked" : ""}`}>{s.locked ? "Locked" : "Editable"}</span>
-          <button type="button" className="sheet-close" onClick={onClose} aria-label="Close sheet">
-            <kbd>C</kbd>
-          </button>
+          {!setup && (
+            <button type="button" className="sheet-close" onClick={onClose} aria-label="Close sheet">
+              <kbd>C</kbd>
+            </button>
+          )}
         </div>
       </header>
 
@@ -195,9 +199,13 @@ function Sheet({ onClose }: { onClose: () => void }) {
       </div>
       {editable && (
         <footer className="sheet-foot">
-          <span>Rolled from your lucky number. Moves lock when you leave the station.</span>
+          <span>
+            {setup
+              ? "Rolled from your lucky number. Set yourself up, then Ready. You can still change it (C) until you leave the station."
+              : "Rolled from your lucky number. Moves lock when you leave the station."}
+          </span>
           <button type="button" className="sheet-ready" onClick={onClose}>
-            Ready
+            {setup ? "Ready" : "Done"}
           </button>
         </footer>
       )}
