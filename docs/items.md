@@ -8,7 +8,7 @@ built yet unless it says so.
 | What | Where | Notes |
 |---|---|---|
 | Item definitions, the grid pack, starting kits | `inventory.proto`, `content/items.txtpb` | `ItemDef` has kind, slot, shape, bulk, value, colour, use effects |
-| Equip / unequip, gear bonuses | `feat/equipment` (in progress) | `InventoryEquipRequested`, `InventoryUnequipRequested`; ability, skill, HP, Stamina, relic and bulk bonuses on `ItemDef` |
+| Equip / unequip, gear bonuses | `inventory.proto` (landed, #33) | `InventoryEquipRequested`, `InventoryUnequipRequested`; ability, skill, HP, Stamina, relic and bulk bonuses on `ItemDef` |
 | Named relics (lore, d20 table, model) | `cargo.proto` `RelicArtifact`, `content/relics/*.txtpb` | the Water Amulet |
 | What a relic takes up in the pack | `items.txtpb` `relic_items` → `relic_amulet`, ... | the shape and bulk are matched from the relic's kind |
 | Generated relics | `cargo.proto` `RelicCulture`, `RelicKind`, `min/max_relics` | turned off (`max_relics: 0`) |
@@ -76,19 +76,25 @@ scatter at the crash site.
 
 ## Order
 
-1. `feat/equipment` lands.
+1. ~~`feat/equipment` lands.~~ Done (#33).
 2. `feat/niko-weapons` lands.
 3. Merge the relic definitions: `RelicArtifact` becomes an `ItemDef` with lore and use. Move `content/relics`,
    delete `relic_items`, `RelicInventory`, `RelicUseRequested`, `RelicCulture` and `RelicKind`.
-4. Add `unique` and `stack`, and stack the kits.
+4. Add `unique` and `stack`, and stack the kits. Dropping puts the item in the world (see Decisions). In progress
+   (`feat/item-stacks`); it touches only the pack, so it doesn't wait for 2 and 3.
 5. Move the weapons' hold, ranged and melee data into the proto.
 6. Add the shared roll table (`dice.proto`).
 
 Each step is its own PR. Do 3 after both branches land so nothing collides.
 
+## Decisions
+
+- **Unequipping (or a swap) with a full pack drops the item at your feet**, and so does Drop: the item goes into the
+  world, where E picks it back up (rule 1). It shows as a placeholder block until it has a model. With no world
+  around (the title, character creation), Drop removes it and a full-pack unequip is refused.
+
 ## Open questions
 
-- **Unequipping with a full pack:** block it ("No room") or drop the item at your feet? Dropping is friendlier.
 - **Selling a relic to the museum:** is it gone for that universe?
 - **Wearable relics:** add a `NECK` / `ACCESSORY` slot so the amulet can be worn for a luck bonus?
 - **Hands:** is the held item just whatever is equipped in `WEAPON` / `TOOL`, plus a drawn / holstered state?
