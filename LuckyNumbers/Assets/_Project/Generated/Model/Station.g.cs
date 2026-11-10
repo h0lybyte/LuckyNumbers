@@ -57,6 +57,10 @@ namespace LuckyNumbers.Model
         /// Toggle the PS1 look.
         /// </summary>
         Psx = 3,
+        /// <summary>
+        /// Go to the Flight School (test-fly your ship); you come back beside this console.
+        /// </summary>
+        FlightSchool = 4,
     }
 
     public enum CallPhase

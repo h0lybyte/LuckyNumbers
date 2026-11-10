@@ -9,7 +9,8 @@ export type GameScene =
   | "Intro"
   | "Planet"
   | "Station"
-  | "Range";
+  | "Range"
+  | "FlightSchool";
 
 /** Discrete actions (button presses). Bound to devices in the Input System asset. */
 export type InputAction =
@@ -314,6 +315,8 @@ export interface PlayerVoyage {
   lastPayout: number;
   /** Trips down to a planet so far: the first one plays the intro cutscene, later ones fly straight down. */
   trips: number;
+  /** At the Flight School: back at the station you step out beside its console (not by your ship, no homecoming). */
+  training: boolean;
 }
 
 export interface DiceState {

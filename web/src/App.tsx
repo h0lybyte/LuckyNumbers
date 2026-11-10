@@ -14,9 +14,13 @@ export function App({ dock }: { dock: HTMLElement | null }) {
   const [inspector, setInspector] = useState(() => new URLSearchParams(location.search).has("ln-debug"));
   const ready = useLNReady();
 
-  // ?ln-range: straight to the dev shooting range once Unity is up (testing weapon holds and firing).
+  // ?ln-range: straight to the dev shooting range once Unity is up (testing weapon holds and firing);
+  // ?ln-flight: straight to the Flight School (test-flying the ships, their jets).
   useEffect(() => {
-    if (ready && new URLSearchParams(location.search).has("ln-range")) LN.send("SceneChangeRequested", { target: "Range" });
+    if (!ready) return;
+    const q = new URLSearchParams(location.search);
+    if (q.has("ln-range")) LN.send("SceneChangeRequested", { target: "Range" });
+    else if (q.has("ln-flight")) LN.send("SceneChangeRequested", { target: "FlightSchool" });
   }, [ready]);
 
   // ` toggles the bridge inspector (capture phase: runs before Unity's keyboard handling).
@@ -233,7 +237,7 @@ function Inspector() {
       <section>
         <h3>Send</h3>
         <div className="row">
-          {(["Title", "Intro", "Planet", "Range"] as const).map((scene) => (
+          {(["Title", "Intro", "Planet", "Range", "FlightSchool"] as const).map((scene) => (
             <button key={scene} type="button" onClick={() => LN.send("SceneChangeRequested", { target: scene })}>
               {scene}
             </button>

@@ -268,6 +268,7 @@ namespace LuckyNumbers.Model
                 d.Add(s.Credits.Subscribe(_ => sink.MarkState(14)));
                 d.Add(s.LastPayout.Subscribe(_ => sink.MarkState(14)));
                 d.Add(s.Trips.Subscribe(_ => sink.MarkState(14)));
+                d.Add(s.Training.Subscribe(_ => sink.MarkState(14)));
                 sink.MarkState(14);
             }
             {
@@ -1049,6 +1050,8 @@ namespace LuckyNumbers.Model
             Json.Num(b, s.LastPayout.Value);
             b.Append(",\"trips\":");
             Json.Num(b, s.Trips.Value);
+            b.Append(",\"training\":");
+            b.Append(s.Training.Value ? "true" : "false");
             b.Append('}');
         }
 
@@ -1384,6 +1387,7 @@ namespace LuckyNumbers.Model
                 case GameScene.Planet: return "Planet";
                 case GameScene.Station: return "Station";
                 case GameScene.Range: return "Range";
+                case GameScene.FlightSchool: return "FlightSchool";
                 default: return ((int)v).ToString(CultureInfo.InvariantCulture);
             }
         }
@@ -1399,6 +1403,7 @@ namespace LuckyNumbers.Model
                 case "Planet": return GameScene.Planet;
                 case "Station": return GameScene.Station;
                 case "Range": return GameScene.Range;
+                case "FlightSchool": return GameScene.FlightSchool;
                 default: return default;
             }
         }

@@ -194,6 +194,10 @@ namespace LuckyNumbers.Model
         /// Trips down to a planet so far: the first one plays the intro cutscene, later ones fly straight down.
         /// </summary>
         public readonly ReactiveProperty<int> Trips = new ReactiveProperty<int>();
+        /// <summary>
+        /// At the Flight School: back at the station you step out beside its console (not by your ship, no homecoming).
+        /// </summary>
+        public readonly ReactiveProperty<bool> Training = new ReactiveProperty<bool>();
 
         public void Dispose()
         {
@@ -201,6 +205,7 @@ namespace LuckyNumbers.Model
             Credits.Dispose();
             LastPayout.Dispose();
             Trips.Dispose();
+            Training.Dispose();
         }
     }
 }

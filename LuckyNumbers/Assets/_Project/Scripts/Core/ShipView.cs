@@ -170,6 +170,24 @@ namespace LuckyNumbers.Core
             if (instant) Apply();
         }
 
+        /// <summary>
+        /// What the jets are doing now, for a readout (the Flight School): each lit flame with its share ("main_l 82"),
+        /// then on a second line the cold-gas jets puffing ("GAS side_r under_tail_l"); "" when nothing is lit.
+        /// </summary>
+        public string JetReadout()
+        {
+            var flames = new System.Text.StringBuilder();
+            var gas = new System.Text.StringBuilder();
+            foreach (var j in _jets)
+            {
+                if (j.Value <= 0.01f) continue;
+                if (j.Def.Gas) gas.Append(gas.Length == 0 ? "GAS  " : "  ").Append(j.Def.Name);
+                else flames.Append(flames.Length == 0 ? "" : "  ").Append(j.Def.Name).Append(' ').Append(Mathf.RoundToInt(j.Value * 100f));
+            }
+            if (gas.Length > 0) flames.Append(flames.Length == 0 ? "" : "\n").Append(gas);
+            return flames.ToString();
+        }
+
         /// <summary>Flames straight to what's asked, no spooling (previews, which have no frames to ease over).</summary>
         public void SnapEngines()
         {

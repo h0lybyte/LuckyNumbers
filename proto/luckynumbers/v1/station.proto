@@ -198,6 +198,8 @@ enum StationAction {
   STATION_ACTION_ANSWER = 2;
   // Toggle the PS1 look.
   STATION_ACTION_PSX = 3;
+  // Go to the Flight School (test-fly your ship); you come back beside this console.
+  STATION_ACTION_FLIGHT_SCHOOL = 4;
 }
 
 message StationSwitch {
