@@ -22,10 +22,16 @@ dice {
   roll_label: "Roll"
   roll_seconds: 1.2
   seed_format: "Lucky number {0}"
-  # Red = the star (1 cool red dwarf .. 6 blue giant), white = how many worlds, gold = luck.
-  dice { id: "red" role: DIE_ROLE_STAR sides: 6 color { r: 0.85 g: 0.2 b: 0.25 a: 1 } initial_face: 6 }
-  dice { id: "white" role: DIE_ROLE_WORLDS sides: 6 color { r: 0.95 g: 0.95 b: 0.95 a: 1 } initial_face: 6 }
-  dice { id: "gold" role: DIE_ROLE_LUCK sides: 6 color { r: 0.95 g: 0.75 b: 0.2 a: 1 } initial_face: 6 }
+  # Four d20s. Each face is scaled into its aspect's range (a 20 on moons is "the most moons", not 20
+  # moons), and every die also feeds the lucky number, the seed behind everything else.
+  dice { id: "red" name: "Star" role: DIE_ROLE_STAR sides: 20 color { r: 0.85 g: 0.2 b: 0.25 a: 1 } initial_face: 20
+         tooltip: "Decides the star: low rolls give a cool red dwarf, high rolls a hot blue giant. Also feeds the seed of the universe." }
+  dice { id: "white" name: "Worlds" role: DIE_ROLE_WORLDS sides: 20 color { r: 0.95 g: 0.95 b: 0.95 a: 1 } initial_face: 20
+         tooltip: "Decides how many planets orbit the star: 3 on a low roll, up to 6 on a high one. Also feeds the seed of the universe." }
+  dice { id: "blue" name: "Moons" role: DIE_ROLE_MOONS sides: 20 color { r: 0.25 g: 0.55 b: 0.95 a: 1 } initial_face: 20
+         tooltip: "Decides the number of moons: low rolls leave most planets bare, high rolls give most of them up to 3. Also feeds the seed of the universe." }
+  dice { id: "gold" name: "Luck" role: DIE_ROLE_LUCK sides: 20 color { r: 0.95 g: 0.75 b: 0.2 a: 1 } initial_face: 20
+         tooltip: "Your luck: more galaxies in the sky, and up to +3 on every relic roll. Also feeds the seed of the universe." }
 }
 
 # Play: UI fades, camera pushes toward home, then the intro continues from that exact view.

@@ -21,9 +21,13 @@ namespace LuckyNumbers.Model
         /// </summary>
         Worlds = 2,
         /// <summary>
-        /// Luck: more moons and galaxies, a brighter sky.
+        /// Luck: more galaxies, a bonus on relic rolls (and more moons when no die has the moons role).
         /// </summary>
         Luck = 3,
+        /// <summary>
+        /// Moons: low = few planets have moons .. high = most do, up to max_moons each.
+        /// </summary>
+        Moons = 4,
     }
 
     public enum MenuAction
@@ -108,6 +112,11 @@ namespace LuckyNumbers.Model
         /// What this die decides (its face, low..high). Every die also feeds the lucky number.
         /// </summary>
         public DieRole Role { get; set; }
+        /// <summary>
+        /// Hover tooltip: a short name ("Moons") and what it does. {face} / {sides} = the current roll.
+        /// </summary>
+        public string Name { get; set; }
+        public string Tooltip { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public Die Clone() => (Die)MemberwiseClone();

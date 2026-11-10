@@ -480,7 +480,7 @@ kbd {
   font-size: 10px;
   font-weight: 700;
 }
-.relic-cool { color: var(--warn); }
+.relic-cool { color: var(--warn); text-transform: none; }   /* "11s", not "11S" (reads as 115) */
 
 .relic-reveal {
   position: absolute;

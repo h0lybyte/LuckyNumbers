@@ -120,7 +120,7 @@ namespace LuckyNumbers.Space
         void OnSeed(UniverseSeedChanged roll)
         {
             if (roll.Seed == 0) return; // buffered default before the first roll; lucky numbers are never 0
-            Debug.Log($"[Space] lucky number {roll.Seed} (star {roll.Star:0.##}, worlds {roll.Worlds:0.##}, luck {roll.Luck:0.##})");
+            Debug.Log($"[Space] lucky number {roll.Seed} (star {roll.Star:0.##}, worlds {roll.Worlds:0.##}, luck {roll.Luck:0.##}, moons {roll.Moons:0.##})");
             _pendingRoll = roll;
             if (_backdrop.Instant && (_world == null || _world.Count == 0))
             {
@@ -136,7 +136,7 @@ namespace LuckyNumbers.Space
 
         void Expand()
         {
-            var roll = _pendingRoll ?? new UniverseSeedChanged(1u, -1f, -1f, -1f);
+            var roll = _pendingRoll ?? new UniverseSeedChanged(1u, -1f, -1f, -1f, -1f);
             _seed = roll.Seed;
             var bodies = UniverseGenerator.Generate(_backdrop.Generator, roll);
             Build(bodies);

@@ -64,13 +64,15 @@ namespace LuckyNumbers.Model
         public readonly float Star;
         public readonly float Worlds;
         public readonly float Luck;
+        public readonly float Moons;
 
-        public UniverseSeedChanged(uint seed, float star, float worlds, float luck)
+        public UniverseSeedChanged(uint seed, float star, float worlds, float luck, float moons)
         {
             Seed = seed;
             Star = star;
             Worlds = worlds;
             Luck = luck;
+            Moons = moons;
         }
     }
 

@@ -819,6 +819,8 @@ namespace LuckyNumbers.Model
             Json.Num(b, e.Worlds);
             b.Append(",\"luck\":");
             Json.Num(b, e.Luck);
+            b.Append(",\"moons\":");
+            Json.Num(b, e.Moons);
             b.Append('}');
         }
 
