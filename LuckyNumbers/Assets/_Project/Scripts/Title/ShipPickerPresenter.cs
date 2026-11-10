@@ -13,7 +13,7 @@ using VContainer.Unity;
 
 namespace LuckyNumbers.Title
 {
-    /// <summary>The hangar, between character creation and the launch: pick your fighter's skin.</summary>
+    /// <summary>The hangar, between character creation and the launch: pick your fighter (skin and its stats).</summary>
     public interface IShipPicker
     {
         /// <summary>Shows the fighter and the page's picker; completes on its Launch (at once with no page).</summary>
@@ -91,6 +91,21 @@ namespace LuckyNumbers.Title
             _playerShip.Skin.Value = skin;
             _state.Index.Value = index;
             _state.Skin.Value = skin;
+            // Its stats (content/ships.txtpb) for the page's card; a new ship starts with a full tank.
+            var stats = PlayerShipStats.Of(skin);
+            _state.Name.Value = stats.Name;
+            _state.Role.Value = stats.Role;
+            _state.Description.Value = stats.Description;
+            _state.Speed.Value = stats.Speed;
+            _state.Agility.Value = stats.Agility;
+            _state.Fuel.Value = stats.Fuel;
+            _state.Efficiency.Value = stats.Efficiency;
+            _state.Toughness.Value = stats.Toughness;
+            _state.Firepower.Value = stats.Firepower;
+            var guns = new System.Collections.Generic.List<string>();
+            foreach (var id in stats.Guns) guns.Add(PlayerShipStats.Gun(id)?.Name ?? id);
+            _state.Guns.Value = string.Join(", ", guns);
+            PlayerShipStats.Refuel(_playerShip);
             _ship.Show(skin, GameContent.Title.Hangar?.ShipLength ?? 1f);
         }
 

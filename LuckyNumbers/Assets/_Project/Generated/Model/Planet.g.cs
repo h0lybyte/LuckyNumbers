@@ -216,16 +216,19 @@ namespace LuckyNumbers.Model
         /// </summary>
         public FlightHover Hover { get; set; }
         /// <summary>
-        /// Leaving: on foot within board_distance (metres from the hull) of your landed ship, E boards it (board_prompt);
-        /// you lift off and fly it out, and past orbit_altitude (metres above the ground) you're back at the station.
+        /// Boarding: on foot within board_distance (metres from the hull) of your landed ship, E boards it (board_prompt)
+        /// and you fly it anywhere, landing wherever you like. Above orbit_altitude (metres above the ground) E breaks
+        /// orbit, back to the station (leave_prompt); the climb fades out at ceiling (x orbit_altitude).
         /// </summary>
         public float OrbitAltitude { get; set; }
         public string BoardPrompt { get; set; }
         public float BoardDistance { get; set; }
         /// <summary>
-        /// Without the page's HUD: shown once you're aboard and climbing.
+        /// Without the page's HUD: shown once you're aboard.
         /// </summary>
         public string TakeoffHint { get; set; }
+        public string LeavePrompt { get; set; }
+        public float Ceiling { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public FlightLanding Clone() => (FlightLanding)MemberwiseClone();
@@ -314,10 +317,23 @@ namespace LuckyNumbers.Model
         /// </summary>
         public readonly ReactiveProperty<bool> HoverShip = new ReactiveProperty<bool>();
         /// <summary>
-        /// Flying out (boarded after landing): climb to orbit_altitude to leave.
+        /// Flying about (boarded after landing): land anywhere, or above orbit_altitude E goes back to the station
+        /// (`can_leave`).
         /// </summary>
-        public readonly ReactiveProperty<bool> Leaving = new ReactiveProperty<bool>();
+        public readonly ReactiveProperty<bool> Roaming = new ReactiveProperty<bool>();
         public readonly ReactiveProperty<float> OrbitAltitude = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<bool> CanLeave = new ReactiveProperty<bool>();
+        /// <summary>
+        /// Fuel (units) and the tank; low (warn) and dry (engines out, the reserve cells letting you down).
+        /// </summary>
+        public readonly ReactiveProperty<float> Fuel = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> FuelMax = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<bool> FuelLow = new ReactiveProperty<bool>();
+        public readonly ReactiveProperty<bool> FuelEmpty = new ReactiveProperty<bool>();
+        /// <summary>
+        /// Guns: shots fired this flight (the HUD flashes its crosshair on a change).
+        /// </summary>
+        public readonly ReactiveProperty<int> Shots = new ReactiveProperty<int>();
 
         public void Dispose()
         {
@@ -341,8 +357,14 @@ namespace LuckyNumbers.Model
             CrashReason.Dispose();
             Assisted.Dispose();
             HoverShip.Dispose();
-            Leaving.Dispose();
+            Roaming.Dispose();
             OrbitAltitude.Dispose();
+            CanLeave.Dispose();
+            Fuel.Dispose();
+            FuelMax.Dispose();
+            FuelLow.Dispose();
+            FuelEmpty.Dispose();
+            Shots.Dispose();
         }
     }
 

@@ -123,11 +123,14 @@ landing {
   grip: 1.5
   chase_distance: 1.45   # ship lengths behind: the fighter fills more of the screen
   chase_height: 0.42
-  # Leaving: E beside your landed ship boards it; climb past orbit_altitude and you're back at the station.
+  # Boarding: E beside your landed ship boards it; fly anywhere and land where you like. Above orbit_altitude
+  # E breaks orbit, back to the station; climbing fades out at ceiling x orbit_altitude.
   orbit_altitude: 260
-  board_prompt: "E: board your ship and fly back to the station"
+  ceiling: 1.6
+  board_prompt: "E: board your ship"
   board_distance: 4
-  takeoff_hint: "Space to lift off - climb to orbit (nose up and Shift to climb faster)"
+  takeoff_hint: "Space to lift off - fly anywhere, land with C - climb above 260 m and press E to go back to the station"
+  leave_prompt: "E: break orbit and fly back to the station"
   hint: "Mouse aim - W/S thrust - A/D strafe - Q/E roll - Space/C up/down - Shift boost - X brake. Stop over the green pad, hold C to land."
   # Six-axis controls with flight assist: aim and travel independent, released keys ease out, gravity
   # cancelled; near the ground descents ease and the ship levels itself. (Off: the flight model below.)

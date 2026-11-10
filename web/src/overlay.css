@@ -1242,6 +1242,64 @@ kbd {
 .flight-orbit-bar { width: 160px; height: 6px; border: 1px solid var(--neon-soft); background: rgba(2, 8, 16, 0.7); }
 .flight-orbit-bar > div { height: 100%; background: var(--neon); box-shadow: 0 0 8px var(--neon); transition: width 0.2s linear; }
 .flight-orbit b { color: #e8fbff; font-weight: 600; }
+.flight-orbit.ready .flight-orbit-bar > div { background: var(--good); box-shadow: 0 0 8px var(--good); }
+
+/* Above orbit height: E breaks orbit (flight.tsx). */
+.flight-leave {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  border: 1px solid var(--good);
+  background: var(--scan), rgba(2, 20, 10, 0.85);
+  color: var(--good);
+  font: 600 14px var(--font-mono);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  max-width: calc(100% - 2 * var(--gap));
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Fuel (flight.tsx): amber when low, red when dry. */
+.flight-fuel-bar { width: 96px; height: 5px; margin-top: 2px; border: 1px solid var(--neon-soft); background: rgba(2, 8, 16, 0.7); }
+.flight-fuel-bar > div { height: 100%; background: var(--neon); transition: width 0.2s linear; }
+.flight-fuel.low .value, .flight-fuel.low .label { color: var(--warn); }
+.flight-fuel.low .flight-fuel-bar > div { background: var(--warn); }
+.flight-fuel.empty .value, .flight-fuel.empty .label { color: var(--bad, #e5484d); }
+
+/* The guns' crosshair, a little above centre (the chase camera looks down the nose, past the ship). */
+.flight-cross {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 36px;
+  height: 36px;
+  transform: translate(-50%, -50%);
+  fill: none;
+  stroke: var(--neon);
+  stroke-width: 1.5;
+  opacity: 0.7;
+  pointer-events: none;
+}
+.flight-cross circle { fill: var(--neon); stroke: none; }
+.flight-cross.fired { animation: cross-fire 0.15s ease-out; }
+@keyframes cross-fire { from { stroke: #fff; opacity: 1; transform: translate(-50%, -50%) scale(1.25); } }
+
+/* Hangar stats (hangar.tsx): one bar per stat, the baseline marked. */
+.hangar-role { font: 10px var(--font-mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--neon); }
+.hangar-desc { margin: 6px 0 0; color: var(--muted); font-size: 12px; text-align: center; }
+.hangar-stats { display: grid; grid-template-columns: auto 1fr auto; gap: 3px 10px; align-items: center; margin-top: 8px; font: 11px var(--font-mono); }
+.hangar-stats span { color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+.hangar-stats b { color: #e8fbff; font-weight: 600; text-align: right; }
+.hangar-bar { position: relative; height: 6px; border: 1px solid var(--edge); background: rgba(2, 8, 16, 0.7); }
+.hangar-bar > div { height: 100%; background: var(--neon-soft); }
+.hangar-bar.up > div { background: var(--good); }
+.hangar-bar.down > div { background: var(--warn); }
+.hangar-bar::after { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--muted); }
+.hangar-guns { margin-top: 6px; font: 11px var(--font-mono); color: var(--muted); text-align: center; }
+.hangar-guns b { color: #e8fbff; font-weight: 600; }
 
 /* Credits (sheet.tsx chips): what the museum has paid you. */
 .chip.credits { cursor: default; color: var(--gold, #ffd166); border-color: rgba(255, 209, 102, 0.5); }
