@@ -1,6 +1,9 @@
 // The crash site's ground: the same colour formula as Planet3D (planet_color * fBm height), at walking
 // scale, lit by the sun (globals _LnSunPosition / _LnSunColor), with atmosphere haze over distance.
 // _PlanetColor, _AtmosphereColor, _NoiseOffset, _NoiseRemap come from the planet's PlanetLook (set in code).
+// Far ring (GroundView): _Sink lowers vertices inside the square of detailed chunks (_NearCentre = centre xz,
+// half-size, blend band), so the coarse horizon mesh never pokes through them; past _HazeHorizon the ground
+// is all atmosphere, so the ring's edge never shows.
 Shader "LuckyNumbers/Ground"
 {
     Properties
@@ -12,6 +15,9 @@ Shader "LuckyNumbers/Ground"
         _SurfaceScale ("Surface Noise Scale", Float) = 0.35
         _Haze ("Haze", Range(0, 1)) = 0.5
         _HazeDistance ("Haze Distance", Float) = 90
+        _HazeHorizon ("Haze Horizon (fully hazed)", Float) = 0
+        _Sink ("Sink Under Near Chunks", Float) = 0
+        _NearCentre ("Near Square (x, z, half, band)", Vector) = (0, 0, 0, 1)
     }
 
     SubShader
@@ -30,7 +36,8 @@ Shader "LuckyNumbers/Ground"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _PlanetColor, _AtmosphereColor, _NoiseOffset;
-                float _NoiseRemap, _SurfaceScale, _Haze, _HazeDistance;
+                float _NoiseRemap, _SurfaceScale, _Haze, _HazeDistance, _HazeHorizon, _Sink;
+                float4 _NearCentre;
             CBUFFER_END
 
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; };
@@ -40,6 +47,11 @@ Shader "LuckyNumbers/Ground"
             {
                 Varyings o;
                 o.positionWS = TransformObjectToWorld(v.positionOS.xyz);
+                if (_Sink > 0.0)
+                {
+                    float d = max(abs(o.positionWS.x - _NearCentre.x), abs(o.positionWS.z - _NearCentre.y));
+                    o.positionWS.y -= _Sink * (1.0 - smoothstep(_NearCentre.z - _NearCentre.w, _NearCentre.z, d));
+                }
                 o.positionCS = TransformWorldToHClip(o.positionWS);
                 o.normalWS = TransformObjectToWorldNormal(v.normalOS);
                 return o;
@@ -66,6 +78,8 @@ Shader "LuckyNumbers/Ground"
                 float dist = distance(GetCameraPositionWS(), i.positionWS);
                 float haze = _Haze * saturate(dist / max(_HazeDistance, 1.0));
                 color = lerp(color, _AtmosphereColor.rgb * 0.7, haze * haze);
+                if (_HazeHorizon > 0.0)   // all atmosphere by the far edge
+                    color = lerp(color, _AtmosphereColor.rgb * 0.7, smoothstep(_HazeHorizon * 0.45, _HazeHorizon * 0.92, dist));
                 return float4(color, 1);
             }
             ENDHLSL
