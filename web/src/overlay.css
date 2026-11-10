@@ -898,6 +898,10 @@ kbd {
 .skill-bonus { min-width: 26px; text-align: right; color: var(--fg); }
 
 .sheet-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-top: 10px;
   padding-top: 8px;
   border-top: 1px solid var(--edge);
@@ -906,6 +910,20 @@ kbd {
   text-transform: uppercase;
   color: var(--muted);
 }
+
+.sheet-ready {
+  height: 34px;
+  padding: 0 22px;
+  border: 1px solid var(--neon);
+  clip-path: var(--chamfer);
+  background: rgba(0, 229, 255, 0.14);
+  color: var(--neon);
+  font: 600 13px var(--font-mono);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.sheet-ready:hover { background: var(--neon); color: #030a14; }
 
 @media (max-width: 720px) {
   .sheet { inset: 3% var(--gap); }

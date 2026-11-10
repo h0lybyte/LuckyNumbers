@@ -1,15 +1,25 @@
 // The character sheet (C): abilities rolled from the lucky number, with +/- to move points between them until you
 // leave the station; class and origin; level, XP, Stamina and HP; skills. Unity owns the rules
 // (Core/CharacterPresenter) and sends CharacterSheet; this only shows it and sends requests back.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LN, useLNState } from "./ln";
 
 const sign = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`);
 
-/** C toggles the sheet (not while flying: C is descend there). Esc closes it. */
+/** C toggles the sheet (not while flying: C is descend there). Esc closes it. Each run it opens by itself when you
+ *  first reach the station, so you set up your character before it locks. */
 export function CharacterSheetGate() {
   const [open, setOpen] = useState(false);
   const flow = useLNState("FlowState");
+  const sheetLocked = useLNState("CharacterSheet")?.locked ?? true;
+  const shownThisRun = useRef(false);
+  useEffect(() => {
+    if (flow?.scene === "Title") shownThisRun.current = false;   // a new run
+    if (flow?.scene === "Station" && !sheetLocked && !shownThisRun.current) {
+      shownThisRun.current = true;
+      setOpen(true);
+    }
+  }, [flow?.scene, sheetLocked]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -183,7 +193,14 @@ function Sheet({ onClose }: { onClose: () => void }) {
           </ul>
         </section>
       </div>
-      {editable && <footer className="sheet-foot">Rolled from your lucky number. Moves lock when you leave the station.</footer>}
+      {editable && (
+        <footer className="sheet-foot">
+          <span>Rolled from your lucky number. Moves lock when you leave the station.</span>
+          <button type="button" className="sheet-ready" onClick={onClose}>
+            Ready
+          </button>
+        </footer>
+      )}
     </div>
   );
 }
