@@ -96,6 +96,8 @@ export interface CharacterSheet {
   relicAbility: string;
   /** Character creation: Play was pressed and the title waits for the page's Ready (CharacterSetupDone). */
   setup: boolean;
+  /** Per ability, what equipped gear adds (already in `scores`). */
+  gear: number[];
 }
 
 export interface FlowState {
@@ -109,9 +111,10 @@ export interface LoadingState {
 }
 
 /**
- * What's in the pack (Core/InventoryPresenter; the page's Inventory tab). Each item
- * "uid|id|name|kind|x|y|rot|shape|bulk|value|color|description|actions": shape already rotated (rows "/"),
- * color "#rrggbb", actions bits 1 = use, 2 = drop.
+ * What's in the pack (Core/InventoryPresenter; the page's Inventory and Equipment tabs). Each item
+ * "uid|id|name|kind|x|y|rot|shape|bulk|value|color|description|actions|slot|equipped|bonuses": shape already rotated
+ * (rows "/"), color "#rrggbb", actions bits 1 = use, 2 = drop, 4 = equip; slot = its EquipSlot, equipped = the slot
+ * it's in now (0: in the grid; x, y unused then); bonuses as text ("Engineering +2, STR +1").
  */
 export interface PlayerInventory {
   width: number;
@@ -126,6 +129,8 @@ export interface PlayerInventory {
   value: number;
   /** The last thing that didn't fit, or that happened ("No room for ..."). */
   message: string;
+  /** Everything equipped adds up to (for the Equipment tab): each "label|value", e.g. "Engineering|+2". */
+  gearBonuses: string[];
 }
 
 /**
@@ -307,6 +312,19 @@ export interface InputActionPerformed {
   action: InputAction;
 }
 
+/** The page: put item `uid` in its equipment slot (whatever was there goes back into the pack, if it fits). */
+export interface InventoryEquipRequested {
+  uid: number;
+}
+
+/**
+ * The page: take slot `slot` (EquipSlot) off, back into the pack where it fits. (Dragging an equipped item onto
+ * the grid is an InventoryMoveRequested.)
+ */
+export interface InventoryUnequipRequested {
+  slot: number;
+}
+
 /** The page's grid: put item `uid` at cell (x, y) (its shape's top left), turned `rot` quarter turns clockwise. */
 export interface InventoryMoveRequested {
   uid: number;
@@ -398,6 +416,8 @@ export interface WebEvents {
   CutsceneStepStarted: CutsceneStepStarted;
   CutsceneFinished: CutsceneFinished;
   InputActionPerformed: InputActionPerformed;
+  InventoryEquipRequested: InventoryEquipRequested;
+  InventoryUnequipRequested: InventoryUnequipRequested;
   InventoryMoveRequested: InventoryMoveRequested;
   InventoryUseRequested: InventoryUseRequested;
   InventoryDropRequested: InventoryDropRequested;
@@ -413,6 +433,6 @@ export interface WebEvents {
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "DevWarpRequested" | "RelicUseRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "InputActionPerformed" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "FlightHudReady" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
+export type InboundEvent = "DevWarpRequested" | "RelicUseRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "FlightHudReady" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
 
 export const STATE_NAMES = ["RelicInventory", "CharacterSheet", "FlowState", "LoadingState", "PlayerInventory", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "StationState", "DiceState"] as const;

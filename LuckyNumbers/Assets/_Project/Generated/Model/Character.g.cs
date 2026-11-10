@@ -212,6 +212,10 @@ namespace LuckyNumbers.Model
         /// Character creation: Play was pressed and the title waits for the page's Ready (CharacterSetupDone).
         /// </summary>
         public readonly ReactiveProperty<bool> Setup = new ReactiveProperty<bool>();
+        /// <summary>
+        /// Per ability, what equipped gear adds (already in `scores`).
+        /// </summary>
+        public readonly ObservableList<int> Gear = new ObservableList<int>();
 
         public void Dispose()
         {

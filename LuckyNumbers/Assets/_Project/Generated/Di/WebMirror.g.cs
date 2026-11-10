@@ -102,6 +102,9 @@ namespace LuckyNumbers.Model
                 d.Add(s.XpLevelStart.Subscribe(_ => sink.MarkState(1)));
                 d.Add(s.RelicAbility.Subscribe(_ => sink.MarkState(1)));
                 d.Add(s.Setup.Subscribe(_ => sink.MarkState(1)));
+                NotifyCollectionChangedEventHandler<int> hGear = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(1);
+                s.Gear.CollectionChanged += hGear;
+                d.Add(Disposable.Create(() => s.Gear.CollectionChanged -= hGear));
                 sink.MarkState(1);
             }
             {
@@ -129,6 +132,9 @@ namespace LuckyNumbers.Model
                 d.Add(s.Speed.Subscribe(_ => sink.MarkState(4)));
                 d.Add(s.Value.Subscribe(_ => sink.MarkState(4)));
                 d.Add(s.Message.Subscribe(_ => sink.MarkState(4)));
+                NotifyCollectionChangedEventHandler<string> hGearBonuses = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(4);
+                s.GearBonuses.CollectionChanged += hGearBonuses;
+                d.Add(Disposable.Create(() => s.GearBonuses.CollectionChanged -= hGearBonuses));
                 sink.MarkState(4);
             }
             {
@@ -287,6 +293,16 @@ namespace LuckyNumbers.Model
                 Write(sink.BeginEvent("InputActionPerformed"), e);
                 sink.EndEvent();
             }));
+            d.Add(c.Resolve<ISubscriber<InventoryEquipRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("InventoryEquipRequested"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<InventoryUnequipRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("InventoryUnequipRequested"), e);
+                sink.EndEvent();
+            }));
             d.Add(c.Resolve<ISubscriber<InventoryMoveRequested>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("InventoryMoveRequested"), e);
@@ -404,6 +420,12 @@ namespace LuckyNumbers.Model
                     return true;
                 case "InputActionPerformed":
                     c.Resolve<IPublisher<InputActionPerformed>>().Publish(new InputActionPerformed(InputActionParse(Json.Get(o, "action"))));
+                    return true;
+                case "InventoryEquipRequested":
+                    c.Resolve<IPublisher<InventoryEquipRequested>>().Publish(new InventoryEquipRequested((int)Json.Number(Json.Get(o, "uid"))));
+                    return true;
+                case "InventoryUnequipRequested":
+                    c.Resolve<IPublisher<InventoryUnequipRequested>>().Publish(new InventoryUnequipRequested((int)Json.Number(Json.Get(o, "slot"))));
                     return true;
                 case "InventoryMoveRequested":
                     c.Resolve<IPublisher<InventoryMoveRequested>>().Publish(new InventoryMoveRequested((int)Json.Number(Json.Get(o, "uid")), (int)Json.Number(Json.Get(o, "x")), (int)Json.Number(Json.Get(o, "y")), (int)Json.Number(Json.Get(o, "rot"))));
@@ -606,6 +628,18 @@ namespace LuckyNumbers.Model
             Json.Str(b, s.RelicAbility.Value);
             b.Append(",\"setup\":");
             b.Append(s.Setup.Value ? "true" : "false");
+            b.Append(",\"gear\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Gear)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Num(b, x);
+                }
+            }
+            b.Append(']');
             b.Append('}');
         }
 
@@ -660,6 +694,18 @@ namespace LuckyNumbers.Model
             Json.Num(b, s.Value.Value);
             b.Append(",\"message\":");
             Json.Str(b, s.Message.Value);
+            b.Append(",\"gearBonuses\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.GearBonuses)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Str(b, x);
+                }
+            }
+            b.Append(']');
             b.Append('}');
         }
 
@@ -958,6 +1004,22 @@ namespace LuckyNumbers.Model
             b.Append('{');
             b.Append("\"action\":");
             Json.Str(b, InputActionName(e.Action));
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, InventoryEquipRequested e)
+        {
+            b.Append('{');
+            b.Append("\"uid\":");
+            Json.Num(b, e.Uid);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, InventoryUnequipRequested e)
+        {
+            b.Append('{');
+            b.Append("\"slot\":");
+            Json.Num(b, e.Slot);
             b.Append('}');
         }
 

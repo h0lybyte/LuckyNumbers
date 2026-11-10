@@ -90,9 +90,31 @@ namespace LuckyNumbers.Model
         public float Amount { get; set; }
         public float Seconds { get; set; }
         public bool Consumable { get; set; }
+        /// <summary>
+        /// While equipped (in its slot): bonuses to abilities, skills, Stamina, HP, relic rolls and the bulk you carry
+        /// freely. Nothing is drawn: you're first-person arms, so gear is all numbers.
+        /// </summary>
+        public List<AbilityBonus> AbilityBonuses { get; } = new List<AbilityBonus>();
+        public List<SkillBonus> SkillBonuses { get; } = new List<SkillBonus>();
+        public int StaminaBonus { get; set; }
+        public int HpBonus { get; set; }
+        public int RelicBonus { get; set; }
+        public float BulkBonus { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public ItemDef Clone() => (ItemDef)MemberwiseClone();
+    }
+
+    public sealed class SkillBonus
+    {
+        /// <summary>
+        /// SkillDef.id.
+        /// </summary>
+        public string Skill { get; set; }
+        public int Amount { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public SkillBonus Clone() => (SkillBonus)MemberwiseClone();
     }
 
     public sealed class StartingKit
@@ -123,9 +145,10 @@ namespace LuckyNumbers.Model
     }
 
     /// <summary>
-    /// What's in the pack (Core/InventoryPresenter; the page's Inventory tab). Each item
-    /// "uid|id|name|kind|x|y|rot|shape|bulk|value|color|description|actions": shape already rotated (rows "/"),
-    /// color "#rrggbb", actions bits 1 = use, 2 = drop.
+    /// What's in the pack (Core/InventoryPresenter; the page's Inventory and Equipment tabs). Each item
+    /// "uid|id|name|kind|x|y|rot|shape|bulk|value|color|description|actions|slot|equipped|bonuses": shape already rotated
+    /// (rows "/"), color "#rrggbb", actions bits 1 = use, 2 = drop, 4 = equip; slot = its EquipSlot, equipped = the slot
+    /// it's in now (0: in the grid; x, y unused then); bonuses as text ("Engineering +2, STR +1").
     /// </summary>
     public sealed class PlayerInventory : IDisposable
     {
@@ -145,6 +168,10 @@ namespace LuckyNumbers.Model
         /// The last thing that didn't fit, or that happened ("No room for ...").
         /// </summary>
         public readonly ReactiveProperty<string> Message = new ReactiveProperty<string>();
+        /// <summary>
+        /// Everything equipped adds up to (for the Equipment tab): each "label|value", e.g. "Engineering|+2".
+        /// </summary>
+        public readonly ObservableList<string> GearBonuses = new ObservableList<string>();
 
         public void Dispose()
         {
@@ -158,6 +185,40 @@ namespace LuckyNumbers.Model
             Value.Dispose();
             Message.Dispose();
         }
+    }
+
+    /// <summary>
+    /// The page: put item `uid` in its equipment slot (whatever was there goes back into the pack, if it fits).
+    /// </summary>
+    public readonly struct InventoryEquipRequested
+    {
+        public readonly int Uid;
+
+        public InventoryEquipRequested(int uid)
+        {
+            Uid = uid;
+        }
+    }
+
+    /// <summary>
+    /// The page: take slot `slot` (EquipSlot) off, back into the pack where it fits. (Dragging an equipped item onto
+    /// the grid is an InventoryMoveRequested.)
+    /// </summary>
+    public readonly struct InventoryUnequipRequested
+    {
+        public readonly int Slot;
+
+        public InventoryUnequipRequested(int slot)
+        {
+            Slot = slot;
+        }
+    }
+
+    /// <summary>
+    /// Equipment changed (CharacterPresenter re-adds the gear bonuses).
+    /// </summary>
+    public readonly struct EquipmentChanged
+    {
     }
 
     /// <summary>
