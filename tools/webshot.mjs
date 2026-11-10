@@ -6,8 +6,9 @@
 //
 // --steps: JSON list run after --wait, coordinates are fractions of the game canvas (0..1, top-left):
 //   [{"drag":[x1,y1,x2,y2]}, {"scroll":[x,y,notches]}, {"sleep":1}, {"shot":"a.png"}, {"click":[x,y]}, {"wait":"text"},
-//    {"fps":5}, {"key":["KeyW",2]}, {"key":["ShiftLeft+KeyW",2]}, {"js":"LN.send(...)"}]
-//   (fps: measure 5 s; key: hold for 2 s; sleep is in seconds; js: run in the page, prints the result)
+//    {"fps":5}, {"key":["KeyW",2]}, {"key":["ShiftLeft+KeyW",2]}, {"hold":[x,y,2]}, {"js":"LN.send(...)"}]
+//   (fps: measure 5 s; key: hold for 2 s; hold: the left button down for 2 s; sleep is in seconds;
+//    js: run in the page, prints the result)
 // Prints the page's console lines (cut at 400 characters; --full keeps them whole). Without --steps it takes one
 // screenshot to <out.png>.
 import { spawn } from "node:child_process";
@@ -96,6 +97,12 @@ for (const step of steps) {
     await mouse("mousePressed", p, 1); await sleep(120);
     await mouse("mouseReleased", p); await sleep(200);
   }
+  if (step.hold) { // [x, y, seconds]: the left button held down (e.g. firing)
+    const [x, y, seconds] = step.hold, p = px([x, y]);
+    await mouse("mouseMoved", p); await sleep(100);
+    await mouse("mousePressed", p, 1); await sleep((seconds ?? 1) * 1000);
+    await mouse("mouseReleased", p); await sleep(200);
+  }
   if (step.scroll) { // [x, y, notches]: positive = scroll down (zoom out)
     const [x, y, notches] = step.scroll, p = px([x, y]);
     for (let i = 0; i < Math.abs(notches); i++) {
@@ -112,7 +119,7 @@ for (const step of steps) {
   }
   if (step.key) { // ["KeyW", seconds] or ["ShiftLeft+KeyW", seconds]: hold key(s) (code + key name for the Input System)
     const [combo, seconds] = step.key, codes = combo.split("+");
-    const vk = { KeyW: 87, KeyA: 65, KeyS: 83, KeyD: 68, KeyE: 69, KeyM: 77, Space: 32, ShiftLeft: 16 };
+    const vk = { KeyW: 87, KeyA: 65, KeyS: 83, KeyD: 68, KeyE: 69, KeyM: 77, KeyC: 67, KeyQ: 81, KeyX: 88, Space: 32, ShiftLeft: 16 };
     const ev = (type, code) => send("Input.dispatchKeyEvent",
       { type, code, key: code.startsWith("Key") ? code.slice(3).toLowerCase() : code, windowsVirtualKeyCode: vk[code] ?? 0 });
     for (const c of codes) await ev("keyDown", c);

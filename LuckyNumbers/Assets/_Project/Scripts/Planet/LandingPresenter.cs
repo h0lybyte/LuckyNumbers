@@ -70,6 +70,7 @@ namespace LuckyNumbers.Planet
         ShipGuns _guns;
         float _altitude, _demand, _arrivalFuel;   // metres above the ground; thrust asked for (0..~2, burns fuel)
         bool _dry;                                 // no fuel: engines out, the reserve cells let you down
+        bool _lockClick, _canFire;                 // the pointer-locking click is pressed; presses fire the guns
         int _landings;
         readonly ISubscriber<DevWarpRequested> _warps;
         IDisposable _warpSubscription;
@@ -236,13 +237,18 @@ namespace LuckyNumbers.Planet
         {
             // Pointer lock like on foot: a click locks it; while locked (or dragging) the mouse steers.
             var pressed = _input.PointerPressed.Value;
-            var locked = Cursor.lockState == CursorLockMode.Locked;   // the click that locks it doesn't also fire
+            var locked = Cursor.lockState == CursorLockMode.Locked;
             if (pressed && !locked) Cursor.lockState = CursorLockMode.Locked;
+            // The click that first locks the pointer doesn't also fire; after that any press does (even where the
+            // browser refuses the lock and you steer by dragging).
+            if (!pressed && _lockClick) { _lockClick = false; _canFire = true; }
+            if (pressed && !locked && !_canFire) _lockClick = true;
+            if (locked && !pressed) _canFire = true;
             var steering = Cursor.lockState == CursorLockMode.Locked || pressed;
             var look = steering ? new Vector2(_input.Look.Value.X, _input.Look.Value.Y) : Vector2.zero;
             var move = _input.Move.Value;
             // Guns: hold the button and the barrels fire in turn (carried along at the ship's forward speed).
-            if (pressed && locked && !_boarding && !_clearing) _guns?.TryFire(Vector3.Dot(_velocity, _rotation * Vector3.forward));
+            if (pressed && _canFire && !_boarding && !_clearing) _guns?.TryFire(Vector3.Dot(_velocity, _rotation * Vector3.forward));
             _dry = F != null && _playerShip.Fuel.Value <= 0f;
             _demand = 0f;
 

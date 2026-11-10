@@ -16,8 +16,9 @@ namespace LuckyNumbers.Core
         [SerializeField] Renderer[] renderers;
         [SerializeField] Texture2D[] skins;   // Art/Models/Fighter/Skins, set by the scene builder
         [SerializeField] float modelLength = 0.49f;
-        [Tooltip("Gun muzzles (the pivot's space, model units: +Z the nose): the fighter's twin barrels, left then right.")]
-        [SerializeField] Vector3[] muzzles = { new(-0.077f, -0.0075f, 0.175f), new(0.077f, -0.0075f, 0.175f) };
+        [Tooltip("Gun muzzles (the pivot's space, model units: +Z the nose): the tips of the fighter's twin gun barrels " +
+                 "(the rods beside the cockpit, fighter1.fbx), left then right.")]
+        [SerializeField] Vector3[] muzzles = { new(-0.111f, -0.0074f, 0.116f), new(0.111f, -0.0074f, 0.116f) };
         Material _material;                                         // skinned ships: the one shared material
         readonly System.Collections.Generic.List<(Material material, float glow)> _parts = new();
 
