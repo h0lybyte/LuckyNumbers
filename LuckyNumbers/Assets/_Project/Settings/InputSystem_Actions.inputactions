@@ -121,6 +121,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "SideView",
+                    "type": "Button",
+                    "id": "9d3349b8-7213-48eb-8df8-bdfe35f3c2a0",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -583,6 +592,17 @@
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "Brake",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "5d4c9a53-74c5-4163-9bf2-24b42d6973ed",
+                    "path": "<Keyboard>/v",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "SideView",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

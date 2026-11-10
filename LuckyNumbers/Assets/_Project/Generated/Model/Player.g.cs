@@ -79,6 +79,23 @@ namespace LuckyNumbers.Model
     }
 
     /// <summary>
+    /// Something the player's hands picked up, dropped or threw (web: a toast, top right, for checking holds).
+    /// </summary>
+    public readonly struct ItemHandled
+    {
+        public readonly string Item;
+        public readonly string Action;
+        public readonly string Detail;
+
+        public ItemHandled(string item, string action, string detail)
+        {
+            Item = item;
+            Action = action;
+            Detail = detail;
+        }
+    }
+
+    /// <summary>
     /// The hangar, after character creation on the title (Title/ShipPickerPresenter): your fighter turns in front of
     /// the camera while the page cycles its skins, then launches. `skin` is the file name (Art/Models/Fighter/Skins),
     /// `index` of `count`. The choice goes to PlayerShip.

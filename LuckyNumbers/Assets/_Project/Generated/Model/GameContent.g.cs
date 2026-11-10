@@ -621,6 +621,16 @@ namespace LuckyNumbers.Model
                             License = "CC0, public domain",
                             Url = "https://drillimpact.itch.io/psx-first-person-arms-free",
                         },
+                        new Credit
+                        {
+                            What = "Futuristic weapons: 9 guns (rifles, snipers, carbine, heavy cannon), 2 melee weapons (hammer, knife) and gun mods (scope, sight, grip, box)",
+                            Title = "Free Futuristic Weapon Assets",
+                            Author = "Niko-3d-models",
+                            License = "Free with credit",
+                            Url = "https://niko-3d-models.itch.io/free-futuristic-weapon-assets",
+                            Notes = "Changes: split into one FBX per weapon, modifiers baked, centred and scaled to metres (tools/blender/export_weapons.py).",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Models/Weapons/LICENSE.txt",
+                        },
                     },
                 },
                 new CreditSection
@@ -707,6 +717,15 @@ namespace LuckyNumbers.Model
                             Author = "Cysharp",
                             License = "MIT",
                             Url = "https://github.com/Cysharp/UniTask",
+                        },
+                        new Credit
+                        {
+                            What = "Finger joint-limit math (hinge and ball-and-socket clamps), ported",
+                            Title = "OpenIK",
+                            Author = "Wouter Apts",
+                            License = "MIT",
+                            Url = "https://github.com/WouterApts/openik-unity",
+                            Path = "LuckyNumbers/Assets/_Project/Scripts/Hands/OpenIK-LICENSE.md",
                         },
                         new Credit
                         {

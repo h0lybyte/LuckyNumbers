@@ -38,6 +38,7 @@ namespace LuckyNumbers.Editor
             BuildIntro(rig);
             BuildPlanet(rig);
             BuildStation(rig);
+            BuildRange(rig);
 
             EditorBuildSettings.scenes = new[]
             {
@@ -45,11 +46,12 @@ namespace LuckyNumbers.Editor
                 new EditorBuildSettingsScene($"{ScenesDir}/Intro.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/Planet.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/Station.unity", true),
+                new EditorBuildSettingsScene($"{ScenesDir}/Range.unity", true),
             };
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>($"{ScenesDir}/SampleScene.unity") != null)
                 AssetDatabase.DeleteAsset($"{ScenesDir}/SampleScene.unity"); // URP template scene
             AssetDatabase.SaveAssets();
-            Debug.Log("[SceneBuilder] built Title, Intro, Planet, Station; build settings = [Title, Intro, Planet, Station]");
+            Debug.Log("[SceneBuilder] built Title, Intro, Planet, Station, Range; build settings = [Title, Intro, Planet, Station, Range]");
         }
 
         static void BuildTitle(Rig rig)
@@ -350,6 +352,9 @@ namespace LuckyNumbers.Editor
             // Your ship, docked in the bay (StationPresenter shows and poses it); solid, so you walk round it.
             ShipRig(collide: true);
 
+            // A test gun by the spawn (StationPresenter drops it there): pick up with E, click fires energy bolts.
+            WeaponRig(StationWeapon);
+
             // Lamp glow: bloom on the station camera (its strength set from content by StationPresenter).
             eyes.GetUniversalAdditionalCameraData().renderPostProcessing = true;
             var volume = new GameObject("Glow").AddComponent<UnityEngine.Rendering.Volume>();
@@ -447,6 +452,289 @@ namespace LuckyNumbers.Editor
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }
             root.gameObject.SetActive(false);
+            return root;
+        }
+
+        /// <summary>A two-tone material on the Relic shader (_ColorA low, _ColorB high, rim glow), saved as an asset.</summary>
+        static Material Tint(string asset, Color a, Color b, float glow, float pulse)
+        {
+            var m = MaterialAsset(asset, "LuckyNumbers/Relic");
+            m.SetColor("_ColorA", a);
+            m.SetColor("_ColorB", b);
+            m.SetFloat("_Glow", glow);
+            m.SetFloat("_Pulse", pulse);
+            EditorUtility.SetDirty(m);
+            return m;
+        }
+
+        /// <summary>Art/Models/Weapons/weapons.json (written by tools/blender/export_weapons.py): what each model is.</summary>
+        [System.Serializable] sealed class WeaponIndex { public WeaponItem[] items; }
+        [System.Serializable] sealed class WeaponItem
+        {
+            public string name;
+            public string kind;          // gun, melee or mod
+            public string[] submeshes;   // material per submesh, in order: metal, darker metal, lights (unused dropped)
+            public WeaponHold hold;      // guns: fitted to the arms by tools/blender/weapon_holds.py (absent: measured here)
+        }
+        [System.Serializable] sealed class WeaponHold
+        {
+            public float[] grip, foregrip, muzzle, offset, arms_shift;   // model space; offset and arms_shift: eye space
+            public float[] grip_palm, grip_along, fore_palm, fore_along;  // the hands' directions (model space)
+            public float scale;
+        }
+        static Vector3 V3(float[] a) => new(a[0], a[1], a[2]);
+
+        static WeaponItem[] Weapons() =>
+            JsonUtility.FromJson<WeaponIndex>(System.IO.File.ReadAllText($"{WeaponsDir}/weapons.json")).items;
+
+        static WeaponItem Weapon(string name) =>
+            System.Array.Find(Weapons(), w => w.name == name) ?? throw new System.Exception($"{name} not in {WeaponsDir}/weapons.json");
+
+        const string RangeFirstGun = "rifle_block";   // the gun you spawn in front of
+
+        /// <summary>
+        /// Dev shooting range (GameScene.Range): a closed hall, every gun on a bench in front of you, the melee weapons
+        /// and loose mods on a table to your left, crates to knock over and target boards downrange (+Z).
+        /// RangePresenter runs it; the debug inspector or ?ln-range opens it.
+        /// </summary>
+        static void BuildRange(Rig rig)
+        {
+            // Guns in export order, but the one you spawn at moved to the middle of the bench.
+            var gunList = new System.Collections.Generic.List<WeaponItem>(System.Array.FindAll(Weapons(), w => w.kind == "gun"));
+            var firstGun = gunList.Find(w => w.name == RangeFirstGun);
+            if (firstGun != null) { gunList.Remove(firstGun); gunList.Insert(gunList.Count / 2, firstGun); }
+            var guns = gunList.ToArray();
+            var others = System.Array.FindAll(Weapons(), w => w.kind != "gun");
+            float GunX(int i) => (i - (guns.Length - 1) / 2f) * 1.12f;
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var ui = Document("UI", rig.Panel, "Planet");   // hint, crosshair
+            var (eyes, _) = PlayerRig();
+            eyes.clearFlags = CameraClearFlags.SolidColor;
+            eyes.backgroundColor = new Color(0.03f, 0.035f, 0.045f);
+            eyes.farClipPlane = 120f;
+            var first = System.Math.Max(0, System.Array.FindIndex(guns, w => w.name == RangeFirstGun));
+            eyes.transform.root.position = new Vector3(GunX(first), 0f, -1.2f);   // behind the bench, facing downrange
+            var view = new GameObject("PlanetView").AddComponent<PlanetView>();
+            Assign(view, ("document", ui));
+
+            var floor = Tint("RangeFloor", new Color(0.16f, 0.17f, 0.19f), new Color(0.22f, 0.23f, 0.26f), 0f, 0f);
+            var wall = Tint("RangeWall", new Color(0.3f, 0.31f, 0.33f), new Color(0.55f, 0.56f, 0.58f), 0.05f, 0f);
+            var bench = Tint("RangeBench", new Color(0.25f, 0.18f, 0.12f), new Color(0.42f, 0.31f, 0.2f), 0f, 0f);
+            var crate = Tint("RangeCrate", new Color(0.55f, 0.36f, 0.12f), new Color(0.85f, 0.6f, 0.25f), 0.1f, 0f);
+            var board = Tint("RangeTarget", new Color(0.75f, 0.2f, 0.15f), new Color(0.95f, 0.9f, 0.85f), 0.2f, 0f);
+
+            var hall = new GameObject("Range").transform;
+            Transform Box(string name, Vector3 centre, Vector3 size, Material m)
+            {
+                var b = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                b.name = name;
+                b.transform.SetParent(hall, false);
+                b.transform.localPosition = centre;
+                b.transform.localScale = size;
+                var r = b.GetComponent<MeshRenderer>();
+                r.sharedMaterial = m;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                return b.transform;
+            }
+            const float width = 12f, height = 4.5f, back = -4f, front = 32f;
+            var mid = (back + front) / 2f;
+            Box("Floor", new Vector3(0f, -0.25f, mid), new Vector3(width, 0.5f, front - back), floor);
+            Box("Ceiling", new Vector3(0f, height + 0.25f, mid), new Vector3(width, 0.5f, front - back), wall);
+            Box("Wall L", new Vector3(-width / 2f - 0.25f, height / 2f, mid), new Vector3(0.5f, height, front - back), wall);
+            Box("Wall R", new Vector3(width / 2f + 0.25f, height / 2f, mid), new Vector3(0.5f, height, front - back), wall);
+            Box("Wall back", new Vector3(0f, height / 2f, back - 0.25f), new Vector3(width, height, 0.5f), wall);
+            Box("Wall front", new Vector3(0f, height / 2f, front + 0.25f), new Vector3(width, height, 0.5f), wall);
+            Box("Bench", new Vector3(0f, 0.4f, 0.4f), new Vector3(11.5f, 0.8f, 0.7f), bench);
+
+            // Every gun on the bench, barrels downrange, dropped a hair above it (they settle with physics).
+            for (var i = 0; i < guns.Length; i++)
+            {
+                var gun = WeaponRig(guns[i].name);
+                gun.transform.position = new Vector3(GunX(i), 1.15f, 0.4f);
+                gun.gameObject.SetActive(true);
+            }
+            // Melee weapons and loose mods (carryable, no firing yet) on a table along the left wall.
+            Box("Table", new Vector3(-5.3f, 0.4f, -1.8f), new Vector3(0.8f, 0.8f, 3.6f), bench);
+            for (var i = 0; i < others.Length; i++)
+            {
+                var item = WeaponRig(others[i].name);
+                item.transform.SetPositionAndRotation(new Vector3(-5.3f, 1.1f, -3.3f + i * 0.5f), Quaternion.Euler(0f, 90f, 0f));
+                item.SetActive(true);
+            }
+
+            // Crates to knock about (loose: bolts push them), then fixed boards at the far end.
+            void Crate(Vector3 at, float size)
+            {
+                var c = Box("Crate", at, Vector3.one * size, crate);
+                var body = c.gameObject.AddComponent<Rigidbody>();
+                body.mass = 4f * size;
+                body.interpolation = RigidbodyInterpolation.Interpolate;
+            }
+            for (var i = 0; i < 3; i++)
+            {
+                Crate(new Vector3(-3f + i * 0.62f, 0.3f, 9f), 0.6f);
+                Crate(new Vector3(-2.7f + i * 0.62f, 0.9f, 9f), 0.6f);
+                Crate(new Vector3(2f + i * 0.45f, 0.22f, 15f), 0.44f);
+            }
+            for (var i = 0; i < 3; i++)
+            {
+                var x = (i - 1) * 3.5f;
+                Box("Target post", new Vector3(x, 0.6f, 28f), new Vector3(0.12f, 1.2f, 0.12f), wall);
+                Box("Target", new Vector3(x, 1.6f, 28f), new Vector3(1.2f, 1.2f, 0.08f), board);
+            }
+
+            Scopes<RangeScope>();
+            EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Range.unity");
+        }
+
+        const string WeaponsDir = "Assets/_Project/Art/Models/Weapons";
+        /// <summary>Which of Art/Models/Weapons lies in the station (any of the guns: their hold points are measured).</summary>
+        const string StationWeapon = "rifle_block";
+
+        /// <summary>
+        /// A model from Art/Models/Weapons: a root (+Z down the barrel, carryable: Rigidbody + box) holding the model,
+        /// coloured per submesh from weapons.json. Guns also get a WeaponView with hold points measured from the mesh:
+        /// the grip (the low part behind the middle, where the pistol grip hangs), the foregrip (under the handguard
+        /// ahead of it) and the muzzle (the barrel's end, +Z as exported). Melee weapons and mods are just carryable.
+        /// </summary>
+        static GameObject WeaponRig(string name)
+        {
+            var item = Weapon(name);
+            var fbx = AssetDatabase.LoadAssetAtPath<GameObject>($"{WeaponsDir}/{name}.fbx")
+                      ?? throw new System.Exception($"{name}.fbx missing in {WeaponsDir}");
+            var Mat = (System.Func<string, Color, Color, float, float, Material>)Tint;
+            var metal = Mat("WeaponMetal", new Color(0.42f, 0.44f, 0.47f), new Color(0.72f, 0.74f, 0.76f), 0.12f, 0f);
+            var dark = Mat("WeaponDarkMetal", new Color(0.12f, 0.13f, 0.15f), new Color(0.24f, 0.25f, 0.28f), 0.08f, 0f);
+            var lights = Mat("WeaponLights", new Color(0.2f, 1.2f, 1.8f), new Color(0.4f, 1.8f, 2.6f), 0.6f, 0.5f);
+            var bolt = Mat("WeaponBolt", new Color(0.35f, 1.6f, 2.6f), new Color(0.35f, 1.6f, 2.6f), 1.5f, 0f);
+
+            var root = new GameObject($"Weapon {name}");
+            var model = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
+            model.transform.SetParent(root.transform, false);
+
+            // Points over the surface in the root's space (the model keeps its import rotation), dense enough
+            // (every cm) that big flat faces, like a grip made of one quad, still have points down to their edges.
+            var verts = new System.Collections.Generic.List<Vector3>();
+            foreach (var f in model.GetComponentsInChildren<MeshFilter>())
+            {
+                var mesh = f.sharedMesh;
+                var vs = mesh.vertices;
+                for (var i = 0; i < vs.Length; i++) vs[i] = root.transform.InverseTransformPoint(f.transform.TransformPoint(vs[i]));
+                var tris = mesh.triangles;
+                for (var i = 0; i < tris.Length; i += 3)
+                {
+                    Vector3 a = vs[tris[i]], ab = vs[tris[i + 1]] - a, ac = vs[tris[i + 2]] - a;
+                    var n = Mathf.Clamp((int)(Mathf.Max(ab.magnitude, ac.magnitude, (ab - ac).magnitude) / 0.01f), 1, 12);
+                    for (var u = 0; u <= n; u++)
+                        for (var w = 0; w <= n - u; w++) verts.Add(a + ab * ((float)u / n) + ac * ((float)w / n));
+                }
+                var r = f.GetComponent<MeshRenderer>();
+                var count = f.sharedMesh.subMeshCount;
+                if (count != item.submeshes.Length)
+                    Debug.LogWarning($"[SceneBuilder] {name}: {count} submeshes, weapons.json lists {item.submeshes.Length}");
+                var mats = new Material[count];
+                for (var i = 0; i < count; i++)
+                    mats[i] = i >= item.submeshes.Length ? metal : item.submeshes[i] switch { "darker metal" => dark, "lights" => lights, _ => metal };
+                r.sharedMaterials = mats;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            // tools/blender/export_weapons.py points every barrel down Blender -Y, which imports as +Z: already aligned.
+            // (Guessing from the shape doesn't work: some stocks are no taller than the muzzle end.)
+            var b = new Bounds(verts[0], Vector3.zero);
+            foreach (var v in verts) b.Encapsulate(v);
+
+            var length = b.size.z;
+            Vector3 Mean(System.Func<Vector3, bool> where, Vector3 fallback)
+            {
+                var sum = Vector3.zero;
+                var n = 0;
+                foreach (var v in verts) if (where(v)) { sum += v; n++; }
+                return n > 0 ? sum / n : fallback;
+            }
+            // Grip: the slice behind the middle (clear of the stock's toe) that hangs lowest: the pistol grip. The palm
+            // closes a few centimetres up from its bottom.
+            float SliceLow(float z)
+            {
+                var lo = float.MaxValue;
+                foreach (var v in verts) if (Mathf.Abs(v.z - z) < length * 0.015f) lo = Mathf.Min(lo, v.y);
+                return lo;
+            }
+            float gz = b.center.z - length * 0.1f, gLow = float.MaxValue;
+            for (var z = b.min.z + length * 0.2f; z <= b.center.z; z += length * 0.01f)
+            {
+                var lo = SliceLow(z);
+                if (lo < gLow) { gLow = lo; gz = z; }
+            }
+            if (gLow == float.MaxValue) gLow = b.min.y;
+            var gx = Mean(v => Mathf.Abs(v.z - gz) < length * 0.015f && v.y < gLow + 0.05f, new Vector3(0f, gLow, gz)).x;
+            var grip = new Vector3(gx, gLow + 0.04f, gz);
+            // Foregrip: under the handguard a fifth of the way ahead of the middle, but no more than a short
+            // hand span ahead of the grip: the arms reach 0.56 m, and a real rifle's foregrip is out of reach.
+            const float maxSpan = 0.2f;
+            var zf = Mathf.Min(b.center.z + length * 0.22f, grip.z + maxSpan);
+            var slice = Mean(v => Mathf.Abs(v.z - zf) < length * 0.04f, new Vector3(0f, b.min.y, zf));
+            var low = float.MaxValue;
+            foreach (var v in verts) if (Mathf.Abs(v.z - zf) < length * 0.04f) low = Mathf.Min(low, v.y);
+            var foregrip = new Vector3(slice.x, low < float.MaxValue ? low : b.min.y, zf);
+            var muzzleEnd = Mean(v => v.z > b.max.z - length * 0.03f, new Vector3(0f, b.center.y, b.max.z));
+            var muzzle = new Vector3(muzzleEnd.x, muzzleEnd.y, b.max.z + 0.01f);
+
+            var box = root.AddComponent<BoxCollider>();
+            box.center = b.center;
+            box.size = b.size;
+            // Its exact shape, for the fingers to close onto while it's held (FirstPersonPresenter switches it on, on the
+            // arms' layer, which collides with nothing else). Off otherwise: a dynamic body can't have a concave collider.
+            if (item.kind != "mod")
+                foreach (var f in model.GetComponentsInChildren<MeshFilter>())
+                {
+                    var grasp = f.gameObject.AddComponent<MeshCollider>();
+                    grasp.sharedMesh = f.sharedMesh;
+                    grasp.enabled = false;
+                }
+            var body = root.AddComponent<Rigidbody>();   // a rigidbody marks it as something you can carry
+            body.mass = item.kind == "gun" ? 3.5f : item.kind == "melee" ? 1.5f : 0.4f;
+            body.interpolation = RigidbodyInterpolation.Interpolate;
+            root.SetActive(false);   // placed by whoever builds the scene (StationPresenter, BuildRange)
+            if (item.kind == "melee")
+            {
+                // Handle down, blade / head up (+Y as exported). The fist closes a little way up the handle (above the
+                // pommel, or the hammer's spike and cap); the tip is the top slice's middle (the hammer: its head's).
+                var hammer = name == "hammer";
+                var h = b.size.y;
+                var gy = b.min.y + h * (hammer ? 0.25f : 0.17f);
+                var handle = Mean(v => Mathf.Abs(v.y - gy) < h * 0.03f, new Vector3(b.center.x, gy, b.center.z));
+                var top = Mean(v => v.y > b.max.y - h * (hammer ? 0.2f : 0.04f), new Vector3(b.center.x, b.max.y, b.center.z));
+                var tipPoint = new Vector3(top.x, hammer ? top.y : b.max.y, top.z);
+                // Edge, from looking at the models (measuring fails: the knife's tip curls toward its spine, so the
+                // spine side bulges further): the knife cuts with its convex side, -X as exported; the hammer strikes
+                // with a face of its head (its long axis, Z).
+                var edgeDir = hammer ? Vector3.forward : Vector3.left;
+                var melee = root.AddComponent<MeleeView>();
+                melee.Init(new Vector3(handle.x, gy, handle.z), tipPoint, edgeDir,
+                           swingSeconds: hammer ? 0.75f : 0.4f, radius: hammer ? 0.1f : 0.04f, impulse: hammer ? 9f : 2.5f);
+                EditorUtility.SetDirty(melee);
+                Debug.Log($"[SceneBuilder] melee {name}: grip ({handle.x:0.00}, {gy:0.00}, {handle.z:0.00}), tip {tipPoint}, edge {edgeDir}");
+                return root;
+            }
+            if (item.kind != "gun")
+            {
+                Debug.Log($"[SceneBuilder] {item.kind} {name}: {b.size.x:0.00} x {b.size.y:0.00} x {b.size.z:0.00} m");
+                return root;
+            }
+            var view = root.AddComponent<WeaponView>();
+            var fit = item.hold != null && item.hold.grip != null && item.hold.grip.Length == 3 ? item.hold : null;
+            if (fit != null)
+            {
+                view.Init(V3(fit.grip), V3(fit.foregrip), V3(fit.muzzle), bolt, V3(fit.offset), fit.scale, V3(fit.arms_shift));
+                if (fit.grip_palm != null && fit.grip_palm.Length == 3)
+                    view.InitHands(V3(fit.grip_palm), V3(fit.grip_along), V3(fit.fore_palm), V3(fit.fore_along));
+            }
+            else
+                view.Init(grip, foregrip, muzzle, bolt);
+            EditorUtility.SetDirty(view);
+            Debug.Log(fit != null
+                ? $"[SceneBuilder] gun {name}: {length:0.00} m, fitted hold: grip {V3(fit.grip)} at {V3(fit.offset)}, scale {fit.scale:0.00}, arms shift {V3(fit.arms_shift)}"
+                : $"[SceneBuilder] gun {name}: {length:0.00} m, measured: grip {grip}, foregrip {foregrip}, muzzle {muzzle} (run weapon_holds.py)");
             return root;
         }
 

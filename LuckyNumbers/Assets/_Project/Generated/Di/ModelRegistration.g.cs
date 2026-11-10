@@ -39,6 +39,7 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<PlayerDamaged>(options);
             builder.RegisterMessageBroker<PlayerHealed>(options);
             builder.RegisterMessageBroker<PlayerDied>(options);
+            builder.RegisterMessageBroker<ItemHandled>(options);
             builder.RegisterMessageBroker<ShipPickerReady>(options);
             builder.RegisterMessageBroker<ShipSkinStepRequested>(options);
             builder.RegisterMessageBroker<ShipPickDone>(options);

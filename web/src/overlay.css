@@ -134,6 +134,19 @@ kbd {
   text-transform: uppercase;
   animation: glitch-in 260ms steps(4, end);
 }
+/* What the hands picked up / dropped (ItemHandled): top right, under the fullscreen button. */
+.item-toasts {
+  position: absolute;
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 52px);
+  right: max(var(--gap), env(safe-area-inset-right));
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  max-width: min(360px, calc(100vw - 2 * var(--gap)));
+}
+.toast.item { text-transform: none; font-size: 13px; }
+.toast.item strong { color: var(--neon); }
+.toast.item .detail { opacity: 0.75; font-size: 11px; margin-top: 2px; }
 .toast.bad { border-color: rgba(255, 59, 92, 0.6); border-left-color: var(--bad); color: var(--bad); }
 .toast.good { border-color: rgba(61, 255, 154, 0.5); border-left-color: var(--good); color: var(--good); }
 

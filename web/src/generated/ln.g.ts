@@ -8,7 +8,8 @@ export type GameScene =
   | "Title"
   | "Intro"
   | "Planet"
-  | "Station";
+  | "Station"
+  | "Range";
 
 /** Discrete actions (button presses). Bound to devices in the Input System asset. */
 export type InputAction =
@@ -21,7 +22,8 @@ export type InputAction =
   | "Sprint"
   | "AnyButton"
   | "Map"
-  | "UseRelic";
+  | "UseRelic"
+  | "SideView";
 
 export type CallPhase =
   | "None"
@@ -371,6 +373,13 @@ export interface PlayerDied {
   cause: string;
 }
 
+/** Something the player's hands picked up, dropped or threw (web: a toast, top right, for checking holds). */
+export interface ItemHandled {
+  item: string;
+  action: string;
+  detail: string;
+}
+
 /**
  * The page has a ship picker (sent when it mounts): Play then opens the hangar after character creation.
  * Without it (no page, e.g. the editor) Play goes straight on with the default skin.
@@ -455,6 +464,7 @@ export interface WebEvents {
   PlayerDamaged: PlayerDamaged;
   PlayerHealed: PlayerHealed;
   PlayerDied: PlayerDied;
+  ItemHandled: ItemHandled;
   ShipPickerReady: ShipPickerReady;
   ShipSkinStepRequested: ShipSkinStepRequested;
   ShipPickDone: ShipPickDone;

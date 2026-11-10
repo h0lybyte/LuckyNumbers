@@ -46,6 +46,15 @@ message PlayerDied {
   string cause = 1;
 }
 
+// Something the player's hands picked up, dropped or threw (web: a toast, top right, for checking holds).
+message ItemHandled {
+  option (ln.event) = true;
+  option (ln.web) = true;
+  string item = 1;     // what it is ("rifle_block")
+  string action = 2;   // "picked up", "dropped", "threw", "holding"
+  string detail = 3;   // e.g. "gun - scale 1.00", or the hands' IK error once settled
+}
+
 // The hangar, after character creation on the title (Title/ShipPickerPresenter): your fighter turns in front of
 // the camera while the page cycles its skins, then launches. `skin` is the file name (Art/Models/Fighter/Skins),
 // `index` of `count`. The choice goes to PlayerShip.

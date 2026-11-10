@@ -64,6 +64,15 @@ sections {
     license: "CC0, public domain"
     url: "https://drillimpact.itch.io/psx-first-person-arms-free"
   }
+  credits {
+    what: "Futuristic weapons: 9 guns (rifles, snipers, carbine, heavy cannon), 2 melee weapons (hammer, knife) and gun mods (scope, sight, grip, box)"
+    title: "Free Futuristic Weapon Assets"
+    author: "Niko-3d-models"
+    license: "Free with credit"
+    url: "https://niko-3d-models.itch.io/free-futuristic-weapon-assets"
+    notes: "Changes: split into one FBX per weapon, modifiers baked, centred and scaled to metres (tools/blender/export_weapons.py)."
+    path: "LuckyNumbers/Assets/_Project/Art/Models/Weapons/LICENSE.txt"
+  }
 }
 
 sections {
@@ -129,6 +138,7 @@ sections {
   name: "Libraries"
   compact: true
   credits { what: "Async/await" title: "UniTask" author: "Cysharp" license: "MIT" url: "https://github.com/Cysharp/UniTask" }
+  credits { what: "Finger joint-limit math (hinge and ball-and-socket clamps), ported" title: "OpenIK" author: "Wouter Apts" license: "MIT" url: "https://github.com/WouterApts/openik-unity" path: "LuckyNumbers/Assets/_Project/Scripts/Hands/OpenIK-LICENSE.md" }
   credits { what: "Reactive state" title: "R3" author: "Cysharp" license: "MIT" url: "https://github.com/Cysharp/R3" }
   credits { what: "Observable collections" title: "ObservableCollections" author: "Cysharp" license: "MIT" url: "https://github.com/Cysharp/ObservableCollections" }
   credits { what: "Messaging" title: "MessagePipe" author: "Cysharp" license: "MIT" url: "https://github.com/Cysharp/MessagePipe" }

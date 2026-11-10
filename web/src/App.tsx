@@ -11,6 +11,12 @@ import type { GameScene, InboundEvent, WebEvents } from "./ln";
 
 export function App({ dock }: { dock: HTMLElement | null }) {
   const [inspector, setInspector] = useState(() => new URLSearchParams(location.search).has("ln-debug"));
+  const ready = useLNReady();
+
+  // ?ln-range: straight to the dev shooting range once Unity is up (testing weapon holds and firing).
+  useEffect(() => {
+    if (ready && new URLSearchParams(location.search).has("ln-range")) LN.send("SceneChangeRequested", { target: "Range" });
+  }, [ready]);
 
   // ` toggles the bridge inspector (capture phase: runs before Unity's keyboard handling).
   useEffect(() => {
@@ -33,6 +39,7 @@ export function App({ dock }: { dock: HTMLElement | null }) {
       <CharacterSheetGate />
       <HangarGate />
       <Toasts />
+      <ItemToasts />
       {inspector && dock && createPortal(<Inspector />, dock)}
     </>
   );
@@ -60,7 +67,7 @@ function Hud() {
   const mapOpen = useLNState("MapState")?.open ?? false;
   const locked = usePointerLocked();
   useEffect(installFreeMouseKey, []);
-  if (flow?.scene === "Station") return <PointerHint locked={locked} />;
+  if (flow?.scene === "Station" || flow?.scene === "Range") return <PointerHint locked={locked} />;
   if (flow?.scene !== "Planet") return null;
 
   return (
@@ -141,6 +148,28 @@ function Toasts() {
   );
 }
 
+/** What the hands picked up, dropped or threw (ItemHandled), top right: for checking weapon holds. */
+function ItemToasts() {
+  const [items, setItems] = useState<{ id: number; item: string; action: string; detail: string }[]>([]);
+  useLNEvent("ItemHandled", (e) => {
+    const id = nextToast++;
+    setItems((t) => [...t.slice(-4), { id, item: e.item, action: e.action, detail: e.detail }]);
+    setTimeout(() => setItems((t) => t.filter((x) => x.id !== id)), 6000);
+  });
+  return (
+    <div className="item-toasts" aria-live="polite">
+      {items.map((t) => (
+        <div key={t.id} className={`toast item ${t.action === "dropped" || t.action === "threw" ? "" : "good"}`}>
+          <div>
+            {t.action} <strong>{t.item}</strong>
+          </div>
+          {t.detail && <div className="detail">{t.detail}</div>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ---- inspector (dev) ------------------------------------------------------------------------------
 
 /** Any inbound event with a JSON payload, e.g. InputActionPerformed {"action":"Jump"}. */
@@ -196,7 +225,7 @@ function Inspector() {
       <section>
         <h3>Send</h3>
         <div className="row">
-          {(["Title", "Intro", "Planet"] as const).map((scene) => (
+          {(["Title", "Intro", "Planet", "Range"] as const).map((scene) => (
             <button key={scene} type="button" onClick={() => LN.send("SceneChangeRequested", { target: scene })}>
               {scene}
             </button>
