@@ -123,6 +123,58 @@ namespace LuckyNumbers.Editor
                 }
         }
 
+        /// <summary>
+        /// Engine flames (content/engines.txtpb) on the fighter, one row per manoeuvre, from behind-above (left) and
+        /// below-side (right), to Logs/preview-exhaust.png. Rows: idle, small trim (cold gas only), cruise, boost, lift,
+        /// strafe right + yaw right, roll + pitch, brake. LN_EXHAUST_SHIP=freighter renders the museum freighter;
+        /// LN_EXHAUST_SKY=1 puts it against a bright planet sky (does the cold gas still read?).
+        /// </summary>
+        [MenuItem("LuckyNumbers/Preview/Render Exhaust")]
+        public static void RenderExhaust()
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            RenderSettings.skybox = new Material(Find("LuckyNumbers/Starfield"));
+            Shader.SetGlobalVector("_LnSunPosition", new Vector4(40f, 30f, -26f, 1f));
+            Shader.SetGlobalVector("_LnSunColor", new Color(1f, 0.95f, 0.85f));
+            var sky = System.Environment.GetEnvironmentVariable("LN_EXHAUST_SKY") == "1";
+            var skyColour = new Color(0.95f, 0.55f, 0.3f);
+            Shader.SetGlobalVector("_LnSkyColor", sky ? new Vector4(1.15f, 0.8f, 0.6f, 1f) : Vector4.zero);
+            Shader.SetGlobalVector("_LnGroundColor", Vector4.zero);
+            // LN_EXHAUST_SHIP=freighter: the museum freighter instead of the fighter.
+            var freighter = System.Environment.GetEnvironmentVariable("LN_EXHAUST_SHIP") == "freighter";
+            var ship = freighter ? SceneBuilder.FreighterRig() : SceneBuilder.ShipRig();
+            ship.Show(System.Environment.GetEnvironmentVariable("LN_SHIP_SKIN") ?? "idolknight", 4f);
+            ship.Pose(Vector3.zero, Quaternion.identity);
+            var states = new (Vector3 push, Vector3 turn, float boost)[]
+            {
+                (Vector3.zero, Vector3.zero, 1f),                     // idle
+                (new Vector3(0.08f, 0.08f, 0f), new Vector3(0.1f, 0.1f, 0.1f), 1f),   // small trim: cold gas only
+                (Vector3.forward, Vector3.zero, 1f),                  // cruise
+                (Vector3.forward, Vector3.zero, 2f),                  // boost
+                (Vector3.up, Vector3.zero, 1f),                       // lift
+                (Vector3.right, new Vector3(0f, 1f, 0f), 1f),         // strafe right + yaw right
+                (Vector3.zero, new Vector3(0.8f, 0f, 1f), 1f),        // pitch down + roll
+                (Vector3.back, Vector3.zero, 1f),                     // brake
+            };
+            Camera Cam(Vector3 at, Vector3 look)
+            {
+                var c = new GameObject("PreviewCamera").AddComponent<Camera>();
+                c.fieldOfView = 40f;
+                c.clearFlags = sky ? CameraClearFlags.SolidColor : CameraClearFlags.Skybox;
+                c.backgroundColor = skyColour;
+                c.nearClipPlane = 0.05f;
+                c.transform.SetPositionAndRotation(at, Quaternion.LookRotation(look - at));
+                return c;
+            }
+            var cams = new[] { Cam(new Vector3(3.2f, 2.2f, -6.5f), new Vector3(0f, 0f, -1.2f)), Cam(new Vector3(6.5f, -2f, 0.5f), new Vector3(0f, -0.4f, -0.3f)) };
+            SaveGrid(cams, states.Length, "preview-exhaust.png", row =>
+            {
+                var s = states[row];
+                ship.SetThrust(s.push, s.turn, s.boost);
+                ship.SnapEngines();
+            });
+        }
+
         /// <summary>First-person arms: lists clips, renders 4 poses from the rig's own camera to Logs/preview-arms.png.</summary>
         [MenuItem("LuckyNumbers/Preview/Render Arms")]
         public static void RenderArms()

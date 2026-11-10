@@ -31,6 +31,7 @@ content/title.txtpb, intro.txtpb, planet.txtpb, player.txtpb   game configs (top
 content/cargo.txtpb                              the museum freighter's seeded manifest: ships, museums, cultures, relic kinds
 content/character.txtpb                          the player's character sheet: abilities, dice rule, point moving, classes, origins, skills, levels
 content/credits.txtpb                            credits: the title's Credits panel; `gen` also writes CREDITS.md and README.md's block
+content/engines.txtpb                            engine flames and cold-gas puffs: each ship's jets (position, direction, size, flame or gas) and their looks (Core/ShipView)
 content/space/systems/home.txtpb                 library: a whole solar system (camera, bodies, orbits)
 content/space/looks/planet_base.txtpb            library: defaults every planet look extends
 content/space/looks/planets/*.txtpb              library: planet presets

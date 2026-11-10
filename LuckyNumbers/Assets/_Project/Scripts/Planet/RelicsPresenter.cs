@@ -224,12 +224,13 @@ namespace LuckyNumbers.Planet
             Debug.Log($"[Relics] {_lying.Count} relics round the wreck ({manifest.Relics.Count} aboard)");
         }
 
-        /// <summary>How far the wreck reaches out from its pivot on the ground plane (its renderers' bounds).</summary>
+        /// <summary>How far the wreck reaches out from its pivot on the ground plane (its hull renderers' bounds).</summary>
         float WreckReach(Vector3 pivot)
         {
             var reach = 0f;
-            foreach (var r in _view.Wreck.Pivot.GetComponentsInChildren<Renderer>())
+            foreach (var r in _view.Wreck.HullRenderers)
             {
+                if (r == null) continue;
                 var b = r.bounds;
                 for (var x = -1; x <= 1; x += 2)
                 for (var z = -1; z <= 1; z += 2)
