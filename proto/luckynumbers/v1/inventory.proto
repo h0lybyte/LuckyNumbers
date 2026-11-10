@@ -24,11 +24,12 @@ message ItemConfig {
   // Walking speed while encumbered / overloaded.
   float encumbered_speed = 7;
   float overloaded_speed = 8;
-  // The item a picked-up relic becomes: matched by artifact id, then relic kind; else default_relic_item.
-  repeated RelicItem relic_items = 9;
-  string default_relic_item = 10;
+  // 9-10: relic_items / default_relic_item, gone: a relic is its own item now.
+  reserved 9, 10;
   // Shown when something doesn't fit.
   string full_prompt = 11;
+  // Items with files of their own (named relics: content/items/relics/<id>), appended to `items`.
+  repeated string item_refs = 12 [(ln.ref) = "items"];
 }
 
 enum ItemKind {
@@ -80,6 +81,29 @@ message ItemDef {
   bool unique = 20;
   // More than 1: this many copies share one cell (med-patches, rations). Bulk and value count each copy.
   int32 stack = 21;
+  // Its own model (file name in Art/Models/Relics, built into the scene); empty: a placeholder block.
+  string model = 22;
+  // Whose it was, when, and a line about them (named relics: shown when you pick it up).
+  ItemLore lore = 23;
+  // Using it rolls a d20 on a table (relics), with a cooldown.
+  ItemUse use = 24;
+  // 25-27: hold / ranged / melee (docs/items.md step 5).
+  // A second colour (the relic shader's _ColorB; `color` is _ColorA).
+  Rgba color_b = 28;
+}
+
+message ItemLore {
+  string figure = 1;
+  string era = 2;
+  string text = 3;
+}
+
+message ItemUse {
+  // Seconds before it can be used again.
+  float cooldown_seconds = 1;
+  // What a d20 roll does (+ your luck die, up to cargo.txtpb luck_bonus, + the sheet's relic bonus): the first row
+  // whose range holds the total. A natural 1 is always 1 (row 1), a natural 20 always 20.
+  repeated RelicRoll rolls = 2;
 }
 
 message SkillBonus {
@@ -95,11 +119,6 @@ message StartingKit {
   repeated string items = 2;
 }
 
-message RelicItem {
-  // An artifact id or a relic kind id.
-  string relic = 1;
-  string item = 2;
-}
 
 // What's in the pack (Core/InventoryPresenter; the page's Inventory and Equipment tabs). Each item
 // "uid|id|name|kind|x|y|rot|shape|bulk|value|color|description|actions|slot|equipped|bonuses|count": shape already
@@ -125,6 +144,10 @@ message PlayerInventory {
   repeated string gear_bonuses = 11;
   // There's a world to drop things into (the crash site): Drop and a full-pack unequip put the item at your feet.
   bool can_drop = 12;
+  // The relic R uses (the one you picked up or used last; 0: none), its name, and seconds until it's ready.
+  int32 ready = 13;
+  string ready_name = 14;
+  float cooldown = 15;
 }
 
 // The page: put item `uid` in its equipment slot (whatever was there goes back into the pack, if it fits).

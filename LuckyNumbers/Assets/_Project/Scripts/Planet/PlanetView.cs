@@ -42,7 +42,7 @@ namespace LuckyNumbers.Planet
         public Transform VaseTemplate => vaseTemplate;
         public Transform RelicBeamTemplate => relicBeamTemplate;
 
-        /// <summary>A named artifact's model template by name (RelicArtifact.model), or null.</summary>
+        /// <summary>A relic's own model template by name (ItemDef.model), or null.</summary>
         public Transform ArtifactModel(string name)
         {
             if (string.IsNullOrEmpty(name)) return null;
