@@ -114,7 +114,7 @@ namespace LuckyNumbers.Title
                     if (die.Sides == 20)
                     {
                         // Lit in the die's colour on the dark face.
-                        number.style.color = Color.Lerp(color, Color.white, 0.45f);
+                        number.style.color = Color.Lerp(color, Color.white, 0.65f);
                         var glowColor = color;
                         glowColor.a = 0.9f;
                         number.style.textShadow = new TextShadow { color = glowColor, blurRadius = 6f };
