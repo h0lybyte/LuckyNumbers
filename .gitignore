@@ -123,3 +123,7 @@ $RECYCLE.BIN/
 /tools/roslyn/**/bin/
 /tools/roslyn/**/obj/
 !/tools/roslyn/**/*.csproj
+
+# moon
+.moon/cache
+.moon/docker

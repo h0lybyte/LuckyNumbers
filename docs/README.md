@@ -3,6 +3,7 @@
 - [getting-started.md](getting-started.md): setup, open project, Smart Merge
 - [project-structure.md](project-structure.md): layout, conventions
 - [dev-tools.md](dev-tools.md): `tools/ln.py` commands
+- [moon.md](moon.md): moon tasks over `ln.py` (`moon run game:build-web`)
 - [web-build.md](web-build.md): Web settings, threading requirements
 - [releasing.md](releasing.md): CHANGELOG-driven CI/CD, secrets, itch.io
 - [proto.md](proto.md): proto schema, content files, C# code generation

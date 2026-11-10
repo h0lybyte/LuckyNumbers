@@ -1,0 +1,35 @@
+$schema: "../.moon/cache/schemas/project.json"
+
+project:
+  title: "Web overlay"
+  description: "React overlays and dock around the Unity Web player (built into Builds/WebGL/overlay)."
+layer: "library"
+stack: "frontend"
+language: "typescript"
+
+fileGroups:
+  sources:
+    - "src/**/*"
+    - "vite.config.ts"
+    - "tsconfig.json"
+    - "package.json"
+
+tasks:
+  typecheck:
+    description: "tsc --noEmit"
+    command: "npm run typecheck"
+    inputs: ["@group(sources)"]
+
+  build:
+    type: "build"
+    description: "Typecheck + build overlay.js into Builds/WebGL/overlay (LN_OVERLAY_OUT overrides)."
+    command: "npm run build"
+    inputs: ["@group(sources)"]
+    options:
+      cache: false # output lives in the Unity build folder, which build-web wipes
+      runInCI: false # typecheck covers PRs; web.yml builds it next to the Unity build
+
+  dev:
+    description: "Rebuild the overlay on save (pair with game:serve)."
+    command: "npm run watch"
+    preset: "server"

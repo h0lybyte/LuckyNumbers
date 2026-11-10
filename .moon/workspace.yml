@@ -1,0 +1,15 @@
+# moon workspace: https://moonrepo.dev/docs/config/workspace
+# Tasks wrap tools/ln.py (still the source of truth); moon adds caching, deps and one entry point.
+$schema: "./cache/schemas/workspace.json"
+
+versionConstraint: ">=2.5.0"
+
+projects:
+  content: "content" # proto/ schemas + content/*.txtpb -> generated C# / TS
+  web: "web" # React overlays + dock around the Unity player
+  game: "LuckyNumbers" # Unity project
+
+vcs:
+  client: "git"
+  provider: "github"
+  defaultBranch: "main"

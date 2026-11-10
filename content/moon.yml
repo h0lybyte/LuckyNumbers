@@ -1,0 +1,49 @@
+$schema: "../.moon/cache/schemas/project.json"
+
+project:
+  title: "Content"
+  description: "proto/ schemas and content/*.txtpb: validated with pinned protoc, generated into C# and TS."
+layer: "configuration"
+language: "python"
+toolchains:
+  default: "system"
+
+fileGroups:
+  sources:
+    - "**/*.txtpb"
+    - "/proto/**/*.proto"
+    - "/tools/ln.py"
+    - "/tools/protogen.py"
+    - "/tools/credits.py"
+
+tasks:
+  validate:
+    description: "Validate proto schemas and content files (tools/ln.py proto)."
+    command: "python3 tools/ln.py proto"
+    inputs: ["@group(sources)"]
+    options:
+      runFromWorkspaceRoot: true
+
+  gen:
+    type: "build"
+    description: "Regenerate C#, web/src/generated, CREDITS.md and the README credits block."
+    command: "python3 tools/ln.py gen"
+    deps: ["validate"]
+    inputs: ["@group(sources)"]
+    options:
+      runFromWorkspaceRoot: true
+      cache: false # writes committed files in several projects; always run it
+      runInCI: false # CI runs check instead
+
+  check:
+    description: "Fail if generated code is stale (what CI runs before building)."
+    command: "python3 tools/ln.py gen --check"
+    deps: ["validate"]
+    inputs:
+      - "@group(sources)"
+      - "/LuckyNumbers/Assets/_Project/Generated/**/*"
+      - "/web/src/generated/**/*"
+      - "/CREDITS.md"
+      - "/README.md"
+    options:
+      runFromWorkspaceRoot: true
