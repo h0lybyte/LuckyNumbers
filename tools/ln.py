@@ -4,6 +4,7 @@
     python3 tools/ln.py check         headless compile, report C# errors
     python3 tools/ln.py build-web     headless Web build -> LuckyNumbers/Builds/WebGL
     python3 tools/ln.py serve         serve the Web build with COOP/COEP headers
+    python3 tools/ln.py bake-grasps   bake weapons' finger grips into weapons.json (needs the build served)
     python3 tools/ln.py deploy        push the Web build to itch.io with butler
 
 Unity is located from ProjectVersion.txt + the Unity Hub install folder.
@@ -274,6 +275,59 @@ def cmd_webshot(args) -> int:
         cmd += ["--steps", args.steps]
     cmd += ["--size", args.size, "--dpr", str(args.dpr)]
     return subprocess.call(cmd)
+
+
+WEAPONS_INDEX = PROJECT / "Assets" / "_Project" / "Art" / "Models" / "Weapons" / "weapons.json"
+
+
+def compact_number_arrays(text: str) -> str:
+    """Indented JSON, but arrays of plain numbers on one line (a grip's 60 rotation floats, points)."""
+    return re.sub(r"\[\s*(-?[\d.e+-]+(?:,\s*-?[\d.e+-]+)*)\s*\]",
+                  lambda m: "[" + ", ".join(x.strip() for x in m.group(1).split(",")) + "]", text)
+
+
+def cmd_bake_grasps(args) -> int:
+    """Bake every weapon's finger grips into weapons.json: the served Web build's range (?ln-range&ln-bake) picks
+    each one up, solves both hands' grips live with the game's own code, and logs them; this writes them in.
+    Build and serve first (build-web, serve); afterwards rebuild the scenes so the weapons carry them."""
+    node = shutil.which("node")
+    if not node:
+        return fail("node not found (Node 22+ needed for tools/webshot.mjs)")
+    shot = PROJECT / "Logs" / "bake-grasps.png"
+    cmd = [node, str(ROOT / "tools" / "webshot.mjs"), args.url, str(shot), "--timeout", str(args.timeout),
+           "--wait", "[Range] ready", "--full", "--steps", json.dumps([{"wait": "[Bake] done"}, {"shot": str(shot)}])]
+    print("baking grips in the range (headless)...")
+    out = subprocess.run(cmd, capture_output=True, text=True)
+    grips, problems = {}, []
+    for line in out.stdout.splitlines():
+        if "[Bake] {" in line:
+            entry = json.loads(line[line.index("[Bake] ") + len("[Bake] "):])
+            # Unity writes floats as doubles (0.01 -> 0.009999999776...): 4 decimals is under a tenth of a degree.
+            r4 = lambda v: [r4(x) for x in v] if isinstance(v, list) else round(v, 4) if isinstance(v, float) else v
+            grips[entry["item"]] = {side: {k: r4(v) for k, v in entry[side].items()} for side in ("left", "right")
+                                    if entry.get(side) and entry[side].get("rotations")}
+        elif "[Bake]" in line and "done" not in line:
+            problems.append(line.strip())
+        elif "[Bake] done" in line:
+            print("  " + line.split("[Bake] ", 1)[1])
+    if not grips:
+        print(out.stdout[-2000:])
+        return fail("no grips came back: is the latest build served (build-web, serve) at " + args.url + "?")
+    index = json.loads(WEAPONS_INDEX.read_text())
+    for item in index["items"]:
+        if item["name"] in grips:
+            item["grasp"] = grips[item["name"]]
+            g = item["grasp"]
+            print(f"  {item['name']}: " + ", ".join(f"{side} {v['touching']}/{v['fingers']} fingers on, palm off {v['push'] * 100:.1f} cm"
+                                                   for side, v in g.items()))
+    WEAPONS_INDEX.write_text(compact_number_arrays(json.dumps(index, indent=2)) + "\n")
+    for p in problems:
+        print("  " + p)
+    missing = [i["name"] for i in index["items"] if i["kind"] != "mod" and i["name"] not in grips]
+    if missing:
+        print("  not baked: " + ", ".join(missing))
+    print(f"wrote {WEAPONS_INDEX.relative_to(ROOT)}; next: python3 tools/ln.py scenes (the weapons carry the grips)")
+    return 0 if not missing else 1
 
 
 def cmd_build_web(args) -> int:
@@ -665,6 +719,11 @@ def main(argv=None) -> int:
     s.add_argument("--size", default="1400x900", help="browser window, WxH (e.g. 1440x800 for a MacBook Air tab)")
     s.add_argument("--dpr", type=float, default=1.0, help="device pixel ratio (2 = retina)")
     s.set_defaults(func=cmd_webshot)
+
+    s = sub.add_parser("bake-grasps", help="bake every weapon's finger grips into weapons.json (served build's range)")
+    s.add_argument("--url", default="http://localhost:8080/?ln-range&ln-bake")
+    s.add_argument("--timeout", type=int, default=300)
+    s.set_defaults(func=cmd_bake_grasps)
 
     s = sub.add_parser("preview", help="render shaders to LuckyNumbers/Logs/preview-<what>.png")
     s.add_argument("what", nargs="?", choices=["space", "ship", "arms", "station"], default="space")

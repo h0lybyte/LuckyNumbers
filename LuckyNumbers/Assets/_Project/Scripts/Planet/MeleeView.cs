@@ -25,6 +25,12 @@ namespace LuckyNumbers.Planet
         [SerializeField] float impulse = 2.5f;        // push on what it hits (N s)
 
         public Vector3 Grip => grip;
+        [Header("Baked grips (weapons.json, tools/ln.py bake-grasps)")]
+        [SerializeField] LuckyNumbers.Hands.GraspData graspLeft;
+        [SerializeField] LuckyNumbers.Hands.GraspData graspRight;
+        public LuckyNumbers.Hands.GraspData BakedGrip(int side) => side == 0 ? graspLeft : graspRight;
+        public void InitGrips(LuckyNumbers.Hands.GraspData left, LuckyNumbers.Hands.GraspData right) { graspLeft = left; graspRight = right; }
+
         public bool Swinging => _t >= 0f;
 
         float _t = -1f;   // swing progress 0..1 (-1: not swinging)

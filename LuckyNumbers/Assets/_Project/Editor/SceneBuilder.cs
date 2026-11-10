@@ -475,7 +475,10 @@ namespace LuckyNumbers.Editor
             public string kind;          // gun, melee or mod
             public string[] submeshes;   // material per submesh, in order: metal, darker metal, lights (unused dropped)
             public WeaponHold hold;      // guns: fitted to the arms by tools/blender/weapon_holds.py (absent: measured here)
+            public WeaponGrasp grasp;    // finger grips baked by tools/ln.py bake-grasps (absent: solved live on pickup)
         }
+        [System.Serializable] sealed class WeaponGrasp { public LuckyNumbers.Hands.GraspData left, right; }
+        static LuckyNumbers.Hands.GraspData Baked(LuckyNumbers.Hands.GraspData g) => g != null && g.rotations != null && g.rotations.Length > 0 ? g : null;
         [System.Serializable] sealed class WeaponHold
         {
             public float[] grip, foregrip, muzzle, offset, arms_shift;   // model space; offset and arms_shift: eye space
@@ -712,6 +715,7 @@ namespace LuckyNumbers.Editor
                 var melee = root.AddComponent<MeleeView>();
                 melee.Init(new Vector3(handle.x, gy, handle.z), tipPoint, edgeDir,
                            swingSeconds: hammer ? 0.75f : 0.4f, radius: hammer ? 0.1f : 0.04f, impulse: hammer ? 9f : 2.5f);
+                melee.InitGrips(null, Baked(item.grasp?.right));
                 EditorUtility.SetDirty(melee);
                 Debug.Log($"[SceneBuilder] melee {name}: grip ({handle.x:0.00}, {gy:0.00}, {handle.z:0.00}), tip {tipPoint}, edge {edgeDir}");
                 return root;
@@ -731,9 +735,11 @@ namespace LuckyNumbers.Editor
             }
             else
                 view.Init(grip, foregrip, muzzle, bolt);
+            view.InitGrips(Baked(item.grasp?.left), Baked(item.grasp?.right));
             EditorUtility.SetDirty(view);
             Debug.Log(fit != null
-                ? $"[SceneBuilder] gun {name}: {length:0.00} m, fitted hold: grip {V3(fit.grip)} at {V3(fit.offset)}, scale {fit.scale:0.00}, arms shift {V3(fit.arms_shift)}"
+                ? $"[SceneBuilder] gun {name}: {length:0.00} m, fitted hold: grip {V3(fit.grip)} at {V3(fit.offset)}, scale {fit.scale:0.00}, arms shift {V3(fit.arms_shift)}, " +
+                  $"grips {(Baked(item.grasp?.left) != null && Baked(item.grasp?.right) != null ? "baked" : "not baked (solved live)")}"
                 : $"[SceneBuilder] gun {name}: {length:0.00} m, measured: grip {grip}, foregrip {foregrip}, muzzle {muzzle} (run weapon_holds.py)");
             return root;
         }
