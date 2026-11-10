@@ -135,7 +135,7 @@ namespace LuckyNumbers.Planet
             m.SetFloat("_Haze", _config.Haze);
             m.SetFloat("_HazeDistance", _config.ChunkSize * math.max(1, _config.ViewChunks) * 1.1f);   // thick before the last chunks
             _ground.Configure(_config.ChunkSize, _config.ChunkResolution, _config.ViewChunks, _config.GroundHeight,
-                              _config.GroundNoiseScale, rng.NextFloat2(0f, 100f), _config.WreckDistance + 6f);
+                              _config.GroundNoiseScale, rng.NextFloat2(0f, 100f), _config.WreckDistance + _config.WreckLength * 0.6f);   // flat out past the wreck
             _ground.Stream(Vector3.zero, int.MaxValue);   // everything around the spawn, now
 
             // Boulders: squashed, tilted spheres half sunk into the ground; the first right beside your path.
@@ -144,7 +144,7 @@ namespace LuckyNumbers.Planet
                 var size = rng.NextFloat(_config.BoulderSizeMin, _config.BoulderSizeMax);
                 var p = i == 0 ? new float2(0.9f, 1.4f)    // a standing stone just ahead-right of where you wake
                               : rng.NextFloat2Direction() * rng.NextFloat(6f, math.max(8f, _config.BoulderSpread));
-                if (i > 0 && math.distance(p, new float2(0f, _config.WreckDistance)) < 6f) continue;   // keep the wreck clear
+                if (i > 0 && math.distance(p, new float2(0f, _config.WreckDistance)) < _config.WreckLength * 0.6f) continue;   // keep the wreck clear
                 var rock = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 rock.name = $"Boulder {i}";
                 var scale = i == 0 ? new Vector3(1.5f, 2.6f, 1.3f)

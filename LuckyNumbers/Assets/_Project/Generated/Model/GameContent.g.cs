@@ -1173,8 +1173,8 @@ namespace LuckyNumbers.Model
             BobFrequency = 1.9f,
             Sway = 0.06f,
             WakeSeconds = 3.2f,
-            WreckDistance = 26.0f,
-            WreckLength = 30.0f,
+            WreckDistance = 60.0f,
+            WreckLength = 80.0f,
             Haze = 0.6f,
             SunElevationDegrees = 38.0f,
             Hint = "Click to look around - WASD to move - Shift to run - Space to jump - E to pick up, click to throw - M for the map",
@@ -1607,7 +1607,7 @@ namespace LuckyNumbers.Model
             },
             TouchDistance = 1.4f,
             Boulders = 14,
-            BoulderSpread = 45.0f,
+            BoulderSpread = 90.0f,
             BoulderSizeMin = 1.2f,
             BoulderSizeMax = 3.5f,
             IdleClip = "relax",
@@ -1655,7 +1655,7 @@ namespace LuckyNumbers.Model
             },
             Landing = new FlightLanding
             {
-                ShipLength = 9.0f,
+                ShipLength = 16.0f,
                 StartAltitude = 110.0f,
                 StartDistance = 260.0f,
                 StartSpeed = 30.0f,
