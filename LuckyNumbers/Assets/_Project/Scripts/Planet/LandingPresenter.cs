@@ -284,7 +284,7 @@ namespace LuckyNumbers.Planet
                 _state.Assisted.Value = Assisted || HoverShip;
                 _state.HoverShip.Value = HoverShip;
                 _state.Altitude.Value = altitude;
-                _state.Climb.Value = -vertical;
+                _state.Climb.Value = _velocity.y;   // true vertical speed (the gauges below stay relative to the slope)
                 _state.Speed.Value = _velocity.magnitude;
                 _state.SetSpeed.Value = HoverShip ? 0f : Assisted ? _throttle * A.MaxSpeed * (_input.Sprinting.Value ? math.max(1f, A.BoostSpeed) : 1f) : _throttle * 100f;
                 _state.Hovering.Value = hovering;
@@ -405,7 +405,11 @@ namespace LuckyNumbers.Planet
             var safe = L.MaxTouchdownVertical * 0.8f;
             var flare = math.max(1f, H.FlareHeight);
             var cap = altitude < flare ? math.lerp(H.TouchdownSpeed, safe, altitude / flare) : safe + (altitude - flare) * 1.2f;
-            if (_velocity.y < -cap) _velocity.y = -cap;
+            // Closing on the ground, not just sinking: drifting over rising ground brings it up at you (slope x
+            // horizontal speed), so the floor on vertical speed is the ground's own rate minus the cap.
+            var n = _ground.NormalAt(_position);
+            var groundRate = n.y > 0.2f ? -(_velocity.x * n.x + _velocity.z * n.z) / n.y : 0f;
+            if (_velocity.y - groundRate < -cap) _velocity.y = groundRate - cap;
             _position += _velocity * dt;
             Ship.SetHeat(0f, 0.6f + 0.9f * (_velocity.magnitude / math.max(1f, H.MaxSpeed)) * boost + (pushing ? 0.5f : 0.2f));
         }

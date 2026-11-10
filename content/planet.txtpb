@@ -5,11 +5,19 @@
 backdrop_ref: "space/systems/home"
 
 # Endless ground: 5 x 5 chunks of 48 m follow you (haze hides the far edge).
-ground_height: 7
-ground_noise_scale: 0.018
+ground_height: 14
+ground_noise_scale: 0.016
 chunk_size: 48
 chunk_resolution: 33
 view_chunks: 3
+# The horizon: 192 m chunks out to ~860 m, so from the air you see land to the edge of the haze.
+far_chunk_scale: 4
+far_resolution: 24
+far_view_chunks: 4
+# Gentle dunes round the wreck (a third of the hills), big rolling swells further out.
+site_relief: 0.35
+swell_height: 22
+swell_scale: 0.22
 surface_noise_scale: 0.12
 
 walk_speed: 4.5
@@ -94,7 +102,7 @@ map {
 # Arrival: you fly your own fighter in and land it near the wreck. Fully piloted: mouse pitches and yaws,
 # A/D roll, W/S throttle, Shift boost, Space lift thrusters. Touch down slow and level, or crash and retry.
 landing {
-  ship_length: 16      # your fighter, nose to tail (about 9 of you)
+  ship_length: 24      # your fighter, nose to tail (about 13 of you)
   start_altitude: 110
   start_distance: 260
   start_speed: 30
@@ -113,8 +121,8 @@ landing {
   max_touchdown_tilt: 18
   wing_lift: 0.011      # level flight at ~30 m/s
   grip: 1.5
-  chase_distance: 2.2
-  chase_height: 0.7
+  chase_distance: 1.45   # ship lengths behind: the fighter fills more of the screen
+  chase_height: 0.42
   hint: "Mouse aim - W/S thrust - A/D strafe - Q/E roll - Space/C up/down - Shift boost - X brake. Stop over the green pad, hold C to land."
   # Six-axis controls with flight assist: aim and travel independent, released keys ease out, gravity
   # cancelled; near the ground descents ease and the ship levels itself. (Off: the flight model below.)

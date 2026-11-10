@@ -21,7 +21,7 @@ namespace LuckyNumbers.Editor
         const string Characters = "Assets/_Project/Art/Characters/";
 
         /// <summary>Bump when these rules change: Unity re-imports what they cover (otherwise old settings stick).</summary>
-        public override uint GetVersion() => 4;   // 3: ship textures kept sharp (1024, no crunch, anisotropic)
+        public override uint GetVersion() => 5;   // 5: hero ship meshes uncompressed (3: ship textures kept sharp)
 
         bool Ours => assetPath.StartsWith(Models) || assetPath.StartsWith(Characters);
         bool Kit => assetPath.StartsWith(Models) && assetPath.Substring(Models.Length).Split('/')[0].EndsWith("Kit");
@@ -50,6 +50,7 @@ namespace LuckyNumbers.Editor
             m.meshOptimizationFlags = MeshOptimizationFlags.Everything;
             m.isReadable = false;
             m.addCollider = false;
+            if (Hero) m.meshCompression = ModelImporterMeshCompression.Off;   // seen up close: no vertex quantising
             if (Kit)
             {
                 m.isReadable = true;

@@ -40,9 +40,9 @@ export function FlightHud() {
     : f.hoverShip
       ? f.hovering || f.climb < -0.8   // descending: by the key, or still sinking after it
         ? f.altitude < 5 ? 3 : 2
-        : f.padDistance > 12 ? 0 : f.speed > 2.5 ? 1 : 2
+        : f.padDistance > 18 ? 0 : f.speed > 2.5 ? 1 : 2
       : f.hovering ? (f.altitude < 15 ? 3 : 2) : slow ? 2 : f.padDistance > 45 ? 0 : 1;
-  const offPad = step >= 2 && f.padDistance > (f.hoverShip ? 12 : 45);
+  const offPad = step >= 2 && f.padDistance > (f.hoverShip ? 18 : 45);
   const low = f.altitude < 40;
   const warnings = low ? warn(f) : [];
   const keys = f.hoverShip
@@ -120,7 +120,7 @@ function warn(f: FlightState): string[] {
 
 /** The pad, relative to your nose: up = ahead, right = to your right. */
 function PadArrow({ bearing, distance }: { bearing: number; distance: number }) {
-  const below = distance < 6;
+  const below = distance < 9;
   return (
     <div className="flight-pad">
       <svg viewBox="-30 -30 60 60" aria-hidden="true">

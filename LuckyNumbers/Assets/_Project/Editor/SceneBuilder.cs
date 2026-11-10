@@ -179,7 +179,7 @@ namespace LuckyNumbers.Editor
             Object.DestroyImmediate(pad.GetComponent<Collider>());
             pad.GetComponent<MeshRenderer>().sharedMaterial = padMat;
             pad.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            pad.transform.localScale = new Vector3(14f, 0.04f, 14f);   // a 14 m disc, flat on the ground
+            pad.transform.localScale = new Vector3(22f, 0.04f, 22f);   // a 22 m disc, flat on the ground (fits the 24 m fighter)
             pad.SetActive(false);
             // Relic shapes (copied per relic at the crash site, coloured per relic): an amulet (a jade disc on a cord
             // ring) and a vase (round body, neck, lip). No colliders: you pick them up by walking close.

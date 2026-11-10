@@ -136,6 +136,12 @@ namespace LuckyNumbers.Planet
             m.SetFloat("_HazeDistance", _config.ChunkSize * math.max(1, _config.ViewChunks) * 1.1f);   // thick before the last chunks
             _ground.Configure(_config.ChunkSize, _config.ChunkResolution, _config.ViewChunks, _config.GroundHeight,
                               _config.GroundNoiseScale, rng.NextFloat2(0f, 100f), _config.WreckDistance + _config.WreckLength * 0.6f);   // flat out past the wreck
+            // The far material is a copy of the near one: set everything they share first.
+            var far = math.max(0, _config.FarViewChunks);
+            var reach = far > 0 ? (far + 0.5f) * _config.ChunkSize * math.max(2, _config.FarChunkScale) : 0f;
+            _ground.Material.SetFloat("_HazeHorizon", reach);
+            _ground.ConfigureFar(_config.FarChunkScale, _config.FarResolution, _config.FarViewChunks,
+                                 _config.SiteRelief, _config.SwellHeight, _config.SwellScale);
             _ground.Stream(Vector3.zero, int.MaxValue);   // everything around the spawn, now
 
             // Boulders: squashed, tilted spheres half sunk into the ground; the first right beside your path.
