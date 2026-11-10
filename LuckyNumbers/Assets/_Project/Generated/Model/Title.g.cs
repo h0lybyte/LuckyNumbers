@@ -88,7 +88,9 @@ namespace LuckyNumbers.Model
     public sealed class ShipHangar
     {
         /// <summary>
-        /// Ship length, and how far ahead of the camera it floats; how far below the view's centre (x its length).
+        /// Ship length (only sets the scale: the distance follows it), and how far ahead of the camera it floats
+        /// (0: as far as the planet's chase camera sits, so it fills the screen as it does when you fly it); how far
+        /// below the view's centre (x its length).
         /// </summary>
         public float ShipLength { get; set; }
         public float Distance { get; set; }

@@ -104,7 +104,7 @@ namespace LuckyNumbers.Title
         /// <summary>Keeps the ship turning in front of the camera (which still orbits) until the pick; slides it in and out.</summary>
         async UniTask PoseAsync(CancellationToken ct)
         {
-            var h = GameContent.Title.Hangar ?? new ShipHangar { ShipLength = 1f, Distance = 2.4f };
+            var h = GameContent.Title.Hangar ?? new ShipHangar { ShipLength = 1f };
             var enter = math.max(0.01f, h.EnterSeconds);
             var angle = 200f;   // starts three-quarter on, nose to the left
             var shown = 0f;
@@ -118,12 +118,29 @@ namespace LuckyNumbers.Title
                 var e = math.smoothstep(0f, 1f, shown);
                 // Slides up from below the view as it appears, back down as it goes.
                 var below = cam.up * (h.ShipLength * (h.Drop + (1f - e) * 1.5f));
-                var at = cam.position + cam.forward * h.Distance - below;
+                var at = cam.position + cam.forward * MatchedDistance(h) - below;
                 var facing = Quaternion.LookRotation(-cam.forward, cam.up);   // nose toward the camera at 0
                 _ship.Pose(at, facing * Quaternion.AngleAxis(h.TiltDegrees, Vector3.right) * Quaternion.AngleAxis(angle, Vector3.up));
                 await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
             }
             _ship.Hide();
+        }
+
+        /// <summary>The planet's chase camera at rest (SceneBuilder's flight camera, LandingPresenter).</summary>
+        const float FlightFovDegrees = 65f;
+
+        /// <summary>
+        /// How far ahead of the camera the hangar ship floats so it fills the screen as it does when you fly it on the
+        /// planet: the chase camera's distance in ship lengths (PlanetScene.landing), corrected for this camera's field
+        /// of view. `distance` > 0 in the content overrides it.
+        /// </summary>
+        float MatchedDistance(ShipHangar h)
+        {
+            if (h.Distance > 0f) return h.Distance;
+            var l = GameContent.Planet.Landing;
+            var lengths = l != null ? math.sqrt(l.ChaseDistance * l.ChaseDistance + l.ChaseHeight * l.ChaseHeight) : 1.5f;
+            var fov = _space.Camera.fieldOfView;
+            return h.ShipLength * lengths * math.tan(math.radians(FlightFovDegrees) * 0.5f) / math.tan(math.radians(fov) * 0.5f);
         }
 
         public void Dispose()
