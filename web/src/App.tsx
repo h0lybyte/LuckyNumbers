@@ -63,23 +63,18 @@ function Hud() {
   );
 }
 
-/** How to get the mouse back (locked) or into the view (free). Fades a few seconds after each change. */
+/** Corner badge: which keys free the mouse (locked), or that a click takes it (free). Always shown on Planet. */
 function PointerHint({ locked }: { locked: boolean }) {
-  const [visible, setVisible] = useState(true);
-  useEffect(() => {
-    setVisible(true);
-    const t = setTimeout(() => setVisible(false), locked ? 3500 : 6000);
-    return () => clearTimeout(t);
-  }, [locked]);
-
   return (
-    <div className={`pointer-hint${visible ? "" : " faded"}`} aria-live="polite">
+    <div className="pointer-hint" aria-live="polite">
       {locked ? (
         <>
-          <kbd>Tab</kbd> or <kbd>Esc</kbd> frees the mouse
+          <kbd>Tab</kbd>
+          <span className="sep">/</span>
+          <kbd>Esc</kbd> free mouse
         </>
       ) : (
-        <>Click the view to look around</>
+        <>Click to look</>
       )}
     </div>
   );
