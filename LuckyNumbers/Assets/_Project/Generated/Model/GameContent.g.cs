@@ -177,7 +177,7 @@ namespace LuckyNumbers.Model
                             {
                                 RelicEffect.Heal,
                             },
-                            Amount = 10.0f,
+                            Amount = 3.0f,
                         },
                         new RelicRoll
                         {
@@ -189,7 +189,7 @@ namespace LuckyNumbers.Model
                             {
                                 RelicEffect.Heal,
                             },
-                            Amount = 35.0f,
+                            Amount = 8.0f,
                         },
                         new RelicRoll
                         {
@@ -226,6 +226,324 @@ namespace LuckyNumbers.Model
             PickupDistance = 2.2f,
             PickupPrompt = "E: pick up the {name}",
             UsePrompt = "R: use the {name}",
+        };
+
+        /// <summary>From <c>content/character.txtpb</c>.</summary>
+        public static readonly CharacterConfig Character = new CharacterConfig
+        {
+            DefaultCallsign = "Salvager",
+            Abilities =
+            {
+                new AbilityDef
+                {
+                    Id = "str",
+                    Name = "Strength",
+                    Abbr = "STR",
+                    Blurb = "Lifting, hauling, hitting hard.",
+                },
+                new AbilityDef
+                {
+                    Id = "dex",
+                    Name = "Dexterity",
+                    Abbr = "DEX",
+                    Blurb = "Hands, reflexes, flying.",
+                },
+                new AbilityDef
+                {
+                    Id = "con",
+                    Name = "Constitution",
+                    Abbr = "CON",
+                    Blurb = "Toughness. Adds to Stamina.",
+                },
+                new AbilityDef
+                {
+                    Id = "int",
+                    Name = "Intelligence",
+                    Abbr = "INT",
+                    Blurb = "Machines, code, knowing what a relic is.",
+                },
+                new AbilityDef
+                {
+                    Id = "wis",
+                    Name = "Wisdom",
+                    Abbr = "WIS",
+                    Blurb = "Instinct and awareness. Adds to relic rolls.",
+                },
+                new AbilityDef
+                {
+                    Id = "cha",
+                    Name = "Charisma",
+                    Abbr = "CHA",
+                    Blurb = "Talking, bargaining, nerve.",
+                },
+            },
+            AbilityRoll = new DiceRule
+            {
+                Count = 4,
+                Sides = 6,
+                DropLowest = 1,
+            },
+            ShiftBudget = 4,
+            FreePoints = 2,
+            ScoreMin = 6,
+            ScoreMax = 18,
+            Classes =
+            {
+                new CharacterClass
+                {
+                    Id = "ace",
+                    Name = "Ace",
+                    Blurb = "A pilot first. Lands anything, anywhere, and walks away.",
+                    KeyAbility = "dex",
+                    StaminaPerLevel = 6,
+                    HpPerLevel = 5,
+                    TrainedSkills =
+                    {
+                        "piloting",
+                        "perception",
+                        "acrobatics",
+                    },
+                },
+                new CharacterClass
+                {
+                    Id = "breaker",
+                    Name = "Breaker",
+                    Blurb = "Cuts wrecks open and carries out what's inside. Hard to put down.",
+                    KeyAbility = "str",
+                    StaminaPerLevel = 7,
+                    HpPerLevel = 7,
+                    TrainedSkills =
+                    {
+                        "athletics",
+                        "engineering",
+                        "intimidate",
+                    },
+                },
+                new CharacterClass
+                {
+                    Id = "hacker",
+                    Name = "Hacker",
+                    Blurb = "Talks to machines. Old locks, dead ships, sealed vaults.",
+                    KeyAbility = "int",
+                    StaminaPerLevel = 5,
+                    HpPerLevel = 4,
+                    TrainedSkills =
+                    {
+                        "computers",
+                        "engineering",
+                        "appraise",
+                    },
+                },
+                new CharacterClass
+                {
+                    Id = "medic",
+                    Name = "Medic",
+                    Blurb = "Keeps the crew breathing, and reads trouble before it lands.",
+                    KeyAbility = "wis",
+                    StaminaPerLevel = 5,
+                    HpPerLevel = 5,
+                    TrainedSkills =
+                    {
+                        "medicine",
+                        "survival",
+                        "perception",
+                    },
+                },
+                new CharacterClass
+                {
+                    Id = "fixer",
+                    Name = "Fixer",
+                    Blurb = "Knows a buyer for everything, and what it's really worth.",
+                    KeyAbility = "cha",
+                    StaminaPerLevel = 6,
+                    HpPerLevel = 4,
+                    TrainedSkills =
+                    {
+                        "persuade",
+                        "bluff",
+                        "appraise",
+                    },
+                },
+            },
+            Origins =
+            {
+                new CharacterOrigin
+                {
+                    Id = "station",
+                    Name = "Station-born",
+                    Blurb = "Grew up in corridors and server rooms.",
+                    Bonuses =
+                    {
+                        new AbilityBonus
+                        {
+                            Ability = "int",
+                            Amount = 2,
+                        },
+                    },
+                    Hp = 4,
+                },
+                new CharacterOrigin
+                {
+                    Id = "belt",
+                    Name = "Belt miner",
+                    Blurb = "Rock dust, long shifts, thin air.",
+                    Bonuses =
+                    {
+                        new AbilityBonus
+                        {
+                            Ability = "con",
+                            Amount = 2,
+                        },
+                    },
+                    Hp = 6,
+                },
+                new CharacterOrigin
+                {
+                    Id = "colony",
+                    Name = "Colony kid",
+                    Blurb = "Raised under a real sky, on a world that wanted you dead.",
+                    Bonuses =
+                    {
+                        new AbilityBonus
+                        {
+                            Ability = "wis",
+                            Amount = 2,
+                        },
+                    },
+                    Hp = 5,
+                },
+                new CharacterOrigin
+                {
+                    Id = "freighter",
+                    Name = "Freighter brat",
+                    Blurb = "Born in a cargo hold, flying before you could walk.",
+                    Bonuses =
+                    {
+                        new AbilityBonus
+                        {
+                            Ability = "dex",
+                            Amount = 2,
+                        },
+                    },
+                    Hp = 4,
+                },
+                new CharacterOrigin
+                {
+                    Id = "heavy",
+                    Name = "Heavyworlder",
+                    Blurb = "From a high-gravity world: strong, a little slow.",
+                    Bonuses =
+                    {
+                        new AbilityBonus
+                        {
+                            Ability = "str",
+                            Amount = 2,
+                        },
+                        new AbilityBonus
+                        {
+                            Ability = "dex",
+                            Amount = -1,
+                        },
+                    },
+                    Hp = 6,
+                },
+            },
+            DefaultClass = "ace",
+            DefaultOrigin = "freighter",
+            Skills =
+            {
+                new SkillDef
+                {
+                    Id = "athletics",
+                    Name = "Athletics",
+                    Ability = "str",
+                },
+                new SkillDef
+                {
+                    Id = "acrobatics",
+                    Name = "Acrobatics",
+                    Ability = "dex",
+                },
+                new SkillDef
+                {
+                    Id = "piloting",
+                    Name = "Piloting",
+                    Ability = "dex",
+                },
+                new SkillDef
+                {
+                    Id = "stealth",
+                    Name = "Stealth",
+                    Ability = "dex",
+                },
+                new SkillDef
+                {
+                    Id = "computers",
+                    Name = "Computers",
+                    Ability = "int",
+                },
+                new SkillDef
+                {
+                    Id = "engineering",
+                    Name = "Engineering",
+                    Ability = "int",
+                },
+                new SkillDef
+                {
+                    Id = "appraise",
+                    Name = "Appraise",
+                    Ability = "int",
+                },
+                new SkillDef
+                {
+                    Id = "medicine",
+                    Name = "Medicine",
+                    Ability = "wis",
+                },
+                new SkillDef
+                {
+                    Id = "perception",
+                    Name = "Perception",
+                    Ability = "wis",
+                },
+                new SkillDef
+                {
+                    Id = "survival",
+                    Name = "Survival",
+                    Ability = "wis",
+                },
+                new SkillDef
+                {
+                    Id = "persuade",
+                    Name = "Persuade",
+                    Ability = "cha",
+                },
+                new SkillDef
+                {
+                    Id = "bluff",
+                    Name = "Bluff",
+                    Ability = "cha",
+                },
+                new SkillDef
+                {
+                    Id = "intimidate",
+                    Name = "Intimidate",
+                    Ability = "cha",
+                },
+            },
+            TrainedBonus = 3,
+            LevelXp =
+            {
+                300,
+                900,
+                2700,
+                6500,
+                14000,
+            },
+            RelicAbility = "wis",
+            StaminaAbility = "con",
+            XpPerRelic = 40,
+            XpPerArtifact = 150,
         };
 
         /// <summary>From <c>content/credits.txtpb</c>.</summary>

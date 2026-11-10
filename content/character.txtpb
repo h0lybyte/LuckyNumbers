@@ -1,0 +1,101 @@
+# proto-file: luckynumbers/v1/character.proto
+# proto-message: luckynumbers.v1.CharacterConfig
+# The player's character sheet: d20 rules, original classes and origins. Placeholder numbers; tune with gameplay.
+# Abilities roll from the lucky number (4d6, drop the lowest); before you leave the station you can take up to
+# shift_budget points off abilities and put them (plus free_points) on others, within score_min..score_max.
+
+default_callsign: "Salvager"
+
+abilities { id: "str" name: "Strength"     abbr: "STR" blurb: "Lifting, hauling, hitting hard." }
+abilities { id: "dex" name: "Dexterity"    abbr: "DEX" blurb: "Hands, reflexes, flying." }
+abilities { id: "con" name: "Constitution" abbr: "CON" blurb: "Toughness. Adds to Stamina." }
+abilities { id: "int" name: "Intelligence" abbr: "INT" blurb: "Machines, code, knowing what a relic is." }
+abilities { id: "wis" name: "Wisdom"       abbr: "WIS" blurb: "Instinct and awareness. Adds to relic rolls." }
+abilities { id: "cha" name: "Charisma"     abbr: "CHA" blurb: "Talking, bargaining, nerve." }
+
+ability_roll { count: 4 sides: 6 drop_lowest: 1 }
+shift_budget: 4
+free_points: 2
+score_min: 6
+score_max: 18
+
+classes {
+  id: "ace" name: "Ace" key_ability: "dex"
+  blurb: "A pilot first. Lands anything, anywhere, and walks away."
+  stamina_per_level: 6 hp_per_level: 5
+  trained_skills: ["piloting", "perception", "acrobatics"]
+}
+classes {
+  id: "breaker" name: "Breaker" key_ability: "str"
+  blurb: "Cuts wrecks open and carries out what's inside. Hard to put down."
+  stamina_per_level: 7 hp_per_level: 7
+  trained_skills: ["athletics", "engineering", "intimidate"]
+}
+classes {
+  id: "hacker" name: "Hacker" key_ability: "int"
+  blurb: "Talks to machines. Old locks, dead ships, sealed vaults."
+  stamina_per_level: 5 hp_per_level: 4
+  trained_skills: ["computers", "engineering", "appraise"]
+}
+classes {
+  id: "medic" name: "Medic" key_ability: "wis"
+  blurb: "Keeps the crew breathing, and reads trouble before it lands."
+  stamina_per_level: 5 hp_per_level: 5
+  trained_skills: ["medicine", "survival", "perception"]
+}
+classes {
+  id: "fixer" name: "Fixer" key_ability: "cha"
+  blurb: "Knows a buyer for everything, and what it's really worth."
+  stamina_per_level: 6 hp_per_level: 4
+  trained_skills: ["persuade", "bluff", "appraise"]
+}
+default_class: "ace"
+
+origins {
+  id: "station" name: "Station-born" hp: 4
+  blurb: "Grew up in corridors and server rooms."
+  bonuses { ability: "int" amount: 2 }
+}
+origins {
+  id: "belt" name: "Belt miner" hp: 6
+  blurb: "Rock dust, long shifts, thin air."
+  bonuses { ability: "con" amount: 2 }
+}
+origins {
+  id: "colony" name: "Colony kid" hp: 5
+  blurb: "Raised under a real sky, on a world that wanted you dead."
+  bonuses { ability: "wis" amount: 2 }
+}
+origins {
+  id: "freighter" name: "Freighter brat" hp: 4
+  blurb: "Born in a cargo hold, flying before you could walk."
+  bonuses { ability: "dex" amount: 2 }
+}
+origins {
+  id: "heavy" name: "Heavyworlder" hp: 6
+  blurb: "From a high-gravity world: strong, a little slow."
+  bonuses { ability: "str" amount: 2 }
+  bonuses { ability: "dex" amount: -1 }
+}
+default_origin: "freighter"
+
+skills { id: "athletics"   name: "Athletics"   ability: "str" }
+skills { id: "acrobatics"  name: "Acrobatics"  ability: "dex" }
+skills { id: "piloting"    name: "Piloting"    ability: "dex" }
+skills { id: "stealth"     name: "Stealth"     ability: "dex" }
+skills { id: "computers"   name: "Computers"   ability: "int" }
+skills { id: "engineering" name: "Engineering" ability: "int" }
+skills { id: "appraise"    name: "Appraise"    ability: "int" }
+skills { id: "medicine"    name: "Medicine"    ability: "wis" }
+skills { id: "perception"  name: "Perception"  ability: "wis" }
+skills { id: "survival"    name: "Survival"    ability: "wis" }
+skills { id: "persuade"    name: "Persuade"    ability: "cha" }
+skills { id: "bluff"       name: "Bluff"       ability: "cha" }
+skills { id: "intimidate"  name: "Intimidate"  ability: "cha" }
+trained_bonus: 3
+
+level_xp: [300, 900, 2700, 6500, 14000]
+relic_ability: "wis"
+stamina_ability: "con"
+xp_per_relic: 40
+xp_per_artifact: 150

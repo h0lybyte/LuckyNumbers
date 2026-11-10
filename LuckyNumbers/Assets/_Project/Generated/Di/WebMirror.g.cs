@@ -29,6 +29,7 @@ namespace LuckyNumbers.Model
         public static readonly string[] States =
         {
             "RelicInventory",
+            "CharacterSheet",
             "FlowState",
             "LoadingState",
             "FlightState",
@@ -56,91 +57,138 @@ namespace LuckyNumbers.Model
                 sink.MarkState(0);
             }
             {
-                var s = c.Resolve<FlowState>();
-                d.Add(s.Scene.Subscribe(_ => sink.MarkState(1)));
+                var s = c.Resolve<CharacterSheet>();
+                d.Add(s.Callsign.Subscribe(_ => sink.MarkState(1)));
+                d.Add(s.ClassId.Subscribe(_ => sink.MarkState(1)));
+                d.Add(s.OriginId.Subscribe(_ => sink.MarkState(1)));
+                d.Add(s.Level.Subscribe(_ => sink.MarkState(1)));
+                d.Add(s.Xp.Subscribe(_ => sink.MarkState(1)));
+                d.Add(s.XpNext.Subscribe(_ => sink.MarkState(1)));
+                NotifyCollectionChangedEventHandler<int> hRolled = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(1);
+                s.Rolled.CollectionChanged += hRolled;
+                d.Add(Disposable.Create(() => s.Rolled.CollectionChanged -= hRolled));
+                NotifyCollectionChangedEventHandler<int> hMoved = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(1);
+                s.Moved.CollectionChanged += hMoved;
+                d.Add(Disposable.Create(() => s.Moved.CollectionChanged -= hMoved));
+                NotifyCollectionChangedEventHandler<int> hScores = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(1);
+                s.Scores.CollectionChanged += hScores;
+                d.Add(Disposable.Create(() => s.Scores.CollectionChanged -= hScores));
+                NotifyCollectionChangedEventHandler<int> hMods = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(1);
+                s.Mods.CollectionChanged += hMods;
+                d.Add(Disposable.Create(() => s.Mods.CollectionChanged -= hMods));
+                d.Add(s.Points.Subscribe(_ => sink.MarkState(1)));
+                d.Add(s.CanLower.Subscribe(_ => sink.MarkState(1)));
+                d.Add(s.Locked.Subscribe(_ => sink.MarkState(1)));
+                d.Add(s.Stamina.Subscribe(_ => sink.MarkState(1)));
+                d.Add(s.StaminaMax.Subscribe(_ => sink.MarkState(1)));
+                NotifyCollectionChangedEventHandler<string> hSkills = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(1);
+                s.Skills.CollectionChanged += hSkills;
+                d.Add(Disposable.Create(() => s.Skills.CollectionChanged -= hSkills));
+                d.Add(s.RelicBonus.Subscribe(_ => sink.MarkState(1)));
+                d.Add(s.Seed.Subscribe(_ => sink.MarkState(1)));
+                NotifyCollectionChangedEventHandler<string> hAbilities = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(1);
+                s.Abilities.CollectionChanged += hAbilities;
+                d.Add(Disposable.Create(() => s.Abilities.CollectionChanged -= hAbilities));
+                NotifyCollectionChangedEventHandler<string> hClasses = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(1);
+                s.Classes.CollectionChanged += hClasses;
+                d.Add(Disposable.Create(() => s.Classes.CollectionChanged -= hClasses));
+                NotifyCollectionChangedEventHandler<string> hOrigins = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(1);
+                s.Origins.CollectionChanged += hOrigins;
+                d.Add(Disposable.Create(() => s.Origins.CollectionChanged -= hOrigins));
+                NotifyCollectionChangedEventHandler<int> hAdjust = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(1);
+                s.Adjust.CollectionChanged += hAdjust;
+                d.Add(Disposable.Create(() => s.Adjust.CollectionChanged -= hAdjust));
+                d.Add(s.XpLevelStart.Subscribe(_ => sink.MarkState(1)));
+                d.Add(s.RelicAbility.Subscribe(_ => sink.MarkState(1)));
+                d.Add(s.Setup.Subscribe(_ => sink.MarkState(1)));
                 sink.MarkState(1);
             }
             {
-                var s = c.Resolve<LoadingState>();
-                d.Add(s.Progress.Subscribe(_ => sink.MarkState(2)));
-                d.Add(s.Ready.Subscribe(_ => sink.MarkState(2)));
+                var s = c.Resolve<FlowState>();
+                d.Add(s.Scene.Subscribe(_ => sink.MarkState(2)));
                 sink.MarkState(2);
             }
             {
-                var s = c.Resolve<FlightState>();
-                d.Add(s.Flying.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.Crashed.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.Landed.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.Altitude.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.Climb.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.Speed.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.SetSpeed.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.Hovering.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.Boost.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.PadDistance.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.PadBearing.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.Descent.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.Drift.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.Tilt.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.MaxDescent.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.MaxDrift.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.MaxTilt.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.CrashReason.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.Assisted.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.HoverShip.Subscribe(_ => sink.MarkState(3)));
+                var s = c.Resolve<LoadingState>();
+                d.Add(s.Progress.Subscribe(_ => sink.MarkState(3)));
+                d.Add(s.Ready.Subscribe(_ => sink.MarkState(3)));
                 sink.MarkState(3);
             }
             {
-                var s = c.Resolve<MapState>();
-                d.Add(s.Open.Subscribe(_ => sink.MarkState(4)));
+                var s = c.Resolve<FlightState>();
+                d.Add(s.Flying.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.Crashed.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.Landed.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.Altitude.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.Climb.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.Speed.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.SetSpeed.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.Hovering.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.Boost.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.PadDistance.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.PadBearing.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.Descent.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.Drift.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.Tilt.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.MaxDescent.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.MaxDrift.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.MaxTilt.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.CrashReason.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.Assisted.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.HoverShip.Subscribe(_ => sink.MarkState(4)));
                 sink.MarkState(4);
             }
             {
-                var s = c.Resolve<LandingSite>();
-                d.Add(s.Valid.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.Body.Subscribe(_ => sink.MarkState(5)));
+                var s = c.Resolve<MapState>();
+                d.Add(s.Open.Subscribe(_ => sink.MarkState(5)));
                 sink.MarkState(5);
             }
             {
-                var s = c.Resolve<PlayerShip>();
-                d.Add(s.Skin.Subscribe(_ => sink.MarkState(6)));
+                var s = c.Resolve<LandingSite>();
+                d.Add(s.Valid.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.Body.Subscribe(_ => sink.MarkState(6)));
                 sink.MarkState(6);
             }
             {
-                var s = c.Resolve<PlayerHealth>();
-                d.Add(s.Current.Subscribe(_ => sink.MarkState(7)));
-                d.Add(s.Max.Subscribe(_ => sink.MarkState(7)));
+                var s = c.Resolve<PlayerShip>();
+                d.Add(s.Skin.Subscribe(_ => sink.MarkState(7)));
                 sink.MarkState(7);
             }
             {
-                var s = c.Resolve<StationState>();
-                d.Add(s.Lights.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.Room.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.Call.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.Caller.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.Objective.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.Prompt.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.Psx.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.Plan.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.MapOpen.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.PlayerCol.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.PlayerRow.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.PlayerYaw.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.DockCol.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.DockRow.Subscribe(_ => sink.MarkState(8)));
-                NotifyCollectionChangedEventHandler<string> hRooms = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(8);
-                s.Rooms.CollectionChanged += hRooms;
-                d.Add(Disposable.Create(() => s.Rooms.CollectionChanged -= hRooms));
+                var s = c.Resolve<PlayerHealth>();
+                d.Add(s.Current.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.Max.Subscribe(_ => sink.MarkState(8)));
                 sink.MarkState(8);
             }
             {
+                var s = c.Resolve<StationState>();
+                d.Add(s.Lights.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.Room.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.Call.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.Caller.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.Objective.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.Prompt.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.Psx.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.Plan.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.MapOpen.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.PlayerCol.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.PlayerRow.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.PlayerYaw.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.DockCol.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.DockRow.Subscribe(_ => sink.MarkState(9)));
+                NotifyCollectionChangedEventHandler<string> hRooms = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(9);
+                s.Rooms.CollectionChanged += hRooms;
+                d.Add(Disposable.Create(() => s.Rooms.CollectionChanged -= hRooms));
+                sink.MarkState(9);
+            }
+            {
                 var s = c.Resolve<DiceState>();
-                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(9);
+                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(10);
                 s.Faces.CollectionChanged += hFaces;
                 d.Add(Disposable.Create(() => s.Faces.CollectionChanged -= hFaces));
-                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(9)));
-                d.Add(s.Seed.Subscribe(_ => sink.MarkState(9)));
-                sink.MarkState(9);
+                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Seed.Subscribe(_ => sink.MarkState(10)));
+                sink.MarkState(10);
             }
             d.Add(c.Resolve<ISubscriber<RelicRolled>>().Subscribe(e =>
             {
@@ -155,6 +203,41 @@ namespace LuckyNumbers.Model
             d.Add(c.Resolve<ISubscriber<RelicUseRequested>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("RelicUseRequested"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<CharacterSheetReady>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("CharacterSheetReady"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<CharacterSetupDone>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("CharacterSetupDone"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<CharacterAbilityAdjustRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("CharacterAbilityAdjustRequested"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<CharacterClassRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("CharacterClassRequested"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<CharacterOriginRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("CharacterOriginRequested"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<CharacterResetRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("CharacterResetRequested"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<CharacterXpGained>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("CharacterXpGained"), e);
                 sink.EndEvent();
             }));
             d.Add(c.Resolve<ISubscriber<SceneChangeRequested>>().Subscribe(e =>
@@ -241,15 +324,16 @@ namespace LuckyNumbers.Model
             switch (index)
             {
                 case 0: Write(b, c.Resolve<RelicInventory>()); break;
-                case 1: Write(b, c.Resolve<FlowState>()); break;
-                case 2: Write(b, c.Resolve<LoadingState>()); break;
-                case 3: Write(b, c.Resolve<FlightState>()); break;
-                case 4: Write(b, c.Resolve<MapState>()); break;
-                case 5: Write(b, c.Resolve<LandingSite>()); break;
-                case 6: Write(b, c.Resolve<PlayerShip>()); break;
-                case 7: Write(b, c.Resolve<PlayerHealth>()); break;
-                case 8: Write(b, c.Resolve<StationState>()); break;
-                case 9: Write(b, c.Resolve<DiceState>()); break;
+                case 1: Write(b, c.Resolve<CharacterSheet>()); break;
+                case 2: Write(b, c.Resolve<FlowState>()); break;
+                case 3: Write(b, c.Resolve<LoadingState>()); break;
+                case 4: Write(b, c.Resolve<FlightState>()); break;
+                case 5: Write(b, c.Resolve<MapState>()); break;
+                case 6: Write(b, c.Resolve<LandingSite>()); break;
+                case 7: Write(b, c.Resolve<PlayerShip>()); break;
+                case 8: Write(b, c.Resolve<PlayerHealth>()); break;
+                case 9: Write(b, c.Resolve<StationState>()); break;
+                case 10: Write(b, c.Resolve<DiceState>()); break;
             }
         }
 
@@ -263,6 +347,24 @@ namespace LuckyNumbers.Model
                     return true;
                 case "RelicUseRequested":
                     c.Resolve<IPublisher<RelicUseRequested>>().Publish(new RelicUseRequested((int)Json.Number(Json.Get(o, "index"))));
+                    return true;
+                case "CharacterSheetReady":
+                    c.Resolve<IPublisher<CharacterSheetReady>>().Publish(new CharacterSheetReady(Json.Get(o, "on") is bool characterSheetReadyOn && characterSheetReadyOn));
+                    return true;
+                case "CharacterSetupDone":
+                    c.Resolve<IPublisher<CharacterSetupDone>>().Publish(new CharacterSetupDone());
+                    return true;
+                case "CharacterAbilityAdjustRequested":
+                    c.Resolve<IPublisher<CharacterAbilityAdjustRequested>>().Publish(new CharacterAbilityAdjustRequested((int)Json.Number(Json.Get(o, "index")), (int)Json.Number(Json.Get(o, "delta"))));
+                    return true;
+                case "CharacterClassRequested":
+                    c.Resolve<IPublisher<CharacterClassRequested>>().Publish(new CharacterClassRequested(Json.Get(o, "id") as string ?? ""));
+                    return true;
+                case "CharacterOriginRequested":
+                    c.Resolve<IPublisher<CharacterOriginRequested>>().Publish(new CharacterOriginRequested(Json.Get(o, "id") as string ?? ""));
+                    return true;
+                case "CharacterResetRequested":
+                    c.Resolve<IPublisher<CharacterResetRequested>>().Publish(new CharacterResetRequested());
                     return true;
                 case "SceneChangeRequested":
                     c.Resolve<IPublisher<SceneChangeRequested>>().Publish(new SceneChangeRequested(GameSceneParse(Json.Get(o, "target"))));
@@ -316,6 +418,152 @@ namespace LuckyNumbers.Model
             Json.Num(b, s.Lying.Value);
             b.Append(",\"reveal\":");
             Json.Str(b, s.Reveal.Value);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, CharacterSheet s)
+        {
+            b.Append('{');
+            b.Append("\"callsign\":");
+            Json.Str(b, s.Callsign.Value);
+            b.Append(",\"classId\":");
+            Json.Str(b, s.ClassId.Value);
+            b.Append(",\"originId\":");
+            Json.Str(b, s.OriginId.Value);
+            b.Append(",\"level\":");
+            Json.Num(b, s.Level.Value);
+            b.Append(",\"xp\":");
+            Json.Num(b, s.Xp.Value);
+            b.Append(",\"xpNext\":");
+            Json.Num(b, s.XpNext.Value);
+            b.Append(",\"rolled\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Rolled)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Num(b, x);
+                }
+            }
+            b.Append(']');
+            b.Append(",\"moved\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Moved)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Num(b, x);
+                }
+            }
+            b.Append(']');
+            b.Append(",\"scores\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Scores)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Num(b, x);
+                }
+            }
+            b.Append(']');
+            b.Append(",\"mods\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Mods)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Num(b, x);
+                }
+            }
+            b.Append(']');
+            b.Append(",\"points\":");
+            Json.Num(b, s.Points.Value);
+            b.Append(",\"canLower\":");
+            Json.Num(b, s.CanLower.Value);
+            b.Append(",\"locked\":");
+            b.Append(s.Locked.Value ? "true" : "false");
+            b.Append(",\"stamina\":");
+            Json.Num(b, s.Stamina.Value);
+            b.Append(",\"staminaMax\":");
+            Json.Num(b, s.StaminaMax.Value);
+            b.Append(",\"skills\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Skills)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Str(b, x);
+                }
+            }
+            b.Append(']');
+            b.Append(",\"relicBonus\":");
+            Json.Num(b, s.RelicBonus.Value);
+            b.Append(",\"seed\":");
+            Json.Num(b, s.Seed.Value);
+            b.Append(",\"abilities\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Abilities)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Str(b, x);
+                }
+            }
+            b.Append(']');
+            b.Append(",\"classes\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Classes)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Str(b, x);
+                }
+            }
+            b.Append(']');
+            b.Append(",\"origins\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Origins)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Str(b, x);
+                }
+            }
+            b.Append(']');
+            b.Append(",\"adjust\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Adjust)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Num(b, x);
+                }
+            }
+            b.Append(']');
+            b.Append(",\"xpLevelStart\":");
+            Json.Num(b, s.XpLevelStart.Value);
+            b.Append(",\"relicAbility\":");
+            Json.Str(b, s.RelicAbility.Value);
+            b.Append(",\"setup\":");
+            b.Append(s.Setup.Value ? "true" : "false");
             b.Append('}');
         }
 
@@ -518,6 +766,62 @@ namespace LuckyNumbers.Model
             b.Append('{');
             b.Append("\"index\":");
             Json.Num(b, e.Index);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, CharacterSheetReady e)
+        {
+            b.Append('{');
+            b.Append("\"on\":");
+            b.Append(e.On ? "true" : "false");
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, CharacterSetupDone e)
+        {
+            b.Append('{');
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, CharacterAbilityAdjustRequested e)
+        {
+            b.Append('{');
+            b.Append("\"index\":");
+            Json.Num(b, e.Index);
+            b.Append(",\"delta\":");
+            Json.Num(b, e.Delta);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, CharacterClassRequested e)
+        {
+            b.Append('{');
+            b.Append("\"id\":");
+            Json.Str(b, e.Id);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, CharacterOriginRequested e)
+        {
+            b.Append('{');
+            b.Append("\"id\":");
+            Json.Str(b, e.Id);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, CharacterResetRequested e)
+        {
+            b.Append('{');
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, CharacterXpGained e)
+        {
+            b.Append('{');
+            b.Append("\"amount\":");
+            Json.Num(b, e.Amount);
+            b.Append(",\"source\":");
+            Json.Str(b, e.Source);
             b.Append('}');
         }
 

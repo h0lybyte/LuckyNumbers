@@ -15,7 +15,8 @@ namespace LuckyNumbers.Title
     /// <summary>
     /// Title + preloader. Text, menu and settings come from GameContent.Title (content/title.txtpb);
     /// the universe behind it is SpacePresenter's. Preloads `next`; Play fades the UI, pushes the camera
-    /// toward home and hands its pose to the next scene (CameraHandoff) so the switch has no visible cut.
+    /// toward home and hands its pose to the next scene (CameraHandoff) so the switch has no visible cut. Before that,
+    /// Play runs character creation (ICharacterSetup: the page's sheet, until Ready).
     /// </summary>
     [Presenter]
     public sealed class TitlePresenter : IStartable, IDisposable
@@ -29,7 +30,9 @@ namespace LuckyNumbers.Title
         readonly IPublisher<SceneChangeRequested> _sceneRequests;
         readonly ISpaceDirector _space;
         readonly CameraHandoff _handoff;
+        readonly ICharacterSetup _character;
         readonly CompositeDisposable _disposables = new();
+        readonly System.Threading.CancellationTokenSource _cts = new();
         bool _settingsOpen, _leaving;
 
         [Inject]
@@ -37,8 +40,9 @@ namespace LuckyNumbers.Title
                               ISubscriber<InputActionPerformed> input,
                               IPublisher<MenuItemSelected> menuPublisher, ISubscriber<MenuItemSelected> menu,
                               IPublisher<SceneChangeRequested> sceneRequests,
-                              ISpaceDirector space, CameraHandoff handoff)
+                              ISpaceDirector space, CameraHandoff handoff, ICharacterSetup character)
         {
+            _character = character;
             _space = space;
             _handoff = handoff;
             _view = view;
@@ -99,10 +103,15 @@ namespace LuckyNumbers.Title
         {
             if (_leaving) return;
             _leaving = true;
-            // Waits for the preload if Play is pressed early.
-            _loading.Ready.Where(ready => ready).Take(1)
-                .Subscribe(_ => LeaveAsync(next).Forget())
-                .AddTo(_disposables);
+            PlayAsync(next).Forget();
+        }
+
+        async UniTaskVoid PlayAsync(GameScene next)
+        {
+            var ct = _cts.Token;
+            await _character.RunAsync(ct);                                          // character creation
+            await _loading.Ready.Where(ready => ready).FirstAsync(ct);              // waits for the preload if early
+            LeaveAsync(next).Forget();
         }
 
         /// <summary>UI fades while the camera eases toward the planet it orbits; then the pose is handed to the next scene.</summary>
@@ -143,6 +152,11 @@ namespace LuckyNumbers.Title
             _view.ShowCredits(false);
         }
 
-        public void Dispose() => _disposables.Dispose();
+        public void Dispose()
+        {
+            _cts.Cancel();
+            _cts.Dispose();
+            _disposables.Dispose();
+        }
     }
 }
