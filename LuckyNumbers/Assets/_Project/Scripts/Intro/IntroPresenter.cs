@@ -226,7 +226,7 @@ namespace LuckyNumbers.Intro
                 {
                     nextFace = t + math.lerp(0.05f, 0.18f, t / tumbleEnd);      // tumbling slows down
                     for (var i = 0; i < _dice.Count; i++)
-                        _dice.ShowFace(i, _rng.NextInt(1, 7), _rng.NextFloat(-40f, 40f) * (1f - t / tumbleEnd));
+                        _dice.ShowFace(i, _rng.NextInt(1, (i < dice.Dice.Count ? dice.Dice[i].Sides : 6) + 1), _rng.NextFloat(-40f, 40f) * (1f - t / tumbleEnd));
                 }
                 else if (built && t >= tumbleEnd)
                     for (var i = 0; i < _dice.Count && i < faces.Count; i++) _dice.ShowFace(i, faces[i], 0f);

@@ -52,6 +52,9 @@ message Die {
   int32 initial_face = 4;
   // What this die decides (its face, low..high). Every die also feeds the lucky number.
   DieRole role = 5;
+  // Hover tooltip: a short name ("Moons") and what it does. {face} / {sides} = the current roll.
+  string name = 6;
+  string tooltip = 7;
 }
 
 enum DieRole {
@@ -60,8 +63,10 @@ enum DieRole {
   DIE_ROLE_STAR = 1;
   // How many planets: low = min_planets .. high = max_planets.
   DIE_ROLE_WORLDS = 2;
-  // Luck: more moons and galaxies, a brighter sky.
+  // Luck: more galaxies, a bonus on relic rolls (and more moons when no die has the moons role).
   DIE_ROLE_LUCK = 3;
+  // Moons: low = few planets have moons .. high = most do, up to max_moons each.
+  DIE_ROLE_MOONS = 4;
 }
 
 message DiceState {

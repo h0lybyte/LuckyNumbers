@@ -6,7 +6,10 @@ using UnityEngine.UIElements;
 
 namespace LuckyNumbers.Title
 {
-    /// <summary>Dice row on the title UI. d6 show pips; other dice show a number. No logic: DicePresenter drives it.</summary>
+    /// <summary>
+    /// Dice row on the title UI. d6 show pips; other dice show a number. Hovering (or tapping) a die shows what it
+    /// decides (content: Die.name / tooltip) and its current roll. No logic: DicePresenter drives it.
+    /// </summary>
     [View]
     public sealed partial class DiceView : MonoBehaviour
     {
@@ -26,6 +29,10 @@ namespace LuckyNumbers.Title
         readonly List<VisualElement> _dieElements = new();
         readonly List<VisualElement[]> _pips = new();
         readonly List<Label> _numbers = new();
+        readonly List<Die> _config = new();
+        readonly List<int> _shown = new();
+        Label _tip;
+        int _tipFor = -1;
         bool _bound;
 
         public void Bind()
@@ -42,10 +49,26 @@ namespace LuckyNumbers.Title
                 _roll.text = rollLabel;
                 _roll.clicked += onRoll;
             }
+            if (_tip == null && _dice.parent != null)
+            {
+                _tip = new Label { pickingMode = PickingMode.Ignore, enableRichText = true };
+                _tip.AddToClassList("ln-dice-tip");
+                _tip.style.display = DisplayStyle.None;
+                _dice.parent.Add(_tip);
+            }
             foreach (var die in dice)
             {
-                var body = new VisualElement { pickingMode = PickingMode.Ignore };
+                var index = _dieElements.Count;
+                var body = new VisualElement { pickingMode = PickingMode.Position };
                 body.AddToClassList("ln-die");
+                if (die.Sides != 6) body.AddToClassList("ln-die--number");
+                body.RegisterCallback<PointerEnterEvent>(_ => ShowTip(index));
+                body.RegisterCallback<PointerLeaveEvent>(_ => HideTip(index));
+                body.RegisterCallback<PointerDownEvent>(e =>   // touch has no hover: a tap toggles it
+                {
+                    if (e.pointerType == UnityEngine.UIElements.PointerType.mouse) return;
+                    if (_tipFor == index) HideTip(index); else ShowTip(index);
+                });
                 var c = die.Color;
                 body.style.backgroundColor = new Color(c.R, c.G, c.B, c.A);
                 var ink = 0.299f * c.R + 0.587f * c.G + 0.114f * c.B > 0.6f ? new Color(0.08f, 0.08f, 0.12f) : Color.white;
@@ -75,6 +98,8 @@ namespace LuckyNumbers.Title
                     body.Add(number);
                 }
                 _dice.Add(body);
+                _config.Add(die);
+                _shown.Add(die.InitialFace);
                 _dieElements.Add(body);
                 _pips.Add(pips);
                 _numbers.Add(number);
@@ -95,6 +120,27 @@ namespace LuckyNumbers.Title
                 _numbers[index].text = face.ToString();
             }
             _dieElements[index].style.rotate = new Rotate(tumble);
+            _shown[index] = face;
+            if (_tipFor == index) ShowTip(index);
+        }
+
+        void ShowTip(int index)
+        {
+            if (_tip == null || index >= _config.Count) return;
+            var die = _config[index];
+            var face = _shown[index];
+            var text = (die.Tooltip ?? "").Replace("{face}", face.ToString()).Replace("{sides}", die.Sides.ToString());
+            var name = string.IsNullOrEmpty(die.Name) ? die.Id : die.Name;
+            _tip.text = $"<b>{name}</b>  d{die.Sides}, rolled {face}\n{text}";
+            _tip.style.display = DisplayStyle.Flex;
+            _tipFor = index;
+        }
+
+        void HideTip(int index)
+        {
+            if (_tip == null || _tipFor != index) return;
+            _tip.style.display = DisplayStyle.None;
+            _tipFor = -1;
         }
 
         public void SetLuckyNumber(string text) => _lucky.text = text;

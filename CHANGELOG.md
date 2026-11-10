@@ -8,6 +8,8 @@ and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version
 
 - New look: a neon sci-fi theme across the menus, the station and planet screens and the page overlay
   (relics, the d20 and the landing HUD included), with readable hover states
+- The title's dice are four d20s: star, worlds, moons (new) and luck. Hover one (or tap it) to see what it
+  decides and what it rolled; every die also feeds the lucky number
 - Every launch opens on a fresh universe: the title rolls its own lucky number instead of always starting
   on 3250720893
 - Bigger, sharper, truer-coloured ships at the crash site (the wrecked freighter and your fighter)

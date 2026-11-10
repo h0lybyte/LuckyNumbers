@@ -96,7 +96,7 @@ namespace LuckyNumbers.Planet
             {
                 if (_built) return;
                 _built = true;
-                Build(roll.Seed == 0 ? new UniverseSeedChanged(1u, -1f, -1f, -1f) : roll);
+                Build(roll.Seed == 0 ? new UniverseSeedChanged(1u, -1f, -1f, -1f, -1f) : roll);
                 if (_config.Landing != null) _arrival.ArriveAsync(this, _cts.Token).Forget();   // you fly in and land
                 else WakeAsync(_cts.Token).Forget();                                       // the old arrival
             });

@@ -271,6 +271,28 @@
     -unity-text-align: middle-center;
 }
 
+/* d20 and other numbered dice: a little tighter so two digits sit well. */
+.ln-die--number {
+    border-radius: 8px;
+}
+
+/* What a die decides: above the dice panel while you hover (or tap) one. */
+.ln-dice-tip {
+    position: absolute;
+    left: 0;
+    bottom: 100%;
+    width: 320px;
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    font-size: 14px;
+    white-space: normal;
+    color: rgb(220, 248, 255);
+    background-color: rgba(3, 10, 20, 0.92);
+    border-width: 1px 1px 1px 3px;
+    border-color: rgba(0, 229, 255, 0.35);
+    border-left-color: rgba(0, 229, 255, 0.9);
+}
+
 .ln-lucky {
     font-size: 15px;
     letter-spacing: 2px;
