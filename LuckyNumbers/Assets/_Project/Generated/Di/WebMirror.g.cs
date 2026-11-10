@@ -28,7 +28,7 @@ namespace LuckyNumbers.Model
     {
         public static readonly string[] States =
         {
-            "RelicInventory",
+            "RelicSite",
             "CharacterSheet",
             "FlowState",
             "LoadingState",
@@ -51,12 +51,7 @@ namespace LuckyNumbers.Model
         {
             var d = new CompositeDisposable();
             {
-                var s = c.Resolve<RelicInventory>();
-                NotifyCollectionChangedEventHandler<string> hItems = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(0);
-                s.Items.CollectionChanged += hItems;
-                d.Add(Disposable.Create(() => s.Items.CollectionChanged -= hItems));
-                d.Add(s.Selected.Subscribe(_ => sink.MarkState(0)));
-                d.Add(s.Cooldown.Subscribe(_ => sink.MarkState(0)));
+                var s = c.Resolve<RelicSite>();
                 d.Add(s.Lying.Subscribe(_ => sink.MarkState(0)));
                 d.Add(s.Reveal.Subscribe(_ => sink.MarkState(0)));
                 sink.MarkState(0);
@@ -140,6 +135,9 @@ namespace LuckyNumbers.Model
                 s.GearBonuses.CollectionChanged += hGearBonuses;
                 d.Add(Disposable.Create(() => s.GearBonuses.CollectionChanged -= hGearBonuses));
                 d.Add(s.CanDrop.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.Ready.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.ReadyName.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.Cooldown.Subscribe(_ => sink.MarkState(4)));
                 sink.MarkState(4);
             }
             {
@@ -289,11 +287,6 @@ namespace LuckyNumbers.Model
             d.Add(c.Resolve<ISubscriber<DevWarpRequested>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("DevWarpRequested"), e);
-                sink.EndEvent();
-            }));
-            d.Add(c.Resolve<ISubscriber<RelicUseRequested>>().Subscribe(e =>
-            {
-                Write(sink.BeginEvent("RelicUseRequested"), e);
                 sink.EndEvent();
             }));
             d.Add(c.Resolve<ISubscriber<CharacterSheetReady>>().Subscribe(e =>
@@ -464,7 +457,7 @@ namespace LuckyNumbers.Model
         {
             switch (index)
             {
-                case 0: Write(b, c.Resolve<RelicInventory>()); break;
+                case 0: Write(b, c.Resolve<RelicSite>()); break;
                 case 1: Write(b, c.Resolve<CharacterSheet>()); break;
                 case 2: Write(b, c.Resolve<FlowState>()); break;
                 case 3: Write(b, c.Resolve<LoadingState>()); break;
@@ -490,9 +483,6 @@ namespace LuckyNumbers.Model
             {
                 case "DevWarpRequested":
                     c.Resolve<IPublisher<DevWarpRequested>>().Publish(new DevWarpRequested(Json.Get(o, "to") as string ?? ""));
-                    return true;
-                case "RelicUseRequested":
-                    c.Resolve<IPublisher<RelicUseRequested>>().Publish(new RelicUseRequested((int)Json.Number(Json.Get(o, "index"))));
                     return true;
                 case "CharacterSheetReady":
                     c.Resolve<IPublisher<CharacterSheetReady>>().Publish(new CharacterSheetReady(Json.Get(o, "on") is bool characterSheetReadyOn && characterSheetReadyOn));
@@ -568,26 +558,10 @@ namespace LuckyNumbers.Model
             }
         }
 
-        static void Write(StringBuilder b, RelicInventory s)
+        static void Write(StringBuilder b, RelicSite s)
         {
             b.Append('{');
-            b.Append("\"items\":");
-            b.Append('[');
-            {
-                var first = true;
-                foreach (var x in s.Items)
-                {
-                    if (!first) b.Append(',');
-                    first = false;
-                    Json.Str(b, x);
-                }
-            }
-            b.Append(']');
-            b.Append(",\"selected\":");
-            Json.Num(b, s.Selected.Value);
-            b.Append(",\"cooldown\":");
-            Json.Num(b, s.Cooldown.Value);
-            b.Append(",\"lying\":");
+            b.Append("\"lying\":");
             Json.Num(b, s.Lying.Value);
             b.Append(",\"reveal\":");
             Json.Str(b, s.Reveal.Value);
@@ -817,6 +791,12 @@ namespace LuckyNumbers.Model
             b.Append(']');
             b.Append(",\"canDrop\":");
             b.Append(s.CanDrop.Value ? "true" : "false");
+            b.Append(",\"ready\":");
+            Json.Num(b, s.Ready.Value);
+            b.Append(",\"readyName\":");
+            Json.Str(b, s.ReadyName.Value);
+            b.Append(",\"cooldown\":");
+            Json.Num(b, s.Cooldown.Value);
             b.Append('}');
         }
 
@@ -1117,14 +1097,6 @@ namespace LuckyNumbers.Model
             b.Append('{');
             b.Append("\"to\":");
             Json.Str(b, e.To);
-            b.Append('}');
-        }
-
-        static void Write(StringBuilder b, RelicUseRequested e)
-        {
-            b.Append('{');
-            b.Append("\"index\":");
-            Json.Num(b, e.Index);
             b.Append('}');
         }
 

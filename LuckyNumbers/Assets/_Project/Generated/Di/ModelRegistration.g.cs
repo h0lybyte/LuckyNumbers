@@ -14,7 +14,6 @@ namespace LuckyNumbers.Model
         {
             builder.RegisterMessageBroker<RelicRolled>(options);
             builder.RegisterMessageBroker<DevWarpRequested>(options);
-            builder.RegisterMessageBroker<RelicUseRequested>(options);
             builder.RegisterMessageBroker<CharacterSheetReady>(options);
             builder.RegisterMessageBroker<CharacterSetupDone>(options);
             builder.RegisterMessageBroker<CharacterAbilityAdjustRequested>(options);
@@ -54,7 +53,7 @@ namespace LuckyNumbers.Model
         /// <summary>Registers every (ln.state) class as a singleton.</summary>
         public static void RegisterModelState(this IContainerBuilder builder)
         {
-            builder.Register<RelicInventory>(Lifetime.Singleton);
+            builder.Register<RelicSite>(Lifetime.Singleton);
             builder.Register<CharacterSheet>(Lifetime.Singleton);
             builder.Register<FlowState>(Lifetime.Singleton);
             builder.Register<LoadingState>(Lifetime.Singleton);

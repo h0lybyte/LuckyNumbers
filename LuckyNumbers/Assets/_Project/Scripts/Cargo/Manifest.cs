@@ -4,23 +4,21 @@ using Unity.Mathematics;
 
 namespace LuckyNumbers.Cargo
 {
-    /// <summary>One relic in the hold: what, from where, worth what, and its own seed (shape and pattern).</summary>
+    /// <summary>One relic in the hold: the item it is (a unique ItemDef with lore, a d20 table, a model) and its seed.</summary>
     public sealed class Relic
     {
-        public RelicCulture Culture;
-        public RelicKind Kind;
-        public string Material, Origin;
-        public int Value;
+        public ItemDef Def;
         public uint Seed;
-        /// <summary>A named artifact (content/relics): its own name, figure, lore and d20 table. Null: procedural.</summary>
-        public RelicArtifact Artifact;
-        /// <summary>"gilded copper Tibetan amulet", or an artifact's own name ("Water Amulet").</summary>
-        public string Name => Artifact != null ? Artifact.Name : $"{Material} {Culture.Name} {Kind.Name}";
+        public string Name => Def.Name;
+        public int Value => Def.Value;
+        /// <summary>Whose it was ("Zhang Heng"), or "" for a relic without lore.</summary>
+        public string Figure => Def.Lore?.Figure ?? "";
     }
 
     /// <summary>
-    /// The museum freighter's manifest, generated from the lucky number and content/cargo.txtpb: the same seed
-    /// always gives the same ship, museum and relics (intro, the call and the crash site all agree).
+    /// The museum freighter's manifest, from the lucky number and content/cargo.txtpb: the same seed always gives the
+    /// same ship and museum (intro, the call and the crash site all agree). Its relics are cargo.txtpb `relics`, item
+    /// ids in content/items.txtpb, always all of them (docs/items.md).
     /// </summary>
     public sealed class Manifest
     {
@@ -28,65 +26,34 @@ namespace LuckyNumbers.Cargo
         public readonly List<Relic> Relics = new();
         public int TotalValue;
 
-        public static Manifest Generate(CargoConfig config, uint seed)
+        public static Manifest Generate(CargoConfig config, uint seed) => Generate(config, GameContent.Items, seed);
+
+        public static Manifest Generate(CargoConfig config, ItemConfig items, uint seed)
         {
             var m = new Manifest();
             if (config == null) return m;
             var rng = new Random((seed ^ 0xC0FFEE11u) | 1u);
             m.Ship = Pick(config.ShipNames, ref rng) ?? "MSV Curator";
             m.Museum = Pick(config.Museums, ref rng) ?? "Galactic Museum";
-            var total = 0f;
-            foreach (var c in config.Cultures) total += math.max(0f, c.Weight);
-            // Named artifacts first: always aboard.
-            foreach (var a in config.Artifacts)
+            foreach (var id in config.Relics)
             {
-                var culture = config.Cultures.Find(c => c.Id == a.Culture) ?? (config.Cultures.Count > 0 ? config.Cultures[0] : null);
-                var kind = config.Kinds.Find(k => k.Id == a.Kind) ?? (config.Kinds.Count > 0 ? config.Kinds[0] : null);
-                if (culture == null || kind == null) continue;
-                m.Relics.Add(new Relic { Culture = culture, Kind = kind, Material = "", Origin = a.Figure, Value = a.Value,
-                                         Seed = rng.NextUInt() | 1u, Artifact = a });
-                m.TotalValue += a.Value;
-            }
-            var count = config.MaxRelics <= 0 ? 0
-                      : rng.NextInt(math.max(0, config.MinRelics), math.max(config.MinRelics, config.MaxRelics) + 1);
-            for (var i = 0; i < count && total > 0f && config.Kinds.Count > 0; i++)
-            {
-                var roll = rng.NextFloat(total);
-                var culture = config.Cultures[0];
-                foreach (var c in config.Cultures) { roll -= math.max(0f, c.Weight); if (roll <= 0f) { culture = c; break; } }
-                var kind = config.Kinds[rng.NextInt(config.Kinds.Count)];
-                var relic = new Relic
+                var def = items?.Items.Find(i => i.Id == id);
+                if (def == null)
                 {
-                    Culture = culture,
-                    Kind = kind,
-                    Material = Pick(culture.Materials, ref rng) ?? "",
-                    Origin = Pick(culture.Origins, ref rng) ?? "",
-                    Value = (int)math.round(rng.NextFloat(kind.ValueMin, math.max(kind.ValueMin, kind.ValueMax)) * math.max(0.1f, culture.ValueScale) / 10f) * 10,
-                    Seed = rng.NextUInt() | 1u,
-                };
-                m.Relics.Add(relic);
-                m.TotalValue += relic.Value;
+                    UnityEngine.Debug.LogWarning($"[Cargo] relic '{id}' isn't an item in items.txtpb");
+                    continue;
+                }
+                m.Relics.Add(new Relic { Def = def, Seed = rng.NextUInt() | 1u });
+                m.TotalValue += def.Value;
             }
             return m;
         }
 
-        /// <summary>
-        /// What's aboard, for the radio: the named artifacts by name ("Zhang Heng's Water Amulet"), then any generated
-        /// relics as cultures and kinds ("Tibetan and Roman amulets and vases").
-        /// </summary>
+        /// <summary>What's aboard, for the radio: each relic by whose it was ("Zhang Heng's Water Amulet").</summary>
         public string Summary()
         {
             var named = new List<string>();
-            var cultures = new List<string>();
-            var kinds = new List<string>();
-            foreach (var r in Relics)
-            {
-                if (r.Artifact != null) { named.Add($"{r.Artifact.Figure}'s {r.Artifact.Name}"); continue; }
-                if (!cultures.Contains(r.Culture.Name)) cultures.Add(r.Culture.Name);
-                var plural = r.Kind.Name + "s";
-                if (!kinds.Contains(plural)) kinds.Add(plural);
-            }
-            if (cultures.Count > 0) named.Add($"{And(cultures)} {And(kinds)}");
+            foreach (var r in Relics) named.Add(r.Figure != "" ? $"{r.Figure}'s {r.Name}" : r.Name);
             return named.Count > 0 ? And(named) : "nothing listed";
         }
 

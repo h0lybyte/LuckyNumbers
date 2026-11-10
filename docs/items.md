@@ -9,10 +9,9 @@ built yet unless it says so.
 |---|---|---|
 | Item definitions, the grid pack, starting kits | `inventory.proto`, `content/items.txtpb` | `ItemDef` has kind, slot, shape, bulk, value, colour, use effects |
 | Equip / unequip, gear bonuses | `inventory.proto` (landed, #33) | `InventoryEquipRequested`, `InventoryUnequipRequested`; ability, skill, HP, Stamina, relic and bulk bonuses on `ItemDef` |
-| Named relics (lore, d20 table, model) | `cargo.proto` `RelicArtifact`, `content/relics/*.txtpb` | the Water Amulet |
-| What a relic takes up in the pack | `items.txtpb` `relic_items` → `relic_amulet`, ... | the shape and bulk are matched from the relic's kind |
-| Generated relics | `cargo.proto` `RelicCulture`, `RelicKind`, `min/max_relics` | turned off (`max_relics: 0`) |
-| Old relic strip | `RelicInventory`, `RelicUseRequested` | the pack's use path duplicates them |
+| Named relics (lore, d20 table, model) | `ItemDef` `lore`, `use`, `model`, `unique`; `content/items/relics/<id>.txtpb` (via `item_refs`) | the Water Amulet. Landed (step 3) |
+| What's aboard the freighter | `cargo.txtpb` `relics` (item ids) | always all of them; generated relics (cultures, kinds) are gone |
+| Using a relic | `InventoryUseRequested` / R → `InventoryPresenter` rolls its d20 | `RelicRolled` for the page's d20; `RelicSite` for lying-out count and reveal bearing |
 | How guns and melee weapons are held and fired | `WeaponView` / `MeleeView` serialized fields (`feat/niko-weapons`) | stored on the prefab, not in content |
 
 ## Rules
@@ -28,12 +27,9 @@ built yet unless it says so.
 
 ## Gaps
 
-- **A relic is split across two definitions.** The `RelicArtifact` in cargo holds lore, the d20 table and the
-  model. A separate pack item, matched through `relic_items`, holds the shape and bulk. Fix: a named artifact
-  becomes one `ItemDef` with a relic part. Then `relic_items` and `default_relic_item` go.
+- ~~**A relic is split across two definitions.**~~ Fixed (step 3): one `ItemDef` with lore and use.
 - **There is no `unique` flag and no stacking.** Kits repeat ids, so every med-patch gets its own uid and cell.
-- **Two use paths.** `RelicInventory` and `RelicUseRequested` do the same job as `PlayerInventory` and
-  `InventoryUseRequested`. Fix: using a relic becomes an ordinary inventory use that rolls its d20 table.
+- ~~**Two use paths.**~~ Fixed (step 3): using a relic is an ordinary inventory use that rolls its d20 table.
 - **Effects are named after relics.** `RelicEffect` is already used by consumables. Rename it `ItemEffect` and
   move it, together with `RelicRoll`, into a shared roll table (`dice.proto`) that items and the sheet can both
   use.
@@ -77,11 +73,11 @@ scatter at the crash site.
 ## Order
 
 1. ~~`feat/equipment` lands.~~ Done (#33).
-2. `feat/niko-weapons` lands.
-3. Merge the relic definitions: `RelicArtifact` becomes an `ItemDef` with lore and use. Move `content/relics`,
-   delete `relic_items`, `RelicInventory`, `RelicUseRequested`, `RelicCulture` and `RelicKind`.
-4. Add `unique` and `stack`, and stack the kits. Dropping puts the item in the world (see Decisions). In progress
-   (`feat/item-stacks`); it touches only the pack, so it doesn't wait for 2 and 3.
+2. ~~`feat/niko-weapons` lands.~~ Done (#44).
+3. ~~Merge the relic definitions.~~ Done (`feat/relic-items`): `RelicArtifact` became an `ItemDef` with lore and use;
+   `content/relics` moved to `content/items/relics`; `relic_items`, `RelicInventory`, `RelicUseRequested`,
+   `RelicCulture` and `RelicKind` are gone.
+4. ~~Add `unique` and `stack`, and stack the kits.~~ Done (#38). Dropping puts the item in the world (see Decisions).
 5. Move the weapons' hold, ranged and melee data into the proto.
 6. Add the shared roll table (`dice.proto`).
 

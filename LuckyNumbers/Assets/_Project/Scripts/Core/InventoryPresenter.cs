@@ -15,13 +15,13 @@ namespace LuckyNumbers.Core
     public interface IInventory
     {
         /// <summary>
-        /// Put item `itemId` in the first place it fits (any rotation). `name`, `description` and `value` override the
-        /// item's own (a relic's); `relic` links it to RelicsPresenter's held list (-1: not a relic). False: no room.
+        /// Put item `itemId` in the first place it fits (any rotation), stacking if it can. False: no room, or it's
+        /// unique and you already have it.
         /// </summary>
-        bool TryAdd(string itemId, string name, string description, int value, int relic);
+        bool TryAdd(string itemId);
 
-        /// <summary>Take every relic out (the crash site starts over).</summary>
-        void ClearRelics();
+        /// <summary>Is item `itemId` in the pack or worn (e.g. a unique relic you already picked up)?</summary>
+        bool Has(string itemId);
 
         /// <summary>Take every relic out and say what they were (name, value): the museum buys them at the station.</summary>
         System.Collections.Generic.List<(string Name, int Value)> TakeRelics();
@@ -69,8 +69,9 @@ namespace LuckyNumbers.Core
     /// The pack (content/items.txtpb), app-wide: a grid items fit into by shape, like falling blocks. Your class's
     /// starting kit is packed while you set up your character (repacked when you change class) and kept once you
     /// leave the station; relics you pick up go in too (IInventory). The page's grid moves items
-    /// (InventoryMoveRequested: cell + quarter turns, checked here), uses them (consumables heal or reveal; relics
-    /// roll through RelicUseRequested) and drops them. Bulk against your Strength gives the load and walking speed.
+    /// (InventoryMoveRequested: cell + quarter turns, checked here), uses them (consumables heal or reveal; relics roll
+    /// their d20 table: the die, + your luck die, + the sheet's relic bonus, naturals stand; R uses the ready one) and
+    /// drops them. Bulk against your Strength gives the load and walking speed.
     /// Gear goes into its equipment slot (InventoryEquipRequested, or dragged onto the slot) and out of the grid; its
     /// bonuses reach the sheet through IEquipment (EquipmentChanged). Nothing is drawn: you're first-person arms.
     /// Unequipping puts it back where there's room (InventoryUnequipRequested, or dragged onto a cell). The kit's gear
@@ -84,7 +85,7 @@ namespace LuckyNumbers.Core
             public int Uid;
             public ItemDef Def;
             public string Name, Description;
-            public int Value, X, Y, Rot, Relic = -1;
+            public int Value, X, Y, Rot;
             public EquipSlot Equipped;   // None: in the grid
             public int Count = 1;        // copies in this stack (ItemDef.stack)
             public bool[,] Cells;   // rotated footprint [row, column]
@@ -100,8 +101,14 @@ namespace LuckyNumbers.Core
         readonly ISubscriber<InventoryEquipRequested> _equips;
         readonly ISubscriber<InventoryUnequipRequested> _unequips;
         readonly IPublisher<EquipmentChanged> _equipmentChanged;
-        readonly IPublisher<RelicUseRequested> _relicUse;
         readonly IPublisher<ItemEffectRequested> _effects;
+        readonly IPublisher<RelicRolled> _rolled;
+        readonly ISubscriber<InputActionPerformed> _actions;
+        readonly IBufferedSubscriber<UniverseSeedChanged> _seeds;
+        readonly Dictionary<int, float> _readyAt = new();   // uid -> Time.time it can be used again
+        int _ready, _rolls;
+        float _luck = -1f;
+        uint _seed = 1u;
         readonly List<IDisposable> _subscriptions = new();
         readonly List<Item> _items = new();
         int _nextUid = 1, _strength = -1;
@@ -114,10 +121,15 @@ namespace LuckyNumbers.Core
         [Inject]
         public InventoryPresenter(PlayerInventory state, CharacterSheet sheet, PlayerHealth health, FlowState flow,
                                   ISubscriber<InventoryMoveRequested> moves, ISubscriber<InventoryUseRequested> uses,
-                                  ISubscriber<InventoryDropRequested> drops, IPublisher<RelicUseRequested> relicUse,
+                                  ISubscriber<InventoryDropRequested> drops,
                                   IPublisher<ItemEffectRequested> effects, ISubscriber<InventoryEquipRequested> equips,
-                                  ISubscriber<InventoryUnequipRequested> unequips, IPublisher<EquipmentChanged> equipmentChanged)
+                                  ISubscriber<InventoryUnequipRequested> unequips, IPublisher<EquipmentChanged> equipmentChanged,
+                                  IPublisher<RelicRolled> rolled, ISubscriber<InputActionPerformed> actions,
+                                  IBufferedSubscriber<UniverseSeedChanged> seeds)
         {
+            _rolled = rolled;
+            _actions = actions;
+            _seeds = seeds;
             _equips = equips;
             _unequips = unequips;
             _equipmentChanged = equipmentChanged;
@@ -128,7 +140,6 @@ namespace LuckyNumbers.Core
             _moves = moves;
             _uses = uses;
             _drops = drops;
-            _relicUse = relicUse;
             _effects = effects;
         }
 
@@ -141,6 +152,13 @@ namespace LuckyNumbers.Core
             _subscriptions.Add(_drops.Subscribe(e => Drop(e.Uid)));
             _subscriptions.Add(_equips.Subscribe(e => Equip(e.Uid)));
             _subscriptions.Add(_unequips.Subscribe(e => Unequip((EquipSlot)e.Slot)));
+            // The title's roll: the lucky number seeds relic rolls, its luck die (0..1, -1: none) adds to them.
+            _subscriptions.Add(_seeds.Subscribe(e => { _seed = e.Seed == 0 ? 1u : e.Seed; _luck = e.Luck; }));
+            // R: the ready relic, at the crash site.
+            _subscriptions.Add(_actions.Subscribe(e =>
+            {
+                if (e.Action == InputAction.UseRelic && _ready != 0 && _flow.Scene.Value == GameScene.Planet) Use(_ready);
+            }));
             // The kit follows the class while the character is being set up; a new run packs it again.
             _subscriptions.Add(_sheet.ClassId.Subscribe(_ => Repack()));
             _subscriptions.Add(_sheet.Locked.Subscribe(locked =>
@@ -161,7 +179,7 @@ namespace LuckyNumbers.Core
             foreach (var kit in Config.Kits)
             {
                 if (kit.ClassId != cls) continue;
-                foreach (var id in kit.Items) TryAdd(id, null, null, -1, -1, publish: false);
+                foreach (var id in kit.Items) TryAdd(id, publish: false);
             }
             // The kit's gear starts on you.
             foreach (var item in _items.ToArray())
@@ -176,6 +194,10 @@ namespace LuckyNumbers.Core
 
         public void Tick()
         {
+            // The ready relic's cooldown, for the page.
+            var cooldown = _ready != 0 && _readyAt.TryGetValue(_ready, out var at) ? Mathf.Max(0f, at - Time.time) : 0f;
+            if (Mathf.Abs(_state.Cooldown.Value - cooldown) > 0.05f || (cooldown == 0f && _state.Cooldown.Value != 0f))
+                _state.Cooldown.Value = cooldown;
             // Strength sets the bulk limit; it moves while you shift points.
             // Dropping is possible only while the drop target says so (on foot), which changes as you land.
             var canDrop = _dropTarget != null && _dropTarget.CanDrop;
@@ -190,10 +212,11 @@ namespace LuckyNumbers.Core
 
         // ---- IInventory ---------------------------------------------------------------------------------------
 
-        public bool TryAdd(string itemId, string name, string description, int value, int relic) =>
-            TryAdd(itemId, name, description, value, relic, publish: true);
+        public bool TryAdd(string itemId) => TryAdd(itemId, publish: true);
 
-        bool TryAdd(string itemId, string name, string description, int value, int relic, bool publish)
+        public bool Has(string itemId) => _items.Exists(i => i.Def.Id == itemId);
+
+        bool TryAdd(string itemId, bool publish)
         {
             var def = Config.Items.Find(i => i.Id == itemId);
             if (def == null)
@@ -201,12 +224,7 @@ namespace LuckyNumbers.Core
                 Debug.LogWarning($"[Inventory] no item '{itemId}' in items.txtpb");
                 return false;
             }
-            var item = new Item
-            {
-                Uid = _nextUid++, Def = def, Name = string.IsNullOrEmpty(name) ? def.Name : name,
-                Description = string.IsNullOrEmpty(description) ? def.Description : description,
-                Value = value >= 0 ? value : def.Value, Relic = relic,
-            };
+            var item = new Item { Uid = _nextUid++, Def = def, Name = def.Name, Description = Describe(def), Value = def.Value };
             return Add(item, publish);
         }
 
@@ -248,7 +266,7 @@ namespace LuckyNumbers.Core
                 return false;
             }
             var limit = StackLimit(def);
-            if (limit > 1 && item.Relic < 0)
+            if (limit > 1)
             {
                 foreach (var other in _items)
                 {
@@ -276,6 +294,7 @@ namespace LuckyNumbers.Core
                     item.Rot = rot;
                     item.Cells = cells;
                     _items.Add(item);
+                    if (item.Def.Use != null && item.Def.Use.Rolls.Count > 0) _ready = item.Uid;   // just picked up: R uses it
                     if (publish) Publish();
                     return true;
                 }
@@ -291,8 +310,8 @@ namespace LuckyNumbers.Core
         public System.Collections.Generic.List<(string Name, int Value)> TakeRelics()
         {
             var taken = new System.Collections.Generic.List<(string, int)>();
-            foreach (var i in _items) if (i.Relic >= 0 || i.Def.Kind == ItemKind.Relic) taken.Add((i.Name, i.Value));
-            if (_items.RemoveAll(i => i.Relic >= 0 || i.Def.Kind == ItemKind.Relic) > 0) Publish();
+            foreach (var i in _items) if (i.Def.Kind == ItemKind.Relic) taken.Add((i.Name, i.Value));
+            if (_items.RemoveAll(i => i.Def.Kind == ItemKind.Relic) > 0) Publish();
             return taken;
         }
 
@@ -305,9 +324,13 @@ namespace LuckyNumbers.Core
             return true;
         }
 
-        public void ClearRelics()
+        /// <summary>A relic's description: whose it was and when, then its lore; else the item's own text.</summary>
+        static string Describe(ItemDef def)
         {
-            if (_items.RemoveAll(i => i.Relic >= 0) > 0) Publish();
+            var lore = def.Lore;
+            if (lore == null || string.IsNullOrEmpty(lore.Text)) return def.Description;
+            var who = string.IsNullOrEmpty(lore.Figure) ? "" : string.IsNullOrEmpty(lore.Era) ? $"{lore.Figure}. " : $"{lore.Figure}, {lore.Era}. ";
+            return who + lore.Text;
         }
 
         public void Say(string text)
@@ -338,9 +361,9 @@ namespace LuckyNumbers.Core
         {
             var item = _items.Find(i => i.Uid == uid);
             if (item == null) return;
-            if (item.Relic >= 0)
+            if (item.Def.Use != null && item.Def.Use.Rolls.Count > 0)
             {
-                _relicUse.Publish(new RelicUseRequested(item.Relic));
+                Roll(item);
                 return;
             }
             if (item.Def.Effects.Count == 0)
@@ -357,31 +380,69 @@ namespace LuckyNumbers.Core
                     return;
                 }
             }
-            foreach (var effect in item.Def.Effects)
-            {
-                switch (effect)
-                {
-                    case RelicEffect.Heal:
-                    {
-                        // HP first; what's left over tops up Stamina (as relic heals do).
-                        var amount = Mathf.RoundToInt(item.Def.Amount);
-                        var toHp = Mathf.Min(amount, _health.Max.Value - _health.Current.Value);
-                        _health.Current.Value += toHp;
-                        _sheet.Stamina.Value = Mathf.Min(_sheet.StaminaMax.Value, _sheet.Stamina.Value + amount - toHp);
-                        break;
-                    }
-                    case RelicEffect.FullHeal:
-                        _health.Current.Value = _health.Max.Value;
-                        _sheet.Stamina.Value = _sheet.StaminaMax.Value;
-                        break;
-                    default:
-                        _effects.Publish(new ItemEffectRequested(effect, item.Def.Amount, item.Def.Seconds));
-                        break;
-                }
-            }
+            foreach (var effect in item.Def.Effects) Apply(effect, item.Def.Amount, item.Def.Seconds);
             Say($"Used {item.Name}");
             if (item.Def.Consumable && --item.Count <= 0) _items.Remove(item);
             Publish();
+        }
+
+        /// <summary>
+        /// A relic's d20: seeded by the lucky number (so a universe always rolls the same), plus up to luck_bonus from
+        /// the luck die and the sheet's relic bonus; a natural 1 is always 1 and a natural 20 always 20. The first row
+        /// whose range holds the total happens, then the relic rests for its cooldown. It becomes the ready one (R).
+        /// </summary>
+        void Roll(Item item)
+        {
+            var use = item.Def.Use;
+            _ready = item.Uid;
+            if (_readyAt.TryGetValue(item.Uid, out var at) && Time.time < at)
+            {
+                Say($"{item.Name} needs {Mathf.CeilToInt(at - Time.time)} s more");
+                Publish();
+                return;
+            }
+            var rng = new Unity.Mathematics.Random((_seed ^ (0xD20u * (uint)(++_rolls))) | 1u);
+            var roll = rng.NextInt(1, 21);
+            var luck = _luck >= 0f ? Mathf.RoundToInt(_luck * Mathf.Max(0, GameContent.Cargo.LuckBonus)) : 0;
+            var bonus = luck + _sheet.RelicBonus.Value;
+            var total = roll == 1 ? 1 : roll == 20 ? 20 : Mathf.Clamp(roll + bonus, 1, 20);
+            RelicRoll row = null;
+            foreach (var r in use.Rolls) if (total >= r.Min && total <= r.Max) { row = r; break; }
+            row ??= use.Rolls[use.Rolls.Count - 1];
+            foreach (var effect in row.Effects) Apply(effect, row.Amount, row.Seconds);
+            _readyAt[item.Uid] = Time.time + use.CooldownSeconds;
+            _rolled.Publish(new RelicRolled(item.Name, roll, total - roll, total, row.Title, row.Text));
+            Debug.Log($"[Inventory] {item.Name}: d20 {roll} + {bonus} = {total}: {row.Title}");
+            Say($"{item.Name}: {total} - {row.Title}");
+            Publish();
+        }
+
+        /// <summary>
+        /// One effect: heals here (HP first, the rest to Stamina; full heal both); the rest (reveal, slow) to whoever
+        /// can do them (the crash site, ItemEffectRequested).
+        /// </summary>
+        void Apply(RelicEffect effect, float amountF, float seconds)
+        {
+            switch (effect)
+            {
+                case RelicEffect.Heal:
+                {
+                    var amount = Mathf.RoundToInt(amountF);
+                    var toHp = Mathf.Min(amount, _health.Max.Value - _health.Current.Value);
+                    _health.Current.Value += toHp;
+                    _sheet.Stamina.Value = Mathf.Min(_sheet.StaminaMax.Value, _sheet.Stamina.Value + amount - toHp);
+                    break;
+                }
+                case RelicEffect.FullHeal:
+                    _health.Current.Value = _health.Max.Value;
+                    _sheet.Stamina.Value = _sheet.StaminaMax.Value;
+                    break;
+                case RelicEffect.None:
+                    break;
+                default:
+                    _effects.Publish(new ItemEffectRequested(effect, amountF, seconds));
+                    break;
+            }
         }
 
         Item SlotItem(EquipSlot slot) => slot == EquipSlot.None ? null : _items.Find(i => i.Equipped == slot);
@@ -495,7 +556,7 @@ namespace LuckyNumbers.Core
         {
             var item = _items.Find(i => i.Uid == uid);
             if (item == null) return;
-            if (item.Relic >= 0)
+            if (item.Def.Kind == ItemKind.Relic)
             {
                 Say("The museum wants every relic back: you can't leave one behind");
                 return;
@@ -597,7 +658,8 @@ namespace LuckyNumbers.Core
                 value += i.Value * i.Count;
                 var c = i.Def.Color;
                 var color = "#" + ColorUtility.ToHtmlStringRGB(new Color(c.R, c.G, c.B));
-                var actions = (i.Relic >= 0 || i.Def.Effects.Count > 0 ? 1 : 0) | (i.Relic < 0 ? 2 : 0) |
+                var usable = i.Def.Effects.Count > 0 || (i.Def.Use != null && i.Def.Use.Rolls.Count > 0);
+                var actions = (usable ? 1 : 0) | (i.Def.Kind != ItemKind.Relic ? 2 : 0) |
                               (i.Def.Slot != EquipSlot.None ? 4 : 0);
                 rows.Add(string.Join("|", i.Uid, i.Def.Id, Clean(i.Name), (int)i.Def.Kind, i.X, i.Y, i.Rot, Shape(i.Cells),
                                      i.Def.Bulk.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture), i.Value,
@@ -617,6 +679,16 @@ namespace LuckyNumbers.Core
             _state.Value.Value = value;
             Set(_state.Items, rows);
             Set(_state.GearBonuses, GearTotals());
+            // The ready relic: the last one picked up or used, else any you carry that rolls.
+            if (_ready != 0 && !_items.Exists(i => i.Uid == _ready)) _ready = 0;
+            if (_ready == 0)
+            {
+                var any = _items.Find(i => i.Def.Use != null && i.Def.Use.Rolls.Count > 0);
+                if (any != null) _ready = any.Uid;
+            }
+            var ready = _items.Find(i => i.Uid == _ready);
+            _state.Ready.Value = _ready;
+            _state.ReadyName.Value = ready?.Name ?? "";
         }
 
         /// <summary>"Engineering +2, STR +1, Stamina +2"</summary>

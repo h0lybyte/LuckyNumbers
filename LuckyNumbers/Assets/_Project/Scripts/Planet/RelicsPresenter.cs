@@ -16,13 +16,12 @@ using Random = Unity.Mathematics.Random;
 namespace LuckyNumbers.Planet
 {
     /// <summary>
-    /// The freighter's relics at the crash site (content/cargo.txtpb, the same manifest the MAYDAY read out):
-    /// scattered round the wreck, glowing, the named artifacts closest. Walk up and E picks one up (an artifact
-    /// tells you whose it was, and either earns XP); R uses the one you hold: a d20, plus up to luck_bonus from your
-    /// luck die and your sheet's relic ability modifier (CharacterSheet.relic_bonus), picks a row of its table (a
-    /// natural 1 is always row 1, a natural 20 the last), whose effects happen: health back (HP first, the rest to
-    /// Stamina), slowed, a beam over the nearest relic or all of them. Rolls are seeded by the lucky number, so a universe always rolls the same.
-    /// Inventory and rolls go to the page (RelicInventory, RelicRolled): its strip and the d20.
+    /// The freighter's relics at the crash site (content/cargo.txtpb `relics`, the same manifest the MAYDAY read out):
+    /// laid out between the wreck and the landing pad, glowing. Walk up and E picks one up into the pack (it tells you
+    /// whose it was, and earns XP); one you already carry (relics are unique) isn't laid out again. Using a relic is an
+    /// ordinary pack use (Core/InventoryPresenter rolls its d20; R uses the ready one); this does the effects only the
+    /// crash site can (ItemEffectRequested: slowed, a beam over the nearest relic or all of them), says what the roll
+    /// did, and shows how many lie out and a revealed one's bearing (RelicSite).
     /// It's also where the pack drops things (IDropTarget): a dropped item lies at your feet as a placeholder block
     /// (PLACEHOLDER_&lt;item id&gt;, sized from its grid shape, until it has a model) and E picks it back up.
     /// </summary>
@@ -51,41 +50,32 @@ namespace LuckyNumbers.Planet
         readonly PlayerView _player;
         readonly GroundView _ground;
         readonly IFirstPerson _firstPerson;
-        readonly PlayerHealth _health;
-        readonly CharacterSheet _sheet;
         readonly IInventory _pack;
         readonly PlayerInventory _packState;
         readonly ISubscriber<ItemEffectRequested> _itemEffects;
         readonly IPublisher<CharacterXpGained> _xp;
-        readonly RelicInventory _inventory;
-        readonly IPublisher<RelicRolled> _rolled;
+        readonly RelicSite _relicSite;
+        readonly ISubscriber<RelicRolled> _rolled;
         readonly ISubscriber<InputActionPerformed> _actions;
-        readonly ISubscriber<RelicUseRequested> _useRequests;
-        readonly IBufferedSubscriber<UniverseSeedChanged> _seeds;
         readonly ISubscriber<DevWarpRequested> _warps;
         readonly List<IDisposable> _subscriptions = new();
         readonly List<Lying> _lying = new();
-        readonly List<Relic> _held = new();
         readonly List<Dropped> _dropped = new();
         readonly CancellationTokenSource _cts = new();
         static readonly int ColorA = Shader.PropertyToID("_ColorA");
         static readonly int ColorB = Shader.PropertyToID("_ColorB");
 
         CargoConfig Config => GameContent.Cargo;
-        bool _spawned, _pickup, _use;
-        int _useRequest = -1, _uses;
-        float _luck = -1f, _cooldownUntil, _slowUntil, _revealUntil;
+        bool _spawned, _pickup;
+        float _slowUntil, _revealUntil;
         bool _revealAll;
         string _prompt = "";
 
         [Inject]
         public RelicsPresenter(ICrashSite site, PlanetView view, PlayerView player, GroundView ground, IFirstPerson firstPerson,
-                               PlayerHealth health, CharacterSheet sheet, IPublisher<CharacterXpGained> xp,
-                               IInventory pack, PlayerInventory packState, ISubscriber<ItemEffectRequested> itemEffects,
-                               RelicInventory inventory, IPublisher<RelicRolled> rolled,
-                               ISubscriber<InputActionPerformed> actions, ISubscriber<RelicUseRequested> useRequests,
-                               IBufferedSubscriber<UniverseSeedChanged> seeds, ISubscriber<DevWarpRequested> warps,
-                               IFighter fighter, PlayerJob job)
+                               IPublisher<CharacterXpGained> xp, IInventory pack, PlayerInventory packState,
+                               ISubscriber<ItemEffectRequested> itemEffects, RelicSite relicSite, ISubscriber<RelicRolled> rolled,
+                               ISubscriber<InputActionPerformed> actions, ISubscriber<DevWarpRequested> warps, IFighter fighter, PlayerJob job)
         {
             _job = job;
             _fighter = fighter;
@@ -95,36 +85,30 @@ namespace LuckyNumbers.Planet
             _player = player;
             _ground = ground;
             _firstPerson = firstPerson;
-            _health = health;
-            _sheet = sheet;
             _pack = pack;
             _packState = packState;
             _itemEffects = itemEffects;
             _xp = xp;
-            _inventory = inventory;
+            _relicSite = relicSite;
             _rolled = rolled;
             _actions = actions;
-            _useRequests = useRequests;
-            _seeds = seeds;
         }
 
         public void Start()
         {
-            _inventory.Items.Clear();
-            _inventory.Selected.Value = -1;
-            _inventory.Lying.Value = 0;
-            _inventory.Reveal.Value = "";
+            _relicSite.Lying.Value = 0;
+            _relicSite.Reveal.Value = "";
             _subscriptions.Add(_actions.Subscribe(e =>
             {
                 if (e.Action == InputAction.Interact) _pickup = true;
-                if (e.Action == InputAction.UseRelic) _use = true;
             }));
-            _subscriptions.Add(_useRequests.Subscribe(e => _useRequest = e.Index));
-            _subscriptions.Add(_seeds.Subscribe(e => _luck = e.Luck));   // the title's roll: its luck die, 0..1 (-1: none)
             _subscriptions.Add(_warps.Subscribe(e => Warp(e.To)));
-            // Pack consumables (ping beacon, flare) reveal relics the same way relic rolls do.
-            _subscriptions.Add(_itemEffects.Subscribe(e => Apply(e.Effect, new RelicRoll { Amount = e.Amount, Seconds = e.Seconds })));
-            _pack.ClearRelics();   // a fresh crash site: the last one's relics aren't in the pack any more
+            // Relic rolls and pack consumables (ping beacon, flare): the effects only the crash site can do.
+            _subscriptions.Add(_itemEffects.Subscribe(e => Apply(e.Effect, e.Amount, e.Seconds)));
+            // What a roll did, said out loud here.
+            _subscriptions.Add(_rolled.Subscribe(e =>
+                DialogueLine.Play(new Dialogue { Speaker = $"{e.Relic}: {e.Total} - {e.Title}", Text = e.Text, DurationSeconds = 4f, CharsPerSecond = 50f },
+                                  _view.Dialogue, _cts.Token).Forget()));
             _pack.DropTarget = this;
         }
 
@@ -175,22 +159,16 @@ namespace LuckyNumbers.Planet
             else if (_pickup && board != "") _fighter.Board();
             _pickup = false;
 
-            if (_useRequest >= 0 && _useRequest < _held.Count) { _inventory.Selected.Value = _useRequest; _use = true; }
-            _useRequest = -1;
-            if (_use && onFoot) Use();
-            _use = false;
-
             // Effects that last.
             var load = _packState.Speed.Value > 0f ? _packState.Speed.Value : 1f;   // a heavy pack slows you
             _firstPerson.SpeedScale = (Time.time < _slowUntil ? _slowScale : 1f) * load;
             UpdateReveal(me);
 
-            var selected = Selected();
-            _inventory.Cooldown.Value = math.max(0f, _cooldownUntil - Time.time);
+            var ready = _packState.ReadyName.Value;
             var prompt = nearDrop != null ? Fill(Config.PickupPrompt, Label(nearDrop.Item))
                        : near != null ? Fill(Config.PickupPrompt, near.Relic.Name)
                        : board != "" ? board
-                       : selected?.Artifact != null && onFoot && _inventory.Cooldown.Value <= 0f ? Fill(Config.UsePrompt, selected.Name) : "";
+                       : !string.IsNullOrEmpty(ready) && onFoot && _packState.Cooldown.Value <= 0f ? Fill(Config.UsePrompt, ready) : "";
             if (prompt != _prompt)
             {
                 _prompt = prompt;
@@ -200,7 +178,7 @@ namespace LuckyNumbers.Planet
 
         float _slowScale = 1f;
 
-        /// <summary>Lay the manifest's relics out round the wreck (seeded): named artifacts nearest, on the ground.</summary>
+        /// <summary>Lay the manifest's relics out between the wreck and the pad, on the ground (not ones you carry).</summary>
         void Spawn()
         {
             _spawned = true;
@@ -218,11 +196,12 @@ namespace LuckyNumbers.Planet
             var named = 0;
             foreach (var relic in manifest.Relics)
             {
-                var own = _view.ArtifactModel(relic.Artifact?.Model);   // a named artifact's own model, if it has one
-                var template = own != null ? own : relic.Kind.Id == "vase" ? _view.VaseTemplate : _view.AmuletTemplate;
+                if (_pack.Has(relic.Def.Id)) continue;   // unique: already in your pack (brought back from an earlier landing)
+                var own = _view.ArtifactModel(relic.Def.Model);   // the relic's own model, if it has one
+                var template = own != null ? own : _view.AmuletTemplate;
                 if (template == null) continue;
-                var distance = relic.Artifact != null ? min : rng.NextFloat(min, max);
-                var angle = relic.Artifact != null ? padAngle + 14f * named++ : rng.NextFloat(360f);
+                var distance = named == 0 ? min : rng.NextFloat(min, max);
+                var angle = padAngle + 14f * named++;
                 var at = wreck + Quaternion.Euler(0f, angle, 0f) * Vector3.forward * distance;
                 at.y = _ground.SurfaceAt(at) + 0.35f;   // on the mesh you walk on
                 var shape = UnityEngine.Object.Instantiate(template, root);
@@ -241,8 +220,8 @@ namespace LuckyNumbers.Planet
                 if (target && beam != null) beam.gameObject.SetActive(true);
                 if (target) Debug.Log($"[Relics] job target {relic.Name}, {Vector3.Distance(at, wreck):0} m from the wreck");
             }
-            _inventory.Lying.Value = _lying.Count;
-            Debug.Log($"[Relics] {_lying.Count} relics round the wreck ({manifest.Relics.FindAll(r => r.Artifact != null).Count} named)");
+            _relicSite.Lying.Value = _lying.Count;
+            Debug.Log($"[Relics] {_lying.Count} relics round the wreck ({manifest.Relics.Count} aboard)");
         }
 
         /// <summary>How far the wreck reaches out from its pivot on the ground plane (its renderers' bounds).</summary>
@@ -264,8 +243,8 @@ namespace LuckyNumbers.Planet
 
         static void Colour(Transform shape, Relic relic)
         {
-            var a = relic.Artifact != null ? relic.Artifact.ColorA : relic.Culture.ColorA;
-            var b = relic.Artifact != null ? relic.Artifact.ColorB : relic.Culture.ColorB;
+            var a = relic.Def.Color.A > 0f ? relic.Def.Color : new Rgba(0.7f, 0.6f, 0.9f, 1f);   // unset: alpha 0
+            var b = relic.Def.ColorB.A > 0f ? relic.Def.ColorB : a;
             var block = new MaterialPropertyBlock();
             block.SetColor(ColorA, new Color(a.R, a.G, a.B, 1f));
             block.SetColor(ColorB, new Color(b.R, b.G, b.B, 1f));
@@ -274,13 +253,12 @@ namespace LuckyNumbers.Planet
 
         void Take(Lying l)
         {
-            // Into the pack first: no room, it stays where it lies.
-            var desc = l.Relic.Artifact != null
-                ? $"{l.Relic.Artifact.Figure}, {l.Relic.Artifact.Era}. {l.Relic.Artifact.Lore}"
-                : $"From {l.Relic.Origin}. {l.Relic.Material} {l.Relic.Culture?.Name} {l.Relic.Kind?.Name}.";
-            if (!_pack.TryAdd(PackItem(l.Relic), l.Relic.Name, desc, l.Relic.Value, _held.Count))
+            // Into the pack first: no room (or you already have it), it stays where it lies.
+            var def = l.Relic.Def;
+            if (!_pack.TryAdd(def.Id))
             {
-                var full = (GameContent.Items.FullPrompt ?? "No room for {name}").Replace("{name}", l.Relic.Name);
+                var full = _pack.Has(def.Id) ? $"You already have the {def.Name}"
+                         : (GameContent.Items.FullPrompt ?? "No room for {name}").Replace("{name}", def.Name);
                 DialogueLine.Play(new Dialogue { Speaker = "Pack", Text = full, DurationSeconds = 2.5f, CharsPerSecond = 60f },
                                   _view.Dialogue, _cts.Token).Forget();
                 return;
@@ -288,13 +266,8 @@ namespace LuckyNumbers.Planet
             l.Taken = true;
             l.Shape.gameObject.SetActive(false);
             if (l.Beam != null) l.Beam.gameObject.SetActive(false);
-            _held.Add(l.Relic);
-            var c = l.Relic.Culture?.Name ?? "";
-            _inventory.Items.Add($"{l.Relic.Artifact?.Id ?? "relic"}|{l.Relic.Name}|{l.Relic.Artifact?.Figure ?? l.Relic.Origin}|{c}");
-            // Hold the newest usable one (an artifact), or the first thing you picked up.
-            if (l.Relic.Artifact != null || _inventory.Selected.Value < 0) _inventory.Selected.Value = _held.Count - 1;
-            _inventory.Lying.Value = _lying.FindAll(x => !x.Taken).Count;
-            Debug.Log($"[Relics] picked up {l.Relic.Name} ({l.Relic.Value} cr)");
+            _relicSite.Lying.Value = _lying.FindAll(x => !x.Taken).Count;
+            Debug.Log($"[Relics] picked up {def.Name} ({def.Value} cr)");
             // The job: a Retrieve's target, or any relic for a Salvage, meets its goal (paid back at the station).
             if (_job.Active.Value && !_job.Done.Value &&
                 (l.Target || _job.Kind.Value == JobKind.Salvage))
@@ -302,77 +275,31 @@ namespace LuckyNumbers.Planet
                 _job.Done.Value = true;
                 Debug.Log($"[Relics] job goal met: {_job.Title.Value}");
             }
-            var xp = l.Relic.Artifact != null ? GameContent.Character.XpPerArtifact : GameContent.Character.XpPerRelic;
-            if (xp > 0) _xp.Publish(new CharacterXpGained(xp, l.Relic.Name));
-            var a = l.Relic.Artifact;
-            var line = a != null
-                ? new Dialogue { Speaker = $"{a.Name} - {a.Figure}, {a.Era}", Text = a.Lore, DurationSeconds = 5f, CharsPerSecond = 45f }
-                : new Dialogue { Speaker = "Relic", Text = $"A {l.Relic.Name}, from {l.Relic.Origin}. Worth {l.Relic.Value:N0} credits.",
-                                 DurationSeconds = 3f, CharsPerSecond = 45f };
+            var lore = def.Lore;
+            var xp = lore != null ? GameContent.Character.XpPerArtifact : GameContent.Character.XpPerRelic;
+            if (xp > 0) _xp.Publish(new CharacterXpGained(xp, def.Name));
+            var line = lore != null && !string.IsNullOrEmpty(lore.Text)
+                ? new Dialogue { Speaker = $"{def.Name} - {lore.Figure}, {lore.Era}", Text = lore.Text, DurationSeconds = 5f, CharsPerSecond = 45f }
+                : new Dialogue { Speaker = "Relic", Text = $"A {def.Name}. Worth {def.Value:N0} credits.", DurationSeconds = 3f, CharsPerSecond = 45f };
             DialogueLine.Play(line, _view.Dialogue, _cts.Token).Forget();
         }
 
-        /// <summary>The pack item a relic takes up: its artifact id, else its kind, else the default.</summary>
-        static string PackItem(Relic relic)
-        {
-            var items = GameContent.Items;
-            foreach (var r in items.RelicItems) if (relic.Artifact != null && r.Relic == relic.Artifact.Id) return r.Item;
-            foreach (var r in items.RelicItems) if (r.Relic == relic.Kind?.Id) return r.Item;
-            return items.DefaultRelicItem;
-        }
-
-        Relic Selected() => _inventory.Selected.Value >= 0 && _inventory.Selected.Value < _held.Count ? _held[_inventory.Selected.Value] : null;
-
-        /// <summary>Roll the held artifact's d20 (seeded, + luck) and do what its table says.</summary>
-        void Use()
-        {
-            var relic = Selected();
-            var a = relic?.Artifact;
-            if (a == null || a.Rolls.Count == 0 || Time.time < _cooldownUntil) return;
-            var rng = new Random((_site.Seed ^ (0xD20u * (uint)(++_uses))) | 1u);
-            var roll = rng.NextInt(1, 21);
-            var bonus = (_luck >= 0f ? (int)math.round(_luck * math.max(0, Config.LuckBonus)) : 0) + _sheet.RelicBonus.Value;
-            // Naturals stand: 1 is always a 1, 20 always a 20.
-            var total = roll == 1 ? 1 : roll == 20 ? 20 : math.clamp(roll + bonus, 1, 20);
-            RelicRoll row = null;
-            foreach (var r in a.Rolls) if (total >= r.Min && total <= r.Max) { row = r; break; }
-            row ??= a.Rolls[a.Rolls.Count - 1];
-            foreach (var effect in row.Effects) Apply(effect, row);
-            _cooldownUntil = Time.time + a.CooldownSeconds;
-            _rolled.Publish(new RelicRolled(a.Name, roll, total - roll, total, row.Title, row.Text));
-            Debug.Log($"[Relics] {a.Name}: d20 {roll} + {bonus} = {total}: {row.Title}");
-            DialogueLine.Play(new Dialogue { Speaker = $"{a.Name}: {total} - {row.Title}", Text = row.Text, DurationSeconds = 4f, CharsPerSecond = 50f },
-                              _view.Dialogue, _cts.Token).Forget();
-        }
-
-        void Apply(RelicEffect effect, RelicRoll row)
+        /// <summary>The effects only the crash site can do (heals happen in the pack).</summary>
+        void Apply(RelicEffect effect, float amount, float seconds)
         {
             switch (effect)
             {
-                case RelicEffect.Heal:
-                {
-                    // HP first; what's left over tops up Stamina.
-                    var amount = Mathf.RoundToInt(row.Amount);
-                    var toHp = Mathf.Min(amount, _health.Max.Value - _health.Current.Value);
-                    _health.Current.Value += toHp;
-                    _sheet.Stamina.Value = Mathf.Min(_sheet.StaminaMax.Value, _sheet.Stamina.Value + amount - toHp);
-                    break;
-                }
-                case RelicEffect.FullHeal:
-                    _health.Current.Value = _health.Max.Value;
-                    _sheet.Stamina.Value = _sheet.StaminaMax.Value;
-                    break;
                 case RelicEffect.Slow:
-                    _slowScale = math.clamp(row.Amount, 0.1f, 1f);
-                    _slowUntil = Time.time + row.Seconds;
+                    _slowScale = math.clamp(amount, 0.1f, 1f);
+                    _slowUntil = Time.time + seconds;
                     break;
                 case RelicEffect.RevealNearest:
                     _revealAll = false;
-                    _revealUntil = Time.time + row.Seconds;
+                    _revealUntil = Time.time + seconds;
                     break;
                 case RelicEffect.RevealAll:
                     _revealAll = true;
-                    _revealUntil = Time.time + row.Seconds;
+                    _revealUntil = Time.time + seconds;
                     break;
             }
         }
@@ -402,10 +329,10 @@ namespace LuckyNumbers.Planet
                 string[] compass = { "north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west" };
                 text = $"{label}: {new Vector2(to.x, to.z).magnitude:0} m {compass[Mathf.RoundToInt(bearing / 45f) % 8]}";
             }
-            if (_inventory.Reveal.Value != text) _inventory.Reveal.Value = text;
+            if (_relicSite.Reveal.Value != text) _relicSite.Reveal.Value = text;
         }
 
-        /// <summary>Dev: on foot beside the nearest named artifact, any relic, or the wreck.</summary>
+        /// <summary>Dev: on foot beside the nearest named relic ("artifact"), any relic, the wreck, or your ship.</summary>
         void Warp(string to)
         {
             if (!_spawned || !_firstPerson.Active) return;
@@ -414,7 +341,7 @@ namespace LuckyNumbers.Planet
             var best = float.MaxValue;
             foreach (var l in _lying)
             {
-                if (l.Taken || (to == "artifact" && l.Relic.Artifact == null)) continue;
+                if (l.Taken || (to == "artifact" && l.Relic.Def.Lore == null)) continue;
                 var d = Vector3.Distance(l.Rest, me);
                 if (d < best) { best = d; target = l.Rest; }
             }
