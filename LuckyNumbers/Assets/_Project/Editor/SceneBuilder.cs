@@ -452,11 +452,13 @@ namespace LuckyNumbers.Editor
         const string FighterDir = "Assets/_Project/Art/Models/Fighter";
 
         /// <summary>Ships keep their painted colours: true albedo (no lifted floor), a little ambient, a faint camera fill.</summary>
-        static void ShipLook(Material m)
+        internal static void ShipLook(Material m)
         {
-            m.SetFloat("_Ambient", 0.25f);
-            m.SetFloat("_Fill", 0.15f);
+            m.SetFloat("_Ambient", 0.45f);   // x the sky / ground tint on a planet: the shadow side still reads
+            m.SetFloat("_Fill", 0.3f);
             m.SetFloat("_Lift", 0f);
+            m.SetFloat("_Spec", 0.6f);       // painted metal catches the sun
+            m.SetFloat("_SpecPower", 28f);
         }
 
         /// <summary>The fighter: pivot (+Z forward) around the model (nose is +X in the file), all skins listed.</summary>
