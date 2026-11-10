@@ -93,10 +93,9 @@ namespace LuckyNumbers.Intro
             _view.Flash(Color.black, _fromTitle ? 0f : 1f);
             // The universe arrives via the buffered lucky number (placed on its orbits as it is built).
             while (_space.Worlds.Count == 0) await UniTask.Yield(ct);
-            // Where it goes down: the cutscene's target, or one of the system's planets picked from the lucky number.
+            // Where it goes down: the cutscene's target, or the crash site the title was already looking at.
             var worlds = _space.Worlds;
-            var pick = new Random((_space.Seed ^ 0xA11CE5EDu) | 1u).NextInt(worlds.Count);
-            Target = string.IsNullOrEmpty(_cut.Target) ? worlds[pick] : _cut.Target;
+            Target = string.IsNullOrEmpty(_cut.Target) ? SpacePresenter.CrashSite(worlds, _space.Seed) : _cut.Target;
             _targetName = BodyNames.Planet(_space.Seed, Mathf.Max(0, IndexOf(worlds, Target)));
             _manifest = LuckyNumbers.Cargo.Manifest.Generate(GameContent.Cargo, _space.Seed);
             Debug.Log($"[Intro] {_manifest.Ship} ({_manifest.Museum}) goes down on {Target} \"{_targetName}\": " +

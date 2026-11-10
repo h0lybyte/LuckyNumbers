@@ -364,7 +364,6 @@ namespace LuckyNumbers.Model
                 },
                 Camera = new CameraOrbit
                 {
-                    Target = "home",
                     Distance = 2.5f,
                     MinDistance = 1.0f,
                     MaxDistance = 10.0f,
@@ -767,7 +766,6 @@ namespace LuckyNumbers.Model
                 },
                 Camera = new CameraOrbit
                 {
-                    Target = "home",
                     Distance = 2.5f,
                     MinDistance = 1.0f,
                     MaxDistance = 10.0f,
@@ -1674,7 +1672,6 @@ namespace LuckyNumbers.Model
                 },
                 Camera = new CameraOrbit
                 {
-                    Target = "home",
                     Distance = 2.5f,
                     MinDistance = 1.0f,
                     MaxDistance = 10.0f,

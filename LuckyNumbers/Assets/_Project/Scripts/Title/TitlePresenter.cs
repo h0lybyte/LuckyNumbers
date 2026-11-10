@@ -105,20 +105,20 @@ namespace LuckyNumbers.Title
                 .AddTo(_disposables);
         }
 
-        /// <summary>UI fades while the camera eases toward home; then the pose is handed to the next scene.</summary>
+        /// <summary>UI fades while the camera eases toward the planet it orbits; then the pose is handed to the next scene.</summary>
         async UniTaskVoid LeaveAsync(GameScene next)
         {
             var content = GameContent.Title;
             var duration = math.max(0.01f, content.PlayTransitionSeconds);
             var cam = _space.Camera.transform;
             _space.TakeCamera();
-            _space.TryGetBody(content.Backdrop.Camera.Target, out var home0, out _);
+            _space.TryGetBody(_space.Focus, out var home0, out _);   // the crash site the title orbits
             var offset = cam.position - (Vector3)home0;     // relative to the (moving) planet
             var startRot = cam.rotation;
             for (var t = 0f; t < duration; t += Time.deltaTime)
             {
                 var e = math.smoothstep(0f, 1f, t / duration);
-                _space.TryGetBody(content.Backdrop.Camera.Target, out var home, out _);
+                _space.TryGetBody(_space.Focus, out var home, out _);
                 var pos = (Vector3)home + offset * (1f - content.PlayPushIn * e);
                 var look = Quaternion.LookRotation((Vector3)home - pos, startRot * Vector3.up);
                 cam.SetPositionAndRotation(pos, Quaternion.Slerp(startRot, look, e * 0.35f));
