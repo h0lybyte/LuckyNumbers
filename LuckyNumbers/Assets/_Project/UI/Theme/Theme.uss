@@ -1,4 +1,11 @@
-/* Lucky Numbers UI theme: every screen shares these classes. */
+/* Lucky Numbers UI theme: every screen shares these classes.
+
+   Look: neon HUD, matching the web overlay (TemplateData/style.css tokens).
+     cyan    rgb(0, 229, 255)    system colour: edges, labels, readouts
+     magenta rgb(255, 43, 214)   accent: active/pressed, section heads
+     amber   rgb(255, 176, 32)   warnings
+     panel   rgba(3, 10, 20, .85) dark glass
+   USS has no clip-path or gradients, so panels are square with a thick cyan bar on the left. */
 
 /* Exo 2 (OFL, see CREDITS.md); Bold/Italic are linked weight variants of this asset. */
 :root {
@@ -18,11 +25,12 @@
 .ln-title {
     font-size: 72px;
     -unity-font-style: bold;
-    color: rgb(255, 255, 255);
-    /* Readable over bright sky (sun, corona). */
-    text-shadow: 0 3px 10px rgba(0, 0, 0, 0.9);
-    -unity-text-outline-width: 0.6px;
-    -unity-text-outline-color: rgba(0, 0, 0, 0.55);
+    letter-spacing: 8px;
+    color: rgb(225, 252, 255);
+    /* Neon glow; the outline keeps it readable over bright sky (sun, corona). */
+    text-shadow: 0 0 18px rgba(0, 229, 255, 0.6);
+    -unity-text-outline-width: 0.25px;
+    -unity-text-outline-color: rgba(0, 229, 255, 0.9);
 }
 
 .ln-menu {
@@ -35,29 +43,37 @@
     width: 220px;
     height: 56px;
     margin: 0 12px;
-    font-size: 26px;
-    color: rgb(255, 255, 255);
-    background-color: rgba(20, 20, 46, 0.82);
-    border-width: 1px;
-    border-color: rgba(140, 160, 255, 0.35);
-    border-radius: 6px;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: rgb(0, 229, 255);
+    background-color: rgba(3, 10, 20, 0.82);
+    border-width: 1px 1px 1px 4px;
+    border-color: rgba(0, 229, 255, 0.45);
+    border-left-color: rgb(0, 229, 255);
+    border-radius: 0;
+    transition-property: background-color, border-color, color, translate;
     transition-duration: 0.12s;
 }
 
 .ln-button:hover {
-    background-color: rgba(48, 48, 110, 0.92);
-    border-color: rgba(170, 190, 255, 0.85);
+    color: rgb(230, 253, 255);
+    background-color: rgba(0, 229, 255, 0.18);
+    border-color: rgb(0, 229, 255);
+    text-shadow: 0 0 8px rgba(0, 229, 255, 0.9);
+    translate: 3px 0;
 }
 
 .ln-button:active {
-    background-color: rgba(80, 80, 160, 0.96);
+    color: rgb(255, 255, 255);
+    background-color: rgba(255, 43, 214, 0.3);
+    border-color: rgb(255, 43, 214);
 }
 
 .ln-prompt {
-    font-size: 20px;
-    -unity-font-style: italic;
-    color: rgba(255, 255, 255, 0.9);
-    text-shadow: 0 1px 5px rgba(0, 0, 0, 0.95);
+    font-size: 18px;
+    letter-spacing: 4px;
+    color: rgb(170, 245, 255);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.95);
 }
 
 .ln-panel {
@@ -70,16 +86,17 @@
     padding: 24px;
     align-items: center;
     justify-content: space-around;
-    background-color: rgba(8, 8, 20, 0.92);
-    border-width: 1px;
-    border-color: rgba(140, 160, 255, 0.3);
-    border-radius: 10px;
+    background-color: rgba(3, 10, 20, 0.93);
+    border-width: 1px 1px 1px 4px;
+    border-color: rgba(0, 229, 255, 0.4);
+    border-left-color: rgb(0, 229, 255);
+    border-radius: 0;
 }
 
 /* Credits: a taller panel with a scrolling list. */
 .ln-panel--tall {
     top: 50%;
-    background-color: rgba(6, 6, 16, 0.98);
+    background-color: rgba(2, 7, 14, 0.98);
     width: 760px;
     max-width: 94%;
     height: 82%;
@@ -99,29 +116,37 @@
 }
 
 .ln-credit-section {
-    font-size: 26px;
+    font-size: 20px;
     -unity-font-style: bold;
-    color: rgb(150, 170, 255);
+    letter-spacing: 4px;
+    color: rgb(255, 43, 214);
+    text-shadow: 0 0 6px rgba(255, 43, 214, 0.6);
     margin: 14px 0 6px 0;
+    padding-bottom: 4px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(255, 43, 214, 0.35);
 }
 
 .unity-button.ln-credit {
     margin: 0 0 10px 0;
-    padding: 4px 6px;
+    padding: 4px 8px;
     background-color: rgba(0, 0, 0, 0);
-    border-width: 0;
-    border-radius: 6px;
+    border-width: 0 0 0 2px;
+    border-color: rgba(0, 229, 255, 0);
+    border-radius: 0;
     align-items: flex-start;
     -unity-text-align: upper-left;
 }
 
 /* Unity's default theme styles .unity-button:hover:enabled; match it so ours wins. */
 .unity-button.ln-credit:hover:enabled {
-    background-color: rgba(140, 160, 255, 0.12);
+    background-color: rgba(0, 229, 255, 0.1);
+    border-color: rgb(0, 229, 255);
 }
 
 .unity-button.ln-credit:active:enabled {
-    background-color: rgba(140, 160, 255, 0.22);
+    background-color: rgba(255, 43, 214, 0.2);
+    border-color: rgb(255, 43, 214);
 }
 
 .ln-credit Label {
@@ -130,37 +155,39 @@
 
 .ln-credit-head {
     font-size: 19px;
-    color: rgb(255, 255, 255);
+    color: rgb(225, 252, 255);
     white-space: normal;
 }
 
 .ln-credit-detail {
     font-size: 15px;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(150, 215, 235, 0.75);
     white-space: normal;
 }
 
 .ln-credit-link {
     font-size: 14px;
-    color: rgb(140, 190, 255);
+    color: rgb(0, 229, 255);
     white-space: normal;
 }
 
 .ln-panel-title {
-    font-size: 40px;
+    font-size: 34px;
     -unity-font-style: bold;
-    color: rgb(255, 255, 255);
+    letter-spacing: 6px;
+    color: rgb(0, 229, 255);
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.7);
 }
 
 .ln-panel-body {
-    font-size: 24px;
-    color: rgba(255, 255, 255, 0.85);
+    font-size: 22px;
+    color: rgba(217, 247, 255, 0.85);
 }
 
 .ln-placeholder {
     flex-grow: 1;
     font-size: 36px;
-    color: rgb(255, 255, 255);
+    color: rgb(225, 252, 255);
     -unity-text-align: middle-center;
 }
 
@@ -168,7 +195,7 @@
     width: 140px;
     height: 44px;
     margin: 10px 0 6px 0;
-    font-size: 22px;
+    font-size: 18px;
 }
 
 /* Dice panel: bottom-left. */
@@ -178,8 +205,11 @@
     bottom: 24px;
     align-items: flex-start;
     padding: 12px;
-    background-color: rgba(8, 8, 20, 0.55);
-    border-radius: 10px;
+    background-color: rgba(3, 10, 20, 0.6);
+    border-width: 1px 1px 1px 3px;
+    border-color: rgba(0, 229, 255, 0.3);
+    border-left-color: rgba(0, 229, 255, 0.85);
+    border-radius: 0;
 }
 
 /* Narrow panels (TitleView toggles .ln-narrow): dice under the menu, centred, instead of the corner. */
@@ -208,7 +238,7 @@
     flex-wrap: wrap;
     border-radius: 11px;
     border-width: 2px;
-    border-color: rgba(0, 0, 0, 0.35);
+    border-color: rgba(0, 229, 255, 0.55);
 }
 
 .ln-pip-cell {
@@ -240,9 +270,10 @@
 }
 
 .ln-lucky {
-    font-size: 16px;
-    color: rgba(255, 255, 255, 0.85);
-    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+    font-size: 15px;
+    letter-spacing: 2px;
+    color: rgba(0, 229, 255, 0.9);
+    text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
 }
 
 /* Intro cutscene */
@@ -272,31 +303,37 @@
 
 .ln-intro-dice .ln-lucky {
     margin-top: 14px;
-    font-size: 22px;
+    font-size: 20px;
 }
 
+/* Comms window: speaker tag on a cyan bar, line below. */
 .ln-dialogue {
     position: absolute;
     left: 15%;
     right: 15%;
     bottom: 9%;
-    padding: 16px 22px;
-    background-color: rgba(8, 8, 20, 0.7);
-    border-radius: 10px;
-    border-width: 1px;
-    border-color: rgba(140, 150, 255, 0.35);
+    padding: 14px 22px 16px 22px;
+    background-color: rgba(3, 10, 20, 0.82);
+    border-width: 1px 1px 1px 4px;
+    border-color: rgba(0, 229, 255, 0.4);
+    border-left-color: rgb(0, 229, 255);
+    border-radius: 0;
 }
 
 .ln-dialogue-speaker {
-    font-size: 18px;
+    align-self: flex-start;
+    font-size: 15px;
     -unity-font-style: bold;
-    color: rgb(150, 170, 255);
-    margin-bottom: 4px;
+    letter-spacing: 3px;
+    color: rgb(3, 10, 20);
+    background-color: rgb(0, 229, 255);
+    padding: 1px 10px;
+    margin-bottom: 8px;
 }
 
 .ln-dialogue-line {
-    font-size: 26px;
-    color: white;
+    font-size: 24px;
+    color: rgb(225, 252, 255);
     white-space: normal;
 }
 
@@ -322,21 +359,27 @@
     right: 0;
     bottom: 7%;
     -unity-text-align: middle-center;
-    font-size: 20px;
-    color: rgba(255, 255, 255, 0.9);
-    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+    font-size: 18px;
+    letter-spacing: 3px;
+    color: rgba(0, 229, 255, 0.92);
+    text-shadow: 0 0 6px rgba(0, 229, 255, 0.5);
+    -unity-text-outline-width: 0.3px;
+    -unity-text-outline-color: rgba(0, 0, 0, 0.7);
 }
 
+/* Reticle: a small ring with a dot (border ring on a 14px box). */
 .ln-crosshair {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 4px;
-    height: 4px;
-    margin-left: -2px;
-    margin-top: -2px;
-    border-radius: 2px;
-    background-color: rgba(255, 255, 255, 0.7);
+    width: 14px;
+    height: 14px;
+    margin-left: -7px;
+    margin-top: -7px;
+    border-radius: 7px;
+    border-width: 1px;
+    border-color: rgba(0, 229, 255, 0.75);
+    background-color: rgba(0, 0, 0, 0);
 }
 
 /* Flying in: a readout strip at the top, messages in the middle. */
@@ -354,9 +397,12 @@
     right: 0;
     top: 4%;
     -unity-text-align: middle-center;
-    font-size: 22px;
-    color: rgb(170, 255, 200);
-    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: rgb(0, 229, 255);
+    text-shadow: 0 0 6px rgba(0, 229, 255, 0.6);
+    -unity-text-outline-width: 0.3px;
+    -unity-text-outline-color: rgba(0, 0, 0, 0.7);
 }
 
 .ln-flight-message {
@@ -367,8 +413,11 @@
     -unity-text-align: middle-center;
     font-size: 44px;
     -unity-font-style: bold;
-    color: rgb(255, 255, 255);
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+    letter-spacing: 6px;
+    color: rgb(255, 176, 32);
+    text-shadow: 0 0 14px rgba(255, 176, 32, 0.75);
+    -unity-text-outline-width: 0.5px;
+    -unity-text-outline-color: rgba(0, 0, 0, 0.7);
 }
 
 /* Planet map: controls line at the top. */
@@ -379,4 +428,38 @@
 
 .ln-hidden {
     display: none;
+}
+
+/* Scrollbars (credits list): thin cyan rail, no arrow buttons. */
+.ln-credits-list .unity-scroller--vertical {
+    width: 8px;
+    border-width: 0;
+    background-color: rgba(0, 229, 255, 0.06);
+}
+
+.ln-credits-list .unity-scroller__low-button,
+.ln-credits-list .unity-scroller__high-button {
+    display: none;
+}
+
+.ln-credits-list .unity-scroller__slider {
+    margin: 0;
+    width: 8px;
+}
+
+.ln-credits-list .unity-base-slider__tracker {
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.ln-credits-list .unity-base-slider__dragger {
+    border-width: 0;
+    border-radius: 0;
+    background-color: rgba(0, 229, 255, 0.55);
+    width: 8px;
+    left: 0;
+}
+
+.ln-credits-list .unity-base-slider__dragger:hover {
+    background-color: rgb(0, 229, 255);
 }

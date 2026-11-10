@@ -106,6 +106,13 @@ sections {
     url: "https://github.com/googlefonts/Exo-2.0"
     path: "LuckyNumbers/Assets/_Project/Art/Fonts/Exo2/OFL.txt"
   }
+  credits {
+    what: "HUD readout font (web overlay)"
+    title: "Share Tech Mono"
+    author: "Carrois Apostrophe"
+    license: "SIL Open Font License 1.1"
+    url: "https://fonts.google.com/specimen/Share+Tech+Mono"
+  }
 }
 
 sections {

@@ -26,6 +26,7 @@ Docs: [docs/](docs/README.md)
 - Noise and fBm techniques: [The Book of Shaders](https://thebookofshaders.com) by Patricio Gonzalez Vivo and Jen Lowe
 - 3D simplex noise: [webgl-noise](https://github.com/ashima/webgl-noise) by Ian McEwan, Stefan Gustavson and Ashima Arts (MIT)
 - UI font: [Exo 2](https://github.com/googlefonts/Exo-2.0) by Natanael Gama / The Exo 2 Project Authors (SIL Open Font License 1.1)
+- HUD readout font (web overlay): [Share Tech Mono](https://fonts.google.com/specimen/Share+Tech+Mono) by Carrois Apostrophe (SIL Open Font License 1.1)
 - Libraries: [UniTask](https://github.com/Cysharp/UniTask), [R3](https://github.com/Cysharp/R3), [ObservableCollections](https://github.com/Cysharp/ObservableCollections), [MessagePipe](https://github.com/Cysharp/MessagePipe), [VContainer](https://github.com/hadashiA/VContainer), [NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity) (MIT)
 
 Details: [CREDITS.md](CREDITS.md) (also in the game: title screen, Credits).
