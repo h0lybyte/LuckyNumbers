@@ -53,6 +53,51 @@ export interface RelicInventory {
   reveal: string;
 }
 
+/**
+ * The sheet as it stands (Core/CharacterPresenter fills it; the page's sheet shows it). Lists follow
+ * CharacterConfig.abilities. HP lives in PlayerHealth (its max comes from here).
+ */
+export interface CharacterSheet {
+  callsign: string;
+  classId: string;
+  originId: string;
+  level: number;
+  xp: number;
+  /** XP for the next level (0 at the cap). */
+  xpNext: number;
+  /** From the lucky number; then the points moved; then the final score (rolled + moved + origin) and modifier. */
+  rolled: number[];
+  moved: number[];
+  scores: number[];
+  mods: number[];
+  /** Points in hand to put on an ability, and how many more can still be taken off. */
+  points: number;
+  canLower: number;
+  /** Set once you leave the station: no more moving points or changing class/origin. */
+  locked: boolean;
+  stamina: number;
+  staminaMax: number;
+  /** Each "id|name|abbr|bonus|trained" (trained: 1 or 0). */
+  skills: string[];
+  /** What relic rolls add from the sheet (the relic ability's modifier). */
+  relicBonus: number;
+  seed: number;
+  /**
+   * For the page (it has no content): each "id|name|abbr|blurb"; each class "id|name|blurb|key ability abbr";
+   * each origin "id|name|blurb|bonuses" (e.g. "STR +2, DEX -1").
+   */
+  abilities: string[];
+  classes: string[];
+  origins: string[];
+  /** Per ability, what +/- would do now: 1 = can raise, 2 = can lower (bits). */
+  adjust: number[];
+  /** Total XP at the start of this level (for the bar), and the relic ability's abbreviation. */
+  xpLevelStart: number;
+  relicAbility: string;
+  /** Character creation: Play was pressed and the title waits for the page's Ready (CharacterSetupDone). */
+  setup: boolean;
+}
+
 export interface FlowState {
   scene: GameScene;
 }
@@ -174,6 +219,43 @@ export interface RelicUseRequested {
   index: number;
 }
 
+/**
+ * The page has a character sheet (sent when it mounts): Play then waits for character creation.
+ * Without it (no page, e.g. the editor) Play goes straight on.
+ */
+export interface CharacterSheetReady {
+  on: boolean;
+}
+
+/** The page's sheet: Ready pressed during character creation. */
+export interface CharacterSetupDone {
+}
+
+/** The page's sheet: +1 / -1 on ability `index` (moving a point to or from the pool). */
+export interface CharacterAbilityAdjustRequested {
+  index: number;
+  delta: number;
+}
+
+/** The page's sheet: pick a class / an origin by id. */
+export interface CharacterClassRequested {
+  id: string;
+}
+
+export interface CharacterOriginRequested {
+  id: string;
+}
+
+/** The page's sheet: put every moved point back. */
+export interface CharacterResetRequested {
+}
+
+/** XP earned (e.g. a relic recovered); the sheet levels up when it crosses CharacterConfig.level_xp. */
+export interface CharacterXpGained {
+  amount: number;
+  source: string;
+}
+
 export interface SceneChangeRequested {
   target: GameScene;
 }
@@ -249,6 +331,7 @@ export interface MenuItemSelected {
 /** Every (ln.web) state, by name: the page holds the latest snapshot of each. */
 export interface WebStates {
   RelicInventory: RelicInventory;
+  CharacterSheet: CharacterSheet;
   FlowState: FlowState;
   LoadingState: LoadingState;
   FlightState: FlightState;
@@ -265,6 +348,13 @@ export interface WebEvents {
   RelicRolled: RelicRolled;
   DevWarpRequested: DevWarpRequested;
   RelicUseRequested: RelicUseRequested;
+  CharacterSheetReady: CharacterSheetReady;
+  CharacterSetupDone: CharacterSetupDone;
+  CharacterAbilityAdjustRequested: CharacterAbilityAdjustRequested;
+  CharacterClassRequested: CharacterClassRequested;
+  CharacterOriginRequested: CharacterOriginRequested;
+  CharacterResetRequested: CharacterResetRequested;
+  CharacterXpGained: CharacterXpGained;
   SceneChangeRequested: SceneChangeRequested;
   SceneEntered: SceneEntered;
   UniverseSeedChanged: UniverseSeedChanged;
@@ -283,6 +373,6 @@ export interface WebEvents {
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "DevWarpRequested" | "RelicUseRequested" | "SceneChangeRequested" | "InputActionPerformed" | "FlightHudReady" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
+export type InboundEvent = "DevWarpRequested" | "RelicUseRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "InputActionPerformed" | "FlightHudReady" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
 
-export const STATE_NAMES = ["RelicInventory", "FlowState", "LoadingState", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "StationState", "DiceState"] as const;
+export const STATE_NAMES = ["RelicInventory", "CharacterSheet", "FlowState", "LoadingState", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "StationState", "DiceState"] as const;

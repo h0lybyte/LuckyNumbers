@@ -1,0 +1,181 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// The player's character sheet, d20 style (content/character.txtpb): six abilities rolled from the lucky number,
+// then a few points the player moves between them; a class and an origin; level and XP; Stamina over HP; skills.
+// Abilities and skills are referred to by id ("str", "piloting"); every list on CharacterSheet follows `abilities`.
+message CharacterConfig {
+  option (ln.config) = true;
+  string default_callsign = 1;
+  // Sheet order. Six, by convention: str, dex, con, int, wis, cha.
+  repeated AbilityDef abilities = 2;
+  // How each ability is rolled (seeded by the lucky number, so a universe always gives the same character).
+  DiceRule ability_roll = 3;
+  // Points the player may take off abilities to put on others, plus free points to spend on top.
+  int32 shift_budget = 4;
+  int32 free_points = 5;
+  // Bounds while moving points (before the origin's bonuses).
+  int32 score_min = 6;
+  int32 score_max = 7;
+  repeated CharacterClass classes = 8;
+  repeated CharacterOrigin origins = 9;
+  string default_class = 10;
+  string default_origin = 11;
+  repeated SkillDef skills = 12;
+  // A skill your class trains adds this plus your level.
+  int32 trained_bonus = 13;
+  // Total XP to reach level 2, 3, ... (index 0 is level 2).
+  repeated int32 level_xp = 14;
+  // This ability's modifier adds to every relic roll (on top of the luck die, cargo.txtpb luck_bonus).
+  string relic_ability = 15;
+  // Which ability adds its modifier to Stamina, per level.
+  string stamina_ability = 16;
+  // XP for picking up a relic, and for a named artifact.
+  int32 xp_per_relic = 17;
+  int32 xp_per_artifact = 18;
+}
+
+message AbilityDef {
+  string id = 1;
+  string name = 2;
+  // Short label on the sheet ("STR").
+  string abbr = 3;
+  string blurb = 4;
+}
+
+// N dice of S sides, dropping the lowest D (4d6 drop 1: 3..18, average about 12).
+message DiceRule {
+  int32 count = 1;
+  int32 sides = 2;
+  int32 drop_lowest = 3;
+}
+
+message CharacterClass {
+  string id = 1;
+  string name = 2;
+  string blurb = 3;
+  // The ability the class leans on (highlighted on the sheet).
+  string key_ability = 4;
+  // Per level: Stamina (plus the stamina ability's modifier) and HP.
+  int32 stamina_per_level = 5;
+  int32 hp_per_level = 6;
+  // Skill ids.
+  repeated string trained_skills = 7;
+}
+
+// Where you grew up: ability bonuses (and penalties) and starting HP.
+message CharacterOrigin {
+  string id = 1;
+  string name = 2;
+  string blurb = 3;
+  repeated AbilityBonus bonuses = 4;
+  int32 hp = 5;
+}
+
+message AbilityBonus {
+  string ability = 1;
+  int32 amount = 2;
+}
+
+message SkillDef {
+  string id = 1;
+  string name = 2;
+  string ability = 3;
+}
+
+// The sheet as it stands (Core/CharacterPresenter fills it; the page's sheet shows it). Lists follow
+// CharacterConfig.abilities. HP lives in PlayerHealth (its max comes from here).
+message CharacterSheet {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  string callsign = 1;
+  string class_id = 2;
+  string origin_id = 3;
+  int32 level = 4;
+  int32 xp = 5;
+  // XP for the next level (0 at the cap).
+  int32 xp_next = 6;
+  // From the lucky number; then the points moved; then the final score (rolled + moved + origin) and modifier.
+  repeated int32 rolled = 7;
+  repeated int32 moved = 8;
+  repeated int32 scores = 9;
+  repeated int32 mods = 10;
+  // Points in hand to put on an ability, and how many more can still be taken off.
+  int32 points = 11;
+  int32 can_lower = 12;
+  // Set once you leave the station: no more moving points or changing class/origin.
+  bool locked = 13;
+  int32 stamina = 14;
+  int32 stamina_max = 15;
+  // Each "id|name|abbr|bonus|trained" (trained: 1 or 0).
+  repeated string skills = 16;
+  // What relic rolls add from the sheet (the relic ability's modifier).
+  int32 relic_bonus = 17;
+  uint32 seed = 18;
+  // For the page (it has no content): each "id|name|abbr|blurb"; each class "id|name|blurb|key ability abbr";
+  // each origin "id|name|blurb|bonuses" (e.g. "STR +2, DEX -1").
+  repeated string abilities = 19;
+  repeated string classes = 20;
+  repeated string origins = 21;
+  // Per ability, what +/- would do now: 1 = can raise, 2 = can lower (bits).
+  repeated int32 adjust = 22;
+  // Total XP at the start of this level (for the bar), and the relic ability's abbreviation.
+  int32 xp_level_start = 23;
+  string relic_ability = 24;
+  // Character creation: Play was pressed and the title waits for the page's Ready (CharacterSetupDone).
+  bool setup = 25;
+}
+
+// The page has a character sheet (sent when it mounts): Play then waits for character creation.
+// Without it (no page, e.g. the editor) Play goes straight on.
+message CharacterSheetReady {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  bool on = 1;
+}
+
+// The page's sheet: Ready pressed during character creation.
+message CharacterSetupDone {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+}
+
+// The page's sheet: +1 / -1 on ability `index` (moving a point to or from the pool).
+message CharacterAbilityAdjustRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  int32 index = 1;
+  int32 delta = 2;
+}
+
+// The page's sheet: pick a class / an origin by id.
+message CharacterClassRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  string id = 1;
+}
+
+message CharacterOriginRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  string id = 1;
+}
+
+// The page's sheet: put every moved point back.
+message CharacterResetRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+}
+
+// XP earned (e.g. a relic recovered); the sheet levels up when it crosses CharacterConfig.level_xp.
+message CharacterXpGained {
+  option (ln.event) = true;
+  option (ln.web) = true;
+  int32 amount = 1;
+  string source = 2;
+}

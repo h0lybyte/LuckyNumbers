@@ -708,7 +708,229 @@ kbd {
 .flight-crash ul { margin: 8px 0 0; padding-left: 18px; }
 .flight-do .flight-note { margin-top: 2px; font-size: 12px; color: var(--good); }
 
+
+
+/* ---- character sheet (C) ---- */
+
+.vitals { display: grid; gap: 3px; }
+.hud-stamina {
+  width: clamp(120px, 18vw, 220px);
+  height: 6px;
+  padding: 1px;
+  border: 1px solid var(--neon-soft);
+  background: repeating-linear-gradient(90deg, rgba(0, 229, 255, 0.1) 0 7px, transparent 7px 9px);
+  transform: skewX(-18deg);
+  overflow: hidden;
+}
+.hud-stamina-fill {
+  height: 100%;
+  background: repeating-linear-gradient(90deg, var(--neon) 0 7px, transparent 7px 9px);
+  filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.8));
+  transition: width 200ms ease;
+}
+
+.sheet-chip {
+  position: absolute;
+  top: max(var(--gap), env(safe-area-inset-top));
+  right: calc(max(var(--gap), env(safe-area-inset-right)) + 44px);
+  height: 36px;
+}
+
+.sheet {
+  position: absolute;
+  inset: 6% max(var(--gap), 8%);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  padding: 16px 18px;
+  border: 1px solid var(--neon-soft);
+  border-left: 3px solid var(--neon);
+  clip-path: polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+  background:
+    var(--scan),
+    linear-gradient(rgba(0, 229, 255, 0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(90deg, rgba(0, 229, 255, 0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    rgba(2, 8, 16, 0.94);
+  backdrop-filter: blur(10px);
+  color: var(--fg);
+  animation: glitch-in 240ms steps(4, end);
+}
+.sheet h3 {
+  margin: 0 0 8px;
+  font: 11px var(--font-mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--hot);
+}
+.sheet h3::before { content: "// "; opacity: 0.6; }
+.sheet .muted { color: var(--muted); }
+
+.sheet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--edge);
+}
+.sheet-kicker { font: 10px var(--font-mono); letter-spacing: 0.2em; text-transform: uppercase; color: var(--neon); }
+.sheet-head h2 {
+  margin: 2px 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-shadow: 0 0 12px rgba(0, 229, 255, 0.55);
+}
+.sheet-sub { font: 12px var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.sheet-head-right { display: flex; gap: 8px; align-items: center; }
+.sheet-badge {
+  padding: 2px 8px;
+  border: 1px solid var(--good);
+  color: var(--good);
+  font: 11px var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.sheet-badge.locked { border-color: var(--warn); color: var(--warn); }
+.sheet-close { padding: 0; border: 0; background: none; cursor: pointer; }
+.sheet-close:hover kbd { background: var(--neon); color: #030a14; }
+
+.sheet-body {
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  grid-template-areas: "abilities vitals" "pick skills";
+  gap: 18px 22px;
+  align-content: start;
+}
+.sheet-abilities { grid-area: abilities; }
+.sheet-vitals { grid-area: vitals; display: grid; gap: 10px; align-content: start; }
+.sheet-pick { grid-area: pick; }
+.sheet-skills { grid-area: skills; }
+
+.sheet-points {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  font: 12px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.sheet-points b { color: var(--neon); font-size: 16px; }
+
+.ability-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ability {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  padding: 8px 6px 6px;
+  border: 1px solid var(--edge);
+  clip-path: var(--chamfer);
+  background: rgba(0, 229, 255, 0.04);
+}
+.ability.key { border-color: var(--neon); background: rgba(0, 229, 255, 0.1); }
+.ability-abbr { font: 12px var(--font-mono); letter-spacing: 0.18em; color: var(--neon); }
+.ability-key { margin-left: 6px; padding: 0 4px; background: var(--hot); color: #14030f; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; }
+.ability-score { font: 700 32px/1.1 var(--font-mono); text-shadow: 0 0 10px rgba(0, 229, 255, 0.45); }
+.ability-mod { font: 600 14px var(--font-mono); color: var(--fg); }
+.ability-roll { margin-top: 2px; font: 10px var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.ability-roll .up { color: var(--good); }
+.ability-roll .down { color: var(--bad); }
+.ability-adjust { display: flex; gap: 6px; margin-top: 6px; }
+.ability-adjust button,
+.sheet-btn {
+  min-width: 30px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--edge);
+  background: rgba(0, 229, 255, 0.06);
+  color: var(--neon);
+  font: 13px var(--font-mono);
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+.ability-adjust button:hover:not(:disabled),
+.sheet-btn:hover:not(:disabled) { border-color: var(--neon); background: var(--neon); color: #030a14; }
+.ability-adjust button:disabled,
+.sheet-btn:disabled { opacity: 0.3; cursor: default; }
+.sheet-btn.active { border-color: var(--neon); background: rgba(0, 229, 255, 0.2); color: var(--fg); }
+.sheet-btn.active:disabled { opacity: 1; }
+
+.meter-head { display: flex; justify-content: space-between; font: 11px var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; }
+.meter-head b { font-size: 14px; }
+.meter-head small { color: var(--muted); font-weight: 400; }
+.meter-bar { height: 8px; margin-top: 3px; padding: 1px; border: 1px solid var(--edge); }
+.meter-fill {
+  height: 100%;
+  -webkit-mask: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 8px);
+  mask: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 8px);
+  transition: width 200ms ease;
+}
+.meter.stamina .meter-fill { background: var(--neon); }
+.meter.hp .meter-fill { background: var(--bad); }
+.meter.xp .meter-fill { background: var(--hot); }
+.sheet-relic { font: 12px var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.sheet-relic b { color: var(--warn); font-size: 15px; }
+
+.sheet-picker { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.sheet-points .sheet-btn,
+.sheet-picker .sheet-btn { text-transform: uppercase; font-size: 11px; letter-spacing: 0.12em; }
+.sheet-blurb { margin: 0 0 12px; font-size: 13px; color: var(--fg); }
+
+.sheet-skills ul { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 14px; }
+.sheet-skills li {
+  display: grid;
+  grid-template-columns: 8px 1fr auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.08);
+  font: 12px var(--font-mono);
+  color: var(--muted);
+}
+.sheet-skills li.trained { color: var(--fg); }
+.skill-dot { width: 6px; height: 6px; border: 1px solid var(--neon-soft); }
+.sheet-skills li.trained .skill-dot { background: var(--neon); border-color: var(--neon); box-shadow: 0 0 4px var(--neon); }
+.skill-abbr { font-size: 10px; color: var(--muted); }
+.skill-bonus { min-width: 26px; text-align: right; color: var(--fg); }
+
+.sheet-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--edge);
+  font: 10px var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.sheet-ready {
+  height: 34px;
+  padding: 0 22px;
+  border: 1px solid var(--neon);
+  clip-path: var(--chamfer);
+  background: rgba(0, 229, 255, 0.14);
+  color: var(--neon);
+  font: 600 13px var(--font-mono);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.sheet-ready:hover { background: var(--neon); color: #030a14; }
+
+@media (max-width: 720px) {
+  .sheet { inset: 3% var(--gap); }
+  .sheet-body { grid-template-columns: minmax(0, 1fr); grid-template-areas: "abilities" "vitals" "pick" "skills"; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .toast, .call-panel, .objective, .station-map, .room-banner.visible, #loading-title,
-  .relic-reveal, .d20-panel, .flight-warn, .flight-crash { animation: none; }
+  .relic-reveal, .d20-panel, .flight-warn, .flight-crash, .sheet { animation: none; }
 }

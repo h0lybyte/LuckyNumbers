@@ -5,6 +5,7 @@ import { installFreeMouseKey, usePointerLocked } from "./pointer";
 import { StationHud, StationTools } from "./station";
 import { RelicHud } from "./relics";
 import { FlightHud } from "./flight";
+import { CharacterSheetGate } from "./sheet";
 import type { GameScene, InboundEvent, WebEvents } from "./ln";
 
 export function App({ dock }: { dock: HTMLElement | null }) {
@@ -28,6 +29,7 @@ export function App({ dock }: { dock: HTMLElement | null }) {
     <>
       <Hud />
       <StationHudGate />
+      <CharacterSheetGate />
       <Toasts />
       {inspector && dock && createPortal(<Inspector />, dock)}
     </>
@@ -52,6 +54,7 @@ function StationHudGate() {
 function Hud() {
   const flow = useLNState("FlowState");
   const health = useLNState("PlayerHealth");
+  const sheet = useLNState("CharacterSheet");
   const mapOpen = useLNState("MapState")?.open ?? false;
   const locked = usePointerLocked();
   useEffect(installFreeMouseKey, []);
@@ -64,8 +67,15 @@ function Hud() {
       {/* While the pointer is locked, HTML can't be clicked: dim the buttons so they read as unavailable. */}
       <div className={`hud${locked ? " locked" : ""}`}>
         {health && health.max > 0 && (
-          <div className="health" title={`${health.current} / ${health.max}`}>
-            <div className="health-fill" style={{ width: `${(100 * health.current) / health.max}%` }} />
+          <div className="vitals">
+            {sheet && sheet.staminaMax > 0 && (
+              <div className="hud-stamina" title={`Stamina ${sheet.stamina} / ${sheet.staminaMax}`}>
+                <div className="hud-stamina-fill" style={{ width: `${(100 * sheet.stamina) / sheet.staminaMax}%` }} />
+              </div>
+            )}
+            <div className="health" title={`HP ${health.current} / ${health.max}`}>
+              <div className="health-fill" style={{ width: `${(100 * health.current) / health.max}%` }} />
+            </div>
           </div>
         )}
         <button

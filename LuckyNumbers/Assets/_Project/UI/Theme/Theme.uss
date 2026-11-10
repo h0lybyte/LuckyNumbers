@@ -276,21 +276,128 @@
     border-radius: 8px;
 }
 
-/* What a die decides: above the dice panel while you hover (or tap) one. */
+/* d20s: drawn by DiceView (hexagon, faces); bigger, no box, the number on the centre face. */
+.ln-die--d20 {
+    width: 76px;
+    height: 76px;
+    padding: 0;
+    border-width: 0;
+    border-radius: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.ln-die--d20 .ln-die-number {
+    /* Down a little: the centre face is widest below its middle. */
+    padding-top: 9%;
+    font-size: 17px;
+    letter-spacing: -0.5px;
+}
+
+/* 3D dice (DiceTray): the row's boxes are only hover targets; the tray's render sits behind them, a little
+   taller than the row so a throw has room to bounce. */
+.ln-dice-row {
+    overflow: visible;
+}
+
+.ln-dice-tray {
+    position: absolute;
+    left: -12px;
+    right: -2px;
+    top: -26px;
+    bottom: -16px;
+}
+
+.ln-die--3d {
+    width: 76px;
+    height: 76px;
+    padding: 0;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.ln-intro-dice .ln-die--3d {
+    width: 104px;
+    height: 104px;
+    padding: 0;
+}
+
+.ln-die--active {
+    border-color: rgb(0, 229, 255);
+}
+
+/* What a die decides, while you hover (or tap) one: beside the dice panel with an arrow to the die (DiceView picks
+   the side with room), or above it when neither side fits. Never takes clicks. */
 .ln-dice-tip {
     position: absolute;
-    left: 0;
-    bottom: 100%;
-    width: 320px;
-    margin-bottom: 8px;
+    width: 280px;
     padding: 8px 12px;
+    background-color: rgba(3, 10, 20, 0.94);
+    border-width: 1px;
+    border-color: rgba(0, 229, 255, 0.45);
+}
+
+.ln-dice-tip-text {
     font-size: 14px;
     white-space: normal;
     color: rgb(220, 248, 255);
-    background-color: rgba(3, 10, 20, 0.92);
-    border-width: 1px 1px 1px 3px;
-    border-color: rgba(0, 229, 255, 0.35);
-    border-left-color: rgba(0, 229, 255, 0.9);
+}
+
+.ln-dice-tip-arrow {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    rotate: 45deg;
+    background-color: rgba(3, 10, 20, 0.94);
+    border-color: rgba(0, 229, 255, 0.45);
+}
+
+.ln-dice-tip--right {
+    left: 100%;
+    margin-left: 14px;
+    border-left-width: 3px;
+    border-left-color: rgb(0, 229, 255);
+}
+
+/* Points left: its outer edges are the square's left and bottom. */
+.ln-dice-tip--right .ln-dice-tip-arrow {
+    left: -9px;
+    border-left-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgb(0, 229, 255);
+    border-bottom-color: rgb(0, 229, 255);
+}
+
+.ln-dice-tip--left {
+    right: 100%;
+    margin-right: 14px;
+    border-right-width: 3px;
+    border-right-color: rgb(0, 229, 255);
+}
+
+/* Points right: top and right edges. */
+.ln-dice-tip--left .ln-dice-tip-arrow {
+    right: -9px;
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-top-color: rgb(0, 229, 255);
+    border-right-color: rgb(0, 229, 255);
+}
+
+.ln-dice-tip--above {
+    left: 0;
+    bottom: 100%;
+    margin-bottom: 14px;
+    border-bottom-width: 3px;
+    border-bottom-color: rgb(0, 229, 255);
+}
+
+/* Points down: right and bottom edges. */
+.ln-dice-tip--above .ln-dice-tip-arrow {
+    bottom: -9px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-right-color: rgb(0, 229, 255);
+    border-bottom-color: rgb(0, 229, 255);
 }
 
 .ln-lucky {
@@ -317,6 +424,17 @@
     margin: 0 9px;
     padding: 9px;
     border-radius: 16px;
+}
+
+.ln-intro-dice .ln-die--d20 {
+    width: 104px;
+    height: 104px;
+    padding: 0;
+    border-radius: 0;
+}
+
+.ln-intro-dice .ln-die--d20 .ln-die-number {
+    font-size: 23px;
 }
 
 .ln-intro-dice .ln-pip {
