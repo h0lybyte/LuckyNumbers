@@ -155,6 +155,28 @@ namespace LuckyNumbers.Model
                         },
                         new Credit
                         {
+                            What = "Space station corridors and rooms (cream panels, leaning walls, ribs, portholes, doorways, deck)",
+                            Title = "PSX Starship Kit Free",
+                            Author = "heyheythere",
+                            License = "CC BY 4.0",
+                            Url = "https://heyheythere.itch.io/psx-starship-kit-free",
+                            LicenseUrl = "https://creativecommons.org/licenses/by/4.0/",
+                            Notes = "Changes: an alpha channel added to atlas.png as a light mask (tools/kitmask.py), RGB unchanged; room walls derived from the corridor walls with their lean cut back, and window panes drawn as clear glass, at build time.",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Models/StarshipKit/LICENSE.txt",
+                        },
+                        new Credit
+                        {
+                            What = "Space station props (imported for later: cryo pods, crates, lab bench, chairs) and early room walls",
+                            Title = "PSX Sci-Fi Station Kit Free",
+                            Author = "heyheythere",
+                            License = "CC BY 4.0",
+                            Url = "https://heyheythere.itch.io/psx-sci-fi-station-kit-free",
+                            LicenseUrl = "https://creativecommons.org/licenses/by/4.0/",
+                            Notes = "Changes: an alpha channel added to atlas.png as a light mask (tools/kitmask.py), RGB unchanged.",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Models/StationKit/LICENSE.txt",
+                        },
+                        new Credit
+                        {
                             What = "First-person arms (rig, 13 animations, skin and glove textures)",
                             Title = "PSX First Person Arms",
                             Author = "DrillImpact",
