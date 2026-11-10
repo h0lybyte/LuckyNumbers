@@ -3,9 +3,9 @@
 // (Core/CharacterPresenter) and sends CharacterSheet; this only shows it and sends requests back.
 import { useEffect, useRef, useState } from "react";
 import { LN, useLNState } from "./ln";
-import { InventoryTab } from "./inventory";
+import { EquipmentTab, InventoryTab } from "./inventory";
 
-export type Tab = "sheet" | "inventory";
+export type Tab = "sheet" | "inventory" | "equipment";
 
 const sign = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`);
 
@@ -124,12 +124,12 @@ function Sheet({ onClose, setup, tab, setTab }: { onClose: () => void; setup: bo
         <button type="button" role="tab" aria-selected={tab === "inventory"} className={tab === "inventory" ? "active" : ""} onClick={() => setTab("inventory")}>
           Inventory <kbd>I</kbd>
         </button>
-        <button type="button" role="tab" disabled title="Coming next">
+        <button type="button" role="tab" aria-selected={tab === "equipment"} className={tab === "equipment" ? "active" : ""} onClick={() => setTab("equipment")}>
           Equipment
         </button>
       </nav>
 
-      {tab === "inventory" ? <InventoryTab /> : (
+      {tab === "inventory" ? <InventoryTab /> : tab === "equipment" ? <EquipmentTab /> : (
       <div className="sheet-body">
         <section className="sheet-abilities">
           <h3>Abilities</h3>
@@ -160,6 +160,7 @@ function Sheet({ onClose, setup, tab, setTab }: { onClose: () => void; setup: bo
                   <div className="ability-roll">
                     rolled {s.rolled[i]}
                     {moved !== 0 && <span className={moved > 0 ? "up" : "down"}> {sign(moved)}</span>}
+                    {(s.gear?.[i] ?? 0) !== 0 && <span className="gear"> gear {sign(s.gear[i])}</span>}
                   </div>
                   {editable && (
                     <div className="ability-adjust">

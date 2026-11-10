@@ -42,6 +42,8 @@ namespace LuckyNumbers.Core
         readonly ISubscriber<CharacterXpGained> _xp;
         readonly ISubscriber<CharacterSheetReady> _pageReady;
         readonly ISubscriber<CharacterSetupDone> _setupDone;
+        readonly IEquipment _equipment;
+        readonly ISubscriber<EquipmentChanged> _equipmentChanged;
         readonly List<IDisposable> _subscriptions = new();
         bool _page;
         UniTaskCompletionSource _setup;
@@ -63,7 +65,8 @@ namespace LuckyNumbers.Core
                                   ISubscriber<CharacterResetRequested> resets,
                                   ISubscriber<CharacterXpGained> xp,
                                   ISubscriber<CharacterSheetReady> pageReady,
-                                  ISubscriber<CharacterSetupDone> setupDone)
+                                  ISubscriber<CharacterSetupDone> setupDone,
+                                  IEquipment equipment, ISubscriber<EquipmentChanged> equipmentChanged)
         {
             _sheet = sheet;
             _health = health;
@@ -76,6 +79,8 @@ namespace LuckyNumbers.Core
             _xp = xp;
             _pageReady = pageReady;
             _setupDone = setupDone;
+            _equipment = equipment;
+            _equipmentChanged = equipmentChanged;
         }
 
         public void Start()
@@ -122,6 +127,7 @@ namespace LuckyNumbers.Core
             _subscriptions.Add(_xp.Subscribe(e => Gain(e.Amount)));
             _subscriptions.Add(_pageReady.Subscribe(e => _page = e.On));
             _subscriptions.Add(_setupDone.Subscribe(_ => FinishSetup()));
+            _subscriptions.Add(_equipmentChanged.Subscribe(_ => Publish()));   // gear bonuses
             _subscriptions.Add(_flow.Scene.Subscribe(OnScene));
             Publish();
         }
@@ -246,14 +252,16 @@ namespace LuckyNumbers.Core
             var n = _rolled.Length;
             var scores = new int[n];
             var mods = new int[n];
+            var gear = new int[n];
             for (var i = 0; i < n; i++)
             {
-                scores[i] = _rolled[i] + _moved[i] + Bonus(origin, Config.Abilities[i].Id);
+                gear[i] = _equipment.AbilityBonus(Config.Abilities[i].Id);
+                scores[i] = _rolled[i] + _moved[i] + Bonus(origin, Config.Abilities[i].Id) + gear[i];
                 mods[i] = Modifier(scores[i]);
             }
 
-            var staminaMax = Math.Max(1, (cls.StaminaPerLevel + Mod(mods, Config.StaminaAbility)) * _level);
-            var hpMax = Math.Max(1, origin.Hp + cls.HpPerLevel * _level);
+            var staminaMax = Math.Max(1, (cls.StaminaPerLevel + Mod(mods, Config.StaminaAbility)) * _level + _equipment.StaminaBonus);
+            var hpMax = Math.Max(1, origin.Hp + cls.HpPerLevel * _level + _equipment.HpBonus);
             if (!_locked || _staminaMax == 0)
             {
                 // Building the character (or the first time): always full.
@@ -276,7 +284,7 @@ namespace LuckyNumbers.Core
             {
                 var ai = AbilityIndex(s.Ability);
                 var trained = cls.TrainedSkills.Contains(s.Id);
-                var bonus = (ai >= 0 ? mods[ai] : 0) + (trained ? Config.TrainedBonus + _level : 0);
+                var bonus = (ai >= 0 ? mods[ai] : 0) + (trained ? Config.TrainedBonus + _level : 0) + _equipment.SkillBonus(s.Id);
                 var abbr = ai >= 0 ? Config.Abilities[ai].Abbr : "";
                 skills.Add($"{s.Id}|{s.Name}|{abbr}|{bonus}|{(trained ? 1 : 0)}");
             }
@@ -289,7 +297,7 @@ namespace LuckyNumbers.Core
             _sheet.Points.Value = Points();
             _sheet.CanLower.Value = CanLower();
             _sheet.Locked.Value = _locked;
-            _sheet.RelicBonus.Value = Mod(mods, Config.RelicAbility);
+            _sheet.RelicBonus.Value = Mod(mods, Config.RelicAbility) + _equipment.RelicBonus;
             _sheet.RelicAbility.Value = Abbr(Config.RelicAbility);
             _sheet.XpLevelStart.Value = _level >= 2 && _level - 2 < Config.LevelXp.Count ? Config.LevelXp[_level - 2] : 0;
             _sheet.Seed.Value = _seed;
@@ -297,6 +305,7 @@ namespace LuckyNumbers.Core
             Set(_sheet.Moved, _moved);
             Set(_sheet.Scores, scores);
             Set(_sheet.Mods, mods);
+            Set(_sheet.Gear, gear);
             Set(_sheet.Skills, skills);
 
             var adjust = new int[n];

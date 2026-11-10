@@ -1307,6 +1307,14 @@ namespace LuckyNumbers.Model
                     Bulk = 1.0f,
                     Value = 350,
                     Color = new Rgba(0.6f, 0.7f, 0.8f, 1.0f),
+                    SkillBonuses =
+                    {
+                        new SkillBonus
+                        {
+                            Skill = "intimidate",
+                            Amount = 1,
+                        },
+                    },
                 },
                 new ItemDef
                 {
@@ -1319,6 +1327,19 @@ namespace LuckyNumbers.Model
                     Bulk = 2.5f,
                     Value = 900,
                     Color = new Rgba(0.55f, 0.6f, 0.7f, 1.0f),
+                    SkillBonuses =
+                    {
+                        new SkillBonus
+                        {
+                            Skill = "intimidate",
+                            Amount = 2,
+                        },
+                        new SkillBonus
+                        {
+                            Skill = "perception",
+                            Amount = 1,
+                        },
+                    },
                 },
                 new ItemDef
                 {
@@ -1331,6 +1352,19 @@ namespace LuckyNumbers.Model
                     Bulk = 2.0f,
                     Value = 600,
                     Color = new Rgba(1.0f, 0.45f, 0.15f, 1.0f),
+                    SkillBonuses =
+                    {
+                        new SkillBonus
+                        {
+                            Skill = "engineering",
+                            Amount = 2,
+                        },
+                        new SkillBonus
+                        {
+                            Skill = "athletics",
+                            Amount = 1,
+                        },
+                    },
                 },
                 new ItemDef
                 {
@@ -1343,6 +1377,19 @@ namespace LuckyNumbers.Model
                     Bulk = 0.3f,
                     Value = 120,
                     Color = new Rgba(0.8f, 0.8f, 0.3f, 1.0f),
+                    SkillBonuses =
+                    {
+                        new SkillBonus
+                        {
+                            Skill = "engineering",
+                            Amount = 1,
+                        },
+                        new SkillBonus
+                        {
+                            Skill = "computers",
+                            Amount = 1,
+                        },
+                    },
                 },
                 new ItemDef
                 {
@@ -1355,6 +1402,19 @@ namespace LuckyNumbers.Model
                     Bulk = 0.3f,
                     Value = 250,
                     Color = new Rgba(0.3f, 0.9f, 0.6f, 1.0f),
+                    SkillBonuses =
+                    {
+                        new SkillBonus
+                        {
+                            Skill = "computers",
+                            Amount = 2,
+                        },
+                        new SkillBonus
+                        {
+                            Skill = "appraise",
+                            Amount = 1,
+                        },
+                    },
                 },
                 new ItemDef
                 {
@@ -1367,6 +1427,20 @@ namespace LuckyNumbers.Model
                     Bulk = 1.0f,
                     Value = 480,
                     Color = new Rgba(0.4f, 0.7f, 1.0f, 1.0f),
+                    SkillBonuses =
+                    {
+                        new SkillBonus
+                        {
+                            Skill = "appraise",
+                            Amount = 2,
+                        },
+                        new SkillBonus
+                        {
+                            Skill = "perception",
+                            Amount = 1,
+                        },
+                    },
+                    RelicBonus = 1,
                 },
                 new ItemDef
                 {
@@ -1379,6 +1453,15 @@ namespace LuckyNumbers.Model
                     Bulk = 1.5f,
                     Value = 400,
                     Color = new Rgba(0.75f, 0.8f, 0.9f, 1.0f),
+                    SkillBonuses =
+                    {
+                        new SkillBonus
+                        {
+                            Skill = "survival",
+                            Amount = 1,
+                        },
+                    },
+                    HpBonus = 2,
                 },
                 new ItemDef
                 {
@@ -1391,6 +1474,15 @@ namespace LuckyNumbers.Model
                     Bulk = 2.0f,
                     Value = 300,
                     Color = new Rgba(0.35f, 0.45f, 0.6f, 1.0f),
+                    SkillBonuses =
+                    {
+                        new SkillBonus
+                        {
+                            Skill = "piloting",
+                            Amount = 1,
+                        },
+                    },
+                    StaminaBonus = 2,
                 },
                 new ItemDef
                 {
@@ -1403,6 +1495,53 @@ namespace LuckyNumbers.Model
                     Bulk = 4.0f,
                     Value = 1200,
                     Color = new Rgba(0.9f, 0.7f, 0.2f, 1.0f),
+                    AbilityBonuses =
+                    {
+                        new AbilityBonus
+                        {
+                            Ability = "str",
+                            Amount = 2,
+                        },
+                    },
+                    SkillBonuses =
+                    {
+                        new SkillBonus
+                        {
+                            Skill = "athletics",
+                            Amount = 2,
+                        },
+                        new SkillBonus
+                        {
+                            Skill = "stealth",
+                            Amount = -2,
+                        },
+                    },
+                    BulkBonus = 3.0f,
+                },
+                new ItemDef
+                {
+                    Id = "gloves",
+                    Name = "Grip gloves",
+                    Description = "Sticky palms, warm fingers.",
+                    Kind = ItemKind.Armor,
+                    Slot = EquipSlot.Hands,
+                    Shape = "##",
+                    Bulk = 0.3f,
+                    Value = 150,
+                    Color = new Rgba(0.5f, 0.8f, 0.5f, 1.0f),
+                    SkillBonuses =
+                    {
+                        new SkillBonus
+                        {
+                            Skill = "acrobatics",
+                            Amount = 1,
+                        },
+                        new SkillBonus
+                        {
+                            Skill = "athletics",
+                            Amount = 1,
+                        },
+                    },
                 },
                 new ItemDef
                 {
@@ -1444,6 +1583,7 @@ namespace LuckyNumbers.Model
                     {
                         "sidearm",
                         "jacket",
+                        "gloves",
                         "medpatch",
                         "medpatch",
                         "ping",

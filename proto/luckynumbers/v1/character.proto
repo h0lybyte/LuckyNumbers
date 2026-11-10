@@ -129,6 +129,8 @@ message CharacterSheet {
   string relic_ability = 24;
   // Character creation: Play was pressed and the title waits for the page's Ready (CharacterSetupDone).
   bool setup = 25;
+  // Per ability, what equipped gear adds (already in `scores`).
+  repeated int32 gear = 26;
 }
 
 // The page has a character sheet (sent when it mounts): Play then waits for character creation.

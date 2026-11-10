@@ -1063,6 +1063,54 @@ kbd {
   .pack { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* ---- equipment tab: worn slots beside the pack ---- */
+
+.pack--equipment { grid-template-columns: minmax(190px, 230px) auto minmax(200px, 1fr); }
+.gear-slots { display: grid; gap: 6px; align-content: start; }
+.gear-slots h3 { margin: 0; }
+.gear-slot {
+  display: grid;
+  gap: 1px;
+  min-height: 54px;
+  padding: 6px 10px;
+  border: 1px dashed var(--edge);
+  clip-path: var(--chamfer);
+  background: rgba(0, 229, 255, 0.03);
+  user-select: none;
+  touch-action: none;
+}
+.gear-slot-name { font: 10px var(--font-mono); letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+.gear-slot-empty { font: 11px var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: rgba(150, 215, 235, 0.35); }
+.gear-slot.filled {
+  border: 1px solid var(--c);
+  border-left: 3px solid var(--c);
+  background: color-mix(in srgb, var(--c) 16%, rgba(2, 8, 16, 0.9));
+  cursor: grab;
+}
+.gear-slot.filled .gear-slot-name { color: color-mix(in srgb, var(--c) 70%, white); }
+.gear-slot-item { font-size: 14px; font-weight: 700; letter-spacing: 0.03em; }
+.gear-slot-bonus { font: 10px var(--font-mono); letter-spacing: 0.04em; color: var(--good); }
+.gear-slot.selected { box-shadow: 0 0 10px var(--c); }
+.gear-slot.target { border: 1px dashed var(--neon); background: rgba(0, 229, 255, 0.1); }
+.gear-slot.over { border-style: solid; background: rgba(61, 255, 154, 0.18); border-color: var(--good); }
+.gear-totals { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+.gear-totals li {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.08);
+  font: 12px var(--font-mono);
+}
+.gear-totals li b { color: var(--good); }
+.gear-totals li.down b { color: var(--bad); }
+.pack-detail-bonus { margin-top: 4px; font: 11px var(--font-mono); letter-spacing: 0.04em; color: var(--good); }
+.ability-roll .gear { color: var(--warn); }
+
+@media (max-width: 1100px) {
+  .pack--equipment { grid-template-columns: minmax(170px, 210px) auto; }
+  .pack--equipment .pack-side { grid-column: 1 / -1; }
+}
+
 /* ---- short windows (laptop browser tabs, itch embeds): the panel compacts instead of scrolling ---- */
 
 @media (max-height: 820px) {

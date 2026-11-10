@@ -4,6 +4,7 @@ package luckynumbers.v1;
 
 import "ln/options.proto";
 import "luckynumbers/v1/cargo.proto";
+import "luckynumbers/v1/character.proto";
 import "luckynumbers/v1/common.proto";
 
 option csharp_namespace = "LuckyNumbers.Model";
@@ -67,6 +68,20 @@ message ItemDef {
   float amount = 11;
   float seconds = 12;
   bool consumable = 13;
+  // While equipped (in its slot): bonuses to abilities, skills, Stamina, HP, relic rolls and the bulk you carry
+  // freely. Nothing is drawn: you're first-person arms, so gear is all numbers.
+  repeated AbilityBonus ability_bonuses = 14;
+  repeated SkillBonus skill_bonuses = 15;
+  int32 stamina_bonus = 16;
+  int32 hp_bonus = 17;
+  int32 relic_bonus = 18;
+  float bulk_bonus = 19;
+}
+
+message SkillBonus {
+  // SkillDef.id.
+  string skill = 1;
+  int32 amount = 2;
 }
 
 message StartingKit {
@@ -82,9 +97,10 @@ message RelicItem {
   string item = 2;
 }
 
-// What's in the pack (Core/InventoryPresenter; the page's Inventory tab). Each item
-// "uid|id|name|kind|x|y|rot|shape|bulk|value|color|description|actions": shape already rotated (rows "/"),
-// color "#rrggbb", actions bits 1 = use, 2 = drop.
+// What's in the pack (Core/InventoryPresenter; the page's Inventory and Equipment tabs). Each item
+// "uid|id|name|kind|x|y|rot|shape|bulk|value|color|description|actions|slot|equipped|bonuses": shape already rotated
+// (rows "/"), color "#rrggbb", actions bits 1 = use, 2 = drop, 4 = equip; slot = its EquipSlot, equipped = the slot
+// it's in now (0: in the grid; x, y unused then); bonuses as text ("Engineering +2, STR +1").
 message PlayerInventory {
   option (ln.state) = true;
   option (ln.web) = true;
@@ -100,6 +116,28 @@ message PlayerInventory {
   int32 value = 9;
   // The last thing that didn't fit, or that happened ("No room for ...").
   string message = 10;
+  // Everything equipped adds up to (for the Equipment tab): each "label|value", e.g. "Engineering|+2".
+  repeated string gear_bonuses = 11;
+}
+
+// The page: put item `uid` in its equipment slot (whatever was there goes back into the pack, if it fits).
+message InventoryEquipRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  int32 uid = 1;
+}
+
+// The page: take slot `slot` (EquipSlot) off, back into the pack where it fits. (Dragging an equipped item onto
+// the grid is an InventoryMoveRequested.)
+message InventoryUnequipRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  int32 slot = 1;
+}
+
+// Equipment changed (CharacterPresenter re-adds the gear bonuses).
+message EquipmentChanged {
+  option (ln.event) = true;
 }
 
 // The page's grid: put item `uid` at cell (x, y) (its shape's top left), turned `rot` quarter turns clockwise.

@@ -28,6 +28,9 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<CutsceneStepStarted>(options);
             builder.RegisterMessageBroker<CutsceneFinished>(options);
             builder.RegisterMessageBroker<InputActionPerformed>(options);
+            builder.RegisterMessageBroker<InventoryEquipRequested>(options);
+            builder.RegisterMessageBroker<InventoryUnequipRequested>(options);
+            builder.RegisterMessageBroker<EquipmentChanged>(options);
             builder.RegisterMessageBroker<InventoryMoveRequested>(options);
             builder.RegisterMessageBroker<InventoryUseRequested>(options);
             builder.RegisterMessageBroker<InventoryDropRequested>(options);

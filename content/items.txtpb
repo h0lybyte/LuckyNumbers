@@ -45,52 +45,68 @@ items {
   effects: [RELIC_EFFECT_REVEAL_ALL] seconds: 20
 }
 
-# ---- gear (Equipment, next) --------------------------------------------------------------------------------
+# ---- gear: equip into its slot (Equipment tab) for the bonuses; nothing is drawn --------------------------------------------------------------------------------
 
 items {
   id: "sidearm" name: "Sidearm" kind: ITEM_KIND_WEAPON slot: EQUIP_SLOT_WEAPON
   description: "Compact coil pistol. Every pilot has one." shape: "##/#." bulk: 1 value: 350
   color { r: 0.6 g: 0.7 b: 0.8 a: 1 }
+  skill_bonuses { skill: "intimidate" amount: 1 }
 }
 items {
   id: "rifle" name: "Salvage rifle" kind: ITEM_KIND_WEAPON slot: EQUIP_SLOT_WEAPON
   description: "Long, heavy, reliable." shape: "####/..#." bulk: 2.5 value: 900
   color { r: 0.55 g: 0.6 b: 0.7 a: 1 }
+  skill_bonuses { skill: "intimidate" amount: 2 } skill_bonuses { skill: "perception" amount: 1 }
 }
 items {
   id: "cutter" name: "Plasma cutter" kind: ITEM_KIND_TOOL slot: EQUIP_SLOT_TOOL
   description: "Opens hulls, crates and anything else in the way." shape: "###" bulk: 2 value: 600
   color { r: 1 g: 0.45 b: 0.15 a: 1 }
+  skill_bonuses { skill: "engineering" amount: 2 } skill_bonuses { skill: "athletics" amount: 1 }
 }
 items {
   id: "multitool" name: "Multitool" kind: ITEM_KIND_TOOL slot: EQUIP_SLOT_TOOL
   description: "Forty tools, one of which is always the right one." shape: "#/#" bulk: 0.3 value: 120
   color { r: 0.8 g: 0.8 b: 0.3 a: 1 }
+  skill_bonuses { skill: "engineering" amount: 1 } skill_bonuses { skill: "computers" amount: 1 }
 }
 items {
   id: "datapad" name: "Datapad" kind: ITEM_KIND_TOOL slot: EQUIP_SLOT_TOOL
   description: "Cracked screen, cracked firmware. Talks to old locks." shape: "##" bulk: 0.3 value: 250
   color { r: 0.3 g: 0.9 b: 0.6 a: 1 }
+  skill_bonuses { skill: "computers" amount: 2 } skill_bonuses { skill: "appraise" amount: 1 }
 }
 items {
   id: "scanner" name: "Relic scanner" kind: ITEM_KIND_TOOL slot: EQUIP_SLOT_HANDS
   description: "Reads age and origin off anything old." shape: "##/##" bulk: 1 value: 480
   color { r: 0.4 g: 0.7 b: 1 a: 1 }
+  skill_bonuses { skill: "appraise" amount: 2 } skill_bonuses { skill: "perception" amount: 1 } relic_bonus: 1
 }
 items {
   id: "helmet" name: "Pressure helmet" kind: ITEM_KIND_ARMOR slot: EQUIP_SLOT_HEAD
   description: "Keeps your head inside and the vacuum out." shape: "##/##" bulk: 1.5 value: 400
   color { r: 0.75 g: 0.8 b: 0.9 a: 1 }
+  hp_bonus: 2 skill_bonuses { skill: "survival" amount: 1 }
 }
 items {
   id: "jacket" name: "Flight jacket" kind: ITEM_KIND_ARMOR slot: EQUIP_SLOT_BODY
   description: "Armoured lining, a lot of pockets." shape: "##/##/##" bulk: 2 value: 300
   color { r: 0.35 g: 0.45 b: 0.6 a: 1 }
+  stamina_bonus: 2 skill_bonuses { skill: "piloting" amount: 1 }
 }
 items {
   id: "rig" name: "Hauler rig" kind: ITEM_KIND_ARMOR slot: EQUIP_SLOT_BODY
   description: "Exo-frame for lifting what you shouldn't." shape: "###/.#./###" bulk: 4 value: 1200
   color { r: 0.9 g: 0.7 b: 0.2 a: 1 }
+  ability_bonuses { ability: "str" amount: 2 } bulk_bonus: 3 skill_bonuses { skill: "athletics" amount: 2 } skill_bonuses { skill: "stealth" amount: -2 }
+}
+
+items {
+  id: "gloves" name: "Grip gloves" kind: ITEM_KIND_ARMOR slot: EQUIP_SLOT_HANDS
+  description: "Sticky palms, warm fingers." shape: "##" bulk: 0.3 value: 150
+  color { r: 0.5 g: 0.8 b: 0.5 a: 1 }
+  skill_bonuses { skill: "acrobatics" amount: 1 } skill_bonuses { skill: "athletics" amount: 1 }
 }
 
 # ---- relics (what a picked-up relic takes up) ----------------------------------------------------------------
@@ -114,9 +130,9 @@ relic_items { relic: "amulet" item: "relic_amulet" }
 relic_items { relic: "vase" item: "relic_vase" }
 default_relic_item: "relic"
 
-# ---- starting kits (CharacterClass.id) -------------------------------------------------------------------------
+# ---- starting kits (CharacterClass.id): gear goes straight into its slot -------------------------------------------------------------------------
 
-kits { class_id: "ace"     items: ["sidearm", "jacket", "medpatch", "medpatch", "ping"] }
+kits { class_id: "ace"     items: ["sidearm", "jacket", "gloves", "medpatch", "medpatch", "ping"] }
 kits { class_id: "breaker" items: ["cutter", "rig", "helmet", "rations", "medpatch"] }
 kits { class_id: "hacker"  items: ["datapad", "multitool", "scanner", "ping", "ping", "medpatch"] }
 kits { class_id: "medic"   items: ["trauma_kit", "medpatch", "medpatch", "medpatch", "scanner", "rations"] }
