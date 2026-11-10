@@ -1,0 +1,43 @@
+# proto-file: luckynumbers/v1/cargo.proto
+# proto-message: luckynumbers.v1.CargoConfig
+# The museum freighter and its relics. Everything here is picked from by the lucky number (Cargo.Manifest).
+
+ship_names: ["MSV Curator", "MSV Long Memory", "MSV Patient Archive", "MSV Quiet Reliquary", "MSV Old Light"]
+museums: ["Galactic Museum of Antiquities", "Hall of Lost Worlds", "Interstellar Heritage Trust", "Museum of Before"]
+
+min_relics: 6
+max_relics: 11
+
+cultures {
+  id: "tibetan"
+  name: "Tibetan"
+  materials: ["gilded copper", "turquoise-set silver", "lacquered wood", "dzi agate"]
+  origins: ["a Lhasa monastery", "the Changtang plateau", "a Himalayan pass shrine"]
+  weight: 1
+  value_scale: 1.2
+  color_a { r: 0.75 g: 0.12 b: 0.08 a: 1 }   # lacquer red
+  color_b { r: 0.95 g: 0.75 b: 0.25 a: 1 }   # gold
+}
+cultures {
+  id: "roman"
+  name: "Roman"
+  materials: ["terracotta", "bronze", "glass", "marble"]
+  origins: ["a villa near Pompeii", "a wreck off Sicily", "a Hadrian's Wall fort"]
+  weight: 1
+  value_scale: 1
+  color_a { r: 0.72 g: 0.36 b: 0.2 a: 1 }    # terracotta
+  color_b { r: 0.1 g: 0.08 b: 0.06 a: 1 }    # black glaze
+}
+cultures {
+  id: "alien"
+  name: "unknown alien"
+  materials: ["living crystal", "humming alloy", "a metal that isn't", "folded glass"]
+  origins: ["a dead moon's vault", "a signal no one answered", "the far side of the galaxy"]
+  weight: 0.6
+  value_scale: 2.5
+  color_a { r: 0.2 g: 0.95 b: 0.75 a: 1 }    # iridescent teal
+  color_b { r: 0.55 g: 0.2 b: 0.95 a: 1 }    # violet
+}
+
+kinds { id: "amulet" name: "amulet" value_min: 300 value_max: 900 }
+kinds { id: "vase" name: "vase" value_min: 500 value_max: 1500 }

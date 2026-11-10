@@ -24,6 +24,10 @@ namespace LuckyNumbers.Model
         /// Ship length, in target-planet diameters.
         /// </summary>
         public float ShipSize { get; set; }
+        /// <summary>
+        /// Body the ship is pulled into ("home"); empty = a planet of the system picked from the lucky number.
+        /// </summary>
+        public string Target { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public Cutscene Clone() => (Cutscene)MemberwiseClone();
@@ -131,6 +135,10 @@ namespace LuckyNumbers.Model
         public CrashLanding Clone() => (CrashLanding)MemberwiseClone();
     }
 
+    /// <summary>
+    /// A line of text (typewriter). In cutscenes the text may use {ship}, {museum}, {planet}, {cargo}, {relics} and
+    /// {value}, filled from the seeded cargo manifest.
+    /// </summary>
     public sealed class Dialogue
     {
         public string Speaker { get; set; }
@@ -140,6 +148,10 @@ namespace LuckyNumbers.Model
         /// Typewriter speed; 0 = show the whole line at once.
         /// </summary>
         public float CharsPerSecond { get; set; }
+        /// <summary>
+        /// In a cutscene: start the line and carry straight on with the next step (a caption over the action).
+        /// </summary>
+        public bool Overlap { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public Dialogue Clone() => (Dialogue)MemberwiseClone();

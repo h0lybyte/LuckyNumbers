@@ -22,7 +22,9 @@ namespace LuckyNumbers.Intro
     [Presenter]
     public sealed class IntroPresenter : IStartable, IDisposable
     {
-        const string Target = "home";
+        string Target = "home";              // the body the ship is pulled into (Cutscene.target, or seeded)
+        string _targetName = "home";         // its readable name (BodyNames)
+        LuckyNumbers.Cargo.Manifest _manifest;
 
         readonly ISpaceDirector _space;
         readonly IntroView _view;
@@ -90,6 +92,15 @@ namespace LuckyNumbers.Intro
             }
             _view.Flash(Color.black, _fromTitle ? 0f : 1f);
             // The universe arrives via the buffered lucky number (placed on its orbits as it is built).
+            while (_space.Worlds.Count == 0) await UniTask.Yield(ct);
+            // Where it goes down: the cutscene's target, or one of the system's planets picked from the lucky number.
+            var worlds = _space.Worlds;
+            var pick = new Random((_space.Seed ^ 0xA11CE5EDu) | 1u).NextInt(worlds.Count);
+            Target = string.IsNullOrEmpty(_cut.Target) ? worlds[pick] : _cut.Target;
+            _targetName = BodyNames.Planet(_space.Seed, Mathf.Max(0, IndexOf(worlds, Target)));
+            _manifest = LuckyNumbers.Cargo.Manifest.Generate(GameContent.Cargo, _space.Seed);
+            Debug.Log($"[Intro] {_manifest.Ship} ({_manifest.Museum}) goes down on {Target} \"{_targetName}\": " +
+                      $"{_manifest.Relics.Count} relics worth {_manifest.TotalValue}");
             while (!_space.TryGetBody(Target, out _, out _)) await UniTask.Yield(ct);
             // Play pressed mid big bang: the title camera is out in its system overview, far from home. Continuing
             // from there would put the whole arrival out in empty space, so stand in for the title's settled view
@@ -132,7 +143,10 @@ namespace LuckyNumbers.Intro
                     case CutsceneStep.StepCase.ShipArrives: await ArriveAsync(step.ShipArrives, ct); break;
                     case CutsceneStep.StepCase.ShipPulledIn: await PullInAsync(step.ShipPulledIn, ct); break;
                     case CutsceneStep.StepCase.CrashLanding: await CrashAsync(step.CrashLanding, ct); break;
-                    case CutsceneStep.StepCase.Dialogue: await DialogueAsync(step.Dialogue, ct); break;
+                    case CutsceneStep.StepCase.Dialogue:
+                        if (step.Dialogue.Overlap) DialogueAsync(step.Dialogue, ct).Forget();   // a caption over the next steps
+                        else await DialogueAsync(step.Dialogue, ct);
+                        break;
                     case CutsceneStep.StepCase.GoTo:
                         _finished.Publish(new CutsceneFinished(_cut.Id));
                         _space.Release();
@@ -264,7 +278,21 @@ namespace LuckyNumbers.Intro
         }
 
         /// <summary>On black: the line types out, holds, clears.</summary>
-        UniTask DialogueAsync(Dialogue line, CancellationToken ct) => DialogueLine.Play(line, _view.Dialogue, ct);
+        /// <summary>A line with {ship} {museum} {planet} {cargo} {relics} {value} filled from the manifest.</summary>
+        UniTask DialogueAsync(Dialogue line, CancellationToken ct)
+        {
+            var filled = line.Clone();
+            filled.Speaker = _manifest?.Fill(line.Speaker, _targetName) ?? line.Speaker;
+            filled.Text = _manifest?.Fill(line.Text, _targetName) ?? line.Text;
+            Debug.Log($"[Intro] {filled.Speaker}: {filled.Text}");
+            return DialogueLine.Play(filled, _view.Dialogue, ct);
+        }
+
+        static int IndexOf(System.Collections.Generic.IReadOnlyList<string> list, string id)
+        {
+            for (var i = 0; i < list.Count; i++) if (list[i] == id) return i;
+            return -1;
+        }
 
         // ---- Ship path ---------------------------------------------------------------------------------
 

@@ -50,6 +50,21 @@ namespace LuckyNumbers.Space
         public void TakeCamera() => _directed = true;
         public void Release() => _directed = false;
 
+        public System.Collections.Generic.IReadOnlyList<string> Worlds
+        {
+            get
+            {
+                var worlds = new System.Collections.Generic.List<string>();
+                for (var i = 0; i < (_world?.Count ?? 0); i++)
+                {
+                    if (_world.Kind[i] != BodyKind.Planet) continue;
+                    var parent = _world.OrbitParent[i];
+                    if (parent < 0 || _world.Kind[parent] == BodyKind.Star) worlds.Add(_world.Ids[i]);   // moons orbit planets
+                }
+                return worlds;
+            }
+        }
+
         public string Nearest(float3 point, out float surfaceDistance)
         {
             string best = null;

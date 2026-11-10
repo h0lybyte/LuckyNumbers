@@ -11,6 +11,114 @@ namespace LuckyNumbers.Model
 {
     public static class GameContent
     {
+        /// <summary>From <c>content/cargo.txtpb</c>.</summary>
+        public static readonly CargoConfig Cargo = new CargoConfig
+        {
+            ShipNames =
+            {
+                "MSV Curator",
+                "MSV Long Memory",
+                "MSV Patient Archive",
+                "MSV Quiet Reliquary",
+                "MSV Old Light",
+            },
+            Museums =
+            {
+                "Galactic Museum of Antiquities",
+                "Hall of Lost Worlds",
+                "Interstellar Heritage Trust",
+                "Museum of Before",
+            },
+            MinRelics = 6,
+            MaxRelics = 11,
+            Cultures =
+            {
+                new RelicCulture
+                {
+                    Id = "tibetan",
+                    Name = "Tibetan",
+                    Materials =
+                    {
+                        "gilded copper",
+                        "turquoise-set silver",
+                        "lacquered wood",
+                        "dzi agate",
+                    },
+                    Origins =
+                    {
+                        "a Lhasa monastery",
+                        "the Changtang plateau",
+                        "a Himalayan pass shrine",
+                    },
+                    Weight = 1.0f,
+                    ValueScale = 1.2f,
+                    ColorA = new Rgba(0.75f, 0.12f, 0.08f, 1.0f),
+                    ColorB = new Rgba(0.95f, 0.75f, 0.25f, 1.0f),
+                },
+                new RelicCulture
+                {
+                    Id = "roman",
+                    Name = "Roman",
+                    Materials =
+                    {
+                        "terracotta",
+                        "bronze",
+                        "glass",
+                        "marble",
+                    },
+                    Origins =
+                    {
+                        "a villa near Pompeii",
+                        "a wreck off Sicily",
+                        "a Hadrian's Wall fort",
+                    },
+                    Weight = 1.0f,
+                    ValueScale = 1.0f,
+                    ColorA = new Rgba(0.72f, 0.36f, 0.2f, 1.0f),
+                    ColorB = new Rgba(0.1f, 0.08f, 0.06f, 1.0f),
+                },
+                new RelicCulture
+                {
+                    Id = "alien",
+                    Name = "unknown alien",
+                    Materials =
+                    {
+                        "living crystal",
+                        "humming alloy",
+                        "a metal that isn't",
+                        "folded glass",
+                    },
+                    Origins =
+                    {
+                        "a dead moon's vault",
+                        "a signal no one answered",
+                        "the far side of the galaxy",
+                    },
+                    Weight = 0.6f,
+                    ValueScale = 2.5f,
+                    ColorA = new Rgba(0.2f, 0.95f, 0.75f, 1.0f),
+                    ColorB = new Rgba(0.55f, 0.2f, 0.95f, 1.0f),
+                },
+            },
+            Kinds =
+            {
+                new RelicKind
+                {
+                    Id = "amulet",
+                    Name = "amulet",
+                    ValueMin = 300.0f,
+                    ValueMax = 900.0f,
+                },
+                new RelicKind
+                {
+                    Id = "vase",
+                    Name = "vase",
+                    ValueMin = 500.0f,
+                    ValueMax = 1500.0f,
+                },
+            },
+        };
+
         /// <summary>From <c>content/intro.txtpb</c>.</summary>
         public static readonly Cutscene Intro = new Cutscene
         {
@@ -22,6 +130,17 @@ namespace LuckyNumbers.Model
                     ShipArrives = new ShipArrives
                     {
                         DurationSeconds = 3.0f,
+                    },
+                },
+                new CutsceneStep
+                {
+                    Dialogue = new Dialogue
+                    {
+                        Speaker = "{ship} - MAYDAY",
+                        Text = "{museum} freighter going down over {planet}. Cargo: {relics} relics, {cargo}.",
+                        DurationSeconds = 6.5f,
+                        CharsPerSecond = 34.0f,
+                        Overlap = true,
                     },
                 },
                 new CutsceneStep

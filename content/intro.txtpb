@@ -9,9 +9,14 @@ backdrop_ref: "space/systems/home"
 backdrop { instant: true }
 
 ship_size: 0.1
+# The museum freighter goes down on a planet of your system picked from the lucky number (empty target).
+target: ""
 
 # Continues straight from the title's camera (the dice were rolled there): the ship streaks in past it.
 steps { ship_arrives { duration_seconds: 3 } }
+
+# Its distress call, over the action. {...} come from the seeded cargo manifest.
+steps { dialogue { speaker: "{ship} - MAYDAY" text: "{museum} freighter going down over {planet}. Cargo: {relics} relics, {cargo}." duration_seconds: 6.5 chars_per_second: 34 overlap: true } }
 
 # The ship gets dragged into the planet.
 steps { ship_pulled_in { duration_seconds: 7 start_distance: 4 turns: 0.9 bank_degrees: 55 camera_release: 0.12 } }

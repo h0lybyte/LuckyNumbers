@@ -14,6 +14,8 @@ namespace LuckyNumbers.Space
         Camera Camera { get; }
         /// <summary>World position and diameter of a body by id (e.g. "home").</summary>
         bool TryGetBody(string id, out float3 position, out float diameter);
+        /// <summary>The system's planets (not moons, stars or galaxies), innermost first, once the universe is built.</summary>
+        System.Collections.Generic.IReadOnlyList<string> Worlds { get; }
         /// <summary>Closest body to a point (surface distance), for keeping shots clear of other bodies.</summary>
         string Nearest(float3 point, out float surfaceDistance);
         /// <summary>Stop the orbit camera; the caller moves Camera until Release.</summary>
