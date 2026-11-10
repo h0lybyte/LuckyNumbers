@@ -1,0 +1,280 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+import "luckynumbers/v1/common.proto";
+import "luckynumbers/v1/flow.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// The player's space station (where their ship docks), built from the PSX station kit (rooms) and the
+// PSX starship kit (corridors) on their shared grid: 2 m cells, 3 m high. Laid out as an ASCII plan.
+message StationScene {
+  option (ln.config) = true;
+  // Rows of the plan, north (+Z) first, west (-X) on the left; one character per 2 m cell:
+  //   '#' or ' '  solid / outside
+  //   '.'         room floor: station-kit walls and deck plate
+  //   'c'         corridor: starship-kit leaning walls, ribs and a ceiling light
+  //   'D'         doorway: walkable; the doorway piece stands across the cell's middle, sides walled
+  //   'W'         window: solid; walls facing it are viewports (rooms) or portholes (corridors)
+  //   'P'         room floor where the player starts (facing spawn_yaw)
+  //   'E'         room floor that takes the player on to `next` (their ship's airlock)
+  repeated string plan = 1;
+  // Every nth wall along the grid gets the lit variant (light strips); 0 = never.
+  int32 light_every = 2;
+  // Cells per side of a mesh chunk: each chunk is one mesh per kit (one draw call each).
+  int32 chunk_cells = 4;
+  // How the station looks in each light mode (StationLightMode).
+  StationLightLook lights_on = 5;
+  StationLightLook lights_off = 6;
+  StationLightLook emergency = 7;
+  // Rooms use the corridor walls with their lean (2.3 to 3 m, 0.6 m in) cut back to this fraction:
+  // 0 = upright panels, 1 = the corridor's full lean.
+  float room_lean = 8;
+  // Rooms light every nth row of ceiling tiles (the rest keep their strip dark); corridors light every tile.
+  int32 ceiling_light_every = 9;
+
+  // Where the station hangs in the player's universe: orbiting this body (empty = the planet the freighter
+  // goes down on, from the lucky number), this many of its diameters from its centre, on its sunward side.
+  // The station's north (+Z, row 0 of the plan) faces the body, so north windows look at it.
+  string orbit = 10;
+  float orbit_diameters = 11;
+  // Player start: compass heading in degrees (0 = north, 90 = east).
+  float spawn_yaw = 12;
+  // Scene after the station (walking onto an 'E' cell).
+  GameScene next = 13;
+  // Controls line shown on arrival.
+  string hint = 14;
+  // Big rooms get more headroom: rooms of at least tall_room_cells cells are tall_levels storeys of 3 m high
+  // (walls stacked: upright below, the room lean on top; walls close over their 3 m doorways). 0 = none.
+  int32 tall_room_cells = 15;
+  int32 tall_levels = 16;
+
+  // Room names, shown as you walk in (a cell of each room, plan coordinates: column, row from the top).
+  repeated StationRoom rooms = 17;
+  // Furniture and clutter from either kit, placed by plan coordinates (cell centres at whole numbers).
+  repeated StationProp props = 18;
+  // Your ship, docked: walk up to it and press E to board (goes on to `next`).
+  StationDock dock = 19;
+  // The call that comes in when you first walk into `call.room`.
+  StationCall call = 20;
+  // Consoles and switches you can use with E.
+  repeated StationSwitch switches = 21;
+  // Doors slide open when you come this close (metres).
+  float door_open_distance = 22;
+  // Orange handrails along the corridor walls.
+  bool corridor_handrails = 23;
+  // Lamp glow (bloom intensity; 0 = off) and light pools under the ceiling strips (0..1).
+  float glow = 24;
+  float light_pools = 25;
+  // Lay the station out from the lucky number instead of `plan` (rooms, props, consoles and dock from its rules).
+  StationGenerator generator = 26;
+}
+
+// Seeded layout: a hub in the middle, rooms around it by role, joined by corridors through doorways.
+message StationGenerator {
+  bool enabled = 1;
+  repeated StationRoomRule rooms = 2;
+  // Corridor length (cells) between the hub and the rooms around it.
+  int32 min_corridor = 3;
+  int32 max_corridor = 4;
+}
+
+enum StationRoomRole {
+  STATION_ROOM_ROLE_UNSPECIFIED = 0;
+  // In the middle; the call comes in here.
+  STATION_ROOM_ROLE_HUB = 1;
+  // North of the hub (towards the planet), windows on its north wall.
+  STATION_ROOM_ROLE_GALLERY = 2;
+  // West of the hub; your ship docks in it.
+  STATION_ROOM_ROLE_BAY = 3;
+  // East of the hub.
+  STATION_ROOM_ROLE_COMMS = 4;
+  // Along a corridor south of the hub (count of them); the first is yours (you start there).
+  STATION_ROOM_ROLE_CABIN = 5;
+  // At the west end of the south corridor.
+  STATION_ROOM_ROLE_STORAGE = 6;
+  // At the east end of the south corridor.
+  STATION_ROOM_ROLE_ENGINEERING = 7;
+}
+
+message StationRoomRule {
+  StationRoomRole role = 1;
+  string name = 2;
+  // Size range in cells (width west-east, depth north-south).
+  int32 min_width = 3;
+  int32 max_width = 4;
+  int32 min_depth = 5;
+  int32 max_depth = 6;
+  // Cabins: how many (the first one is "Your Cabin" if your_name is set).
+  int32 count = 7;
+  string your_name = 8;
+  // Windows on the wall facing away from the hub (every other cell).
+  bool windows = 9;
+  // Placed across the room: u west -> east, v north -> south, both 0..1 (inside the walls).
+  repeated StationRoomItem items = 10;
+}
+
+message StationRoomItem {
+  string piece = 1;
+  float u = 2;
+  float v = 3;
+  float yaw = 4;
+  bool solid = 5;
+  // A console: E does this (see StationAction), with this prompt.
+  StationAction action = 6;
+  string prompt = 7;
+}
+
+message StationRoom {
+  string name = 1;
+  int32 col = 2;
+  int32 row = 3;
+}
+
+message StationProp {
+  // Kit model name (file name in Art/Models/StationKit or StarshipKit), e.g. "crate_station".
+  string piece = 1;
+  float col = 2;
+  float row = 3;
+  // Compass heading in degrees (0 = its front faces north).
+  float yaw = 4;
+  // You bump into it (a box from its model's bounds).
+  bool solid = 5;
+}
+
+message StationDock {
+  float col = 1;
+  float row = 2;
+  float yaw = 3;
+  // Ship length in metres.
+  float length = 4;
+  // How close (metres from the hull) you need to be to board.
+  float board_distance = 5;
+  string board_prompt = 6;
+}
+
+message StationCallLine {
+  string speaker = 1;
+  string text = 2;
+  float seconds = 3;
+}
+
+message StationCall {
+  // Room name (StationRoom.name) that sets it off.
+  string room = 1;
+  string caller = 2;
+  // Prompt while it rings ({caller} works); E or the page's Answer button picks up.
+  string ring_prompt = 3;
+  // Lines; {planet} is the world the station orbits, {ship} / {museum} the freighter's (cargo manifest).
+  repeated StationCallLine lines = 4;
+  float chars_per_second = 5;
+  // What to do next, shown once the call ends.
+  string objective = 6;
+}
+
+enum StationAction {
+  STATION_ACTION_UNSPECIFIED = 0;
+  // Step the lights: on -> off -> emergency -> on.
+  STATION_ACTION_LIGHTS = 1;
+  // Answer the call (while it rings).
+  STATION_ACTION_ANSWER = 2;
+  // Toggle the PS1 look.
+  STATION_ACTION_PSX = 3;
+}
+
+message StationSwitch {
+  float col = 1;
+  float row = 2;
+  StationAction action = 3;
+  string prompt = 4;
+  // Optional kit model to show there (e.g. a console: "lab_bench"), placed like a prop.
+  string piece = 5;
+  float yaw = 6;
+}
+
+enum CallPhase {
+  CALL_PHASE_NONE = 0;
+  CALL_PHASE_RINGING = 1;
+  CALL_PHASE_ACTIVE = 2;
+  CALL_PHASE_ENDED = 3;
+}
+
+// Live station state (mirrored to the web page).
+message StationState {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  StationLightMode lights = 1;
+  // The room you're in (StationRoom.name), or "" in corridors.
+  string room = 2;
+  CallPhase call = 3;
+  string caller = 4;
+  // What to do next ("Board your ship in the docking bay"), and the E prompt you're standing at.
+  string objective = 5;
+  string prompt = 6;
+  // PS1 look: vertex snapping, affine textures, dither.
+  bool psx = 7;
+  // The plan as built (rows joined with \n), for the page's layout editor.
+  string plan = 8;
+  // The station map (M): open or not, where you are and which way you face (plan coordinates; yaw: compass
+  // degrees), your ship's dock, and every room as "name|col|row".
+  bool map_open = 9;
+  float player_col = 10;
+  float player_row = 11;
+  float player_yaw = 12;
+  float dock_col = 13;
+  float dock_row = 14;
+  repeated string rooms = 15;
+}
+
+// The page (or a console) answers the ringing call.
+message StationCallAnswered {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+}
+
+// The page's layout editor: rebuild the station from this plan (rows joined with \n).
+message StationPlanRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  string plan = 1;
+}
+
+// Toggle the PS1 look (the page or a console).
+message PsxModeRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  bool on = 1;
+}
+
+// Switch the station's lights (the page may send it too: e.g. trip the emergency lighting).
+message StationLightsRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  StationLightMode mode = 1;
+}
+
+enum StationLightMode {
+  STATION_LIGHT_MODE_UNSPECIFIED = 0;
+  STATION_LIGHT_MODE_ON = 1;
+  // Power down: the painted lights go dark and the station dims.
+  STATION_LIGHT_MODE_OFF = 2;
+  // Red alert: every light turns red and pulses, the rest dims under a red cast.
+  STATION_LIGHT_MODE_EMERGENCY = 3;
+}
+
+// One light mode's look. The kits' painted lights are masked in their atlases' alpha (tools/kitmask.py);
+// the StationKit shader treats those texels as lights and everything else as surface.
+message StationLightLook {
+  // Surfaces (not lights): multiplies the atlas x baked shading. White = as the kit painted it.
+  Rgba ambient = 1;
+  // Light texels: tint (rgb) times intensity (a).
+  Rgba light = 2;
+  // Light texels go this far towards grey before the tint (1 = only the tint's colour shows).
+  float desaturate = 3;
+  // Pulse (lights, and surfaces at half depth): cycles per second; 0 = steady.
+  float pulse_hz = 4;
+  // How deep the pulse dips, 0..1.
+  float pulse_depth = 5;
+}

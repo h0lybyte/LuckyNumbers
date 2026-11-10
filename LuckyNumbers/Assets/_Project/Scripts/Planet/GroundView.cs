@@ -131,6 +131,8 @@ namespace LuckyNumbers.Planet
         }
 
         public float HeightAt(Vector3 world) => Height(new float2(world.x, world.z));
+        /// <summary>Ground normal under a world point (from the height function, like the chunk normals).</summary>
+        public Vector3 NormalAt(Vector3 world) => Normal(new float2(world.x, world.z), 0.5f);
 
         Vector3 Normal(float2 p, float e)
         {

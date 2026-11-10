@@ -3,12 +3,19 @@ using UnityEngine.UIElements;
 
 namespace LuckyNumbers.Planet
 {
-    /// <summary>Crash-site overlay: full-screen fade, a controls hint and the dialogue box (typewriter).</summary>
+    /// <summary>
+    /// Crash-site overlay (full-screen fade, controls hint, dialogue box, flight HUD) and the scene's ships: the
+    /// freighter wreck and your fighter, with the chase camera you fly it from.
+    /// </summary>
     [View]
     public sealed partial class PlanetView : MonoBehaviour
     {
         [SerializeField] UIDocument document;
         [SerializeField] MeshRenderer sun;   // star sphere far away in the sky
+        [SerializeField] LuckyNumbers.Intro.ShipView wreck;    // the museum freighter
+        [SerializeField] LuckyNumbers.Intro.ShipView fighter;  // your ship
+        [SerializeField] Camera flightCamera;                 // chase camera while you fly (off otherwise)
+        [SerializeField] Transform wreckBeacon;               // unlit beam marking the wreck while you fly in (off otherwise)
 
         [Ui("flash")] VisualElement _flash;
         [Ui("hint")] Label _hint;
@@ -17,8 +24,24 @@ namespace LuckyNumbers.Planet
         [Ui("dialogue")] VisualElement _dialogue;
         [Ui("speaker")] Label _speaker;
         [Ui("line")] Label _line;
+        [Ui("flight-hud")] VisualElement _flightHud;
+        [Ui("flight-readout")] Label _flightReadout;
+        [Ui("flight-message")] Label _flightMessage;
 
         public MeshRenderer Sun => sun;
+        public LuckyNumbers.Intro.ShipView Wreck => wreck;
+        public LuckyNumbers.Intro.ShipView Fighter => fighter;
+        public Camera FlightCamera => flightCamera;
+        public Transform WreckBeacon => wreckBeacon;
+
+        /// <summary>Flight HUD: readout line (null = hide the HUD) and a big centred message (null = none).</summary>
+        public void Flight(string readout, string message)
+        {
+            _flightHud.EnableInClassList("ln-hidden", readout == null);
+            _flightReadout.text = readout ?? "";
+            _flightMessage.text = message ?? "";
+            _crosshair.EnableInClassList("ln-hidden", readout != null);
+        }
 
         public void Bind() => BindUi(document.rootVisualElement);
 

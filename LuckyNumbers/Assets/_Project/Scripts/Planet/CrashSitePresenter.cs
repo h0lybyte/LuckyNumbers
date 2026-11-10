@@ -30,6 +30,15 @@ namespace LuckyNumbers.Planet
         System.Collections.Generic.IReadOnlyList<CelestialBody> Bodies { get; }
         /// <summary>Towards the sun, in the ground's frame (x east, y up, z north).</summary>
         Vector3 SunDirection { get; }
+        /// <summary>The ground streams around `target` and the sun sits beyond `eye` (null: the player, the default).</summary>
+        void Follow(Transform target, Transform eye);
+    }
+
+    /// <summary>How you arrive once the crash site is built (LandingPresenter: you fly in and land).</summary>
+    public interface IArrival
+    {
+        /// <summary>Called once the site is built (passed in, rather than injected, to avoid a dependency loop).</summary>
+        UniTask ArriveAsync(ICrashSite site, CancellationToken ct);
     }
 
     [Presenter]
@@ -42,7 +51,8 @@ namespace LuckyNumbers.Planet
         readonly GroundView _ground;
         readonly PlanetView _view;
         readonly PlayerView _player;
-        readonly ShipView _wreck;
+        readonly IArrival _arrival;
+        Transform _follow, _eye;
         readonly IFirstPerson _firstPerson;
         readonly LandingSite _landing;
         readonly PlayerShip _playerShip;
@@ -58,9 +68,11 @@ namespace LuckyNumbers.Planet
         public PlanetLook Look { get; private set; }
         public System.Collections.Generic.IReadOnlyList<CelestialBody> Bodies { get; private set; }
         public Vector3 SunDirection => _sunDirection;
+        public void Follow(Transform target, Transform eye) { _follow = target; _eye = eye; }
+        ShipView _wreck => _view.Wreck;
 
         [Inject]
-        public CrashSitePresenter(PlanetScene config, GroundView ground, PlanetView view, PlayerView player, ShipView wreck,
+        public CrashSitePresenter(PlanetScene config, GroundView ground, PlanetView view, PlayerView player, IArrival arrival,
                                   IFirstPerson firstPerson, LandingSite landing, IBufferedSubscriber<UniverseSeedChanged> seeds,
                                   PlayerShip playerShip)
         {
@@ -69,7 +81,7 @@ namespace LuckyNumbers.Planet
             _ground = ground;
             _view = view;
             _player = player;
-            _wreck = wreck;
+            _arrival = arrival;
             _firstPerson = firstPerson;
             _landing = landing;
             _seeds = seeds;
@@ -85,7 +97,8 @@ namespace LuckyNumbers.Planet
                 if (_built) return;
                 _built = true;
                 Build(roll.Seed == 0 ? new UniverseSeedChanged(1u, -1f, -1f, -1f) : roll);
-                WakeAsync(_cts.Token).Forget();
+                if (_config.Landing != null) _arrival.ArriveAsync(this, _cts.Token).Forget();   // you fly in and land
+                else WakeAsync(_cts.Token).Forget();                                       // the old arrival
             });
         }
 
@@ -187,7 +200,7 @@ namespace LuckyNumbers.Planet
             }
 
             // Wreck: nose-down in front of where you wake, half dug in, still smouldering.
-            _wreck.Show(PlayerShipSkin.Current(_playerShip), _config.WreckLength);   // your ship
+            _wreck.Show(null, _config.WreckLength);   // the museum freighter (its own look)
             var at = new Vector3(0f, 0f, _config.WreckDistance);
             at.y = _ground.HeightAt(at) + _config.WreckLength * 0.04f;            // nose dug in, hull above ground
             _wreck.Pose(at, Quaternion.Euler(14f, rng.NextFloat(-160f, -110f), rng.NextFloat(-18f, 18f)));
@@ -250,7 +263,8 @@ namespace LuckyNumbers.Planet
 
         public void Tick()
         {
-            if (_built)
+            if (_built && _follow != null) _ground.Stream(_follow.position, 3);   // flying: around the ship
+            else if (_built)
             {
                 var body = _player.Body.transform;
                 _ground.Stream(body.position, 2);   // a couple of chunks per frame as you walk
@@ -264,7 +278,7 @@ namespace LuckyNumbers.Planet
                 }
             }
             // Sun at "infinity": a fixed direction from wherever the player is.
-            var eye = _player.Camera.transform.position;
+            var eye = (_eye != null ? _eye : _player.Camera.transform).position;
             var sun = eye + _sunDirection * 900f;
             _view.Sun.transform.position = sun;
             Shader.SetGlobalVector(SunPosition, new Vector4(sun.x, sun.y, sun.z, 1f));

@@ -4,7 +4,7 @@
 title: "Lucky Numbers"
 start_prompt: "Drag to look around - scroll to zoom"
 loading_prompt: "Loading..."
-next: GAME_SCENE_INTRO
+next: GAME_SCENE_STATION
 prompt_pulse_seconds: 1.6
 
 menu { label: "Play" action: MENU_ACTION_PLAY }

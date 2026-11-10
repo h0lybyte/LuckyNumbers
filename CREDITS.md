@@ -14,6 +14,14 @@ Lucky Numbers is made with the work of these people. Thank you.
   https://retrovandal.itch.io/low-poly-space-ship-pack
   From a 2005 3D Game Resources skinning competition. Skins (named after their authors): IdolKnight (1st), Krulspeld (2nd), Kaos Kiwi (3rd), Lordshadow (4th), Wilko, Cinfa, Crono782, Cubik, Freelancer, Jodomatis, NMT3000, Psychic Parrot, Robin, Shadee, Snaz, Thor and Psionic.
   (`LuckyNumbers/Assets/_Project/Art/Models/Fighter/README-psionic.txt`)
+- **Space station corridors and rooms (cream panels, leaning walls, ribs, portholes, doorways, deck)**: "PSX Starship Kit Free" by **heyheythere** ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/))
+  https://heyheythere.itch.io/psx-starship-kit-free
+  Changes: an alpha channel added to atlas.png as a light mask and the atlas packed with the station kit's into one (Art/Models/CombinedKit, tools/kitmask.py), RGB unchanged; room walls derived from the corridor walls with their lean cut back, corner fillers, window panes drawn as clear glass and door leaves slid in the shader, at build time.
+  (`LuckyNumbers/Assets/_Project/Art/Models/StarshipKit/LICENSE.txt`)
+- **Space station props (imported for later: cryo pods, crates, lab bench, chairs) and early room walls**: "PSX Sci-Fi Station Kit Free" by **heyheythere** ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/))
+  https://heyheythere.itch.io/psx-sci-fi-station-kit-free
+  Changes: an alpha channel added to atlas.png as a light mask and the atlas packed with the starship kit's into one (Art/Models/CombinedKit, tools/kitmask.py), RGB unchanged.
+  (`LuckyNumbers/Assets/_Project/Art/Models/StationKit/LICENSE.txt`)
 - **First-person arms (rig, 13 animations, skin and glove textures)**: "PSX First Person Arms" by **DrillImpact** (CC0, public domain)
   https://drillimpact.itch.io/psx-first-person-arms-free
 

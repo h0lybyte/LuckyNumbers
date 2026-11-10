@@ -6,12 +6,14 @@ import "ln/options.proto";
 
 option csharp_namespace = "LuckyNumbers.Model";
 
-// Top-level game flow: Title -> Intro (cutscene) -> Planet.
+// Top-level game flow: Title -> Station (your station; the call) -> Intro (cutscene) -> Planet.
 enum GameScene {
   GAME_SCENE_UNSPECIFIED = 0;
   GAME_SCENE_TITLE = 1;
   GAME_SCENE_INTRO = 2;
   GAME_SCENE_PLANET = 3;
+  // The player's space station, where their ship is docked.
+  GAME_SCENE_STATION = 4;
 }
 
 message FlowState {

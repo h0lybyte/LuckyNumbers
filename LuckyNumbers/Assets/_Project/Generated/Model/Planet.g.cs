@@ -128,9 +128,73 @@ namespace LuckyNumbers.Model
         /// The planet map (M): a hex globe of the planet you're on.
         /// </summary>
         public PlanetMap Map { get; set; }
+        /// <summary>
+        /// Arrival in your own ship: you fly it in and land it near the wreck (fully piloted). Unset = the old
+        /// arrival (waking up beside the wreck).
+        /// </summary>
+        public FlightLanding Landing { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public PlanetScene Clone() => (PlanetScene)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// Piloting your fighter down to the crash site. Metres, seconds, m/s, m/s^2, degrees.
+    /// </summary>
+    public sealed class FlightLanding
+    {
+        public float ShipLength { get; set; }
+        /// <summary>
+        /// Where you start: height above the ground, horizontal distance from the wreck, forward speed.
+        /// </summary>
+        public float StartAltitude { get; set; }
+        public float StartDistance { get; set; }
+        public float StartSpeed { get; set; }
+        /// <summary>
+        /// Flight model: gravity; main engine at full throttle (x boost with Shift); lift thrusters (Space, along the
+        /// ship's up); air drag per second; how fast the throttle moves (W/S, share per second).
+        /// </summary>
+        public float Gravity { get; set; }
+        public float Thrust { get; set; }
+        public float Boost { get; set; }
+        public float Lift { get; set; }
+        public float Drag { get; set; }
+        public float ThrottlePerSecond { get; set; }
+        /// <summary>
+        /// Handling: mouse pitch/yaw (degrees per pixel), roll (A/D, degrees per second), how quickly turning settles
+        /// (per second), and how fast the wings level themselves when you're not rolling (degrees per second).
+        /// </summary>
+        public float TurnDegreesPerPixel { get; set; }
+        public float RollDegreesPerSecond { get; set; }
+        public float TurnDamping { get; set; }
+        public float RollReturnDegreesPerSecond { get; set; }
+        /// <summary>
+        /// A landing counts if every limit holds at touchdown; otherwise you crash and try again.
+        /// </summary>
+        public float MaxTouchdownVertical { get; set; }
+        public float MaxTouchdownHorizontal { get; set; }
+        public float MaxTouchdownTilt { get; set; }
+        /// <summary>
+        /// Chase camera: behind and above the ship (ship lengths).
+        /// </summary>
+        public float ChaseDistance { get; set; }
+        public float ChaseHeight { get; set; }
+        public string Hint { get; set; }
+        public string LandedText { get; set; }
+        public string CrashedText { get; set; }
+        /// <summary>
+        /// Said once you've stepped out.
+        /// </summary>
+        public List<Dialogue> LandedLines { get; } = new List<Dialogue>();
+        /// <summary>
+        /// Wings: lift along the ship's up per (forward speed)^2 (so it glides when fast and sinks when slow: land
+        /// on the lift thrusters), and grip (per second) turning your motion toward where the nose points.
+        /// </summary>
+        public float WingLift { get; set; }
+        public float Grip { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public FlightLanding Clone() => (FlightLanding)MemberwiseClone();
     }
 
     /// <summary>

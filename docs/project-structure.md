@@ -57,6 +57,11 @@ one-shots), procedural life (breath, stride swing, run pump, arms up in the air,
 (touch, grab, carry), finger poses from `content/hands/poses/*`. Drawn by an overlay camera on the
 `Viewmodel` layer (same FOV, cleared depth), so they and what they hold never clip into the world.
 
+Arrival (`LandingPresenter`, `content/planet.txtpb` `landing`): you fly your own fighter in, fully piloted
+(mouse pitch/yaw, A/D roll, W/S throttle, Shift boost, Space lift thrusters; wing lift grows with airspeed,
+so you glide fast and hover slow), following the beacon over the freighter wreck. Touch down slow and level
+or crash and retry; then you step out on foot. Without `landing` you wake up beside the wreck instead.
+
 Map (M, `MapPresenter`): the planet as a smooth hex globe (`HexSphere`: a Goldberg polyhedron, hexagons plus
 the 12 pentagons Euler requires), coloured by its terrain noise, in the real universe: the roll's sky, the
 star in its true direction (lighting it) and the planet's moons. The globe is turned so the crash cell is up

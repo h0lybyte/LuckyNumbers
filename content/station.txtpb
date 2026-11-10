@@ -1,0 +1,222 @@
+# proto-file: luckynumbers/v1/station.proto
+# proto-message: luckynumbers.v1.StationScene
+# The player's station, north (row 0) facing the planet it orbits. Rooms: observation gallery (north
+# windows), docking bay (west; the airlock E is your way out to the ship), central hub, comms (east),
+# three crew cabins (you start in the middle one, P), storage (south-west) and engineering (east).
+# Your ship is docked in the bay (dock below): board it to leave.
+# One character per 2 m cell; see StationScene in station.proto for the legend.
+
+plan: "###########W#W#W#W#W#W#W#W#W#W#W############"
+plan: "##########........................##########"
+plan: "##########........................##########"
+plan: "##########........................##########"
+plan: "######################D#####################"
+plan: "###W#W#W#W#W##########c#####################"
+plan: "#............#########c#####################"
+plan: "#............#########D#####################"
+plan: "#............#####.........#####.......#####"
+plan: "#............#####.........#####.......W####"
+plan: "#............#####.........DcccD.......#####"
+plan: "#............DcccD.........#####.......W####"
+plan: "#............#####.........#####.......#####"
+plan: "#............#####.........#################"
+plan: "#............#####.........#################"
+plan: "#............#####.........#################"
+plan: "#............#########D#####################"
+plan: "#............#########c#############......##"
+plan: "######################c#############......W#"
+plan: "###########ccccccccccccccccccccccccD......##"
+plan: "###########c#####D#####D#####D######......W#"
+plan: "###.......#c####....##....##....####......##"
+plan: "###.......#c####....##.P..##....####......W#"
+plan: "###.......Dc####....##....##....####......##"
+plan: "###.......######....##....##....####......W#"
+plan: "###.......########W#####W#####W#####......##"
+plan: "###.......##################################"
+plan: "############################################"
+
+light_every: 2
+chunk_cells: 6
+room_lean: 0.4
+
+# Headroom: the gallery, docking bay and hub (60+ cells) are two storeys (6 m) high.
+tall_room_cells: 60
+tall_levels: 2
+
+# In your universe: orbiting the planet the freighter goes down on, its north windows facing it.
+orbit: ""
+orbit_diameters: 1.8
+spawn_yaw: 0
+next: GAME_SCENE_INTRO
+hint: "WASD to move - mouse to look - E to use things"
+ceiling_light_every: 2
+
+# Light modes. Lights keep their painted colour when on; off, they go grey-dark and the station dims;
+# in an emergency they turn red and pulse, and the walls take a red cast.
+lights_on {
+  ambient { r: 1 g: 1 b: 1 a: 1 }
+  light { r: 1 g: 1 b: 1 a: 1.15 }
+}
+lights_off {
+  ambient { r: 0.42 g: 0.44 b: 0.5 a: 1 }
+  light { r: 0.3 g: 0.29 b: 0.27 a: 1 }
+  desaturate: 0.7
+}
+emergency {
+  ambient { r: 0.55 g: 0.3 b: 0.28 a: 1 }
+  light { r: 1 g: 0.12 b: 0.06 a: 1.6 }
+  desaturate: 1
+  pulse_hz: 0.8
+  pulse_depth: 0.55
+}
+
+door_open_distance: 2.6
+corridor_handrails: true
+glow: 0.8
+light_pools: 0.35
+
+# --- Rooms (a cell inside each; plan coordinates: column, row from the top) ---
+rooms { name: "Observation Gallery" col: 20 row: 2 }
+rooms { name: "Docking Bay" col: 5 row: 10 }
+rooms { name: "Hub" col: 22 row: 11 }
+rooms { name: "Comms" col: 35 row: 10 }
+rooms { name: "Crew Cabin A" col: 17 row: 22 }
+rooms { name: "Your Cabin" col: 23 row: 22 }
+rooms { name: "Crew Cabin C" col: 29 row: 22 }
+rooms { name: "Storage" col: 6 row: 23 }
+rooms { name: "Engineering" col: 38 row: 20 }
+
+# --- Your ship, nose north in the middle of the bay ---
+dock { col: 6.5 row: 12 yaw: 0 length: 9 board_distance: 2.5 board_prompt: "E: board your ship" }
+
+# --- The call: it comes in as you reach the hub ---
+call {
+  room: "Hub"
+  caller: "Dispatch"
+  ring_prompt: "Incoming call from {caller} - E to answer"
+  chars_per_second: 38
+  lines { speaker: "Dispatch" text: "You're up. Good. We've got a situation." seconds: 3.5 }
+  lines { speaker: "Dispatch" text: "A museum freighter, the {ship}, just sent a mayday. It's going down over {planet}." seconds: 5.5 }
+  lines { speaker: "Dispatch" text: "{museum} relics on board. Salvage rights go to whoever reaches the wreck first." seconds: 5.5 }
+  lines { speaker: "Dispatch" text: "Your ship's fuelled in the docking bay. Go." seconds: 3.5 }
+  objective: "Board your ship in the Docking Bay (west of the hub)"
+}
+
+# --- Consoles (E) ---
+switches { col: 35 row: 7.78 action: STATION_ACTION_ANSWER prompt: "E: answer the call" piece: "lab_bench" yaw: 180 }
+switches { col: 38 row: 16.78 action: STATION_ACTION_LIGHTS prompt: "E: cycle the station lights" piece: "lab_bench" yaw: 180 }
+switches { col: 40.3 row: 16.78 action: STATION_ACTION_PSX prompt: "E: toggle the retro display" piece: "lab_bench" yaw: 180 }
+
+# --- Props ---
+# Observation gallery: chairs facing the windows.
+props { piece: "chair_station" col: 13 row: 2 yaw: 0 solid: true }
+props { piece: "chair_station" col: 17 row: 2 yaw: 0 solid: true }
+props { piece: "chair_station" col: 21 row: 2 yaw: 0 solid: true }
+props { piece: "chair_station" col: 25 row: 2 yaw: 0 solid: true }
+props { piece: "chair_station" col: 29 row: 2 yaw: 0 solid: true }
+# Docking bay: cargo along the walls.
+props { piece: "crate_station" col: 1.3 row: 6.3 yaw: 0 solid: true }
+props { piece: "crate_station" col: 1.3 row: 7 yaw: 10 solid: true }
+props { piece: "crate_small" col: 1.9 row: 6.4 yaw: 25 solid: true }
+props { piece: "barrel" col: 1.3 row: 16.6 yaw: 0 solid: true }
+props { piece: "barrel" col: 1.75 row: 16.7 yaw: 40 solid: true }
+props { piece: "crate_case" col: 11.5 row: 16.6 yaw: 0 solid: true }
+props { piece: "crate_case" col: 11.5 row: 16.2 yaw: 12 solid: true }
+props { piece: "canister" col: 11.6 row: 6.4 yaw: 0 solid: true }
+# Hub: a few things in transit.
+props { piece: "crate_station" col: 18.4 row: 8.4 yaw: 5 solid: true }
+props { piece: "crate_small" col: 18.4 row: 9 yaw: 30 solid: true }
+props { piece: "canister" col: 25.6 row: 14.6 yaw: 0 solid: true }
+props { piece: "barrel" col: 25.6 row: 8.4 yaw: 0 solid: true }
+# Comms: chairs at the console.
+props { piece: "chair_station" col: 34.5 row: 9.1 yaw: 0 solid: true }
+props { piece: "chair_station" col: 35.6 row: 9.1 yaw: 10 solid: true }
+# Cabins: a cryo pod against the back wall, a chair.
+props { piece: "cryo_pod" col: 17 row: 24.25 yaw: 0 solid: true }
+props { piece: "chair_station" col: 18.6 row: 21.6 yaw: 200 solid: true }
+props { piece: "cryo_pod" col: 24 row: 24.25 yaw: 0 solid: true }
+props { piece: "chair_station" col: 22.4 row: 23.4 yaw: 160 solid: true }
+props { piece: "cryo_pod" col: 29 row: 24.25 yaw: 0 solid: true }
+props { piece: "crate_small" col: 30.6 row: 21.4 yaw: 15 solid: true }
+# Storage: stacked crates, canisters, barrels.
+props { piece: "crate_station" col: 3.3 row: 21.3 yaw: 0 solid: true }
+props { piece: "crate_station" col: 3.3 row: 21.85 yaw: 0 solid: true }
+props { piece: "crate_station" col: 3.85 row: 21.3 yaw: 5 solid: true }
+props { piece: "crate_small" col: 4.4 row: 21.3 yaw: 20 solid: true }
+props { piece: "canister" col: 8.6 row: 21.3 yaw: 0 solid: true }
+props { piece: "canister" col: 9.0 row: 21.5 yaw: 0 solid: true }
+props { piece: "canister" col: 8.8 row: 25.6 yaw: 0 solid: true }
+props { piece: "barrel" col: 3.3 row: 26.25 yaw: 0 solid: true }
+props { piece: "barrel" col: 3.8 row: 26.25 yaw: 30 solid: true }
+props { piece: "crate_case" col: 6.5 row: 26.25 yaw: 0 solid: true }
+props { piece: "crate_case" col: 7.0 row: 26.25 yaw: 8 solid: true }
+# Engineering: drums by the windows.
+props { piece: "barrel" col: 41.3 row: 25.4 yaw: 0 solid: true }
+props { piece: "barrel" col: 40.8 row: 25.6 yaw: 0 solid: true }
+props { piece: "canister" col: 36.3 row: 25.6 yaw: 0 solid: true }
+props { piece: "crate_station" col: 36.4 row: 21 yaw: 90 solid: true }
+
+# --- Seeded layout: your station comes from your lucky number (the plan above is the fallback, and what the
+# preview and the page's editor start from when this is off). Items: u west->east, v north->south across the
+# room (0..1 = first..last cell centre); past 0 or 1 counts in cells beyond it, e.g. -0.25 = against the wall.
+# room (0..1 = first..last cell centre; a little beyond puts it against the wall).
+generator {
+  enabled: true
+  min_corridor: 2
+  max_corridor: 4
+  rooms {
+    role: STATION_ROOM_ROLE_HUB name: "Hub" min_width: 7 max_width: 10 min_depth: 6 max_depth: 9
+    items { piece: "crate_station" u: -0.25 v: -0.25 yaw: 5 solid: true }
+    items { piece: "crate_small" u: -0.25 v: 0.08 yaw: 30 solid: true }
+    items { piece: "barrel" u: 1.25 v: -0.25 solid: true }
+    items { piece: "canister" u: 1.25 v: 1.25 solid: true }
+  }
+  rooms {
+    role: STATION_ROOM_ROLE_GALLERY name: "Observation Gallery" min_width: 14 max_width: 24 min_depth: 3 max_depth: 4 windows: true
+    items { piece: "chair_station" u: 0.15 v: 0.1 solid: true }
+    items { piece: "chair_station" u: 0.35 v: 0.1 solid: true }
+    items { piece: "chair_station" u: 0.65 v: 0.1 solid: true }
+    items { piece: "chair_station" u: 0.85 v: 0.1 solid: true }
+  }
+  rooms {
+    role: STATION_ROOM_ROLE_BAY name: "Docking Bay" min_width: 10 max_width: 13 min_depth: 10 max_depth: 13 windows: true
+    items { piece: "crate_station" u: -0.25 v: -0.25 solid: true }
+    items { piece: "crate_station" u: -0.25 v: 0.02 yaw: 10 solid: true }
+    items { piece: "crate_small" u: 0.02 v: -0.25 yaw: 25 solid: true }
+    items { piece: "barrel" u: -0.25 v: 1.25 solid: true }
+    items { piece: "barrel" u: 0.0 v: 1.25 yaw: 40 solid: true }
+    items { piece: "crate_case" u: 1.25 v: 1.25 solid: true }
+    items { piece: "crate_case" u: 1.25 v: 1.0 yaw: 12 solid: true }
+  }
+  rooms {
+    role: STATION_ROOM_ROLE_COMMS name: "Comms" min_width: 6 max_width: 8 min_depth: 4 max_depth: 6 windows: true
+    items { piece: "lab_bench" u: 0.5 v: -0.3 yaw: 180 action: STATION_ACTION_ANSWER prompt: "E: answer the call" }
+    items { piece: "chair_station" u: 0.4 v: 0.2 solid: true }
+    items { piece: "chair_station" u: 0.6 v: 0.2 yaw: 10 solid: true }
+  }
+  rooms {
+    role: STATION_ROOM_ROLE_CABIN name: "Crew Cabin" your_name: "Your Cabin" count: 3
+    min_width: 4 max_width: 4 min_depth: 4 max_depth: 5 windows: true
+    items { piece: "cryo_pod" u: 0.5 v: 1.25 solid: true }
+    items { piece: "chair_station" u: 0.0 v: 0.1 yaw: 200 solid: true }
+  }
+  rooms {
+    role: STATION_ROOM_ROLE_STORAGE name: "Storage" min_width: 6 max_width: 8 min_depth: 5 max_depth: 7
+    items { piece: "crate_station" u: -0.25 v: 0.2 solid: true }
+    items { piece: "crate_station" u: -0.25 v: 0.32 solid: true }
+    items { piece: "crate_station" u: 0.05 v: 0.2 yaw: 5 solid: true }
+    items { piece: "crate_small" u: 0.15 v: 0.2 yaw: 20 solid: true }
+    items { piece: "canister" u: 1.25 v: 0.2 solid: true }
+    items { piece: "canister" u: 1.25 v: 0.3 solid: true }
+    items { piece: "barrel" u: -0.25 v: 1.25 solid: true }
+    items { piece: "crate_case" u: 0.55 v: 1.25 solid: true }
+    items { piece: "crate_case" u: 0.62 v: 1.25 yaw: 8 solid: true }
+  }
+  rooms {
+    role: STATION_ROOM_ROLE_ENGINEERING name: "Engineering" min_width: 5 max_width: 7 min_depth: 6 max_depth: 9 windows: true
+    items { piece: "lab_bench" u: 0.3 v: 1.3 yaw: 0 action: STATION_ACTION_LIGHTS prompt: "E: cycle the station lights" }
+    items { piece: "lab_bench" u: 0.75 v: 1.3 yaw: 0 action: STATION_ACTION_PSX prompt: "E: toggle the retro display" }
+    items { piece: "barrel" u: 1.25 v: 0.1 solid: true }
+    items { piece: "canister" u: 1.25 v: 0.25 solid: true }
+  }
+}

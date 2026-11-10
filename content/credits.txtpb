@@ -28,6 +28,26 @@ sections {
     path: "LuckyNumbers/Assets/_Project/Art/Models/Fighter/README-psionic.txt"
   }
   credits {
+    what: "Space station corridors and rooms (cream panels, leaning walls, ribs, portholes, doorways, deck)"
+    title: "PSX Starship Kit Free"
+    author: "heyheythere"
+    license: "CC BY 4.0"
+    url: "https://heyheythere.itch.io/psx-starship-kit-free"
+    license_url: "https://creativecommons.org/licenses/by/4.0/"
+    notes: "Changes: an alpha channel added to atlas.png as a light mask and the atlas packed with the station kit's into one (Art/Models/CombinedKit, tools/kitmask.py), RGB unchanged; room walls derived from the corridor walls with their lean cut back, corner fillers, window panes drawn as clear glass and door leaves slid in the shader, at build time."
+    path: "LuckyNumbers/Assets/_Project/Art/Models/StarshipKit/LICENSE.txt"
+  }
+  credits {
+    what: "Space station props (imported for later: cryo pods, crates, lab bench, chairs) and early room walls"
+    title: "PSX Sci-Fi Station Kit Free"
+    author: "heyheythere"
+    license: "CC BY 4.0"
+    url: "https://heyheythere.itch.io/psx-sci-fi-station-kit-free"
+    license_url: "https://creativecommons.org/licenses/by/4.0/"
+    notes: "Changes: an alpha channel added to atlas.png as a light mask and the atlas packed with the starship kit's into one (Art/Models/CombinedKit, tools/kitmask.py), RGB unchanged."
+    path: "LuckyNumbers/Assets/_Project/Art/Models/StationKit/LICENSE.txt"
+  }
+  credits {
     what: "First-person arms (rig, 13 animations, skin and glove textures)"
     title: "PSX First Person Arms"
     author: "DrillImpact"

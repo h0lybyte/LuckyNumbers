@@ -9,7 +9,9 @@
         "LuckyNumbers.Intro",
         "LuckyNumbers.Planet",
         "Unity.RenderPipelines.Universal.Runtime",
-        "LuckyNumbers.Model"
+        "LuckyNumbers.Model",
+        "LuckyNumbers.Station",
+        "Unity.RenderPipelines.Core.Runtime"
     ],
     "includePlatforms": [
         "Editor"
