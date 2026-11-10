@@ -16,6 +16,7 @@ namespace LuckyNumbers.Planet
         [SerializeField] LuckyNumbers.Intro.ShipView fighter;  // your ship
         [SerializeField] Camera flightCamera;                 // chase camera while you fly (off otherwise)
         [SerializeField] Transform wreckBeacon;               // unlit beam marking the wreck while you fly in (off otherwise)
+        [SerializeField] Transform landingPad;                // ring on the ground where to land (flight assist; off otherwise)
 
         [Ui("flash")] VisualElement _flash;
         [Ui("hint")] Label _hint;
@@ -33,6 +34,7 @@ namespace LuckyNumbers.Planet
         public LuckyNumbers.Intro.ShipView Fighter => fighter;
         public Camera FlightCamera => flightCamera;
         public Transform WreckBeacon => wreckBeacon;
+        public Transform LandingPad => landingPad;
 
         /// <summary>Flight HUD: readout line (null = hide the HUD) and a big centred message (null = none).</summary>
         public void Flight(string readout, string message)

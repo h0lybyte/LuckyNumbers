@@ -4,6 +4,18 @@ Releases are driven by this file: the **top `## x.y.z` entry is the game version
 Bumping it on `main` builds the Web player, uploads it to itch.io with that version,
 and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version does not rebuild.
 
+## 0.2.3 (2026-11-10)
+
+- Flying in is much easier, with a flight assist (on by default; content can turn it off for the raw model):
+  - W/S set a speed the ship holds, and air brakes really slow you when you let off
+  - Hold Space to hover down: a controlled descent (quick up high, gentle at the ground, a soft cushion at
+    the end) that stops your drift and levels you to the slope, ready to touch down
+  - Smoother steering: the mouse turns your heading and pitch at a steady rate (no accidental loops), and
+    the ship banks into its turns; the chase camera leans with it and widens with speed
+- A green landing pad on the flattest spot by the wreck, with its distance and direction on the HUD
+- Landing gauges once you're low: descent, drift and tilt against the touchdown limits, in green, amber
+  or red
+
 ## 0.2.2 (2026-11-10)
 
 - Your space station: Play now takes you there first (Title, Station, Intro, Planet). You wake in your
