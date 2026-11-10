@@ -14,8 +14,8 @@ Lucky Numbers is made with the work of these people. Thank you.
   https://retrovandal.itch.io/low-poly-space-ship-pack
   From a 2005 3D Game Resources skinning competition. Skins (named after their authors): IdolKnight (1st), Krulspeld (2nd), Kaos Kiwi (3rd), Lordshadow (4th), Wilko, Cinfa, Crono782, Cubik, Freelancer, Jodomatis, NMT3000, Psychic Parrot, Robin, Shadee, Snaz, Thor and Psionic.
   (`LuckyNumbers/Assets/_Project/Art/Models/Fighter/README-psionic.txt`)
-- **Water Amulet (Zhang Heng's relic)**: "Amulet (Blend Swap #80554)" by **Blend Swap author (name to confirm)** ([CC BY 3.0](https://creativecommons.org/licenses/by/3.0/))
-  https://www.blendswap.com/blends/view/80554
+- **Water Amulet (Zhang Heng's relic)**: "Amulet" by **Mierenttt** ([CC BY 3.0](https://creativecommons.org/licenses/by/3.0/))
+  https://blendswap.com/blend/15782
   Changes: exported low-poly (chain subdivision off), modifiers baked, recoloured with the relic shader (tools/blender/export_relic.py).
   (`LuckyNumbers/Assets/_Project/Art/Models/Relics/LICENSE-blendswap-80554.html`)
 - **Space station corridors and rooms (cream panels, leaning walls, ribs, portholes, doorways, deck)**: "PSX Starship Kit Free" by **heyheythere** ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/))

@@ -29,10 +29,10 @@ sections {
   }
   credits {
     what: "Water Amulet (Zhang Heng's relic)"
-    title: "Amulet (Blend Swap #80554)"
-    author: "Blend Swap author (name to confirm)"
+    title: "Amulet"
+    author: "Mierenttt"
     license: "CC BY 3.0"
-    url: "https://www.blendswap.com/blends/view/80554"
+    url: "https://blendswap.com/blend/15782"
     license_url: "https://creativecommons.org/licenses/by/3.0/"
     notes: "Changes: exported low-poly (chain subdivision off), modifiers baked, recoloured with the relic shader (tools/blender/export_relic.py)."
     path: "LuckyNumbers/Assets/_Project/Art/Models/Relics/LICENSE-blendswap-80554.html"

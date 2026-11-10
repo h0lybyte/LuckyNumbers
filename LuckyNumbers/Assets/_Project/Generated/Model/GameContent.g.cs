@@ -267,10 +267,10 @@ namespace LuckyNumbers.Model
                         new Credit
                         {
                             What = "Water Amulet (Zhang Heng's relic)",
-                            Title = "Amulet (Blend Swap #80554)",
-                            Author = "Blend Swap author (name to confirm)",
+                            Title = "Amulet",
+                            Author = "Mierenttt",
                             License = "CC BY 3.0",
-                            Url = "https://www.blendswap.com/blends/view/80554",
+                            Url = "https://blendswap.com/blend/15782",
                             LicenseUrl = "https://creativecommons.org/licenses/by/3.0/",
                             Notes = "Changes: exported low-poly (chain subdivision off), modifiers baked, recoloured with the relic shader (tools/blender/export_relic.py).",
                             Path = "LuckyNumbers/Assets/_Project/Art/Models/Relics/LICENSE-blendswap-80554.html",

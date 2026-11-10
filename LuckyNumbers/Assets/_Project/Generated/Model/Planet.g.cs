@@ -202,6 +202,71 @@ namespace LuckyNumbers.Model
     }
 
     /// <summary>
+    /// Flying in, for the page's flight HUD (the steps, the pad arrow, instruments, landing gauges): in the air /
+    /// crashed / landed; altitude, climb, speed and the set speed (m, m/s); hovering, boost; the pad's distance and
+    /// bearing from your nose (degrees, + right); descent, drift and tilt against the touchdown limits; why you
+    /// crashed ("descent", "drift", "tilt", "hit", comma-separated); the assist on or not.
+    /// </summary>
+    public sealed class FlightState : IDisposable
+    {
+        public readonly ReactiveProperty<bool> Flying = new ReactiveProperty<bool>();
+        public readonly ReactiveProperty<bool> Crashed = new ReactiveProperty<bool>();
+        public readonly ReactiveProperty<bool> Landed = new ReactiveProperty<bool>();
+        public readonly ReactiveProperty<float> Altitude = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> Climb = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> Speed = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> SetSpeed = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<bool> Hovering = new ReactiveProperty<bool>();
+        public readonly ReactiveProperty<bool> Boost = new ReactiveProperty<bool>();
+        public readonly ReactiveProperty<float> PadDistance = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> PadBearing = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> Descent = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> Drift = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> Tilt = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> MaxDescent = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> MaxDrift = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> MaxTilt = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<string> CrashReason = new ReactiveProperty<string>();
+        public readonly ReactiveProperty<bool> Assisted = new ReactiveProperty<bool>();
+
+        public void Dispose()
+        {
+            Flying.Dispose();
+            Crashed.Dispose();
+            Landed.Dispose();
+            Altitude.Dispose();
+            Climb.Dispose();
+            Speed.Dispose();
+            SetSpeed.Dispose();
+            Hovering.Dispose();
+            Boost.Dispose();
+            PadDistance.Dispose();
+            PadBearing.Dispose();
+            Descent.Dispose();
+            Drift.Dispose();
+            Tilt.Dispose();
+            MaxDescent.Dispose();
+            MaxDrift.Dispose();
+            MaxTilt.Dispose();
+            CrashReason.Dispose();
+            Assisted.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// The page draws the flight HUD: Unity's own text readout and controls line step aside.
+    /// </summary>
+    public readonly struct FlightHudReady
+    {
+        public readonly bool On;
+
+        public FlightHudReady(bool on)
+        {
+            On = on;
+        }
+    }
+
+    /// <summary>
     /// Flight assist: the throttle sets a speed and the ship holds it (engine forward, air brakes back), and Space
     /// is a hover: the lift thrusters hold a controlled descent (faster up high, gentle near the ground), bleed off
     /// drift and level the ship, so touching down inside the limits is a matter of holding Space over the spot.

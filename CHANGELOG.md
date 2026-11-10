@@ -4,6 +4,19 @@ Releases are driven by this file: the **top `## x.y.z` entry is the game version
 Bumping it on `main` builds the Web player, uploads it to itch.io with that version,
 and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version does not rebuild.
 
+## 0.2.4 (2026-11-10)
+
+- The first named relic: Zhang Heng's Water Amulet (Eastern Han, 2nd century CE). Find it by the wreck on
+  your way in from the landing pad, pick it up (E) and use it (R): it rolls a d20, plus up to 3 from your
+  luck die. 1: Flood (slowed); 2-7: Trickle (a little health); 8-14: Spring (a good heal); 15-19: Dragon's
+  Pearl (shows you the nearest relic, like his seismoscope); 20: Heavenly Tide (full health, every relic shown)
+- The freighter's relics now lie round the wreck to collect, glowing, with a new Han Chinese culture among
+  them; an inventory strip on the page, and the d20 rolling on screen when you use one
+- Landing HUD rebuilt: step-by-step guidance (fly to the pad, slow down, hover down, touch down) that follows
+  what you're doing, an arrow to the pad, cockpit instruments, landing gauges with their safe zones, plain
+  warnings ("Too fast to land: tap S"), a crash card that says why, and a compact key card
+- Amulet model: "Amulet" by Mierenttt (Blend Swap, CC BY 3.0), exported low-poly
+
 ## 0.2.3 (2026-11-10)
 
 - Flying in is much easier, with a flight assist (on by default; content can turn it off for the raw model):

@@ -3,6 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using LuckyNumbers.Intro;
 using LuckyNumbers.Model;
+using MessagePipe;
 using Unity.Mathematics;
 using UnityEngine;
 using VContainer;
@@ -34,6 +35,11 @@ namespace LuckyNumbers.Planet
         ICrashSite _site;
         readonly PlayerInput _input;
         readonly PlayerShip _playerShip;
+        readonly FlightState _state;
+        readonly ISubscriber<FlightHudReady> _hudReady;
+        IDisposable _hudSubscription;
+        bool _pageHud;          // the page draws the flight HUD (FlightHudReady): Unity's readout steps aside
+        float _stateTimer;
 
         Phase _phase;
         Vector3 _velocity, _spin;      // m/s; degrees/s around the ship's right (pitch), up (yaw), forward (roll)
@@ -52,7 +58,8 @@ namespace LuckyNumbers.Planet
 
         [Inject]
         public LandingPresenter(PlanetScene config, PlanetView view, PlayerView player, GroundView ground,
-                                IFirstPerson firstPerson, PlayerInput input, PlayerShip playerShip)
+                                IFirstPerson firstPerson, PlayerInput input, PlayerShip playerShip, FlightState state,
+                                ISubscriber<FlightHudReady> hudReady)
         {
             _config = config;
             _view = view;
@@ -61,6 +68,13 @@ namespace LuckyNumbers.Planet
             _firstPerson = firstPerson;
             _input = input;
             _playerShip = playerShip;
+            _state = state;
+            _hudReady = hudReady;
+            _hudSubscription = _hudReady.Subscribe(e =>
+            {
+                _pageHud = e.On;
+                if (_pageHud && _phase == Phase.Flying) _view.Hint("", 0f);
+            });
         }
 
         FlightLanding L => _config.Landing;
@@ -83,7 +97,7 @@ namespace LuckyNumbers.Planet
             _site.Follow(Ship.Pivot, _view.FlightCamera.transform);
             for (var t = 0f; t < 1f; t += Time.deltaTime) { _view.Fade(1f - t); await UniTask.Yield(ct); }
             _view.Fade(0f);
-            _view.Hint(L.Hint, 1f);
+            if (!_pageHud) _view.Hint(L.Hint, 1f);   // the page's HUD has its own controls card
             _done = new UniTaskCompletionSource();
             await _done.Task.AttachExternalCancellation(ct);
         }
@@ -211,7 +225,14 @@ namespace LuckyNumbers.Planet
             if (lowest <= 0f)
             {
                 if (vertical <= L.MaxTouchdownVertical && horizontal <= L.MaxTouchdownHorizontal && tilt <= L.MaxTouchdownTilt) Land(normal);
-                else Crash($"{vertical:0.0} m/s down, {horizontal:0.0} m/s along, {tilt:0} deg tilt");
+                else
+                {
+                    var why = new System.Collections.Generic.List<string>();
+                    if (vertical > L.MaxTouchdownVertical) why.Add("descent");
+                    if (horizontal > L.MaxTouchdownHorizontal) why.Add("drift");
+                    if (tilt > L.MaxTouchdownTilt) why.Add("tilt");
+                    Crash($"{vertical:0.0} m/s down, {horizontal:0.0} m/s along, {tilt:0} deg tilt", string.Join(",", why));
+                }
                 return;
             }
             // Hitting anything solid (the wreck, a boulder) in the air is a crash too.
@@ -219,7 +240,7 @@ namespace LuckyNumbers.Planet
             for (var i = 0; i < n; i++)
             {
                 if (Array.IndexOf(_ownColliders, _hits[i]) >= 0 || _hits[i].GetComponentInParent<GroundView>() != null) continue;
-                Crash($"hit {_hits[i].name}");
+                Crash($"hit {_hits[i].name}", "hit");
                 return;
             }
 
@@ -242,7 +263,32 @@ namespace LuckyNumbers.Planet
             if (altitude < 40f)
                 hud += $"\n{Gauge("DESCENT", vertical, L.MaxTouchdownVertical, "m/s")}    " +
                        $"{Gauge("DRIFT", horizontal, L.MaxTouchdownHorizontal, "m/s")}    {Gauge("TILT", tilt, L.MaxTouchdownTilt, "deg")}";
-            _view.Flight(hud, null);
+            _view.Flight(_pageHud ? "" : hud, null);
+
+            // For the page's HUD (15 times a second is plenty).
+            _stateTimer -= dt;
+            if (_stateTimer <= 0f)
+            {
+                _stateTimer = 1f / 15f;
+                _state.Flying.Value = true;
+                _state.Crashed.Value = false;
+                _state.Landed.Value = false;
+                _state.Assisted.Value = Assisted;
+                _state.Altitude.Value = altitude;
+                _state.Climb.Value = -vertical;
+                _state.Speed.Value = _velocity.magnitude;
+                _state.SetSpeed.Value = Assisted ? _throttle * A.MaxSpeed * (_input.Sprinting.Value ? math.max(1f, A.BoostSpeed) : 1f) : _throttle * 100f;
+                _state.Hovering.Value = hovering;
+                _state.Boost.Value = _input.Sprinting.Value;
+                _state.PadDistance.Value = (Assisted ? padFlat : flat).magnitude;
+                _state.PadBearing.Value = Assisted ? padHeading : heading;
+                _state.Descent.Value = vertical;
+                _state.Drift.Value = horizontal;
+                _state.Tilt.Value = tilt;
+                _state.MaxDescent.Value = L.MaxTouchdownVertical;
+                _state.MaxDrift.Value = L.MaxTouchdownHorizontal;
+                _state.MaxTilt.Value = L.MaxTouchdownTilt;
+            }
         }
 
         /// <summary>
@@ -309,14 +355,17 @@ namespace LuckyNumbers.Planet
             return $"{label} <color={colour}>{math.max(0f, value):0.0} {unit}</color> / {limit:0}";
         }
 
-        void Crash(string why)
+        void Crash(string why, string reason = "")
         {
+            _state.Flying.Value = false;
+            _state.Crashed.Value = true;
+            _state.CrashReason.Value = reason;
             _phase = Phase.Crashed;
             _phaseTime = 0f;
             _velocity = Vector3.zero;
             _spin = Vector3.zero;
             Ship.SetHeat(0.9f, 0.2f);                                          // scorched
-            _view.Flight("", L.CrashedText);
+            _view.Flight("", _pageHud ? null : L.CrashedText);
             Debug.Log($"[Landing] crashed: {why}");
             FlashAsync().Forget();
         }
@@ -330,6 +379,8 @@ namespace LuckyNumbers.Planet
         void Land(Vector3 normal)
         {
             _phase = Phase.Landed;
+            _state.Flying.Value = false;
+            _state.Landed.Value = true;
             _velocity = Vector3.zero;
             // Settle on the ground, upright along the slope.
             var forward = Vector3.ProjectOnPlane(_rotation * Vector3.forward, normal).normalized;
@@ -348,7 +399,7 @@ namespace LuckyNumbers.Planet
         /// <summary>Fade, then you stand beside your ship facing the wreck, on foot.</summary>
         async UniTaskVoid StepOutAsync()
         {
-            _view.Flight("", L.LandedText);
+            _view.Flight("", _pageHud ? null : L.LandedText);
             await UniTask.Delay(900);
             for (var t = 0f; t < 0.5f; t += Time.deltaTime) { _view.Fade(t * 2f); await UniTask.Yield(); }
             var side = _position + _rotation * Vector3.right * (L.ShipLength * 0.5f + 2f);
@@ -401,6 +452,11 @@ namespace LuckyNumbers.Planet
             foreach (var c in _ownColliders) c.enabled = solid;   // off while flying (the ship tests the world itself)
         }
 
-        public void Dispose() => _done?.TrySetCanceled();
+        public void Dispose()
+        {
+            _state.Flying.Value = false;
+            _hudSubscription?.Dispose();
+            _done?.TrySetCanceled();
+        }
     }
 }

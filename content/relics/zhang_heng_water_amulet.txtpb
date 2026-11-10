@@ -15,7 +15,8 @@ value: 4800
 color_a { r: 0.18 g: 0.62 b: 0.52 a: 1 }   # jade
 color_b { r: 0.35 g: 0.75 b: 0.95 a: 1 }   # water
 cooldown_seconds: 12
-# Model: "Amulet" from Blend Swap (#80554, CC BY 3.0), low-poly export (tools/blender/export_relic.py).
+# Model: "Amulet" by Mierenttt (Blend Swap, https://blendswap.com/blend/15782, CC BY 3.0), low-poly export
+# (tools/blender/export_relic.py).
 model: "water_amulet"
 
 rolls {

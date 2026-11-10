@@ -79,14 +79,16 @@ class _CSharp:
                 out.append(f"            {self.write_value(f, member)}")
         return out + ["            b.Append('}');", "        }"]
 
-    def reader_value(self, f: Field, key: str) -> str:
+    def reader_value(self, f: Field, key: str, owner: str = "") -> str:
         t = self.em.ctype(f)
         if f.type == T_ENUM:
             return f"{t}Parse(Json.Get(o, \"{key}\"))"
         if f.type == 9:
             return f"Json.Get(o, \"{key}\") as string ?? \"\""
         if f.type == 8:
-            return f"Json.Get(o, \"{key}\") is bool {key}V && {key}V"
+            # Pattern variables share the switch's scope: name them per message, or two events' "on" collide.
+            v = f"{owner[:1].lower()}{owner[1:]}{pascal(key)}"
+            return f"Json.Get(o, \"{key}\") is bool {v} && {v}"
         return f"({t})Json.Number(Json.Get(o, \"{key}\"))"
 
     def file(self, namespace: str, states: list[Message], events: list[Message], enums: list) -> str:
@@ -147,7 +149,7 @@ class _CSharp:
         for m in events:
             if not _inbound(m):
                 continue
-            args = ", ".join(self.reader_value(f, camel(f.name)) for f in m.fields)
+            args = ", ".join(self.reader_value(f, camel(f.name), m.name) for f in m.fields)
             L += [f'                case "{m.name}":',
                   f"                    c.Resolve<IPublisher<{m.name}>>().Publish(new {m.name}({args}));",
                   "                    return true;"]

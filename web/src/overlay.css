@@ -81,7 +81,7 @@ kbd {
 
 .toasts {
   position: absolute;
-  top: calc(max(var(--gap), env(safe-area-inset-top)) + 48px);
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 150px);   /* below the flight steps */
   left: 50%;
   transform: translateX(-50%);
   display: grid;
@@ -420,3 +420,172 @@ kbd {
 .d20-panel.crit .d20-title { color: #ffd36b; }
 .d20-panel.fumble .d20-title { color: #ff8b8f; }
 .d20-line { margin-top: 2px; color: var(--fg); }
+
+/* ---- flight HUD (landing) ---- */
+
+.flight-hud { position: absolute; inset: 0; pointer-events: none; }
+.flight-steps {
+  position: absolute;
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: min(640px, calc(100% - 2 * var(--gap)));
+}
+.flight-steps ol {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.flight-steps li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 4px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 12px;
+  backdrop-filter: blur(6px);
+}
+.flight-steps li .n {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 700;
+}
+.flight-steps li.done { color: #6fd3a0; }
+.flight-steps li.done .n { background: rgba(70, 167, 88, 0.35); }
+.flight-steps li.now { color: var(--fg); border-color: #46a758; }
+.flight-steps li.now .n { background: #46a758; color: #fff; }
+.flight-do {
+  display: grid;
+  justify-items: center;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: rgba(8, 10, 14, 0.78);
+  backdrop-filter: blur(6px);
+  text-align: center;
+}
+.flight-do b { font-size: 20px; }
+.flight-do span { color: var(--muted); }
+.flight-warn {
+  padding: 6px 14px;
+  border: 1px solid rgba(229, 162, 58, 0.7);
+  border-radius: 8px;
+  background: rgba(40, 26, 6, 0.8);
+  color: #f3c476;
+  font-weight: 600;
+}
+
+.flight-pad {
+  position: absolute;
+  right: calc(max(var(--gap), env(safe-area-inset-right)) + 48px);
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 6px);
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  color: #6fd3a0;
+  font-size: 13px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+.flight-pad svg { width: 64px; height: 64px; }
+.pad-ring { fill: rgba(8, 10, 14, 0.6); stroke: rgba(70, 167, 88, 0.7); stroke-width: 2; }
+.pad-arrow { fill: #46a758; }
+.pad-below { fill: #46a758; animation: goal 1.2s ease-in-out infinite; }
+.flight-pad .muted { color: var(--muted); }
+
+.flight-instruments {
+  position: absolute;
+  left: max(var(--gap), env(safe-area-inset-left));
+  top: 32%;
+  display: grid;
+  gap: 6px;
+}
+.flight-inst {
+  display: grid;
+  min-width: 104px;
+  padding: 6px 10px;
+  border-left: 3px solid #4fb3c8;
+  border-radius: 4px;
+  background: var(--panel);
+  backdrop-filter: blur(6px);
+}
+.flight-inst .label { font-size: 10px; letter-spacing: 0.1em; color: var(--muted); }
+.flight-inst .value { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.flight-inst small { font-size: 11px; font-weight: 400; color: var(--muted); }
+.flight-inst .sub { font-size: 11px; color: #9fe3ef; }
+.flight-tag {
+  justify-self: start;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #46a758;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.flight-gauges {
+  position: absolute;
+  left: 50%;
+  bottom: calc(max(var(--gap), env(safe-area-inset-bottom)) + 56px);
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(8, 10, 14, 0.78);
+  backdrop-filter: blur(6px);
+}
+.gauge { width: 150px; }
+.gauge-head { display: flex; justify-content: space-between; font-size: 12px; }
+.gauge-bar { position: relative; height: 8px; margin-top: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.gauge-safe { position: absolute; inset: 0 auto 0 0; background: rgba(70, 167, 88, 0.18); border-right: 2px solid rgba(70, 167, 88, 0.8); }
+.gauge-fill { position: absolute; inset: 0 auto 0 0; border-radius: 4px; transition: width 80ms linear; }
+.gauge.ok .gauge-fill { background: #46a758; }
+.gauge.close .gauge-fill { background: #e5a23a; }
+.gauge.bad .gauge-fill { background: #e5484d; }
+.gauge.bad .gauge-head { color: #ff8b8f; }
+.gauge-fix { margin-top: 3px; font-size: 11px; color: #ff8b8f; }
+
+.flight-keys {
+  position: absolute;
+  left: max(var(--gap), env(safe-area-inset-left));
+  bottom: calc(max(var(--gap), env(safe-area-inset-bottom)) + 44px);
+  display: grid;
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 12px;
+  backdrop-filter: blur(6px);
+}
+.flight-keys kbd { margin-right: 3px; color: var(--fg); }
+
+.flight-crash {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(520px, calc(100% - 2 * var(--gap)));
+  padding: 14px 18px;
+  border: 1px solid rgba(229, 72, 77, 0.6);
+  border-radius: 12px;
+  background: rgba(20, 8, 10, 0.86);
+  backdrop-filter: blur(8px);
+}
+.flight-crash b { font-size: 20px; color: #ff8b8f; }
+.flight-crash ul { margin: 8px 0 0; padding-left: 18px; }
+.flight-do .flight-note { margin-top: 2px; font-size: 12px; color: #6fd3a0; }

@@ -64,6 +64,34 @@ export interface LoadingState {
 }
 
 /**
+ * Flying in, for the page's flight HUD (the steps, the pad arrow, instruments, landing gauges): in the air /
+ * crashed / landed; altitude, climb, speed and the set speed (m, m/s); hovering, boost; the pad's distance and
+ * bearing from your nose (degrees, + right); descent, drift and tilt against the touchdown limits; why you
+ * crashed ("descent", "drift", "tilt", "hit", comma-separated); the assist on or not.
+ */
+export interface FlightState {
+  flying: boolean;
+  crashed: boolean;
+  landed: boolean;
+  altitude: number;
+  climb: number;
+  speed: number;
+  setSpeed: number;
+  hovering: boolean;
+  boost: boolean;
+  padDistance: number;
+  padBearing: number;
+  descent: number;
+  drift: number;
+  tilt: number;
+  maxDescent: number;
+  maxDrift: number;
+  maxTilt: number;
+  crashReason: string;
+  assisted: boolean;
+}
+
+/**
  * The planet map (M): open from the moment it starts opening until it has fully closed.
  * The pointer is free (not locked) while it's open, for dragging the globe.
  */
@@ -174,6 +202,11 @@ export interface InputActionPerformed {
   action: InputAction;
 }
 
+/** The page draws the flight HUD: Unity's own text readout and controls line step aside. */
+export interface FlightHudReady {
+  on: boolean;
+}
+
 export interface PlayerDamaged {
   amount: number;
   source: string;
@@ -215,6 +248,7 @@ export interface WebStates {
   RelicInventory: RelicInventory;
   FlowState: FlowState;
   LoadingState: LoadingState;
+  FlightState: FlightState;
   MapState: MapState;
   LandingSite: LandingSite;
   PlayerShip: PlayerShip;
@@ -234,6 +268,7 @@ export interface WebEvents {
   CutsceneStepStarted: CutsceneStepStarted;
   CutsceneFinished: CutsceneFinished;
   InputActionPerformed: InputActionPerformed;
+  FlightHudReady: FlightHudReady;
   PlayerDamaged: PlayerDamaged;
   PlayerHealed: PlayerHealed;
   PlayerDied: PlayerDied;
@@ -245,6 +280,6 @@ export interface WebEvents {
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "DevWarpRequested" | "RelicUseRequested" | "SceneChangeRequested" | "InputActionPerformed" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
+export type InboundEvent = "DevWarpRequested" | "RelicUseRequested" | "SceneChangeRequested" | "InputActionPerformed" | "FlightHudReady" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
 
-export const STATE_NAMES = ["RelicInventory", "FlowState", "LoadingState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "StationState", "DiceState"] as const;
+export const STATE_NAMES = ["RelicInventory", "FlowState", "LoadingState", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "StationState", "DiceState"] as const;

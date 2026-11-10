@@ -134,6 +134,41 @@ message FlightLanding {
   FlightAssist assist = 26;
 }
 
+// Flying in, for the page's flight HUD (the steps, the pad arrow, instruments, landing gauges): in the air /
+// crashed / landed; altitude, climb, speed and the set speed (m, m/s); hovering, boost; the pad's distance and
+// bearing from your nose (degrees, + right); descent, drift and tilt against the touchdown limits; why you
+// crashed ("descent", "drift", "tilt", "hit", comma-separated); the assist on or not.
+message FlightState {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  bool flying = 1;
+  bool crashed = 2;
+  bool landed = 3;
+  float altitude = 4;
+  float climb = 5;
+  float speed = 6;
+  float set_speed = 7;
+  bool hovering = 8;
+  bool boost = 9;
+  float pad_distance = 10;
+  float pad_bearing = 11;
+  float descent = 12;
+  float drift = 13;
+  float tilt = 14;
+  float max_descent = 15;
+  float max_drift = 16;
+  float max_tilt = 17;
+  string crash_reason = 18;
+  bool assisted = 19;
+}
+
+// The page draws the flight HUD: Unity's own text readout and controls line step aside.
+message FlightHudReady {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  bool on = 1;
+}
+
 // Flight assist: the throttle sets a speed and the ship holds it (engine forward, air brakes back), and Space
 // is a hover: the lift thrusters hold a controlled descent (faster up high, gentle near the ground), bleed off
 // drift and level the ship, so touching down inside the limits is a matter of holding Space over the spot.
