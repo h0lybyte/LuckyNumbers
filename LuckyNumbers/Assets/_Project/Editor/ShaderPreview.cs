@@ -196,8 +196,8 @@ namespace LuckyNumbers.Editor
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var view = new GameObject("Station").AddComponent<LuckyNumbers.Station.StationView>();
-            view.Init(KitMaterial("StationKit"), KitMaterial("StarshipKit"), new Material(Find("LuckyNumbers/StationGlass")),
-                      KitPieces("StationKit", "StarshipKit"));
+            view.Init(new Material(SceneBuilder.KitMaterial("CombinedKit")), new Material(Find("LuckyNumbers/StationGlass")),
+                      SceneBuilder.KitPieces("StationKit", "StarshipKit"));
 
             // Outside: the seeded sky and a planet the station orbits, north of the hangar (its windows face it),
             // lit by a sun up and to the east. The windows should show these, not the kits' painted stars.
@@ -211,7 +211,9 @@ namespace LuckyNumbers.Editor
             world.transform.localScale = Vector3.one * 150f;
             world.GetComponent<MeshRenderer>().sharedMaterial = new Material(Find("LuckyNumbers/Planet3D"));
             var config = LuckyNumbers.Model.GameContent.Station;
-            view.Build(config);
+            var seeded = config.Generator != null && config.Generator.Enabled;
+            var layout = seeded ? LuckyNumbers.Station.LayoutGenerator.Generate(config, 3250720893u) : null;   // the title's first roll
+            view.Build(config, layout);
             var plan = view.Plan;
 
             Camera Eye(Vector3 from, Vector3 to)
@@ -264,34 +266,66 @@ namespace LuckyNumbers.Editor
             more.Add(corridor);
             SaveGrid(more.ToArray(), "preview-station-rooms.png");
 
+            // Joins, to hunt overdraw: a doorway seen from the corridor and from its room, a corridor's inner
+            // turn, a tall room's corner and the wall over its doorway (cells in plan coordinates: column, row).
+            Vector3 P(float col, float row, float y = 1.6f) =>
+                new Vector3((col + 0.5f) * 2f, y, (plan.Depth - 1 - row + 0.5f) * 2f);
+            SaveGrid(new[]
+            {
+                Eye(P(15f, 11f, 1.7f), P(12.6f, 11f, 2.2f)),      // bay-hub corridor, looking west into the bay door
+                Eye(P(10.5f, 12.5f, 1.6f), P(14.5f, 10.8f, 2.4f)),// from inside the bay at its east door, up and right
+                Eye(P(12.4f, 19.6f, 2.1f), P(10.6f, 19f, 2.6f)),  // south corridor's turn down to storage: inner corner
+                Eye(P(2.2f, 15.8f, 1.6f), P(0.6f, 17.4f, 4.5f)),  // bay's south-west corner, looking up both storeys
+            }, "preview-station-joins.png");
+            SaveGrid(new[]
+            {
+                Eye(P(13.5f, 19f, 1.6f), P(10.5f, 19f, 2.4f)),    // along the south corridor to its west turn
+                Eye(P(11f, 19f, 1.0f), P(11.01f, 19.01f, 6f)),    // in the turn, straight up
+                Eye(P(11f, 21.5f, 1.6f), P(11f, 18.4f, 2.6f)),    // up the storage leg into the turn
+                Eye(P(12.4f, 19.6f, 2.1f), P(10.6f, 19f, 2.6f)),  // the gap shot again
+            }, "preview-station-turn.png");
+
             // Light modes: corridor and the biggest room, lights on / off / emergency (one row each).
             var modes = new[] { LuckyNumbers.Model.StationLightMode.On, LuckyNumbers.Model.StationLightMode.Off,
                                 LuckyNumbers.Model.StationLightMode.Emergency };
             SaveGrid(new[] { corridor, RoomView(big[0]) }, modes.Length, "preview-station-lights.png",
                      row => view.SetLights(modes[row]));
             view.SetLights(LuckyNumbers.Model.StationLightMode.On);
+            // Four lucky numbers, four stations (from above).
+            if (seeded)
+            {
+                int w = Width / 2, h = Height / 2;
+                var sheet = new Texture2D(Width, Height, TextureFormat.RGB24, false);
+                var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
+                var seeds = new[] { 1u, 777u, 424242u, 9001u };
+                for (var i = 0; i < seeds.Length; i++)
+                {
+                    view.Build(config, LuckyNumbers.Station.LayoutGenerator.Generate(config, seeds[i]));
+                    var p2 = view.Plan;
+                    var cam = new GameObject("Seed").AddComponent<Camera>();
+                    cam.orthographic = true;
+                    cam.clearFlags = CameraClearFlags.SolidColor;
+                    cam.backgroundColor = new Color(0.05f, 0.05f, 0.08f);
+                    var span = new Vector2(p2.Width, p2.Depth) * 2f;
+                    cam.orthographicSize = Mathf.Max(span.y, span.x * Height / Width) * 0.55f;
+                    cam.transform.SetPositionAndRotation(new Vector3(span.x / 2f, 30f, span.y / 2f), Quaternion.Euler(90, 0, 0));
+                    cam.farClipPlane = 60f;
+                    var request = new RenderPipeline.StandardRequest { destination = rt };
+                    if (RenderPipeline.SupportsRenderRequest(cam, request)) RenderPipeline.SubmitRenderRequest(cam, request);
+                    else { cam.targetTexture = rt; cam.Render(); cam.targetTexture = null; }
+                    var prev = RenderTexture.active;
+                    RenderTexture.active = rt;
+                    sheet.ReadPixels(new Rect(0, 0, w, h), (i % 2) * w, (1 - i / 2) * h);
+                    RenderTexture.active = prev;
+                    Object.DestroyImmediate(cam.gameObject);
+                }
+                sheet.Apply();
+                File.WriteAllBytes(Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", "preview-station-seeds.png")),
+                                   sheet.EncodeToPNG());
+                view.Build(config, layout);
+            }
             Debug.Log($"[ShaderPreview] station: {rooms.Count} rooms (largest {big[0].Count} cells), corridor run " +
                       $"{runFrom} -> {runTo}");
-        }
-
-        static Material KitMaterial(string kit)
-        {
-            var atlas = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/_Project/Art/Models/{kit}/atlas.png")
-                        ?? throw new System.Exception($"{kit}/atlas.png not imported");
-            return new Material(Find("LuckyNumbers/StationKit")) { mainTexture = atlas };
-        }
-
-        static LuckyNumbers.Station.StationView.KitPiece[] KitPieces(params string[] kits)
-        {
-            var list = new System.Collections.Generic.List<LuckyNumbers.Station.StationView.KitPiece>();
-            foreach (var kit in kits)
-            foreach (var guid in AssetDatabase.FindAssets("t:Model", new[] { $"Assets/_Project/Art/Models/{kit}" }))
-            {
-                var path = AssetDatabase.GUIDToAssetPath(guid);
-                list.Add(new LuckyNumbers.Station.StationView.KitPiece
-                    { name = Path.GetFileNameWithoutExtension(path), model = AssetDatabase.LoadAssetAtPath<GameObject>(path) });
-            }
-            return list.ToArray();
         }
 
         /// <summary>Cameras rendered into a 2 x 2 grid (each at half size), saved to Logs/.</summary>

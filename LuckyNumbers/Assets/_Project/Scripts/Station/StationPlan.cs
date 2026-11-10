@@ -31,8 +31,10 @@ namespace LuckyNumbers.Station
             public readonly Vector2Int Cell;
             /// <summary>Its painted lights stay dark in every mode (e.g. every other room ceiling).</summary>
             public readonly bool Unlit;
+            public readonly Vector3 Scale;
 
-            public Piece(string name, Kit kit, Vector3 position, Quaternion rotation, Vector2Int cell, bool unlit = false)
+            public Piece(string name, Kit kit, Vector3 position, Quaternion rotation, Vector2Int cell, bool unlit = false,
+                         Vector3? scale = null)
             {
                 Name = name;
                 Kit = kit;
@@ -40,7 +42,20 @@ namespace LuckyNumbers.Station
                 Rotation = rotation;
                 Cell = cell;
                 Unlit = unlit;
+                Scale = scale ?? Vector3.one;
             }
+        }
+
+        /// <summary>
+        /// A convex corridor corner (the inside of a turn, or either side of a T): two leaning walls end at
+        /// <see cref="Vertex"/> without meeting. A leans towards <see cref="NormalA"/> and would carry on past the
+        /// corner along <see cref="NormalB"/> (and B the other way round); StationView fills the wedge between them.
+        /// </summary>
+        public readonly struct Hip
+        {
+            public readonly Vector3 Vertex, NormalA, NormalB;
+            public readonly Vector2Int Cell;
+            public Hip(Vector3 vertex, Vector3 a, Vector3 b, Vector2Int cell) { Vertex = vertex; NormalA = a; NormalB = b; Cell = cell; }
         }
 
         public readonly struct Box
@@ -60,6 +75,13 @@ namespace LuckyNumbers.Station
         public const string WallRoom = WallCorridor + Flat, WallRoomLights = WallCorridorLights + Flat;
         public const string PortholeRoom = Porthole + Flat;
         public const string Post = "post_ship", DoorwayShip = "wall_doorway_ship";
+        public const string Door = "door_ship", Handrail = "handrail";
+
+        /// <summary>
+        /// Posts are 0.2 m square on a corner, so their faces land exactly on the two walls' faces (0.1 m out):
+        /// coplanar surfaces z-fight, a flickering 10 cm strip up every corner. A touch thicker, they sit ~8 mm proud.
+        /// </summary>
+        static readonly Vector3 PostScale = new(1.08f, 1f, 1.08f);
 
         /// <summary>Doorway opening (wall_doorway_ship, fits door_ship: 1.2 x 2.19 m).</summary>
         const float DoorWidth = 1.2f, DoorHeight = 2.19f, WallThickness = 0.2f;
@@ -73,6 +95,7 @@ namespace LuckyNumbers.Station
         public readonly List<Vector2Int> Exits = new();
         public readonly List<Piece> Pieces = new();
         public readonly List<Box> Boxes = new();
+        public readonly List<Hip> Hips = new();
         readonly Kind[,] _cells;
 
         readonly int _ceilingEvery;
@@ -84,7 +107,7 @@ namespace LuckyNumbers.Station
         /// <param name="ceilingLightEvery">Rooms light every nth row of ceiling tiles (corridors: every tile).</param>
         /// <param name="tallRoomCells">Rooms with at least this many cells get <paramref name="tallLevels"/> storeys.</param>
         public StationPlan(IReadOnlyList<string> rows, int lightEvery, int ceilingLightEvery = 1, int tallRoomCells = 0,
-                           int tallLevels = 1)
+                           int tallLevels = 1, bool handrails = false)
         {
             _ceilingEvery = Math.Max(1, ceilingLightEvery);
             Depth = rows.Count;
@@ -150,6 +173,9 @@ namespace LuckyNumbers.Station
                     if (kind == Kind.Corridor)
                     {
                         name = next == Kind.Window ? Porthole : lit ? WallCorridorLights : WallCorridor;
+                        // The rail is modelled on the wall's centre line: bring it out to the wall's face (0.1 m in).
+                        if (handrails && next != Kind.Window)
+                            Pieces.Add(new Piece(Handrail, Kit.Starship, edge - new Vector3(dir.x, 0, dir.y) * 0.1f, turn, cell));
                     }
                     else if (levels > 1)
                     {
@@ -188,12 +214,38 @@ namespace LuckyNumbers.Station
             var middle = new Vector3(Width * Cell / 2f, 0f, Depth * Cell / 2f);
             Boxes.Add(new Box(middle - Vector3.up * 0.05f, span));   // (no ceiling slab: a jump never reaches 3 m)
 
+            // Convex corridor corners: a grid vertex with corridor on three sides and something solid on the fourth.
+            // The two walls round the solid cell end there, leaning away from each other: fill the gap (and post it).
+            for (var vz = 1; vz < Depth; vz++)
+            for (var vx = 1; vx < Width; vx++)
+            {
+                Vector2Int sw = new(vx - 1, vz - 1), se = new(vx, vz - 1), nw = new(vx - 1, vz), ne = new(vx, vz);
+                var around = new[] { sw, se, ne, nw };   // counter-clockwise
+                var solid = -1;
+                var corridors = 0;
+                for (var i = 0; i < 4; i++)
+                {
+                    var k = At(around[i]);
+                    if (k == Kind.Corridor) corridors++;
+                    else if (!Walkable(k)) solid = i;
+                }
+                if (corridors != 3 || solid < 0) continue;
+                var s = around[solid];
+                var c1 = around[(solid + 1) % 4];   // the solid cell's two corridor neighbours (by an edge)
+                var c2 = around[(solid + 3) % 4];
+                var a = new Vector3(c1.x - s.x, 0, c1.y - s.y);
+                var b = new Vector3(c2.x - s.x, 0, c2.y - s.y);
+                var v = new Vector3(vx * Cell, 0, vz * Cell);
+                Hips.Add(new Hip(v, a, b, around[(solid + 2) % 4]));
+                Pieces.Add(new Piece(Post, Kit.Starship, v, Quaternion.identity, around[(solid + 2) % 4], false, PostScale));
+            }
+
             foreach (var (vertex, axes) in corners)
             {
                 if (axes != 3) continue;   // a straight run: the walls meet flush, no post
                 var p = new Vector3(vertex.x, 0, vertex.y);
                 for (var l = 0; l < cornerLevels[vertex]; l++)
-                    Pieces.Add(new Piece(Post, Kit.Starship, p + Vector3.up * (Height * l), Quaternion.identity, CellOf(p)));
+                    Pieces.Add(new Piece(Post, Kit.Starship, p + Vector3.up * (Height * l), Quaternion.identity, CellOf(p), false, PostScale));
             }
         }
 
@@ -249,6 +301,16 @@ namespace LuckyNumbers.Station
 
         public Kind At(Vector2Int c) =>
             c.x >= 0 && c.y >= 0 && c.x < Width && c.y < Depth ? _cells[c.x, c.y] : Kind.Solid;
+
+        /// <summary>Plan coordinates (column, row from the top; whole numbers are cell centres) -> world, on the deck.</summary>
+        public Vector3 PlanToWorld(float col, float row) => new((col + 0.5f) * Cell, 0f, (Depth - 1 - row + 0.5f) * Cell);
+
+        /// <summary>The cell under a plan coordinate.</summary>
+        public Vector2Int PlanCell(float col, float row) => new(Mathf.RoundToInt(col), Depth - 1 - Mathf.RoundToInt(row));
+
+        /// <summary>Place an extra piece (props, consoles): merged with the station like the rest.</summary>
+        public void Add(string name, Kit kit, Vector3 position, Quaternion rotation) =>
+            Pieces.Add(new Piece(name, kit, position, rotation, CellOf(position)));
 
         public static Vector3 Centre(Vector2Int cell) => new((cell.x + 0.5f) * Cell, 0, (cell.y + 0.5f) * Cell);
 

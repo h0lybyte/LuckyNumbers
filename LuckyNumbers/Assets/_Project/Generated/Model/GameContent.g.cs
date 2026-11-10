@@ -161,7 +161,7 @@ namespace LuckyNumbers.Model
                             License = "CC BY 4.0",
                             Url = "https://heyheythere.itch.io/psx-starship-kit-free",
                             LicenseUrl = "https://creativecommons.org/licenses/by/4.0/",
-                            Notes = "Changes: an alpha channel added to atlas.png as a light mask (tools/kitmask.py), RGB unchanged; room walls derived from the corridor walls with their lean cut back, and window panes drawn as clear glass, at build time.",
+                            Notes = "Changes: an alpha channel added to atlas.png as a light mask and the atlas packed with the station kit's into one (Art/Models/CombinedKit, tools/kitmask.py), RGB unchanged; room walls derived from the corridor walls with their lean cut back, corner fillers, window panes drawn as clear glass and door leaves slid in the shader, at build time.",
                             Path = "LuckyNumbers/Assets/_Project/Art/Models/StarshipKit/LICENSE.txt",
                         },
                         new Credit
@@ -172,7 +172,7 @@ namespace LuckyNumbers.Model
                             License = "CC BY 4.0",
                             Url = "https://heyheythere.itch.io/psx-sci-fi-station-kit-free",
                             LicenseUrl = "https://creativecommons.org/licenses/by/4.0/",
-                            Notes = "Changes: an alpha channel added to atlas.png as a light mask (tools/kitmask.py), RGB unchanged.",
+                            Notes = "Changes: an alpha channel added to atlas.png as a light mask and the atlas packed with the starship kit's into one (Art/Models/CombinedKit, tools/kitmask.py), RGB unchanged.",
                             Path = "LuckyNumbers/Assets/_Project/Art/Models/StationKit/LICENSE.txt",
                         },
                         new Credit
@@ -1678,7 +1678,7 @@ namespace LuckyNumbers.Model
                 "#............#####.........#####.......#####",
                 "#............#####.........#####.......W####",
                 "#............#####.........DcccD.......#####",
-                "#E...........DcccD.........#####.......W####",
+                "#............DcccD.........#####.......W####",
                 "#............#####.........#####.......#####",
                 "#............#####.........#################",
                 "#............#####.........#################",
@@ -1721,9 +1721,785 @@ namespace LuckyNumbers.Model
             CeilingLightEvery = 2,
             OrbitDiameters = 1.8f,
             Next = GameScene.Intro,
-            Hint = "WASD to move - mouse to look - lights: the page's inspector (`)",
+            Hint = "WASD to move - mouse to look - E to use things",
             TallRoomCells = 60,
             TallLevels = 2,
+            Rooms =
+            {
+                new StationRoom
+                {
+                    Name = "Observation Gallery",
+                    Col = 20,
+                    Row = 2,
+                },
+                new StationRoom
+                {
+                    Name = "Docking Bay",
+                    Col = 5,
+                    Row = 10,
+                },
+                new StationRoom
+                {
+                    Name = "Hub",
+                    Col = 22,
+                    Row = 11,
+                },
+                new StationRoom
+                {
+                    Name = "Comms",
+                    Col = 35,
+                    Row = 10,
+                },
+                new StationRoom
+                {
+                    Name = "Crew Cabin A",
+                    Col = 17,
+                    Row = 22,
+                },
+                new StationRoom
+                {
+                    Name = "Your Cabin",
+                    Col = 23,
+                    Row = 22,
+                },
+                new StationRoom
+                {
+                    Name = "Crew Cabin C",
+                    Col = 29,
+                    Row = 22,
+                },
+                new StationRoom
+                {
+                    Name = "Storage",
+                    Col = 6,
+                    Row = 23,
+                },
+                new StationRoom
+                {
+                    Name = "Engineering",
+                    Col = 38,
+                    Row = 20,
+                },
+            },
+            Props =
+            {
+                new StationProp
+                {
+                    Piece = "chair_station",
+                    Col = 13.0f,
+                    Row = 2.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "chair_station",
+                    Col = 17.0f,
+                    Row = 2.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "chair_station",
+                    Col = 21.0f,
+                    Row = 2.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "chair_station",
+                    Col = 25.0f,
+                    Row = 2.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "chair_station",
+                    Col = 29.0f,
+                    Row = 2.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "crate_station",
+                    Col = 1.3f,
+                    Row = 6.3f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "crate_station",
+                    Col = 1.3f,
+                    Row = 7.0f,
+                    Yaw = 10.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "crate_small",
+                    Col = 1.9f,
+                    Row = 6.4f,
+                    Yaw = 25.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "barrel",
+                    Col = 1.3f,
+                    Row = 16.6f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "barrel",
+                    Col = 1.75f,
+                    Row = 16.7f,
+                    Yaw = 40.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "crate_case",
+                    Col = 11.5f,
+                    Row = 16.6f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "crate_case",
+                    Col = 11.5f,
+                    Row = 16.2f,
+                    Yaw = 12.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "canister",
+                    Col = 11.6f,
+                    Row = 6.4f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "crate_station",
+                    Col = 18.4f,
+                    Row = 8.4f,
+                    Yaw = 5.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "crate_small",
+                    Col = 18.4f,
+                    Row = 9.0f,
+                    Yaw = 30.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "canister",
+                    Col = 25.6f,
+                    Row = 14.6f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "barrel",
+                    Col = 25.6f,
+                    Row = 8.4f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "chair_station",
+                    Col = 34.5f,
+                    Row = 9.1f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "chair_station",
+                    Col = 35.6f,
+                    Row = 9.1f,
+                    Yaw = 10.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "cryo_pod",
+                    Col = 17.0f,
+                    Row = 24.25f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "chair_station",
+                    Col = 18.6f,
+                    Row = 21.6f,
+                    Yaw = 200.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "cryo_pod",
+                    Col = 24.0f,
+                    Row = 24.25f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "chair_station",
+                    Col = 22.4f,
+                    Row = 23.4f,
+                    Yaw = 160.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "cryo_pod",
+                    Col = 29.0f,
+                    Row = 24.25f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "crate_small",
+                    Col = 30.6f,
+                    Row = 21.4f,
+                    Yaw = 15.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "crate_station",
+                    Col = 3.3f,
+                    Row = 21.3f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "crate_station",
+                    Col = 3.3f,
+                    Row = 21.85f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "crate_station",
+                    Col = 3.85f,
+                    Row = 21.3f,
+                    Yaw = 5.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "crate_small",
+                    Col = 4.4f,
+                    Row = 21.3f,
+                    Yaw = 20.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "canister",
+                    Col = 8.6f,
+                    Row = 21.3f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "canister",
+                    Col = 9.0f,
+                    Row = 21.5f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "canister",
+                    Col = 8.8f,
+                    Row = 25.6f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "barrel",
+                    Col = 3.3f,
+                    Row = 26.25f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "barrel",
+                    Col = 3.8f,
+                    Row = 26.25f,
+                    Yaw = 30.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "crate_case",
+                    Col = 6.5f,
+                    Row = 26.25f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "crate_case",
+                    Col = 7.0f,
+                    Row = 26.25f,
+                    Yaw = 8.0f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "barrel",
+                    Col = 41.3f,
+                    Row = 25.4f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "barrel",
+                    Col = 40.8f,
+                    Row = 25.6f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "canister",
+                    Col = 36.3f,
+                    Row = 25.6f,
+                    Solid = true,
+                },
+                new StationProp
+                {
+                    Piece = "crate_station",
+                    Col = 36.4f,
+                    Row = 21.0f,
+                    Yaw = 90.0f,
+                    Solid = true,
+                },
+            },
+            Dock = new StationDock
+            {
+                Col = 6.5f,
+                Row = 12.0f,
+                Length = 9.0f,
+                BoardDistance = 2.5f,
+                BoardPrompt = "E: board your ship",
+            },
+            Call = new StationCall
+            {
+                Room = "Hub",
+                Caller = "Dispatch",
+                RingPrompt = "Incoming call from {caller} - E to answer",
+                Lines =
+                {
+                    new StationCallLine
+                    {
+                        Speaker = "Dispatch",
+                        Text = "You're up. Good. We've got a situation.",
+                        Seconds = 3.5f,
+                    },
+                    new StationCallLine
+                    {
+                        Speaker = "Dispatch",
+                        Text = "A museum freighter, the {ship}, just sent a mayday. It's going down over {planet}.",
+                        Seconds = 5.5f,
+                    },
+                    new StationCallLine
+                    {
+                        Speaker = "Dispatch",
+                        Text = "{museum} relics on board. Salvage rights go to whoever reaches the wreck first.",
+                        Seconds = 5.5f,
+                    },
+                    new StationCallLine
+                    {
+                        Speaker = "Dispatch",
+                        Text = "Your ship's fuelled in the docking bay. Go.",
+                        Seconds = 3.5f,
+                    },
+                },
+                CharsPerSecond = 38.0f,
+                Objective = "Board your ship in the Docking Bay (west of the hub)",
+            },
+            Switches =
+            {
+                new StationSwitch
+                {
+                    Col = 35.0f,
+                    Row = 7.78f,
+                    Action = StationAction.Answer,
+                    Prompt = "E: answer the call",
+                    Piece = "lab_bench",
+                    Yaw = 180.0f,
+                },
+                new StationSwitch
+                {
+                    Col = 38.0f,
+                    Row = 16.78f,
+                    Action = StationAction.Lights,
+                    Prompt = "E: cycle the station lights",
+                    Piece = "lab_bench",
+                    Yaw = 180.0f,
+                },
+                new StationSwitch
+                {
+                    Col = 40.3f,
+                    Row = 16.78f,
+                    Action = StationAction.Psx,
+                    Prompt = "E: toggle the retro display",
+                    Piece = "lab_bench",
+                    Yaw = 180.0f,
+                },
+            },
+            DoorOpenDistance = 2.6f,
+            CorridorHandrails = true,
+            Glow = 0.8f,
+            LightPools = 0.35f,
+            Generator = new StationGenerator
+            {
+                Enabled = true,
+                Rooms =
+                {
+                    new StationRoomRule
+                    {
+                        Role = StationRoomRole.Hub,
+                        Name = "Hub",
+                        MinWidth = 7,
+                        MaxWidth = 10,
+                        MinDepth = 6,
+                        MaxDepth = 9,
+                        Items =
+                        {
+                            new StationRoomItem
+                            {
+                                Piece = "crate_station",
+                                U = -0.25f,
+                                V = -0.25f,
+                                Yaw = 5.0f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_small",
+                                U = -0.25f,
+                                V = 0.08f,
+                                Yaw = 30.0f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "barrel",
+                                U = 1.25f,
+                                V = -0.25f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "canister",
+                                U = 1.25f,
+                                V = 1.25f,
+                                Solid = true,
+                            },
+                        },
+                    },
+                    new StationRoomRule
+                    {
+                        Role = StationRoomRole.Gallery,
+                        Name = "Observation Gallery",
+                        MinWidth = 14,
+                        MaxWidth = 24,
+                        MinDepth = 3,
+                        MaxDepth = 4,
+                        Windows = true,
+                        Items =
+                        {
+                            new StationRoomItem
+                            {
+                                Piece = "chair_station",
+                                U = 0.15f,
+                                V = 0.1f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "chair_station",
+                                U = 0.35f,
+                                V = 0.1f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "chair_station",
+                                U = 0.65f,
+                                V = 0.1f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "chair_station",
+                                U = 0.85f,
+                                V = 0.1f,
+                                Solid = true,
+                            },
+                        },
+                    },
+                    new StationRoomRule
+                    {
+                        Role = StationRoomRole.Bay,
+                        Name = "Docking Bay",
+                        MinWidth = 10,
+                        MaxWidth = 13,
+                        MinDepth = 10,
+                        MaxDepth = 13,
+                        Windows = true,
+                        Items =
+                        {
+                            new StationRoomItem
+                            {
+                                Piece = "crate_station",
+                                U = -0.25f,
+                                V = -0.25f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_station",
+                                U = -0.25f,
+                                V = 0.02f,
+                                Yaw = 10.0f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_small",
+                                U = 0.02f,
+                                V = -0.25f,
+                                Yaw = 25.0f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "barrel",
+                                U = -0.25f,
+                                V = 1.25f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "barrel",
+                                V = 1.25f,
+                                Yaw = 40.0f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_case",
+                                U = 1.25f,
+                                V = 1.25f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_case",
+                                U = 1.25f,
+                                V = 1.0f,
+                                Yaw = 12.0f,
+                                Solid = true,
+                            },
+                        },
+                    },
+                    new StationRoomRule
+                    {
+                        Role = StationRoomRole.Comms,
+                        Name = "Comms",
+                        MinWidth = 6,
+                        MaxWidth = 8,
+                        MinDepth = 4,
+                        MaxDepth = 6,
+                        Windows = true,
+                        Items =
+                        {
+                            new StationRoomItem
+                            {
+                                Piece = "lab_bench",
+                                U = 0.5f,
+                                V = -0.3f,
+                                Yaw = 180.0f,
+                                Action = StationAction.Answer,
+                                Prompt = "E: answer the call",
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "chair_station",
+                                U = 0.4f,
+                                V = 0.2f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "chair_station",
+                                U = 0.6f,
+                                V = 0.2f,
+                                Yaw = 10.0f,
+                                Solid = true,
+                            },
+                        },
+                    },
+                    new StationRoomRule
+                    {
+                        Role = StationRoomRole.Cabin,
+                        Name = "Crew Cabin",
+                        MinWidth = 4,
+                        MaxWidth = 4,
+                        MinDepth = 4,
+                        MaxDepth = 5,
+                        Count = 3,
+                        YourName = "Your Cabin",
+                        Windows = true,
+                        Items =
+                        {
+                            new StationRoomItem
+                            {
+                                Piece = "cryo_pod",
+                                U = 0.5f,
+                                V = 1.25f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "chair_station",
+                                V = 0.1f,
+                                Yaw = 200.0f,
+                                Solid = true,
+                            },
+                        },
+                    },
+                    new StationRoomRule
+                    {
+                        Role = StationRoomRole.Storage,
+                        Name = "Storage",
+                        MinWidth = 6,
+                        MaxWidth = 8,
+                        MinDepth = 5,
+                        MaxDepth = 7,
+                        Items =
+                        {
+                            new StationRoomItem
+                            {
+                                Piece = "crate_station",
+                                U = -0.25f,
+                                V = 0.2f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_station",
+                                U = -0.25f,
+                                V = 0.32f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_station",
+                                U = 0.05f,
+                                V = 0.2f,
+                                Yaw = 5.0f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_small",
+                                U = 0.15f,
+                                V = 0.2f,
+                                Yaw = 20.0f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "canister",
+                                U = 1.25f,
+                                V = 0.2f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "canister",
+                                U = 1.25f,
+                                V = 0.3f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "barrel",
+                                U = -0.25f,
+                                V = 1.25f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_case",
+                                U = 0.55f,
+                                V = 1.25f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_case",
+                                U = 0.62f,
+                                V = 1.25f,
+                                Yaw = 8.0f,
+                                Solid = true,
+                            },
+                        },
+                    },
+                    new StationRoomRule
+                    {
+                        Role = StationRoomRole.Engineering,
+                        Name = "Engineering",
+                        MinWidth = 5,
+                        MaxWidth = 7,
+                        MinDepth = 6,
+                        MaxDepth = 9,
+                        Windows = true,
+                        Items =
+                        {
+                            new StationRoomItem
+                            {
+                                Piece = "lab_bench",
+                                U = 0.3f,
+                                V = 1.3f,
+                                Action = StationAction.Lights,
+                                Prompt = "E: cycle the station lights",
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "lab_bench",
+                                U = 0.75f,
+                                V = 1.3f,
+                                Action = StationAction.Psx,
+                                Prompt = "E: toggle the retro display",
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "barrel",
+                                U = 1.25f,
+                                V = 0.1f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "canister",
+                                U = 1.25f,
+                                V = 0.25f,
+                                Solid = true,
+                            },
+                        },
+                    },
+                },
+                MinCorridor = 2,
+                MaxCorridor = 4,
+            },
         };
 
         /// <summary>From <c>content/title.txtpb</c>.</summary>

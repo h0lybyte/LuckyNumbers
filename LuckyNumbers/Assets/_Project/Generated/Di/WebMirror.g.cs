@@ -78,6 +78,22 @@ namespace LuckyNumbers.Model
             {
                 var s = c.Resolve<StationState>();
                 d.Add(s.Lights.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.Room.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.Call.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.Caller.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.Objective.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.Prompt.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.Psx.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.Plan.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.MapOpen.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.PlayerCol.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.PlayerRow.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.PlayerYaw.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.DockCol.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.DockRow.Subscribe(_ => sink.MarkState(6)));
+                NotifyCollectionChangedEventHandler<string> hRooms = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(6);
+                s.Rooms.CollectionChanged += hRooms;
+                d.Add(Disposable.Create(() => s.Rooms.CollectionChanged -= hRooms));
                 sink.MarkState(6);
             }
             {
@@ -134,6 +150,21 @@ namespace LuckyNumbers.Model
                 Write(sink.BeginEvent("PlayerDied"), e);
                 sink.EndEvent();
             }));
+            d.Add(c.Resolve<ISubscriber<StationCallAnswered>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("StationCallAnswered"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<StationPlanRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("StationPlanRequested"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<PsxModeRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("PsxModeRequested"), e);
+                sink.EndEvent();
+            }));
             d.Add(c.Resolve<ISubscriber<StationLightsRequested>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("StationLightsRequested"), e);
@@ -173,6 +204,15 @@ namespace LuckyNumbers.Model
                     return true;
                 case "InputActionPerformed":
                     c.Resolve<IPublisher<InputActionPerformed>>().Publish(new InputActionPerformed(InputActionParse(Json.Get(o, "action"))));
+                    return true;
+                case "StationCallAnswered":
+                    c.Resolve<IPublisher<StationCallAnswered>>().Publish(new StationCallAnswered());
+                    return true;
+                case "StationPlanRequested":
+                    c.Resolve<IPublisher<StationPlanRequested>>().Publish(new StationPlanRequested(Json.Get(o, "plan") as string ?? ""));
+                    return true;
+                case "PsxModeRequested":
+                    c.Resolve<IPublisher<PsxModeRequested>>().Publish(new PsxModeRequested(Json.Get(o, "on") is bool onV && onV));
                     return true;
                 case "StationLightsRequested":
                     c.Resolve<IPublisher<StationLightsRequested>>().Publish(new StationLightsRequested(StationLightModeParse(Json.Get(o, "mode"))));
@@ -244,6 +284,44 @@ namespace LuckyNumbers.Model
             b.Append('{');
             b.Append("\"lights\":");
             Json.Str(b, StationLightModeName(s.Lights.Value));
+            b.Append(",\"room\":");
+            Json.Str(b, s.Room.Value);
+            b.Append(",\"call\":");
+            Json.Str(b, CallPhaseName(s.Call.Value));
+            b.Append(",\"caller\":");
+            Json.Str(b, s.Caller.Value);
+            b.Append(",\"objective\":");
+            Json.Str(b, s.Objective.Value);
+            b.Append(",\"prompt\":");
+            Json.Str(b, s.Prompt.Value);
+            b.Append(",\"psx\":");
+            b.Append(s.Psx.Value ? "true" : "false");
+            b.Append(",\"plan\":");
+            Json.Str(b, s.Plan.Value);
+            b.Append(",\"mapOpen\":");
+            b.Append(s.MapOpen.Value ? "true" : "false");
+            b.Append(",\"playerCol\":");
+            Json.Num(b, s.PlayerCol.Value);
+            b.Append(",\"playerRow\":");
+            Json.Num(b, s.PlayerRow.Value);
+            b.Append(",\"playerYaw\":");
+            Json.Num(b, s.PlayerYaw.Value);
+            b.Append(",\"dockCol\":");
+            Json.Num(b, s.DockCol.Value);
+            b.Append(",\"dockRow\":");
+            Json.Num(b, s.DockRow.Value);
+            b.Append(",\"rooms\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Rooms)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Str(b, x);
+                }
+            }
+            b.Append(']');
             b.Append('}');
         }
 
@@ -351,6 +429,28 @@ namespace LuckyNumbers.Model
             b.Append('}');
         }
 
+        static void Write(StringBuilder b, StationCallAnswered e)
+        {
+            b.Append('{');
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, StationPlanRequested e)
+        {
+            b.Append('{');
+            b.Append("\"plan\":");
+            Json.Str(b, e.Plan);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, PsxModeRequested e)
+        {
+            b.Append('{');
+            b.Append("\"on\":");
+            b.Append(e.On ? "true" : "false");
+            b.Append('}');
+        }
+
         static void Write(StringBuilder b, StationLightsRequested e)
         {
             b.Append('{');
@@ -425,6 +525,31 @@ namespace LuckyNumbers.Model
                 case "Sprint": return InputAction.Sprint;
                 case "AnyButton": return InputAction.AnyButton;
                 case "Map": return InputAction.Map;
+                default: return default;
+            }
+        }
+
+        static string CallPhaseName(CallPhase v)
+        {
+            switch (v)
+            {
+                case CallPhase.None: return "None";
+                case CallPhase.Ringing: return "Ringing";
+                case CallPhase.Active: return "Active";
+                case CallPhase.Ended: return "Ended";
+                default: return ((int)v).ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
+        static CallPhase CallPhaseParse(object v)
+        {
+            if (v is double n) return (CallPhase)(int)n;
+            switch (v as string)
+            {
+                case "None": return CallPhase.None;
+                case "Ringing": return CallPhase.Ringing;
+                case "Active": return CallPhase.Active;
+                case "Ended": return CallPhase.Ended;
                 default: return default;
             }
         }
