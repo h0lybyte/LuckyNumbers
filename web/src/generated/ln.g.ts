@@ -189,6 +189,7 @@ export interface UniverseSeedChanged {
   star: number;
   worlds: number;
   luck: number;
+  moons: number;
 }
 
 export interface CutsceneStepStarted {

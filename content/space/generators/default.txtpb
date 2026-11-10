@@ -27,7 +27,7 @@ star_scale_max: 12
 planet_star_density_ratio: 4
 
 moon_chance: 0.6
-max_moons: 2
+max_moons: 3
 moon_scale_ratio: 0.27
 moon_orbit_min: 3
 moon_orbit_max: 6
