@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using LuckyNumbers.Model;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -7,8 +9,9 @@ using UnityEngine.UIElements;
 namespace LuckyNumbers.Title
 {
     /// <summary>
-    /// Dice row on the title UI. d6 show pips; d20s are drawn as a d20 (hexagon, centre face, facets) with the number
-    /// on the face; other dice show a number. Hovering (or tapping) a die lights it and shows what it decides (content:
+    /// Dice row on the title UI. When every die is a d20 they're real 3D dice (DiceTray: physics, its own camera,
+    /// shown behind the row; the row's boxes stay as hover targets); otherwise d6 show pips, d20s are drawn flat as a
+    /// d20 (hexagon, centre face, facets) and other dice show a number. Hovering (or tapping) a die lights it and shows what it decides (content:
     /// Die.name / tooltip) and its current roll, beside the dice panel on whichever side has room, with an arrow to the
     /// die (above the panel only when neither side fits), so it never covers the menu. No logic: DicePresenter drives it.
     /// </summary>
@@ -36,6 +39,8 @@ namespace LuckyNumbers.Title
         VisualElement _tip, _tipArrow;
         Label _tipText;
         int _tipFor = -1;
+        DiceTray _tray;
+        VisualElement _trayImage;
         const float TipGap = 14f;     // panel edge to tip
         const float ArrowHalf = 6f;   // the arrow is a 12 px square turned 45 degrees
         bool _bound;
@@ -67,6 +72,9 @@ namespace LuckyNumbers.Title
                 _tip.Add(_tipArrow);
                 _dice.parent.Add(_tip);
             }
+            var all20 = dice.Count > 0;
+            foreach (var die in dice) all20 &= die.Sides == 20;
+            if (all20 && _tray == null) BuildTray(dice);
             foreach (var die in dice)
             {
                 var index = _dieElements.Count;
@@ -82,7 +90,8 @@ namespace LuckyNumbers.Title
                 });
                 var c = die.Color;
                 var color = new Color(c.R, c.G, c.B, c.A);
-                if (die.Sides == 20)
+                if (_tray != null) body.AddToClassList("ln-die--3d");   // a hover box over the 3D die
+                else if (die.Sides == 20)
                 {
                     body.AddToClassList("ln-die--d20");
                     body.generateVisualContent += ctx => DrawD20(ctx, body, color, _tipFor == index);
@@ -111,6 +120,7 @@ namespace LuckyNumbers.Title
                 {
                     number = new Label { pickingMode = PickingMode.Ignore };
                     number.AddToClassList("ln-die-number");
+                    if (_tray != null) number.style.display = DisplayStyle.None;
                     if (die.Sides == 20)
                     {
                         // Lit in the die's colour on the dark face.
@@ -144,7 +154,8 @@ namespace LuckyNumbers.Title
             {
                 _numbers[index].text = face.ToString();
             }
-            _dieElements[index].style.rotate = new Rotate(tumble);
+            if (_tray != null) _tray.ShowFace(index, face, tumble);
+            else _dieElements[index].style.rotate = new Rotate(tumble);
             _shown[index] = face;
             if (_tipFor == index) ShowTip(index);
         }
@@ -176,6 +187,7 @@ namespace LuckyNumbers.Title
         void Highlight(int index)
         {
             if (index < 0 || index >= _dieElements.Count) return;
+            if (_tray != null && (_tipFor == index || _tipFor < 0)) _tray.SetActive(_tipFor);
             _dieElements[index].EnableInClassList("ln-die--active", _tipFor == index);
             _dieElements[index].MarkDirtyRepaint();
         }
@@ -296,6 +308,45 @@ namespace LuckyNumbers.Title
         {
             p.MoveTo(a);
             p.LineTo(b);
+        }
+
+        // ---- 3D dice ---------------------------------------------------------------------------------------
+
+        /// <summary>True when the dice are 3D: a roll is thrown (ThrowAsync) rather than flickered through faces.</summary>
+        public bool Physical => _tray != null;
+
+        /// <summary>Throw the 3D dice; the faces that land on top.</summary>
+        public UniTask<int[]> ThrowAsync(uint seed, CancellationToken ct) => _tray.ThrowAsync(seed, ct);
+
+        void BuildTray(IReadOnlyList<Die> dice)
+        {
+            var colors = new List<Color>(dice.Count);
+            foreach (var d in dice) colors.Add(new Color(d.Color.R, d.Color.G, d.Color.B, d.Color.A));
+            _tray = DiceTray.Create(colors);
+            // Behind the row's hover boxes, a little taller than them so a throw has room to bounce.
+            _trayImage = new VisualElement { pickingMode = PickingMode.Ignore };
+            _trayImage.AddToClassList("ln-dice-tray");
+            _dice.Insert(0, _trayImage);
+            _trayImage.RegisterCallback<GeometryChangedEvent>(_ => LayoutTray());
+        }
+
+        void LayoutTray()
+        {
+            if (_tray == null || _dieElements.Count == 0) return;
+            var image = _trayImage.worldBound;
+            if (image.width < 4f) return;
+            var slots = new List<float>(_dieElements.Count);
+            foreach (var die in _dieElements) slots.Add(die.worldBound.center.x - image.xMin);
+            var scale = _trayImage.panel?.scaledPixelsPerPoint ?? 1f;
+            _tray.Layout(image.width, image.height, _dieElements[0].worldBound.width, slots, Mathf.Max(1f, scale) * 2f);
+            _trayImage.style.backgroundImage = new StyleBackground(Background.FromRenderTexture(_tray.Texture));
+            // The tray only knows where to rest after layout: show the current faces again.
+            for (var i = 0; i < _shown.Count; i++) _tray.ShowFace(i, _shown[i], 0f);
+        }
+
+        void OnDestroy()
+        {
+            if (_tray != null) Destroy(_tray.gameObject);
         }
 
         public void SetLuckyNumber(string text) => _lucky.text = text;

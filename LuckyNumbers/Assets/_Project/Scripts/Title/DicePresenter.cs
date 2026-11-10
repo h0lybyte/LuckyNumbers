@@ -26,6 +26,7 @@ namespace LuckyNumbers.Title
         DiceRoller _config;
         Random _rng;
         bool _disposed;
+        readonly System.Threading.CancellationTokenSource _cts = new();
 
         [Inject]
         public DicePresenter(DiceView view, DiceState state, IBufferedPublisher<UniverseSeedChanged> seeds)
@@ -75,6 +76,16 @@ namespace LuckyNumbers.Title
         {
             _state.Rolling.Value = true;
             _view.SetRolling(true);
+            if (_view.Physical)
+            {
+                // 3D dice: thrown with physics; whatever lands on top is the roll.
+                var landed = await _view.ThrowAsync(_rng.NextUInt(), _cts.Token);
+                for (var i = 0; i < _faces.Count && i < landed.Length; i++) _faces[i] = landed[i];
+                Land(_state.Seed.Value);
+                _state.Rolling.Value = false;
+                _view.SetRolling(false);
+                return;
+            }
             var end = Time.time + Mathf.Max(0.1f, _config.RollSeconds);
             while (Time.time < end && !_disposed)
             {
@@ -113,6 +124,11 @@ namespace LuckyNumbers.Title
             return -1f;
         }
 
-        public void Dispose() => _disposed = true;
+        public void Dispose()
+        {
+            _disposed = true;
+            _cts.Cancel();
+            _cts.Dispose();
+        }
     }
 }

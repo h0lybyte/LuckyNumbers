@@ -293,6 +293,34 @@
     letter-spacing: -0.5px;
 }
 
+/* 3D dice (DiceTray): the row's boxes are only hover targets; the tray's render sits behind them, a little
+   taller than the row so a throw has room to bounce. */
+.ln-dice-row {
+    overflow: visible;
+}
+
+.ln-dice-tray {
+    position: absolute;
+    left: -12px;
+    right: -2px;
+    top: -26px;
+    bottom: -16px;
+}
+
+.ln-die--3d {
+    width: 76px;
+    height: 76px;
+    padding: 0;
+    border-width: 0;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.ln-intro-dice .ln-die--3d {
+    width: 104px;
+    height: 104px;
+    padding: 0;
+}
+
 .ln-die--active {
     border-color: rgb(0, 229, 255);
 }
