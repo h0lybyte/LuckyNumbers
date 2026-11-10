@@ -1356,6 +1356,27 @@ namespace LuckyNumbers.Model
             ShipSkin = "idolknight",
         };
 
+        /// <summary>From <c>content/station.txtpb</c>.</summary>
+        public static readonly StationScene Station = new StationScene
+        {
+            Plan =
+            {
+                "##WWWW#############",
+                "#......############",
+                "W......############",
+                "#......Dcccccccc###",
+                "W......########c###",
+                "#......########c###",
+                "###D###########D###",
+                "##...#########...W#",
+                "##...#########....W",
+                "##...#########...W#",
+                "###################",
+            },
+            LightEvery = 2,
+            ChunkCells = 4,
+        };
+
         /// <summary>From <c>content/title.txtpb</c>.</summary>
         public static readonly TitleScreen Title = new TitleScreen
         {

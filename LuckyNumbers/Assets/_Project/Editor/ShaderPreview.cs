@@ -187,6 +187,102 @@ namespace LuckyNumbers.Editor
             Debug.Log($"[ShaderPreview] wrote {outPath}");
         }
 
+        /// <summary>
+        /// The station (content/station.txtpb) from both PSX kits: three eye-height views and a top-down plan
+        /// (ceilings face down, so from above they're culled and the rooms show) to Logs/preview-station.png.
+        /// </summary>
+        [MenuItem("LuckyNumbers/Preview/Render Station")]
+        public static void RenderStation()
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var view = new GameObject("Station").AddComponent<LuckyNumbers.Station.StationView>();
+            view.Init(KitMaterial("StationKit"), KitMaterial("StarshipKit"), KitPieces("StationKit", "StarshipKit"));
+            var config = LuckyNumbers.Model.GameContent.Station;
+            view.Build(config);
+            var plan = view.Plan;
+
+            // Plan coordinates (column, row from the top, as in the .txtpb) -> eye-height point in that cell.
+            Vector3 At(float col, float row, float y = 1.6f) =>
+                new Vector3((col + 0.5f) * 2f, y, (plan.Depth - 1 - row + 0.5f) * 2f);
+            Camera Eye(Vector3 from, Vector3 to)
+            {
+                var cam = new GameObject("Eye").AddComponent<Camera>();
+                cam.fieldOfView = 70f;
+                cam.nearClipPlane = 0.05f;
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = Color.black;
+                cam.transform.SetPositionAndRotation(from, Quaternion.LookRotation(to - from));
+                return cam;
+            }
+
+            var top = new GameObject("Top").AddComponent<Camera>();
+            top.orthographic = true;
+            top.clearFlags = CameraClearFlags.SolidColor;
+            top.backgroundColor = new Color(0.05f, 0.05f, 0.08f);
+            var size = new Vector2(plan.Width, plan.Depth) * 2f;
+            top.orthographicSize = Mathf.Max(size.y, size.x * Height / Width) * 0.55f;
+            top.transform.SetPositionAndRotation(new Vector3(size.x / 2f, 30f, size.y / 2f), Quaternion.Euler(90, 0, 0));
+            top.farClipPlane = 60f;
+
+            SaveGrid(new[]
+            {
+                Eye(At(5.3f, 5.3f), At(2f, 1f, 1.9f)),         // hangar, towards its windows
+                Eye(At(8.6f, 3f), At(15f, 3f, 1.5f)),           // corridor, east
+                Eye(At(14f, 8.6f), At(17.5f, 8f, 1.7f)),        // viewing room, towards the windows
+                top,
+            }, "preview-station.png");
+            // Joins: both doorways, a corner post, the corridor's turn.
+            SaveGrid(new[]
+            {
+                Eye(At(10f, 3f), At(6.5f, 3f, 1.4f)),           // corridor -> hangar doorway
+                Eye(At(3f, 4.2f), At(3f, 7.5f, 1.2f)),          // hangar -> store doorway
+                Eye(At(5.2f, 4.8f), At(6.6f, 1f, 1.5f)),        // hangar's north-east corner
+                Eye(At(12.5f, 3f), At(15f, 5.5f, 1.4f)),        // corridor turning south
+            }, "preview-station-joins.png");
+        }
+
+        static Material KitMaterial(string kit)
+        {
+            var atlas = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/_Project/Art/Models/{kit}/atlas.png")
+                        ?? throw new System.Exception($"{kit}/atlas.png not imported");
+            return new Material(Find("LuckyNumbers/StationKit")) { mainTexture = atlas };
+        }
+
+        static LuckyNumbers.Station.StationView.KitPiece[] KitPieces(params string[] kits)
+        {
+            var list = new System.Collections.Generic.List<LuckyNumbers.Station.StationView.KitPiece>();
+            foreach (var kit in kits)
+            foreach (var guid in AssetDatabase.FindAssets("t:Model", new[] { $"Assets/_Project/Art/Models/{kit}" }))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                list.Add(new LuckyNumbers.Station.StationView.KitPiece
+                    { name = Path.GetFileNameWithoutExtension(path), model = AssetDatabase.LoadAssetAtPath<GameObject>(path) });
+            }
+            return list.ToArray();
+        }
+
+        /// <summary>Cameras rendered into a 2 x 2 grid (each at half size), saved to Logs/.</summary>
+        static void SaveGrid(Camera[] cams, string file)
+        {
+            int w = Width / 2, h = Height / 2;
+            var sheet = new Texture2D(Width, Height, TextureFormat.RGB24, false);
+            var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
+            for (var i = 0; i < cams.Length && i < 4; i++)
+            {
+                var request = new RenderPipeline.StandardRequest { destination = rt };
+                if (RenderPipeline.SupportsRenderRequest(cams[i], request)) RenderPipeline.SubmitRenderRequest(cams[i], request);
+                else { cams[i].targetTexture = rt; cams[i].Render(); cams[i].targetTexture = null; }
+                var prev = RenderTexture.active;
+                RenderTexture.active = rt;
+                sheet.ReadPixels(new Rect(0, 0, w, h), (i % 2) * w, (1 - i / 2) * h);
+                RenderTexture.active = prev;
+            }
+            sheet.Apply();
+            var path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", file));
+            File.WriteAllBytes(path, sheet.EncodeToPNG());
+            Debug.Log($"[ShaderPreview] wrote {path}");
+        }
+
         static Transform FindDeep(Transform t, string name)
         {
             if (t.name == name) return t;

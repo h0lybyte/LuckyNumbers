@@ -1,0 +1,17 @@
+{
+    "name": "LuckyNumbers.Station",
+    "rootNamespace": "LuckyNumbers.Station",
+    "references": [
+        "LuckyNumbers.Attributes",
+        "LuckyNumbers.Model"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

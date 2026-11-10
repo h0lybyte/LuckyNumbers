@@ -1,0 +1,19 @@
+# proto-file: luckynumbers/v1/station.proto
+# proto-message: luckynumbers.v1.StationScene
+# First pass (walls): a hangar with windows, a corridor round to a viewing room, and a small store.
+# One character per 2 m cell; see StationScene in station.proto for the legend.
+
+plan: "##WWWW#############"
+plan: "#......############"
+plan: "W......############"
+plan: "#......Dcccccccc###"
+plan: "W......########c###"
+plan: "#......########c###"
+plan: "###D###########D###"
+plan: "##...#########...W#"
+plan: "##...#########....W"
+plan: "##...#########...W#"
+plan: "###################"
+
+light_every: 2
+chunk_cells: 4
