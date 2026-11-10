@@ -4,6 +4,30 @@ Releases are driven by this file: the **top `## x.y.z` entry is the game version
 Bumping it on `main` builds the Web player, uploads it to itch.io with that version,
 and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version does not rebuild.
 
+## 0.3.0 (2026-11-10)
+
+- Your character: Play opens character creation, a d20 sheet rolled from your lucky number. Six abilities
+  (4d6, drop the lowest) you can shift points between, five classes and five origins, Stamina over HP,
+  trained skills, level and XP. Change it with C until you leave the station. Relic rolls add your WIS
+  modifier, and picking things up earns XP
+- Inventory (I): a 10x6 pack where items take up their own shape. Drag them into place, R turns them. Your
+  class packs a starting kit; relics you find go in if there's room. Carry more than your Strength allows
+  and you slow down on the planet
+- Equipment: head, body, hands, weapon and tool slots. Worn gear adds to abilities, skills, Stamina, HP,
+  relic rolls and how much you can carry
+- The title's d20s are real 3D dice in holo neon: Roll throws them, and the faces that land on top are the
+  roll
+- Weapons: a futuristic arsenal by Niko-3d-models. Nine guns that fire energy bolts, a knife and a hammer
+  that swing on click, and gun mods. Both hands hold them, fingers wrapped round each one's real shape. A
+  test rifle waits by your spawn on the station
+- A shooting range for trying them (?ln-range, or ?ln-range=knife to start at one): every weapon on a bench,
+  crates to knock over and targets downrange; V shows your hands from the side
+- The planet's ground now runs to the horizon, with hills round the crash site
+- A bigger fighter (24 m nose to tail) with a closer chase camera, and sharper ship models up close
+- Landing: CLIMB shows your true vertical speed, and the flare now allows for rising ground, so drifting
+  over a hillside no longer crashes you on touchdown
+- The title and the character panel fit short screens: the dice no longer cover Play
+
 ## 0.2.4 (2026-11-10)
 
 - New look: a neon sci-fi theme across the menus, the station and planet screens and the page overlay
