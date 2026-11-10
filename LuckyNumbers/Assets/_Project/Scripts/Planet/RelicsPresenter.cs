@@ -309,7 +309,7 @@ namespace LuckyNumbers.Planet
             }
             if (to == "wreck" || target == null) target = _view.Wreck.Pivot.position + Vector3.right * 14f;
             var at = target.Value + Vector3.back * 1.2f;
-            at.y = _ground.HeightAt(at) + 0.05f;
+            at.y = _ground.SurfaceAt(at) + 0.15f;
             var body = _player.Body;
             var face = target.Value - at;
             var yaw = Mathf.Atan2(face.x, face.z) * Mathf.Rad2Deg;

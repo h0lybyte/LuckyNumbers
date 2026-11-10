@@ -89,6 +89,8 @@ export interface FlightState {
   maxTilt: number;
   crashReason: string;
   assisted: boolean;
+  /** Hover-ship controls (the HUD's steps and keys follow them). */
+  hoverShip: boolean;
 }
 
 /**

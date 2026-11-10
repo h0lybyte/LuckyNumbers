@@ -6,6 +6,14 @@ import { useEffect } from "react";
 import { LN, useLNState } from "./ln";
 import type { FlightState } from "./ln";
 
+// Six-axis controls (hover ship): aim, thrust, stop over the pad, let it down.
+const HOVER_STEPS = [
+  { title: "Fly to the green pad", how: "Aim with the mouse, W to thrust" },
+  { title: "Stop over the pad", how: "Let go of W, or tap X to brake" },
+  { title: "Descend", how: "Hold C: the ship eases down and levels itself" },
+  { title: "Touch down", how: "Keep holding C, hands off the mouse" },
+];
+
 const STEPS = [
   { title: "Fly to the green pad", how: "Mouse to steer, W / S to set your speed" },
   { title: "Slow down", how: "Tap S until SET reads 0" },
@@ -26,24 +34,34 @@ export function FlightHud() {
   // Follow what you're doing: hovering low = touch down, hovering = hover down, slow = hover down,
   // fast and near the pad = slow down, else fly to the pad. Landing anywhere counts.
   const slow = f.speed <= f.maxDrift * 0.85;
-  const step = !f.assisted ? -1 : f.hovering ? (f.altitude < 15 ? 3 : 2) : slow ? 2 : f.padDistance > 45 ? 0 : 1;
-  const offPad = step >= 1 && f.padDistance > 45;
+  const steps = f.hoverShip ? HOVER_STEPS : STEPS;
+  const step = !f.assisted
+    ? -1
+    : f.hoverShip
+      ? f.hovering || f.climb < -0.8   // descending: by the key, or still sinking after it
+        ? f.altitude < 5 ? 3 : 2
+        : f.padDistance > 12 ? 0 : f.speed > 2.5 ? 1 : 2
+      : f.hovering ? (f.altitude < 15 ? 3 : 2) : slow ? 2 : f.padDistance > 45 ? 0 : 1;
+  const offPad = step >= 2 && f.padDistance > (f.hoverShip ? 12 : 45);
   const low = f.altitude < 40;
   const warnings = low ? warn(f) : [];
+  const keys = f.hoverShip
+    ? [["Mouse", "aim"], ["W S", "thrust"], ["A D", "strafe"], ["Q E", "roll"], ["Space C", "up / down"], ["Shift", "boost"], ["X", "brake"]]
+    : [["Mouse", "steer"], ["W S", "speed"], ["A D", "roll"], ["Shift", "boost"], ["Space", "hover down"]];
   return (
     <div className="flight-hud">
       {step >= 0 && (
         <div className="flight-steps">
           <ol>
-            {STEPS.map((s, i) => (
+            {steps.map((s, i) => (
               <li key={s.title} className={i === step ? "now" : i < step ? "done" : ""}>
                 <span className="n">{i + 1}</span> {s.title}
               </li>
             ))}
           </ol>
           <div className="flight-do">
-            <b>{STEPS[step].title}</b>
-            <span>{STEPS[step].how}</span>
+            <b>{steps[step].title}</b>
+            <span>{steps[step].how}</span>
             {offPad && <span className="flight-note">Any flat spot works; the pad is closest to the wreck</span>}
           </div>
           {warnings.map((w) => (
@@ -58,9 +76,10 @@ export function FlightHud() {
 
       <div className="flight-instruments">
         <Instrument label="ALT" value={f.altitude} unit="m" />
-        <Instrument label="SPEED" value={f.speed} unit="m/s" sub={f.assisted ? `SET ${f.setSpeed.toFixed(0)}${f.boost ? " BOOST" : ""}` : undefined} />
+        <Instrument label="SPEED" value={f.speed} unit="m/s"
+          sub={f.hoverShip ? (f.boost ? "BOOST" : undefined) : f.assisted ? `SET ${f.setSpeed.toFixed(0)}${f.boost ? " BOOST" : ""}` : undefined} />
         <Instrument label="CLIMB" value={f.climb} unit="m/s" signed />
-        {f.hovering && <div className="flight-tag">HOVER</div>}
+        {f.hovering && <div className="flight-tag">{f.hoverShip ? "DESCENDING" : "HOVER"}</div>}
       </div>
 
       {low && (
@@ -72,11 +91,14 @@ export function FlightHud() {
       )}
 
       <div className="flight-keys">
-        <div><kbd>Mouse</kbd> steer</div>
-        <div><kbd>W</kbd><kbd>S</kbd> speed</div>
-        <div><kbd>A</kbd><kbd>D</kbd> roll</div>
-        <div><kbd>Shift</kbd> boost</div>
-        <div><kbd>Space</kbd> hover down</div>
+        {keys.map(([k, what]) => (
+          <div key={k}>
+            {k.split(" ").map((x) => (
+              <kbd key={x}>{x}</kbd>
+            ))}{" "}
+            {what}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -84,6 +106,12 @@ export function FlightHud() {
 
 function warn(f: FlightState): string[] {
   const out: string[] = [];
+  if (f.hoverShip) {
+    if (f.drift > f.maxDrift) out.push("Still moving: let go of W, or tap X");
+    if (f.descent > f.maxDescent) out.push("Coming down too fast: let go and hold C");
+    if (f.tilt > f.maxTilt) out.push("Tilted: let go of the mouse and it levels itself");
+    return out;
+  }
   if (f.drift > f.maxDrift) out.push("Too fast to land: tap S");
   if (f.descent > f.maxDescent) out.push("Coming down too fast: hold SPACE");
   if (f.tilt > f.maxTilt) out.push("Tilted: hold SPACE to level out");
@@ -147,14 +175,22 @@ const REASONS: Record<string, string> = {
   hit: "You flew into something. Keep clear of the wreck and the rocks.",
 };
 
+const HOVER_REASONS: Record<string, string> = {
+  descent: "You came down too fast. Hold C near the ground and it eases you down.",
+  drift: "You were still moving. Let go of W (or tap X) and stop before you descend.",
+  tilt: "The ship was tilted. Let go of the mouse near the ground and it levels itself.",
+  hit: "You flew into something. Keep clear of the wreck and the rocks.",
+};
+
 function CrashCard({ f }: { f: FlightState }) {
   const why = f.crashReason.split(",").filter(Boolean);
+  const reasons = f.hoverShip ? HOVER_REASONS : REASONS;
   return (
     <div className="flight-crash">
       <b>Too hard. Trying again…</b>
       <ul>
         {(why.length ? why : ["descent"]).map((r) => (
-          <li key={r}>{REASONS[r] ?? r}</li>
+          <li key={r}>{reasons[r] ?? r}</li>
         ))}
       </ul>
     </div>

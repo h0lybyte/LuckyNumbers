@@ -39,6 +39,11 @@ message PlayerInput {
   bool sprinting = 7;
   // Jump held (flying: the lift thrusters).
   bool lifting = 8;
+  // Descend held (C): the ship's hover goes down.
+  bool descending = 9;
+  // Roll (Q / E: -1 left .. +1 right) and brake held (X): the ship's flight.
+  float roll = 10;
+  bool braking = 11;
 }
 
 message InputActionPerformed {

@@ -12,9 +12,15 @@ and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version
   Pearl (shows you the nearest relic, like his seismoscope); 20: Heavenly Tide (full health, every relic shown)
 - The freighter's relics now lie round the wreck to collect, glowing, with a new Han Chinese culture among
   them; an inventory strip on the page, and the d20 rolling on screen when you use one
-- Landing HUD rebuilt: step-by-step guidance (fly to the pad, slow down, hover down, touch down) that follows
+- New ship controls with flight assist on: the mouse aims the nose, W/S thrust, A/D strafe, Q/E roll,
+  Space/C up and down, Shift boost, X brake. Aim and travel are separate (swing the nose and you slide on a
+  moment); let go of a key and that motion eases out, so the ship stops on its own and holds its place. Near
+  the ground it eases your descent and levels itself, so landing is: stop over the pad, hold C
+- Landing HUD rebuilt: step-by-step guidance (fly to the pad, stop over it, descend, touch down) that follows
   what you're doing, an arrow to the pad, cockpit instruments, landing gauges with their safe zones, plain
-  warnings ("Too fast to land: tap S"), a crash card that says why, and a compact key card
+  warnings ("Still moving: let go of W, or tap X"), a crash card that says why, and a key card
+- Fixed: after landing you could fall through the ground over and over (you're now placed on the ground's
+  actual surface)
 - Amulet model: "Amulet" by Mierenttt (Blend Swap, CC BY 3.0), exported low-poly
 
 ## 0.2.3 (2026-11-10)

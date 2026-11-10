@@ -196,9 +196,65 @@ namespace LuckyNumbers.Model
         /// Flight assist (on unless disabled): easier to fly, same feel.
         /// </summary>
         public FlightAssist Assist { get; set; }
+        /// <summary>
+        /// Hover-ship controls (when enabled, instead of the flight model above): the ship hovers, holds its height and
+        /// stops when you let go; you fly it about and set it down. Easiest to land.
+        /// </summary>
+        public FlightHover Hover { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public FlightLanding Clone() => (FlightLanding)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// Six-axis ship controls with flight assist: the mouse aims the nose (yaw, pitch), Q/E roll; W/S thrust
+    /// forward/back, A/D strafe, Space/C thrust up/down, all relative to the ship; Shift boosts; X brakes along
+    /// your travel. Aim and travel are independent: the assist eases your velocity towards what the keys ask for
+    /// (in the ship's frame, so swinging the nose leaves you sliding a moment), easing out of any motion you let go
+    /// of, and cancels gravity so a released ship holds where it is. Near the ground a descent eases to
+    /// `touchdown_speed`, and when you're low and not steering the ship levels itself, so landing stays forgiving.
+    /// </summary>
+    public sealed class FlightHover
+    {
+        public bool Enabled { get; set; }
+        public float MaxSpeed { get; set; }
+        public float ReverseSpeed { get; set; }
+        public float StrafeSpeed { get; set; }
+        public float Boost { get; set; }
+        /// <summary>
+        /// m/s^2 speeding up, and braking (also when you let go).
+        /// </summary>
+        public float Accel { get; set; }
+        public float Brake { get; set; }
+        public float ClimbSpeed { get; set; }
+        public float DescendSpeed { get; set; }
+        public float VerticalAccel { get; set; }
+        /// <summary>
+        /// Heading change at most (degrees per second) and how quickly it settles (per second).
+        /// </summary>
+        public float TurnRate { get; set; }
+        public float TurnSmoothing { get; set; }
+        /// <summary>
+        /// Descents ease off below flare_height (m) to touchdown_speed (m/s); `clearance`: the height it keeps.
+        /// </summary>
+        public float FlareHeight { get; set; }
+        public float TouchdownSpeed { get; set; }
+        public float Clearance { get; set; }
+        /// <summary>
+        /// Unused (the ship's own attitude shows its motion now).
+        /// </summary>
+        public float LeanDegrees { get; set; }
+        /// <summary>
+        /// Roll (Q/E, degrees per second); X's brake (m/s^2); below level_height (m), with no steering input, the ship
+        /// levels itself at level_rate (degrees per second).
+        /// </summary>
+        public float RollRate { get; set; }
+        public float HardBrake { get; set; }
+        public float LevelHeight { get; set; }
+        public float LevelRate { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public FlightHover Clone() => (FlightHover)MemberwiseClone();
     }
 
     /// <summary>
@@ -228,6 +284,10 @@ namespace LuckyNumbers.Model
         public readonly ReactiveProperty<float> MaxTilt = new ReactiveProperty<float>();
         public readonly ReactiveProperty<string> CrashReason = new ReactiveProperty<string>();
         public readonly ReactiveProperty<bool> Assisted = new ReactiveProperty<bool>();
+        /// <summary>
+        /// Hover-ship controls (the HUD's steps and keys follow them).
+        /// </summary>
+        public readonly ReactiveProperty<bool> HoverShip = new ReactiveProperty<bool>();
 
         public void Dispose()
         {
@@ -250,6 +310,7 @@ namespace LuckyNumbers.Model
             MaxTilt.Dispose();
             CrashReason.Dispose();
             Assisted.Dispose();
+            HoverShip.Dispose();
         }
     }
 

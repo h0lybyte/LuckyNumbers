@@ -272,8 +272,9 @@ namespace LuckyNumbers.Planet
                 var floor = _ground.HeightAt(body.position);
                 if (body.position.y < floor - 2f)
                 {
+                    // Back onto the mesh's own surface (HeightAt can sit under it), so it doesn't fall again.
                     _player.Body.enabled = false;
-                    body.position = new Vector3(body.position.x, floor + 0.2f, body.position.z);
+                    body.position = new Vector3(body.position.x, _ground.SurfaceAt(body.position) + 0.3f, body.position.z);
                     _player.Body.enabled = true;
                 }
             }

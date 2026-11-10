@@ -87,6 +87,7 @@ namespace LuckyNumbers.Model
                 d.Add(s.MaxTilt.Subscribe(_ => sink.MarkState(3)));
                 d.Add(s.CrashReason.Subscribe(_ => sink.MarkState(3)));
                 d.Add(s.Assisted.Subscribe(_ => sink.MarkState(3)));
+                d.Add(s.HoverShip.Subscribe(_ => sink.MarkState(3)));
                 sink.MarkState(3);
             }
             {
@@ -377,6 +378,8 @@ namespace LuckyNumbers.Model
             Json.Str(b, s.CrashReason.Value);
             b.Append(",\"assisted\":");
             b.Append(s.Assisted.Value ? "true" : "false");
+            b.Append(",\"hoverShip\":");
+            b.Append(s.HoverShip.Value ? "true" : "false");
             b.Append('}');
         }
 

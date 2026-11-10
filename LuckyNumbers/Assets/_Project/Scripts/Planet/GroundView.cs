@@ -131,6 +131,22 @@ namespace LuckyNumbers.Planet
         }
 
         public float HeightAt(Vector3 world) => Height(new float2(world.x, world.z));
+
+        /// <summary>
+        /// The ground you actually stand on: the chunk mesh's surface (a ray down onto its collider). Between its
+        /// vertices the mesh runs a little above the smooth height function on a hill's curve, so placing a body by
+        /// HeightAt alone can start it inside the mesh, where it falls through. Falls back to HeightAt.
+        /// </summary>
+        public float SurfaceAt(Vector3 world)
+        {
+            var h = HeightAt(world);
+            var from = new Vector3(world.x, h + 40f, world.z);
+            var hits = Physics.RaycastAll(from, Vector3.down, 80f, ~0, QueryTriggerInteraction.Ignore);
+            var best = float.MinValue;
+            foreach (var hit in hits)
+                if (hit.collider.GetComponentInParent<GroundView>() == this) best = Mathf.Max(best, hit.point.y);
+            return best > float.MinValue ? best : h;
+        }
         /// <summary>Ground normal under a world point (from the height function, like the chunk normals).</summary>
         public Vector3 NormalAt(Vector3 world) => Normal(new float2(world.x, world.z), 0.5f);
 

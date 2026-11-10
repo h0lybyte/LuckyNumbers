@@ -114,7 +114,31 @@ landing {
   grip: 1.5
   chase_distance: 2.2
   chase_height: 0.7
-  hint: "Mouse: pitch and turn - A/D roll - W/S speed - Shift boost - hold Space to hover down. Land slow and level by the wreck."
+  hint: "Mouse aim - W/S thrust - A/D strafe - Q/E roll - Space/C up/down - Shift boost - X brake. Stop over the green pad, hold C to land."
+  # Six-axis controls with flight assist: aim and travel independent, released keys ease out, gravity
+  # cancelled; near the ground descents ease and the ship levels itself. (Off: the flight model below.)
+  hover {
+    enabled: true
+    max_speed: 32
+    reverse_speed: 10
+    strafe_speed: 10
+    boost: 1.8
+    accel: 10
+    brake: 16
+    climb_speed: 9
+    descend_speed: 10
+    vertical_accel: 14
+    turn_rate: 90
+    turn_smoothing: 6
+    flare_height: 12
+    touchdown_speed: 1.4
+    clearance: 4
+    lean_degrees: 0
+    roll_rate: 110
+    hard_brake: 28
+    level_height: 14
+    level_rate: 40
+  }
   # Flight assist: W/S set a speed the ship holds (air brakes slow it); Space hovers it down under control.
   assist {
     max_speed: 50
