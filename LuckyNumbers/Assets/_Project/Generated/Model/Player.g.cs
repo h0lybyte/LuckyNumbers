@@ -27,10 +27,18 @@ namespace LuckyNumbers.Model
     public sealed class PlayerShip : IDisposable
     {
         public readonly ReactiveProperty<string> Skin = new ReactiveProperty<string>();
+        /// <summary>
+        /// Fuel in the tank and the tank's size (units; content/ships.txtpb fuel x the skin's stats). Kept between
+        /// scenes: the station fills it, flying burns it.
+        /// </summary>
+        public readonly ReactiveProperty<float> Fuel = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> FuelMax = new ReactiveProperty<float>();
 
         public void Dispose()
         {
             Skin.Dispose();
+            Fuel.Dispose();
+            FuelMax.Dispose();
         }
     }
 
@@ -106,6 +114,19 @@ namespace LuckyNumbers.Model
         public readonly ReactiveProperty<string> Skin = new ReactiveProperty<string>();
         public readonly ReactiveProperty<int> Index = new ReactiveProperty<int>();
         public readonly ReactiveProperty<int> Count = new ReactiveProperty<int>();
+        /// <summary>
+        /// That skin's stats (content/ships.txtpb; multipliers, 1 = baseline) and the guns in its barrels.
+        /// </summary>
+        public readonly ReactiveProperty<string> Name = new ReactiveProperty<string>();
+        public readonly ReactiveProperty<string> Role = new ReactiveProperty<string>();
+        public readonly ReactiveProperty<string> Description = new ReactiveProperty<string>();
+        public readonly ReactiveProperty<float> Speed = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> Agility = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> Fuel = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> Efficiency = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> Toughness = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> Firepower = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<string> Guns = new ReactiveProperty<string>();
 
         public void Dispose()
         {
@@ -113,6 +134,16 @@ namespace LuckyNumbers.Model
             Skin.Dispose();
             Index.Dispose();
             Count.Dispose();
+            Name.Dispose();
+            Role.Dispose();
+            Description.Dispose();
+            Speed.Dispose();
+            Agility.Dispose();
+            Fuel.Dispose();
+            Efficiency.Dispose();
+            Toughness.Dispose();
+            Firepower.Dispose();
+            Guns.Dispose();
         }
     }
 
