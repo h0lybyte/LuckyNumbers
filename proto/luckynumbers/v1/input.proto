@@ -20,6 +20,8 @@ enum InputAction {
   INPUT_ACTION_ANY_BUTTON = 7;
   // Open/close the planet map.
   INPUT_ACTION_MAP = 8;
+  // Use the relic you're holding (R).
+  INPUT_ACTION_USE_RELIC = 9;
 }
 
 // Continuous axes, sampled every frame.
@@ -37,6 +39,11 @@ message PlayerInput {
   bool sprinting = 7;
   // Jump held (flying: the lift thrusters).
   bool lifting = 8;
+  // Descend held (C): the ship's hover goes down.
+  bool descending = 9;
+  // Roll (Q / E: -1 left .. +1 right) and brake held (X): the ship's flight.
+  float roll = 10;
+  bool braking = 11;
 }
 
 message InputActionPerformed {

@@ -4,6 +4,29 @@ Releases are driven by this file: the **top `## x.y.z` entry is the game version
 Bumping it on `main` builds the Web player, uploads it to itch.io with that version,
 and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version does not rebuild.
 
+## 0.2.4 (2026-11-10)
+
+- Bigger, sharper, truer-coloured ships at the crash site (the wrecked freighter and your fighter)
+- The first named relic: Zhang Heng's Water Amulet (Eastern Han, 2nd century CE). Find it by the wreck on
+  your way in from the landing pad, pick it up (E) and use it (R): it rolls a d20, plus up to 3 from your
+  luck die. 1: Flood (slowed); 2-7: Trickle (a little health); 8-14: Spring (a good heal); 15-19: Dragon's
+  Pearl (shows you the nearest relic, like his seismoscope); 20: Heavenly Tide (full health, every relic shown)
+- The freighter now carries just the named artifact (the MAYDAY names it): no more generated relics. An
+  inventory strip on the page, and the d20 rolling on screen when you use it
+- New ship controls with flight assist on: the mouse aims the nose, W/S thrust, A/D strafe, Q/E roll,
+  Space/C up and down, Shift boost, X brake. Aim and travel are separate (swing the nose and you slide on a
+  moment); let go of a key and that motion eases out, so the ship stops on its own and holds its place. Near
+  the ground it eases your descent and levels itself, so landing is: stop over the pad, hold C
+- Landing HUD rebuilt: step-by-step guidance (fly to the pad, stop over it, descend, touch down) that follows
+  what you're doing, an arrow to the pad, cockpit instruments, landing gauges with their safe zones, plain
+  warnings ("Still moving: let go of W, or tap X"), a crash card that says why, and a key card
+- Fixed: after landing you could fall through the ground over and over, and the ship could sink into it as
+  you touched down: touchdown, the parked ship, the chase camera and stepping out all use the ground's
+  actual surface now
+- Fixed: the title's forming-system dust disk was cut off in a straight line across its far side (the space
+  camera now sees all the way to it)
+- Amulet model: "Amulet" by Mierenttt (Blend Swap, CC BY 3.0), exported low-poly
+
 ## 0.2.3 (2026-11-10)
 
 - Flying in is much easier, with a flight assist (on by default; content can turn it off for the raw model):

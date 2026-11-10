@@ -132,6 +132,81 @@ message FlightLanding {
   float grip = 25;
   // Flight assist (on unless disabled): easier to fly, same feel.
   FlightAssist assist = 26;
+  // Hover-ship controls (when enabled, instead of the flight model above): the ship hovers, holds its height and
+  // stops when you let go; you fly it about and set it down. Easiest to land.
+  FlightHover hover = 27;
+}
+
+// Six-axis ship controls with flight assist: the mouse aims the nose (yaw, pitch), Q/E roll; W/S thrust
+// forward/back, A/D strafe, Space/C thrust up/down, all relative to the ship; Shift boosts; X brakes along
+// your travel. Aim and travel are independent: the assist eases your velocity towards what the keys ask for
+// (in the ship's frame, so swinging the nose leaves you sliding a moment), easing out of any motion you let go
+// of, and cancels gravity so a released ship holds where it is. Near the ground a descent eases to
+// `touchdown_speed`, and when you're low and not steering the ship levels itself, so landing stays forgiving.
+message FlightHover {
+  bool enabled = 1;
+  float max_speed = 2;
+  float reverse_speed = 3;
+  float strafe_speed = 4;
+  float boost = 5;
+  // m/s^2 speeding up, and braking (also when you let go).
+  float accel = 6;
+  float brake = 7;
+  float climb_speed = 8;
+  float descend_speed = 9;
+  float vertical_accel = 10;
+  // Heading change at most (degrees per second) and how quickly it settles (per second).
+  float turn_rate = 11;
+  float turn_smoothing = 12;
+  // Descents ease off below flare_height (m) to touchdown_speed (m/s); `clearance`: the height it keeps.
+  float flare_height = 13;
+  float touchdown_speed = 14;
+  float clearance = 15;
+  // Unused (the ship's own attitude shows its motion now).
+  float lean_degrees = 16;
+  // Roll (Q/E, degrees per second); X's brake (m/s^2); below level_height (m), with no steering input, the ship
+  // levels itself at level_rate (degrees per second).
+  float roll_rate = 17;
+  float hard_brake = 18;
+  float level_height = 19;
+  float level_rate = 20;
+}
+
+// Flying in, for the page's flight HUD (the steps, the pad arrow, instruments, landing gauges): in the air /
+// crashed / landed; altitude, climb, speed and the set speed (m, m/s); hovering, boost; the pad's distance and
+// bearing from your nose (degrees, + right); descent, drift and tilt against the touchdown limits; why you
+// crashed ("descent", "drift", "tilt", "hit", comma-separated); the assist on or not.
+message FlightState {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  bool flying = 1;
+  bool crashed = 2;
+  bool landed = 3;
+  float altitude = 4;
+  float climb = 5;
+  float speed = 6;
+  float set_speed = 7;
+  bool hovering = 8;
+  bool boost = 9;
+  float pad_distance = 10;
+  float pad_bearing = 11;
+  float descent = 12;
+  float drift = 13;
+  float tilt = 14;
+  float max_descent = 15;
+  float max_drift = 16;
+  float max_tilt = 17;
+  string crash_reason = 18;
+  bool assisted = 19;
+  // Hover-ship controls (the HUD's steps and keys follow them).
+  bool hover_ship = 20;
+}
+
+// The page draws the flight HUD: Unity's own text readout and controls line step aside.
+message FlightHudReady {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  bool on = 1;
 }
 
 // Flight assist: the throttle sets a speed and the ship holds it (engine forward, air brakes back), and Space

@@ -29,8 +29,6 @@ namespace LuckyNumbers.Model
                 "Interstellar Heritage Trust",
                 "Museum of Before",
             },
-            MinRelics = 6,
-            MaxRelics = 11,
             Cultures =
             {
                 new RelicCulture
@@ -99,6 +97,28 @@ namespace LuckyNumbers.Model
                     ColorA = new Rgba(0.2f, 0.95f, 0.75f, 1.0f),
                     ColorB = new Rgba(0.55f, 0.2f, 0.95f, 1.0f),
                 },
+                new RelicCulture
+                {
+                    Id = "han",
+                    Name = "Han Chinese",
+                    Materials =
+                    {
+                        "jade",
+                        "bronze",
+                        "lacquered bronze",
+                        "celadon",
+                    },
+                    Origins =
+                    {
+                        "a Luoyang observatory",
+                        "a Nanyang tomb",
+                        "the Han imperial archive",
+                    },
+                    Weight = 0.8f,
+                    ValueScale = 1.6f,
+                    ColorA = new Rgba(0.18f, 0.62f, 0.52f, 1.0f),
+                    ColorB = new Rgba(0.72f, 0.52f, 0.25f, 1.0f),
+                },
             },
             Kinds =
             {
@@ -117,6 +137,95 @@ namespace LuckyNumbers.Model
                     ValueMax = 1500.0f,
                 },
             },
+            Artifacts =
+            {
+                new RelicArtifact
+                {
+                    Id = "zhang_heng_water_amulet",
+                    Name = "Water Amulet",
+                    Figure = "Zhang Heng",
+                    Era = "Eastern Han, 2nd century CE",
+                    Lore = "Jade carved for Zhang Heng, whose water-driven sphere turned with the heavens and whose bronze dragons pointed the way to distant quakes.",
+                    Culture = "han",
+                    Kind = "amulet",
+                    Value = 4800,
+                    ColorA = new Rgba(0.18f, 0.62f, 0.52f, 1.0f),
+                    ColorB = new Rgba(0.35f, 0.75f, 0.95f, 1.0f),
+                    CooldownSeconds = 12.0f,
+                    Rolls =
+                    {
+                        new RelicRoll
+                        {
+                            Min = 1,
+                            Max = 1,
+                            Title = "Flood",
+                            Text = "Water bursts from the jade and soaks you through. You slog on, slowed.",
+                            Effects =
+                            {
+                                RelicEffect.Slow,
+                            },
+                            Amount = 0.5f,
+                            Seconds = 8.0f,
+                        },
+                        new RelicRoll
+                        {
+                            Min = 2,
+                            Max = 7,
+                            Title = "Trickle",
+                            Text = "A cool trickle runs over your hands. A little strength comes back.",
+                            Effects =
+                            {
+                                RelicEffect.Heal,
+                            },
+                            Amount = 10.0f,
+                        },
+                        new RelicRoll
+                        {
+                            Min = 8,
+                            Max = 14,
+                            Title = "Spring",
+                            Text = "A clear spring wells up from the amulet. You feel much better.",
+                            Effects =
+                            {
+                                RelicEffect.Heal,
+                            },
+                            Amount = 35.0f,
+                        },
+                        new RelicRoll
+                        {
+                            Min = 15,
+                            Max = 19,
+                            Title = "Dragon's Pearl",
+                            Text = "A bronze dragon's pearl drops and rolls, pointing to the nearest relic.",
+                            Effects =
+                            {
+                                RelicEffect.RevealNearest,
+                            },
+                            Seconds = 25.0f,
+                        },
+                        new RelicRoll
+                        {
+                            Min = 20,
+                            Max = 20,
+                            Title = "Heavenly Tide",
+                            Text = "The sky turns like Zhang Heng's sphere: you are whole again, and every relic shines.",
+                            Effects =
+                            {
+                                RelicEffect.FullHeal,
+                                RelicEffect.RevealAll,
+                            },
+                            Seconds = 30.0f,
+                        },
+                    },
+                    Model = "water_amulet",
+                },
+            },
+            LuckBonus = 3,
+            ScatterMin = 10.0f,
+            ScatterMax = 34.0f,
+            PickupDistance = 2.2f,
+            PickupPrompt = "E: pick up the {name}",
+            UsePrompt = "R: use the {name}",
         };
 
         /// <summary>From <c>content/credits.txtpb</c>.</summary>
@@ -152,6 +261,17 @@ namespace LuckyNumbers.Model
                             Url = "https://retrovandal.itch.io/low-poly-space-ship-pack",
                             Notes = "From a 2005 3D Game Resources skinning competition. Skins (named after their authors): IdolKnight (1st), Krulspeld (2nd), Kaos Kiwi (3rd), Lordshadow (4th), Wilko, Cinfa, Crono782, Cubik, Freelancer, Jodomatis, NMT3000, Psychic Parrot, Robin, Shadee, Snaz, Thor and Psionic.",
                             Path = "LuckyNumbers/Assets/_Project/Art/Models/Fighter/README-psionic.txt",
+                        },
+                        new Credit
+                        {
+                            What = "Water Amulet (Zhang Heng's relic)",
+                            Title = "Amulet",
+                            Author = "Mierenttt",
+                            License = "CC BY 3.0",
+                            Url = "https://blendswap.com/blend/15782",
+                            LicenseUrl = "https://creativecommons.org/licenses/by/3.0/",
+                            Notes = "Changes: exported low-poly (chain subdivision off), modifiers baked, recoloured with the relic shader (tools/blender/export_relic.py).",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Models/Relics/LICENSE-blendswap-80554.html",
                         },
                         new Credit
                         {
@@ -334,7 +454,7 @@ namespace LuckyNumbers.Model
                     Dialogue = new Dialogue
                     {
                         Speaker = "{ship} - MAYDAY",
-                        Text = "{museum} freighter going down over {planet}. Cargo: {relics} relics, {cargo}.",
+                        Text = "{museum} freighter going down over {planet}. Cargo: {cargo}.",
                         DurationSeconds = 6.5f,
                         CharsPerSecond = 34.0f,
                         Overlap = true,
@@ -1181,8 +1301,8 @@ namespace LuckyNumbers.Model
             BobFrequency = 1.9f,
             Sway = 0.06f,
             WakeSeconds = 3.2f,
-            WreckDistance = 26.0f,
-            WreckLength = 30.0f,
+            WreckDistance = 60.0f,
+            WreckLength = 80.0f,
             Haze = 0.6f,
             SunElevationDegrees = 38.0f,
             Hint = "Click to look around - WASD to move - Shift to run - Space to jump - E to pick up, click to throw - M for the map",
@@ -1615,7 +1735,7 @@ namespace LuckyNumbers.Model
             },
             TouchDistance = 1.4f,
             Boulders = 14,
-            BoulderSpread = 45.0f,
+            BoulderSpread = 90.0f,
             BoulderSizeMin = 1.2f,
             BoulderSizeMax = 3.5f,
             IdleClip = "relax",
@@ -1663,7 +1783,7 @@ namespace LuckyNumbers.Model
             },
             Landing = new FlightLanding
             {
-                ShipLength = 9.0f,
+                ShipLength = 16.0f,
                 StartAltitude = 110.0f,
                 StartDistance = 260.0f,
                 StartSpeed = 30.0f,
@@ -1682,7 +1802,7 @@ namespace LuckyNumbers.Model
                 MaxTouchdownTilt = 18.0f,
                 ChaseDistance = 2.2f,
                 ChaseHeight = 0.7f,
-                Hint = "Mouse: pitch and turn - A/D roll - W/S speed - Shift boost - hold Space to hover down. Land slow and level by the wreck.",
+                Hint = "Mouse aim - W/S thrust - A/D strafe - Q/E roll - Space/C up/down - Shift boost - X brake. Stop over the green pad, hold C to land.",
                 LandedText = "Landed.",
                 CrashedText = "Too hard. Try again.",
                 LandedLines =
@@ -1715,11 +1835,33 @@ namespace LuckyNumbers.Model
                     MaxPitch = 35.0f,
                     BankPerTurn = 0.45f,
                     MaxBank = 35.0f,
-                    PadMinDistance = 40.0f,
-                    PadMaxDistance = 55.0f,
+                    PadMinDistance = 60.0f,
+                    PadMaxDistance = 80.0f,
                     SpeedFov = 14.0f,
                     CameraBank = 0.3f,
                     CushionHeight = 5.0f,
+                },
+                Hover = new FlightHover
+                {
+                    Enabled = true,
+                    MaxSpeed = 32.0f,
+                    ReverseSpeed = 10.0f,
+                    StrafeSpeed = 10.0f,
+                    Boost = 1.8f,
+                    Accel = 10.0f,
+                    Brake = 16.0f,
+                    ClimbSpeed = 9.0f,
+                    DescendSpeed = 10.0f,
+                    VerticalAccel = 14.0f,
+                    TurnRate = 90.0f,
+                    TurnSmoothing = 6.0f,
+                    FlareHeight = 12.0f,
+                    TouchdownSpeed = 1.4f,
+                    Clearance = 4.0f,
+                    RollRate = 110.0f,
+                    HardBrake = 28.0f,
+                    LevelHeight = 14.0f,
+                    LevelRate = 40.0f,
                 },
             },
         };

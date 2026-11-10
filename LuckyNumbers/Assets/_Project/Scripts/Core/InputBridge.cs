@@ -26,12 +26,13 @@ namespace LuckyNumbers.Core
             ("Player/Interact", ModelInputAction.Interact),
             ("Player/Sprint", ModelInputAction.Sprint),
             ("Player/Map", ModelInputAction.Map),
+            ("Player/UseRelic", ModelInputAction.UseRelic),
         };
 
         readonly IPublisher<InputActionPerformed> _publisher;
         readonly ModelPlayerInput _input;
         readonly List<IDisposable> _subscriptions = new();
-        UnityEngine.InputSystem.InputAction _move, _look, _sprint, _jump;
+        UnityEngine.InputSystem.InputAction _move, _look, _sprint, _jump, _crouch, _roll, _brake;
 
         [Inject]
         public InputBridge(IPublisher<InputActionPerformed> publisher, ModelPlayerInput input)
@@ -60,6 +61,12 @@ namespace LuckyNumbers.Core
             _sprint = actions?.FindAction("Player/Sprint");
             _sprint?.Enable();
             _jump = actions?.FindAction("Player/Jump");
+            _crouch = actions?.FindAction("Player/Crouch");
+            _crouch?.Enable();
+            _roll = actions?.FindAction("Player/Roll");
+            _roll?.Enable();
+            _brake = actions?.FindAction("Player/Brake");
+            _brake?.Enable();
             _look = actions?.FindAction("Player/Look");
             _move?.Enable();
             _look?.Enable();
@@ -70,6 +77,9 @@ namespace LuckyNumbers.Core
             if (_move != null) { var v = _move.ReadValue<UnityEngine.Vector2>(); _input.Move.Value = new Vec2(v.x, v.y); }
             _input.Sprinting.Value = _sprint != null && _sprint.IsPressed();
             _input.Lifting.Value = _jump != null && _jump.IsPressed();
+            _input.Descending.Value = _crouch != null && _crouch.IsPressed();
+            _input.Roll.Value = _roll != null ? _roll.ReadValue<float>() : 0f;
+            _input.Braking.Value = _brake != null && _brake.IsPressed();
             if (_look != null) { var v = _look.ReadValue<UnityEngine.Vector2>(); _input.Look.Value = new Vec2(v.x, v.y); }
 
             var pointer = Pointer.current; // mouse, pen or touch

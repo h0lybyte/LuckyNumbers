@@ -29,6 +29,10 @@ namespace LuckyNumbers.Model
         /// Open/close the planet map.
         /// </summary>
         Map = 8,
+        /// <summary>
+        /// Use the relic you're holding (R).
+        /// </summary>
+        UseRelic = 9,
     }
 
     /// <summary>
@@ -56,6 +60,15 @@ namespace LuckyNumbers.Model
         /// Jump held (flying: the lift thrusters).
         /// </summary>
         public readonly ReactiveProperty<bool> Lifting = new ReactiveProperty<bool>();
+        /// <summary>
+        /// Descend held (C): the ship's hover goes down.
+        /// </summary>
+        public readonly ReactiveProperty<bool> Descending = new ReactiveProperty<bool>();
+        /// <summary>
+        /// Roll (Q / E: -1 left .. +1 right) and brake held (X): the ship's flight.
+        /// </summary>
+        public readonly ReactiveProperty<float> Roll = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<bool> Braking = new ReactiveProperty<bool>();
 
         public void Dispose()
         {
@@ -67,6 +80,9 @@ namespace LuckyNumbers.Model
             PointerScroll.Dispose();
             Sprinting.Dispose();
             Lifting.Dispose();
+            Descending.Dispose();
+            Roll.Dispose();
+            Braking.Dispose();
         }
     }
 
