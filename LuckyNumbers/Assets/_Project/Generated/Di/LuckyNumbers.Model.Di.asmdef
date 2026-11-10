@@ -5,7 +5,8 @@
         "LuckyNumbers.Model",
         "VContainer",
         "MessagePipe",
-        "MessagePipe.VContainer"
+        "MessagePipe.VContainer",
+        "UniTask"
     ],
     "autoReferenced": true
 }

@@ -214,6 +214,32 @@ def web_build_dir(gfx: str) -> Path:
     return WEB_BUILD.with_name("WebGL" + suffix)
 
 
+def build_overlay(out: Path, watch: bool = False) -> int:
+    """web/ (React overlays) -> <build>/overlay/overlay.js. Installs node_modules on first use."""
+    npm = shutil.which("npm")
+    if npm is None:
+        print("  npm not found: skipping the overlay (the game runs without it)")
+        return 0
+    if not (WEB_DIR / "node_modules").is_dir():
+        code = subprocess.run([npm, "ci"], cwd=WEB_DIR).returncode
+        if code != 0:
+            return code
+    env = {**os.environ, "LN_OVERLAY_OUT": str(out)}
+    script = ["run", "watch"] if watch else ["run", "build"]
+    print(f"  overlay -> {out}" + (" (watching; Ctrl+C to stop)" if watch else ""))
+    try:
+        return subprocess.run([npm, *script], cwd=WEB_DIR, env=env).returncode
+    except KeyboardInterrupt:
+        return 0
+
+
+def cmd_overlay(args) -> int:
+    out = web_build_dir(args.gfx)
+    if not (out / "index.html").is_file():
+        return fail(f"no Web build in {out}; run `ln.py build-web` first")
+    return build_overlay(out / "overlay", watch=args.watch)
+
+
 def cmd_preview(args) -> int:
     method, png = {"ship": ("RenderShip", "preview-ship.png"), "arms": ("RenderArms", "preview-arms.png")}.get(
         args.what, ("RenderSpace", "preview-space.png"))
@@ -258,6 +284,8 @@ def cmd_build_web(args) -> int:
     out = web_build_dir(args.gfx)
     if code != 0 or errors or not (out / "index.html").is_file():
         return fail("Web build failed, see log above.")
+    if build_overlay(out / "overlay") != 0:
+        return fail("overlay build failed (web/), see above.")
     size = sum(f.stat().st_size for f in out.rglob("*") if f.is_file()) / (1024 * 1024)
     print(f"Web build OK ({args.gfx}): {out} ({size:.1f} MB)")
     print(f"Next: python3 tools/ln.py serve --gfx {args.gfx}")
@@ -481,6 +509,13 @@ def cmd_roslyn(args) -> int:
 
 
 GENERATED_DIR = PROJECT / "Assets" / "_Project" / "Generated"
+WEB_DIR = ROOT / "web"
+WEB_GENERATED_DIR = WEB_DIR / "src" / "generated"
+
+
+def generated_path(rel: str) -> Path:
+    """protogen output path: "@web/x" -> web/src/generated/x, everything else under Assets/_Project/Generated."""
+    return WEB_GENERATED_DIR / rel[len("@web/"):] if rel.startswith("@web/") else GENERATED_DIR / rel
 
 
 def cmd_gen(args) -> int:
@@ -497,9 +532,9 @@ def cmd_gen(args) -> int:
     except ValueError as e:
         return fail(str(e))
 
-    wanted = {GENERATED_DIR / rel: text for rel, text in files.items()}
-    existing = {p for p in GENERATED_DIR.rglob("*") if p.is_file() and not p.name.endswith(".meta")} \
-        if GENERATED_DIR.exists() else set()
+    wanted = {generated_path(rel): text for rel, text in files.items()}
+    existing = {p for d in (GENERATED_DIR, WEB_GENERATED_DIR) if d.exists()
+                for p in d.rglob("*") if p.is_file() and not p.name.endswith(".meta")}
     changed = [p for p, t in wanted.items() if not p.is_file() or p.read_text(encoding="utf-8") != t]
     stale = sorted(existing - set(wanted))
 
@@ -601,6 +636,11 @@ def main(argv=None) -> int:
                         "other variants build to Builds/WebGL-<Variant>")
     s.add_argument("--version", help="game version (default: top entry of CHANGELOG.md)")
     s.set_defaults(func=cmd_build_web)
+
+    s = sub.add_parser("overlay", help="build the web overlays (web/) into the Web build; --watch rebuilds on save")
+    s.add_argument("--watch", action="store_true", help="rebuild on every change (refresh the page to see it)")
+    s.add_argument("--gfx", choices=GFX_CHOICES, default="both", help="which variant's build folder to write into")
+    s.set_defaults(func=cmd_overlay)
 
     s = sub.add_parser("scenes", help="rebuild game scenes from code (Editor/SceneBuilder.cs)")
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")

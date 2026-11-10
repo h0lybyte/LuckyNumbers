@@ -80,11 +80,13 @@ message GoTo {
 
 message CutsceneStepStarted {
   option (ln.event) = true;
+  option (ln.web) = true;
   string cutscene_id = 1;
   int32 index = 2;
 }
 
 message CutsceneFinished {
   option (ln.event) = true;
+  option (ln.web) = true;
   string cutscene_id = 1;
 }

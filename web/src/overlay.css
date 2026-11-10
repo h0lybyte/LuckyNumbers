@@ -1,0 +1,137 @@
+/* Overlay styles. Tokens (--fg, --panel, --edge, --gap) come from the template's style.css.
+   #overlay has pointer-events: none; anything clickable needs class "ui". */
+
+#overlay-root {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* ---- HUD ---- */
+
+.hud {
+  position: absolute;
+  left: max(var(--gap), env(safe-area-inset-left));
+  bottom: max(var(--gap), env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.health {
+  width: clamp(120px, 18vw, 220px);
+  height: 8px;
+  border-radius: 4px;
+  background: var(--edge);
+  overflow: hidden;
+}
+.health-fill {
+  height: 100%;
+  background: #e5484d;
+  transition: width 200ms ease;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+.chip:hover { border-color: rgba(255, 255, 255, 0.3); }
+
+kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  font: 11px/1.4 ui-monospace, monospace;
+  color: var(--muted);
+}
+
+/* ---- toasts ---- */
+
+.toasts {
+  position: absolute;
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 48px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+
+.toast {
+  padding: 6px 14px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: var(--panel);
+  backdrop-filter: blur(6px);
+  animation: toast-in 180ms ease-out;
+}
+.toast.bad { border-color: rgba(229, 72, 77, 0.6); }
+.toast.good { border-color: rgba(70, 167, 88, 0.6); }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+
+/* ---- inspector (lives in #dock) ---- */
+
+.inspector {
+  padding: 12px;
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--fg);
+}
+.inspector header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.inspector header .ok { color: #46a758; }
+.inspector header .wait { color: #f5d76e; }
+.inspector header .hint { margin-left: auto; color: var(--muted); }
+.inspector h3 {
+  margin: 12px 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.inspector .row { display: flex; flex-wrap: wrap; gap: 6px; }
+.inspector button {
+  padding: 4px 8px;
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+.inspector button:hover { background: rgba(255, 255, 255, 0.06); }
+.inspector details { margin-bottom: 4px; }
+.inspector summary { cursor: pointer; }
+.inspector pre {
+  margin: 4px 0 0 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--muted);
+}
+.inspector .events {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.inspector .events li {
+  padding: 2px 0;
+  border-bottom: 1px solid var(--edge);
+  overflow-wrap: anywhere;
+}
+.inspector .payload { color: var(--muted); }

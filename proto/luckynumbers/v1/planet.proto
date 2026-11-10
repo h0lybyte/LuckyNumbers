@@ -121,6 +121,7 @@ message PlanetMap {
 // Where the intro's ship came down: read by the Planet scene (and later a save file).
 message LandingSite {
   option (ln.state) = true;
+  option (ln.web) = true;
   bool valid = 1;
   // Body id of the planet (e.g. "home") in the universe of the current lucky number.
   string body = 2;

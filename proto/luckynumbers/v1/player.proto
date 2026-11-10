@@ -16,27 +16,32 @@ message PlayerConfig {
 // The player's ship as they've set it up (starts from PlayerConfig; a customise screen / save file sets it).
 message PlayerShip {
   option (ln.state) = true;
+  option (ln.web) = true;
   string skin = 1;
 }
 
 message PlayerHealth {
   option (ln.state) = true;
+  option (ln.web) = true;
   int32 current = 1;
   int32 max = 2;
 }
 
 message PlayerDamaged {
   option (ln.event) = true;
+  option (ln.web) = true;
   int32 amount = 1;
   string source = 2;
 }
 
 message PlayerHealed {
   option (ln.event) = true;
+  option (ln.web) = true;
   int32 amount = 1;
 }
 
 message PlayerDied {
   option (ln.event) = true;
+  option (ln.web) = true;
   string cause = 1;
 }

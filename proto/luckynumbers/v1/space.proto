@@ -34,6 +34,7 @@ message CameraHandoff {
 // The dice roll's lucky number: Space regenerates the universe from it.
 message UniverseSeedChanged {
   option (ln.event) = true;
+  option (ln.web) = true;
   uint32 seed = 1;
   // Dice roles as 0..1 (face low..high), or -1 when no die has that role (the seed decides).
   float star = 2;
