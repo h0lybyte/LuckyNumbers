@@ -11,6 +11,18 @@ export type GameScene =
   | "Station"
   | "Range";
 
+export type CallPhase =
+  | "None"
+  | "Ringing"
+  | "Active"
+  | "Ended";
+
+export type StationLightMode =
+  | "Unspecified"
+  | "On"
+  | "Off"
+  | "Emergency";
+
 /** Discrete actions (button presses). Bound to devices in the Input System asset. */
 export type InputAction =
   | "Unspecified"
@@ -24,18 +36,6 @@ export type InputAction =
   | "Map"
   | "UseRelic"
   | "SideView";
-
-export type CallPhase =
-  | "None"
-  | "Ringing"
-  | "Active"
-  | "Ended";
-
-export type StationLightMode =
-  | "Unspecified"
-  | "On"
-  | "Off"
-  | "Emergency";
 
 /** What a job asks of you on the planet. */
 export type JobKind =
@@ -116,6 +116,45 @@ export interface LoadingState {
   ready: boolean;
 }
 
+/** Live station state (mirrored to the web page). */
+export interface StationState {
+  lights: StationLightMode;
+  /** The room you're in (StationRoom.name), or "" in corridors. */
+  room: string;
+  call: CallPhase;
+  caller: string;
+  /** What to do next ("Board your ship in the docking bay"), and the E prompt you're standing at. */
+  objective: string;
+  prompt: string;
+  /** PS1 look: vertex snapping, affine textures, dither. */
+  psx: boolean;
+  /** The plan as built (rows joined with \n), for the page's layout editor. */
+  plan: string;
+  /**
+   * The station map (M): open or not, where you are and which way you face (plan coordinates; yaw: compass
+   * degrees), your ship's dock, and every room as "name|col|row".
+   */
+  mapOpen: boolean;
+  playerCol: number;
+  playerRow: number;
+  playerYaw: number;
+  dockCol: number;
+  dockRow: number;
+  rooms: string[];
+}
+
+/**
+ * The fight on this site (mirrored to the page): monsters still alive and killed, the one you hit last
+ * ("name|hp|max", or "" once it's dead), and you're down (being rescued).
+ */
+export interface CombatState {
+  alive: number;
+  killed: number;
+  target: string;
+  downed: boolean;
+  armor: number;
+}
+
 /**
  * What's in the pack (Core/InventoryPresenter; the page's Inventory and Equipment tabs). Each item
  * "uid|id|name|kind|x|y|rot|shape|bulk|value|color|description|actions|slot|equipped|bonuses|count": shape already
@@ -144,33 +183,6 @@ export interface PlayerInventory {
   ready: number;
   readyName: string;
   cooldown: number;
-}
-
-/** Live station state (mirrored to the web page). */
-export interface StationState {
-  lights: StationLightMode;
-  /** The room you're in (StationRoom.name), or "" in corridors. */
-  room: string;
-  call: CallPhase;
-  caller: string;
-  /** What to do next ("Board your ship in the docking bay"), and the E prompt you're standing at. */
-  objective: string;
-  prompt: string;
-  /** PS1 look: vertex snapping, affine textures, dither. */
-  psx: boolean;
-  /** The plan as built (rows joined with \n), for the page's layout editor. */
-  plan: string;
-  /**
-   * The station map (M): open or not, where you are and which way you face (plan coordinates; yaw: compass
-   * degrees), your ship's dock, and every room as "name|col|row".
-   */
-  mapOpen: boolean;
-  playerCol: number;
-  playerRow: number;
-  playerYaw: number;
-  dockCol: number;
-  dockRow: number;
-  rooms: string[];
 }
 
 /**
@@ -314,6 +326,8 @@ export interface PlayerVoyage {
   lastPayout: number;
   /** Trips down to a planet so far: the first one plays the intro cutscene, later ones fly straight down. */
   trips: number;
+  /** Brought back by the rescue drone (you went down on the planet): the station's call says so. */
+  rescued: boolean;
 }
 
 export interface DiceState {
@@ -386,6 +400,46 @@ export interface SceneEntered {
   scene: GameScene;
 }
 
+/** The page (or a console) answers the ringing call. */
+export interface StationCallAnswered {
+}
+
+/** The page's layout editor: rebuild the station from this plan (rows joined with \n). */
+export interface StationPlanRequested {
+  plan: string;
+}
+
+/** Toggle the PS1 look (the page or a console). */
+export interface PsxModeRequested {
+  on: boolean;
+}
+
+/** Switch the station's lights (the page may send it too: e.g. trip the emergency lighting). */
+export interface StationLightsRequested {
+  mode: StationLightMode;
+}
+
+/**
+ * One attack roll, for the page's roll feed: who at whom, the d20, the bonus, the total against the armour, hit or
+ * not (crit on a natural 20, fumble on a 1), and the damage rolled (dice as text, e.g. "1d8+2").
+ */
+export interface CombatRoll {
+  attacker: string;
+  target: string;
+  d20: number;
+  bonus: number;
+  total: number;
+  armor: number;
+  hit: boolean;
+  crit: boolean;
+  fumble: boolean;
+  damage: number;
+  dice: string;
+  /** You rolled it (else a monster attacked you). */
+  player: boolean;
+  weapon: string;
+}
+
 /** The dice roll's lucky number: Space regenerates the universe from it. */
 export interface UniverseSeedChanged {
   seed: number;
@@ -436,25 +490,6 @@ export interface InventoryUseRequested {
 
 export interface InventoryDropRequested {
   uid: number;
-}
-
-/** The page (or a console) answers the ringing call. */
-export interface StationCallAnswered {
-}
-
-/** The page's layout editor: rebuild the station from this plan (rows joined with \n). */
-export interface StationPlanRequested {
-  plan: string;
-}
-
-/** Toggle the PS1 look (the page or a console). */
-export interface PsxModeRequested {
-  on: boolean;
-}
-
-/** Switch the station's lights (the page may send it too: e.g. trip the emergency lighting). */
-export interface StationLightsRequested {
-  mode: StationLightMode;
 }
 
 /** The page (or a number key) takes offer `index` off the board. */
@@ -514,8 +549,9 @@ export interface WebStates {
   CharacterSheet: CharacterSheet;
   FlowState: FlowState;
   LoadingState: LoadingState;
-  PlayerInventory: PlayerInventory;
   StationState: StationState;
+  CombatState: CombatState;
+  PlayerInventory: PlayerInventory;
   JobBoard: JobBoard;
   PlayerJob: PlayerJob;
   FlightState: FlightState;
@@ -541,6 +577,11 @@ export interface WebEvents {
   CharacterXpGained: CharacterXpGained;
   SceneChangeRequested: SceneChangeRequested;
   SceneEntered: SceneEntered;
+  StationCallAnswered: StationCallAnswered;
+  StationPlanRequested: StationPlanRequested;
+  PsxModeRequested: PsxModeRequested;
+  StationLightsRequested: StationLightsRequested;
+  CombatRoll: CombatRoll;
   UniverseSeedChanged: UniverseSeedChanged;
   CutsceneStepStarted: CutsceneStepStarted;
   CutsceneFinished: CutsceneFinished;
@@ -550,10 +591,6 @@ export interface WebEvents {
   InventoryMoveRequested: InventoryMoveRequested;
   InventoryUseRequested: InventoryUseRequested;
   InventoryDropRequested: InventoryDropRequested;
-  StationCallAnswered: StationCallAnswered;
-  StationPlanRequested: StationPlanRequested;
-  PsxModeRequested: PsxModeRequested;
-  StationLightsRequested: StationLightsRequested;
   JobAcceptRequested: JobAcceptRequested;
   FlightHudReady: FlightHudReady;
   PlayerDamaged: PlayerDamaged;
@@ -567,6 +604,6 @@ export interface WebEvents {
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "MenuItemSelected";
+export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "MenuItemSelected";
 
-export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "PlayerInventory", "StationState", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "ShipPicker", "PlayerVoyage", "DiceState"] as const;
+export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "StationState", "CombatState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "ShipPicker", "PlayerVoyage", "DiceState"] as const;

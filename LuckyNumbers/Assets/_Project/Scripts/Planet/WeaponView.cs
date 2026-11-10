@@ -126,6 +126,7 @@ namespace LuckyNumbers.Planet
                 var step = Mathf.Min(boltSpeed * dt, b.Left);
                 if (Cast(b.Position, b.Direction, step, out var hit))
                 {
+                    hit.collider.GetComponentInParent<IDamageable>()?.Hit("default", hit.point, b.Direction);
                     if (hit.rigidbody != null && !hit.rigidbody.isKinematic)
                         hit.rigidbody.AddForceAtPosition(b.Direction * impulse, hit.point, ForceMode.Impulse);
                     Flash(hit.point + hit.normal * 0.02f, 0.35f, 0.18f, 0);

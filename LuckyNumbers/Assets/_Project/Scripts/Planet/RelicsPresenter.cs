@@ -386,10 +386,15 @@ namespace LuckyNumbers.Planet
             UnityEngine.Object.Destroy(cube.GetComponent<Collider>());   // nothing to trip on
             cube.transform.localScale = size;
             cube.transform.position = at;
+            // The relics' own lit material (a primitive's default isn't in the build: it renders magenta).
+            var relic = _view.VaseTemplate != null ? _view.VaseTemplate.GetComponentInChildren<Renderer>(true) : null;
+            if (relic != null) cube.GetComponent<Renderer>().sharedMaterial = relic.sharedMaterial;
             var c = item.Def.Color;
             var block = new MaterialPropertyBlock();
             block.SetColor("_BaseColor", new Color(c.R, c.G, c.B, 1f));
             block.SetColor("_Color", new Color(c.R, c.G, c.B, 1f));
+            block.SetColor(ColorA, new Color(c.R, c.G, c.B, 1f));
+            block.SetColor(ColorB, new Color(c.R * 0.7f, c.G * 0.7f, c.B * 0.7f, 1f));
             cube.GetComponent<Renderer>().SetPropertyBlock(block);
             _dropped.Add(new Dropped { Item = item, Shape = cube.transform, Rest = at });
             Debug.Log($"[Relics] dropped {Label(item)} ({cube.name})");

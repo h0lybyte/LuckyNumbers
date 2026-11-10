@@ -23,6 +23,11 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<CharacterXpGained>(options);
             builder.RegisterMessageBroker<SceneChangeRequested>(options);
             builder.RegisterMessageBroker<SceneEntered>(options);
+            builder.RegisterMessageBroker<StationCallAnswered>(options);
+            builder.RegisterMessageBroker<StationPlanRequested>(options);
+            builder.RegisterMessageBroker<PsxModeRequested>(options);
+            builder.RegisterMessageBroker<StationLightsRequested>(options);
+            builder.RegisterMessageBroker<CombatRoll>(options);
             builder.RegisterMessageBroker<UniverseSeedChanged>(options);
             builder.RegisterMessageBroker<CutsceneStepStarted>(options);
             builder.RegisterMessageBroker<CutsceneFinished>(options);
@@ -34,10 +39,6 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<InventoryUseRequested>(options);
             builder.RegisterMessageBroker<InventoryDropRequested>(options);
             builder.RegisterMessageBroker<ItemEffectRequested>(options);
-            builder.RegisterMessageBroker<StationCallAnswered>(options);
-            builder.RegisterMessageBroker<StationPlanRequested>(options);
-            builder.RegisterMessageBroker<PsxModeRequested>(options);
-            builder.RegisterMessageBroker<StationLightsRequested>(options);
             builder.RegisterMessageBroker<JobAcceptRequested>(options);
             builder.RegisterMessageBroker<FlightHudReady>(options);
             builder.RegisterMessageBroker<PlayerDamaged>(options);
@@ -57,10 +58,11 @@ namespace LuckyNumbers.Model
             builder.Register<CharacterSheet>(Lifetime.Singleton);
             builder.Register<FlowState>(Lifetime.Singleton);
             builder.Register<LoadingState>(Lifetime.Singleton);
+            builder.Register<StationState>(Lifetime.Singleton);
+            builder.Register<CombatState>(Lifetime.Singleton);
             builder.Register<CameraHandoff>(Lifetime.Singleton);
             builder.Register<PlayerInput>(Lifetime.Singleton);
             builder.Register<PlayerInventory>(Lifetime.Singleton);
-            builder.Register<StationState>(Lifetime.Singleton);
             builder.Register<JobBoard>(Lifetime.Singleton);
             builder.Register<PlayerJob>(Lifetime.Singleton);
             builder.Register<FlightState>(Lifetime.Singleton);

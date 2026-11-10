@@ -359,6 +359,164 @@ namespace LuckyNumbers.Model
             XpPerArtifact = 150,
         };
 
+        /// <summary>From <c>content/combat.txtpb</c>.</summary>
+        public static readonly CombatConfig Combat = new CombatConfig
+        {
+            Monsters =
+            {
+                new MonsterType
+                {
+                    Id = "skitter",
+                    Name = "Skitter",
+                    Hp = 6,
+                    Armor = 9,
+                    Attack = 1,
+                    Damage = "1d3",
+                    Speed = 5.5f,
+                    Size = new Vec3(0.7f, 0.45f, 0.9f),
+                    Color = new Rgba(0.75f, 0.85f, 0.2f, 1.0f),
+                    Reach = 1.4f,
+                    Sight = 16.0f,
+                    Cooldown = 1.5f,
+                    Xp = 40,
+                    DangerMin = 1,
+                    Weight = 3.0f,
+                },
+                new MonsterType
+                {
+                    Id = "lurker",
+                    Name = "Lurker",
+                    Hp = 14,
+                    Armor = 11,
+                    Attack = 3,
+                    Damage = "1d6",
+                    Speed = 3.8f,
+                    Size = new Vec3(1.1f, 1.4f, 1.1f),
+                    Color = new Rgba(0.55f, 0.2f, 0.65f, 1.0f),
+                    Reach = 1.8f,
+                    Sight = 16.0f,
+                    Cooldown = 1.9f,
+                    Xp = 90,
+                    DangerMin = 2,
+                    Weight = 2.0f,
+                },
+                new MonsterType
+                {
+                    Id = "brute",
+                    Name = "Rock Brute",
+                    Hp = 28,
+                    Armor = 13,
+                    Attack = 4,
+                    Damage = "1d10",
+                    Speed = 2.8f,
+                    Size = new Vec3(1.8f, 2.2f, 1.6f),
+                    Color = new Rgba(0.6f, 0.35f, 0.25f, 1.0f),
+                    Reach = 2.4f,
+                    Sight = 14.0f,
+                    Cooldown = 2.4f,
+                    Xp = 200,
+                    DangerMin = 4,
+                    Weight = 1.0f,
+                },
+            },
+            Count = 1,
+            CountPerDanger = 1,
+            SpawnMin = 28.0f,
+            SpawnMax = 52.0f,
+            PlayerArmor = 11,
+            DefenseAbility = "dex",
+            AttackPerLevel = 1.0f,
+            Weapons =
+            {
+                new CombatWeapon
+                {
+                    Source = "carbine",
+                    Name = "Carbine",
+                    Ability = "dex",
+                    Damage = "1d8",
+                    Cooldown = 0.35f,
+                    Speed = 90.0f,
+                    Range = 90.0f,
+                    Length = 1.2f,
+                    Width = 0.08f,
+                    Color = new Rgba(0.4f, 1.6f, 2.6f, 1.0f),
+                },
+                new CombatWeapon
+                {
+                    Source = "sidearm",
+                    Name = "Sidearm",
+                    Ability = "dex",
+                    Damage = "1d6+1",
+                    Cooldown = 0.45f,
+                    Speed = 80.0f,
+                    Range = 70.0f,
+                    Length = 0.9f,
+                    Width = 0.07f,
+                    Color = new Rgba(2.4f, 1.4f, 0.3f, 1.0f),
+                },
+                new CombatWeapon
+                {
+                    Source = "rifle",
+                    Name = "Salvage rifle",
+                    Ability = "dex",
+                    Damage = "1d10",
+                    Cooldown = 0.6f,
+                    Speed = 110.0f,
+                    Range = 120.0f,
+                    Length = 1.5f,
+                    Width = 0.1f,
+                    Color = new Rgba(2.6f, 0.6f, 0.3f, 1.0f),
+                },
+                new CombatWeapon
+                {
+                    Source = "default",
+                    Name = "Gun",
+                    Ability = "dex",
+                    Damage = "1d6",
+                    Cooldown = 0.5f,
+                    Speed = 80.0f,
+                    Range = 70.0f,
+                    Length = 0.9f,
+                    Width = 0.07f,
+                    Color = new Rgba(0.4f, 1.6f, 2.6f, 1.0f),
+                },
+                new CombatWeapon
+                {
+                    Source = "ship",
+                    Name = "Laser rifle",
+                    Ability = "dex",
+                    Damage = "2d8",
+                },
+                new CombatWeapon
+                {
+                    Source = "melee",
+                    Name = "Blade",
+                    Ability = "str",
+                    Damage = "1d8+1",
+                },
+            },
+            Rescue = new CombatRescue
+            {
+                Fee = 250,
+                DownedText = "You're down. A rescue drone is on its way...",
+                Lines =
+                {
+                    new StationCallLine
+                    {
+                        Speaker = "Dispatch",
+                        Text = "Rescue drone has you. You're back aboard, patched up.",
+                        Seconds = 3.5f,
+                    },
+                    new StationCallLine
+                    {
+                        Speaker = "Dispatch",
+                        Text = "Whatever you were carrying is still down on {planet}. The drone's fee comes out of your account.",
+                        Seconds = 5.0f,
+                    },
+                },
+            },
+        };
+
         /// <summary>From <c>content/credits.txtpb</c>.</summary>
         public static readonly CreditsConfig Credits = new CreditsConfig
         {
@@ -1603,7 +1761,6 @@ namespace LuckyNumbers.Model
                 new JobType
                 {
                     Kind = JobKind.Clear,
-                    Disabled = true,
                     Title = "Clear the nest on {planet}",
                     Brief = "Something's nesting by the wreck on {planet}. {client} wants it gone: {count} of them.",
                     Objective = "Kill {count} creatures on {planet}, then fly back to the station",

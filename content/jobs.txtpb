@@ -37,7 +37,6 @@ types {
 }
 types {
   kind: JOB_KIND_CLEAR
-  disabled: true   # needs monsters (the combat update)
   title: "Clear the nest on {planet}"
   brief: "Something's nesting by the wreck on {planet}. {client} wants it gone: {count} of them."
   objective: "Kill {count} creatures on {planet}, then fly back to the station"
