@@ -79,7 +79,9 @@ jobs:
         run: |
           echo "version=$(sed -n 's/^m_EditorVersion: //p' "$PROJECT_PATH/ProjectSettings/ProjectVersion.txt")" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/cache@v4
+      # Restore and save are separate steps: only actions/cache/restore reports which key it matched (needed for
+      # the cold retry below), and saving only after a successful build never stores a Library that just failed.
+      - uses: actions/cache/restore@v4
         id: library
         with:
           path: ${{ env.PROJECT_PATH }}/Library
@@ -140,6 +142,12 @@ jobs:
           sudo chown -R "$(id -u):$(id -g)" "$BUILD_DIR"
           npm ci --prefix web
           LN_OVERLAY_OUT="$GITHUB_WORKSPACE/$BUILD_DIR/overlay" npm run build --prefix web
+
+      - uses: actions/cache/save@v4
+        if: success() && steps.library.outputs.cache-hit != 'true'
+        with:
+          path: ${{ env.PROJECT_PATH }}/Library
+          key: ${{ steps.library.outputs.cache-primary-key }}
 
       - name: Check build output
         run: |
