@@ -3973,9 +3973,9 @@ namespace LuckyNumbers.Model
             PlayPushIn = 0.3f,
             Hangar = new ShipHangar
             {
-                ShipLength = 1.0f,
-                Distance = 2.4f,
-                Drop = 0.12f,
+                ShipLength = 1.5f,
+                Distance = 2.6f,
+                Drop = -0.1f,
                 SpinDegreesPerSecond = 24.0f,
                 TiltDegrees = 18.0f,
                 EnterSeconds = 0.6f,
