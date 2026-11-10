@@ -625,7 +625,10 @@ namespace LuckyNumbers.Editor
             cam.orthographic = false;
             cam.fieldOfView = 45f;
             cam.nearClipPlane = 0.1f;
-            cam.farClipPlane = 5000f; // outer orbits ~2500, sky galaxies at 2000
+            // Outer orbits ~2500 and the forming system's dust disk reaches 1.2x past them (~3000 radius): seen at
+            // an angle from the title camera, its far side went past a 5000 far plane and was cut off in a straight
+            // line. 20000 keeps the whole disk (space has nothing close enough for depth precision to matter).
+            cam.farClipPlane = 20000f;
             cam.clearFlags = CameraClearFlags.Skybox;
             cam.transform.position = new Vector3(0, 0, -6);
             return cam;

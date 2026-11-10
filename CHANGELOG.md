@@ -21,6 +21,8 @@ and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version
   warnings ("Still moving: let go of W, or tap X"), a crash card that says why, and a key card
 - Fixed: after landing you could fall through the ground over and over (you're now placed on the ground's
   actual surface)
+- Fixed: the title's forming-system dust disk was cut off in a straight line across its far side (the space
+  camera now sees all the way to it)
 - Amulet model: "Amulet" by Mierenttt (Blend Swap, CC BY 3.0), exported low-poly
 
 ## 0.2.3 (2026-11-10)
