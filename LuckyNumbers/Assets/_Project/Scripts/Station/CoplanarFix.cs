@@ -6,8 +6,8 @@ namespace LuckyNumbers.Station
     /// <summary>
     /// Some kit models are skinned with flush panels: a panel face lies in the same plane as the face under it, facing
     /// the same way (the cryo pod's back, sides, top, bottom and lid). The two z-fight, a shimmering patch that moves as
-    /// you do. This finds those overlapping same-facing coplanar triangles in a mesh and lifts the smaller of each pair
-    /// a few millimetres out along its normal (on its own vertices, so neighbours keep their shape), the way the corner
+    /// you do. This finds those overlapping same-facing coplanar triangles in a mesh and layers them: the face under
+    /// stays put and each panel on it is lifted a few millimetres per layer out along its normal (on its own vertices, so neighbours keep their shape), the way the corner
     /// posts were made proud of the walls (b6c8d79). Run once per kit mesh when the station collects its parts; the
     /// FBX files stay untouched.
     /// </summary>
@@ -43,11 +43,12 @@ namespace LuckyNumbers.Station
                 }
             }
 
-            // Pairs in one plane, facing the same way, overlapping. In each, lift the panel, not the face under it:
-            // the face under several panels overlaps more triangles, so lift the one with fewer overlaps (ties: the
-            // smaller one).
-            var pairs = new List<(int, int)>();
-            var overlaps = new int[tris.Count];
+            // Pairs in one plane, facing the same way, overlapping. Lifting one of each pair isn't enough: a panel can
+            // overlap two base faces, and lifting a base and a panel that overlap each other puts them in one plane
+            // again. So layer them: bases (most overlaps; ties: the bigger) stay at layer 0, and each other triangle takes
+            // the lowest layer none of the triangles it overlaps has, lifted layer x Lift. Overlapping triangles never
+            // share a depth.
+            var neighbours = new List<int>[tris.Count];
             for (var i = 0; i < tris.Count; i++)
             for (var j = i + 1; j < tris.Count; j++)
             {
@@ -55,16 +56,26 @@ namespace LuckyNumbers.Station
                 var q = tris[j];
                 if (Vector3.Dot(p.Normal, q.Normal) < NormalTolerance || Mathf.Abs(p.D - q.D) > PlaneTolerance) continue;
                 if (!Overlap(p, q)) continue;
-                pairs.Add((i, j));
-                overlaps[i]++;
-                overlaps[j]++;
+                (neighbours[i] ??= new List<int>()).Add(j);
+                (neighbours[j] ??= new List<int>()).Add(i);
             }
-            var lift = new HashSet<(int sub, int index)>();
-            foreach (var (i, j) in pairs)
+            var order = new List<int>();
+            for (var i = 0; i < tris.Count; i++) if (neighbours[i] != null) order.Add(i);
+            order.Sort((a, b) =>
             {
-                var top = overlaps[i] != overlaps[j] ? (overlaps[i] < overlaps[j] ? i : j) : (tris[i].Area <= tris[j].Area ? i : j);
-                lift.Add((tris[top].Sub, tris[top].Index));
+                var c = neighbours[b].Count.CompareTo(neighbours[a].Count);
+                return c != 0 ? c : tris[b].Area.CompareTo(tris[a].Area);
+            });
+            var layer = new int[tris.Count];
+            for (var i = 0; i < layer.Length; i++) layer[i] = -1;
+            foreach (var i in order)
+            {
+                var l = 0;
+                while (neighbours[i].Exists(n => layer[n] == l)) l++;
+                layer[i] = l;
             }
+            var lift = new Dictionary<(int sub, int index), int>();
+            for (var i = 0; i < tris.Count; i++) if (layer[i] > 0) lift[(tris[i].Sub, tris[i].Index)] = layer[i];
             if (lift.Count == 0) return mesh;
 
             // Copy the mesh; each lifted triangle gets three new vertices pushed out along its normal.
@@ -77,12 +88,12 @@ namespace LuckyNumbers.Station
             var tangents = new List<Vector4>(mesh.tangents);
             foreach (var t in tris)
             {
-                if (!lift.Contains((t.Sub, t.Index))) continue;
+                if (!lift.TryGetValue((t.Sub, t.Index), out var level)) continue;
                 var triangles = subTriangles[t.Sub];
                 for (var k = 0; k < 3; k++)
                 {
                     var old = triangles[t.Index + k];
-                    positions.Add(vertices[old] + t.Normal * Lift);
+                    positions.Add(vertices[old] + t.Normal * (Lift * level));
                     if (normals.Count > old) normals.Add(normals[old]);
                     if (uvs.Count > old) uvs.Add(uvs[old]);
                     if (colors.Count > old) colors.Add(colors[old]);
