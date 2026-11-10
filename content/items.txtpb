@@ -65,6 +65,12 @@ items {
   skill_bonuses { skill: "intimidate" amount: 2 } skill_bonuses { skill: "perception" amount: 1 }
 }
 items {
+  id: "carbine" name: "Carbine" kind: ITEM_KIND_WEAPON slot: EQUIP_SLOT_WEAPON
+  description: "Short coil carbine. Light enough to carry everywhere." shape: "###/.#." bulk: 1.5 value: 650
+  color { r: 0.5 g: 0.65 b: 0.75 a: 1 }
+  skill_bonuses { skill: "intimidate" amount: 1 } skill_bonuses { skill: "perception" amount: 1 }
+}
+items {
   id: "cutter" name: "Plasma cutter" kind: ITEM_KIND_TOOL slot: EQUIP_SLOT_TOOL
   description: "Opens hulls, crates and anything else in the way." shape: "###" bulk: 2 value: 600
   color { r: 1 g: 0.45 b: 0.15 a: 1 }
@@ -137,8 +143,8 @@ default_relic_item: "relic"
 
 # ---- starting kits (CharacterClass.id): gear goes straight into its slot -------------------------------------------------------------------------
 
-kits { class_id: "ace"     items: ["sidearm", "jacket", "gloves", "medpatch", "medpatch", "ping"] }
-kits { class_id: "breaker" items: ["cutter", "rig", "helmet", "rations", "medpatch"] }
-kits { class_id: "hacker"  items: ["datapad", "multitool", "scanner", "ping", "ping", "medpatch"] }
-kits { class_id: "medic"   items: ["trauma_kit", "medpatch", "medpatch", "medpatch", "scanner", "rations"] }
-kits { class_id: "fixer"   items: ["sidearm", "datapad", "flare", "rations", "rations"] }
+kits { class_id: "ace"     items: ["carbine", "sidearm", "jacket", "gloves", "medpatch", "medpatch", "ping"] }
+kits { class_id: "breaker" items: ["carbine", "cutter", "rig", "helmet", "rations", "medpatch"] }
+kits { class_id: "hacker"  items: ["carbine", "datapad", "multitool", "scanner", "ping", "ping", "medpatch"] }
+kits { class_id: "medic"   items: ["carbine", "trauma_kit", "medpatch", "medpatch", "medpatch", "scanner", "rations"] }
+kits { class_id: "fixer"   items: ["carbine", "sidearm", "datapad", "flare", "rations", "rations"] }

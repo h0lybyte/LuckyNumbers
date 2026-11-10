@@ -1367,6 +1367,31 @@ namespace LuckyNumbers.Model
                 },
                 new ItemDef
                 {
+                    Id = "carbine",
+                    Name = "Carbine",
+                    Description = "Short coil carbine. Light enough to carry everywhere.",
+                    Kind = ItemKind.Weapon,
+                    Slot = EquipSlot.Weapon,
+                    Shape = "###/.#.",
+                    Bulk = 1.5f,
+                    Value = 650,
+                    Color = new Rgba(0.5f, 0.65f, 0.75f, 1.0f),
+                    SkillBonuses =
+                    {
+                        new SkillBonus
+                        {
+                            Skill = "intimidate",
+                            Amount = 1,
+                        },
+                        new SkillBonus
+                        {
+                            Skill = "perception",
+                            Amount = 1,
+                        },
+                    },
+                },
+                new ItemDef
+                {
                     Id = "cutter",
                     Name = "Plasma cutter",
                     Description = "Opens hulls, crates and anything else in the way.",
@@ -1605,6 +1630,7 @@ namespace LuckyNumbers.Model
                     ClassId = "ace",
                     Items =
                     {
+                        "carbine",
                         "sidearm",
                         "jacket",
                         "gloves",
@@ -1618,6 +1644,7 @@ namespace LuckyNumbers.Model
                     ClassId = "breaker",
                     Items =
                     {
+                        "carbine",
                         "cutter",
                         "rig",
                         "helmet",
@@ -1630,6 +1657,7 @@ namespace LuckyNumbers.Model
                     ClassId = "hacker",
                     Items =
                     {
+                        "carbine",
                         "datapad",
                         "multitool",
                         "scanner",
@@ -1643,6 +1671,7 @@ namespace LuckyNumbers.Model
                     ClassId = "medic",
                     Items =
                     {
+                        "carbine",
                         "trauma_kit",
                         "medpatch",
                         "medpatch",
@@ -1656,6 +1685,7 @@ namespace LuckyNumbers.Model
                     ClassId = "fixer",
                     Items =
                     {
+                        "carbine",
                         "sidearm",
                         "datapad",
                         "flare",
