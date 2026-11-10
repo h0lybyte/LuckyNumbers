@@ -28,6 +28,31 @@ namespace LuckyNumbers.Core
 
         /// <summary>Show `text` as the pack's message (e.g. "No room for ...").</summary>
         void Say(string text);
+
+        /// <summary>
+        /// Where dropped items go: the scene with a world to drop into (the crash site) sets itself, and clears it when
+        /// it ends. Null: no world (Drop removes the item, a full-pack unequip is refused).
+        /// </summary>
+        IDropTarget DropTarget { get; set; }
+
+        /// <summary>Pick a dropped item back up (it stacks if it can). False: no room, it stays where it lies.</summary>
+        bool TryAdd(DroppedItem item);
+    }
+
+    /// <summary>Something that left the pack for the world: what it is and how many.</summary>
+    public sealed class DroppedItem
+    {
+        public ItemDef Def;
+        public string Name, Description;
+        public int Value, Count;
+    }
+
+    /// <summary>A world items can be dropped into (lay `item` at the player's feet).</summary>
+    public interface IDropTarget
+    {
+        /// <summary>Somewhere to drop it right now (on foot, not in the cockpit).</summary>
+        bool CanDrop { get; }
+        void Drop(DroppedItem item);
     }
 
     /// <summary>What equipped gear adds up to (CharacterPresenter folds it into the sheet).</summary>
@@ -61,6 +86,7 @@ namespace LuckyNumbers.Core
             public string Name, Description;
             public int Value, X, Y, Rot, Relic = -1;
             public EquipSlot Equipped;   // None: in the grid
+            public int Count = 1;        // copies in this stack (ItemDef.stack)
             public bool[,] Cells;   // rotated footprint [row, column]
         }
 
@@ -151,6 +177,9 @@ namespace LuckyNumbers.Core
         public void Tick()
         {
             // Strength sets the bulk limit; it moves while you shift points.
+            // Dropping is possible only while the drop target says so (on foot), which changes as you land.
+            var canDrop = _dropTarget != null && _dropTarget.CanDrop;
+            if (_state.CanDrop.Value != canDrop) _state.CanDrop.Value = canDrop;
             var str = Strength();
             if (str != _strength)
             {
@@ -178,6 +207,63 @@ namespace LuckyNumbers.Core
                 Description = string.IsNullOrEmpty(description) ? def.Description : description,
                 Value = value >= 0 ? value : def.Value, Relic = relic,
             };
+            return Add(item, publish);
+        }
+
+        public bool TryAdd(DroppedItem dropped)
+        {
+            if (dropped?.Def == null) return false;
+            var item = new Item
+            {
+                Uid = _nextUid++, Def = dropped.Def, Name = dropped.Name, Description = dropped.Description,
+                Value = dropped.Value, Count = Math.Max(1, dropped.Count),
+            };
+            return Add(item, publish: true);
+        }
+
+        IDropTarget _dropTarget;
+
+        public IDropTarget DropTarget
+        {
+            get => _dropTarget;
+            set
+            {
+                _dropTarget = value;
+                _state.CanDrop.Value = value != null && value.CanDrop;
+            }
+        }
+
+        static int StackLimit(ItemDef def) => def.Unique ? 1 : Math.Max(1, def.Stack);
+
+        /// <summary>
+        /// Into the pack: unique items refuse a second copy; stackable ones top up a stack of the same item first;
+        /// the rest goes in the first place it fits (any rotation).
+        /// </summary>
+        bool Add(Item item, bool publish)
+        {
+            var def = item.Def;
+            if (def.Unique && _items.Exists(i => i.Def.Id == def.Id))
+            {
+                if (publish) Say($"You already have {item.Name}");
+                return false;
+            }
+            var limit = StackLimit(def);
+            if (limit > 1 && item.Relic < 0)
+            {
+                foreach (var other in _items)
+                {
+                    if (other.Def != def || other.Equipped != EquipSlot.None || other.Count >= limit) continue;
+                    var moved = Math.Min(item.Count, limit - other.Count);
+                    other.Count += moved;
+                    item.Count -= moved;
+                    if (item.Count == 0)
+                    {
+                        if (publish) Publish();
+                        return true;
+                    }
+                }
+            }
+            item.Count = Math.Min(item.Count, limit);
             for (var rot = 0; rot < 4; rot++)
             {
                 var cells = Rotate(Parse(def.Shape), rot);
@@ -194,7 +280,11 @@ namespace LuckyNumbers.Core
                     return true;
                 }
             }
-            if (publish) Say((Config.FullPrompt ?? "No room for {name}").Replace("{name}", item.Name));
+            if (publish)
+            {
+                Publish();   // a partly topped-up stack still changed
+                Say((Config.FullPrompt ?? "No room for {name}").Replace("{name}", item.Name));
+            }
             return false;
         }
 
@@ -204,6 +294,15 @@ namespace LuckyNumbers.Core
             foreach (var i in _items) if (i.Relic >= 0 || i.Def.Kind == ItemKind.Relic) taken.Add((i.Name, i.Value));
             if (_items.RemoveAll(i => i.Relic >= 0 || i.Def.Kind == ItemKind.Relic) > 0) Publish();
             return taken;
+        }
+
+        /// <summary>Out of the pack (and its slot) into the world at your feet, the whole stack. False: no world.</summary>
+        bool ToWorld(Item item)
+        {
+            if (DropTarget == null || !DropTarget.CanDrop) return false;
+            _items.Remove(item);
+            DropTarget.Drop(new DroppedItem { Def = item.Def, Name = item.Name, Description = item.Description, Value = item.Value, Count = item.Count });
+            return true;
         }
 
         public void ClearRelics()
@@ -281,7 +380,7 @@ namespace LuckyNumbers.Core
                 }
             }
             Say($"Used {item.Name}");
-            if (item.Def.Consumable) _items.Remove(item);
+            if (item.Def.Consumable && --item.Count <= 0) _items.Remove(item);
             Publish();
         }
 
@@ -296,12 +395,17 @@ namespace LuckyNumbers.Core
             item.Equipped = item.Def.Slot;   // frees its cells first, so the swapped-out one can take them
             if (current != null && !Place(current))
             {
-                item.Equipped = EquipSlot.None;
-                Say($"No room in your pack to take off {current.Name}");
-                Publish();
-                return;
+                // No room: the old one drops at your feet (or, with no world here, the swap doesn't happen).
+                if (!ToWorld(current))
+                {
+                    item.Equipped = EquipSlot.None;
+                    Say($"No room in your pack to take off {current.Name}");
+                    Publish();
+                    return;
+                }
+                Say($"Equipped {item.Name}; no room for {current.Name}, dropped at your feet");
             }
-            Say($"Equipped {item.Name}");
+            else Say($"Equipped {item.Name}");
             Publish();
             _equipmentChanged.Publish(new EquipmentChanged());
         }
@@ -312,10 +416,14 @@ namespace LuckyNumbers.Core
             if (item == null) return;
             if (!Place(item))
             {
-                Say($"No room in your pack for {item.Name}");
-                return;
+                if (!ToWorld(item))
+                {
+                    Say($"No room in your pack for {item.Name}");
+                    return;
+                }
+                Say($"No room in your pack: {item.Name} dropped at your feet");
             }
-            Say($"Took off {item.Name}");
+            else Say($"Took off {item.Name}");
             Publish();
             _equipmentChanged.Publish(new EquipmentChanged());
         }
@@ -393,8 +501,17 @@ namespace LuckyNumbers.Core
                 return;
             }
             var wasEquipped = item.Equipped != EquipSlot.None;
-            _items.Remove(item);
-            Say($"Dropped {item.Name}");
+            if (ToWorld(item)) Say($"Dropped {item.Name}{(item.Count > 1 ? $" x{item.Count}" : "")} at your feet");
+            else if (_flow.Scene.Value == GameScene.Title)
+            {
+                _items.Remove(item);   // setting up your character: there's no world yet, it just leaves the kit
+                Say($"Removed {item.Name}");
+            }
+            else
+            {
+                Say(_dropTarget != null ? $"Land first: nowhere to drop {item.Name} from the cockpit" : $"Nowhere to drop {item.Name} here");
+                return;
+            }
             Publish();
             if (wasEquipped) _equipmentChanged.Publish(new EquipmentChanged());
         }
@@ -476,8 +593,8 @@ namespace LuckyNumbers.Core
             var value = 0;
             foreach (var i in _items)
             {
-                bulk += i.Def.Bulk;
-                value += i.Value;
+                bulk += i.Def.Bulk * i.Count;
+                value += i.Value * i.Count;
                 var c = i.Def.Color;
                 var color = "#" + ColorUtility.ToHtmlStringRGB(new Color(c.R, c.G, c.B));
                 var actions = (i.Relic >= 0 || i.Def.Effects.Count > 0 ? 1 : 0) | (i.Relic < 0 ? 2 : 0) |
@@ -485,7 +602,7 @@ namespace LuckyNumbers.Core
                 rows.Add(string.Join("|", i.Uid, i.Def.Id, Clean(i.Name), (int)i.Def.Kind, i.X, i.Y, i.Rot, Shape(i.Cells),
                                      i.Def.Bulk.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture), i.Value,
                                      color, Clean(i.Description), actions, (int)i.Def.Slot, (int)i.Equipped,
-                                     Clean(BonusText(i.Def))));
+                                     Clean(BonusText(i.Def)), i.Count));
             }
             var str = Strength();
             var extra = BulkBonus;

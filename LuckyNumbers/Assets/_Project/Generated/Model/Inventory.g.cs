@@ -100,6 +100,14 @@ namespace LuckyNumbers.Model
         public int HpBonus { get; set; }
         public int RelicBonus { get; set; }
         public float BulkBonus { get; set; }
+        /// <summary>
+        /// One per universe (relics): never a second copy, never stacked (docs/items.md).
+        /// </summary>
+        public bool Unique { get; set; }
+        /// <summary>
+        /// More than 1: this many copies share one cell (med-patches, rations). Bulk and value count each copy.
+        /// </summary>
+        public int Stack { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public ItemDef Clone() => (ItemDef)MemberwiseClone();
@@ -146,9 +154,10 @@ namespace LuckyNumbers.Model
 
     /// <summary>
     /// What's in the pack (Core/InventoryPresenter; the page's Inventory and Equipment tabs). Each item
-    /// "uid|id|name|kind|x|y|rot|shape|bulk|value|color|description|actions|slot|equipped|bonuses": shape already rotated
-    /// (rows "/"), color "#rrggbb", actions bits 1 = use, 2 = drop, 4 = equip; slot = its EquipSlot, equipped = the slot
-    /// it's in now (0: in the grid; x, y unused then); bonuses as text ("Engineering +2, STR +1").
+    /// "uid|id|name|kind|x|y|rot|shape|bulk|value|color|description|actions|slot|equipped|bonuses|count": shape already
+    /// rotated (rows "/"), color "#rrggbb", actions bits 1 = use, 2 = drop, 4 = equip; slot = its EquipSlot, equipped =
+    /// the slot it's in now (0: in the grid; x, y unused then); bonuses as text ("Engineering +2, STR +1"); count = copies
+    /// in the stack (bulk and value are per copy).
     /// </summary>
     public sealed class PlayerInventory : IDisposable
     {
@@ -172,6 +181,10 @@ namespace LuckyNumbers.Model
         /// Everything equipped adds up to (for the Equipment tab): each "label|value", e.g. "Engineering|+2".
         /// </summary>
         public readonly ObservableList<string> GearBonuses = new ObservableList<string>();
+        /// <summary>
+        /// There's a world to drop things into (the crash site): Drop and a full-pack unequip put the item at your feet.
+        /// </summary>
+        public readonly ReactiveProperty<bool> CanDrop = new ReactiveProperty<bool>();
 
         public void Dispose()
         {
@@ -184,6 +197,7 @@ namespace LuckyNumbers.Model
             Speed.Dispose();
             Value.Dispose();
             Message.Dispose();
+            CanDrop.Dispose();
         }
     }
 

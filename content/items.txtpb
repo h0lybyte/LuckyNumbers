@@ -12,37 +12,42 @@ encumbered_speed: 0.8
 overloaded_speed: 0.55
 full_prompt: "No room in your pack for {name}"
 
-# ---- consumables -------------------------------------------------------------------------------------------
+# ---- consumables (stack: copies per cell) -------------------------------------------------------------------------------------------
 
 items {
   id: "medpatch" name: "Med-patch" kind: ITEM_KIND_CONSUMABLE consumable: true
   description: "Stick it on, feel better. Heals 4." shape: "#" bulk: 0.1 value: 40
   color { r: 0.95 g: 0.3 b: 0.4 a: 1 }
   effects: [RELIC_EFFECT_HEAL] amount: 4
+  stack: 10
 }
 items {
   id: "trauma_kit" name: "Trauma kit" kind: ITEM_KIND_CONSUMABLE consumable: true
   description: "Field surgery in a box. Back to full HP and Stamina." shape: "##" bulk: 0.5 value: 220
   color { r: 0.95 g: 0.2 b: 0.3 a: 1 }
   effects: [RELIC_EFFECT_FULL_HEAL]
+  stack: 2
 }
 items {
   id: "rations" name: "Ration bar" kind: ITEM_KIND_CONSUMABLE consumable: true
   description: "Tastes like packing foam. Heals 2." shape: "#/#" bulk: 0.2 value: 10
   color { r: 0.85 g: 0.65 b: 0.3 a: 1 }
   effects: [RELIC_EFFECT_HEAL] amount: 2
+  stack: 5
 }
 items {
   id: "ping" name: "Ping beacon" kind: ITEM_KIND_CONSUMABLE consumable: true
   description: "One-shot sonar. Shows the nearest relic for 25 s." shape: "#" bulk: 0.2 value: 90
   color { r: 0.2 g: 0.9 b: 1 a: 1 }
   effects: [RELIC_EFFECT_REVEAL_NEAREST] seconds: 25
+  stack: 5
 }
 items {
   id: "flare" name: "Survey flare" kind: ITEM_KIND_CONSUMABLE consumable: true
   description: "Lights up the whole site: every relic for 20 s." shape: "#/#/#" bulk: 0.4 value: 160
   color { r: 1 g: 0.55 b: 0.2 a: 1 }
   effects: [RELIC_EFFECT_REVEAL_ALL] seconds: 20
+  stack: 3
 }
 
 # ---- gear: equip into its slot (Equipment tab) for the bonuses; nothing is drawn --------------------------------------------------------------------------------

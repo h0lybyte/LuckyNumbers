@@ -1247,6 +1247,7 @@ namespace LuckyNumbers.Model
                     },
                     Amount = 4.0f,
                     Consumable = true,
+                    Stack = 10,
                 },
                 new ItemDef
                 {
@@ -1263,6 +1264,7 @@ namespace LuckyNumbers.Model
                         RelicEffect.FullHeal,
                     },
                     Consumable = true,
+                    Stack = 2,
                 },
                 new ItemDef
                 {
@@ -1280,6 +1282,7 @@ namespace LuckyNumbers.Model
                     },
                     Amount = 2.0f,
                     Consumable = true,
+                    Stack = 5,
                 },
                 new ItemDef
                 {
@@ -1297,6 +1300,7 @@ namespace LuckyNumbers.Model
                     },
                     Seconds = 25.0f,
                     Consumable = true,
+                    Stack = 5,
                 },
                 new ItemDef
                 {
@@ -1314,6 +1318,7 @@ namespace LuckyNumbers.Model
                     },
                     Seconds = 20.0f,
                     Consumable = true,
+                    Stack = 3,
                 },
                 new ItemDef
                 {

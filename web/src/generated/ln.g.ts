@@ -114,9 +114,10 @@ export interface LoadingState {
 
 /**
  * What's in the pack (Core/InventoryPresenter; the page's Inventory and Equipment tabs). Each item
- * "uid|id|name|kind|x|y|rot|shape|bulk|value|color|description|actions|slot|equipped|bonuses": shape already rotated
- * (rows "/"), color "#rrggbb", actions bits 1 = use, 2 = drop, 4 = equip; slot = its EquipSlot, equipped = the slot
- * it's in now (0: in the grid; x, y unused then); bonuses as text ("Engineering +2, STR +1").
+ * "uid|id|name|kind|x|y|rot|shape|bulk|value|color|description|actions|slot|equipped|bonuses|count": shape already
+ * rotated (rows "/"), color "#rrggbb", actions bits 1 = use, 2 = drop, 4 = equip; slot = its EquipSlot, equipped =
+ * the slot it's in now (0: in the grid; x, y unused then); bonuses as text ("Engineering +2, STR +1"); count = copies
+ * in the stack (bulk and value are per copy).
  */
 export interface PlayerInventory {
   width: number;
@@ -133,6 +134,8 @@ export interface PlayerInventory {
   message: string;
   /** Everything equipped adds up to (for the Equipment tab): each "label|value", e.g. "Engineering|+2". */
   gearBonuses: string[];
+  /** There's a world to drop things into (the crash site): Drop and a full-pack unequip put the item at your feet. */
+  canDrop: boolean;
 }
 
 /**
@@ -260,7 +263,8 @@ export interface RelicRolled {
 
 /**
  * Dev (the page's inspector): put you on foot beside "artifact" (the nearest named one still lying out), "relic"
- * (the nearest of any), the "wreck" or your landed "ship". For trying things out quickly.
+ * (the nearest of any), the "wreck" or your landed "ship"; "land" (while flying in) sets the ship down on the pad.
+ * For trying things out quickly.
  */
 export interface DevWarpRequested {
   to: string;

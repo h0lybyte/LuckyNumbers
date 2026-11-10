@@ -59,6 +59,8 @@ namespace LuckyNumbers.Planet
         // or crash yet), past orbit and fading out (`_exiting`); where it was parked (a crash on the way up restarts there).
         bool _leaving, _clearing, _exiting, _boarding;
         Vector3 _parked;
+        readonly ISubscriber<DevWarpRequested> _warps;
+        IDisposable _warpSubscription;
         IDisposable _hudSubscription;
         bool _pageHud;          // the page draws the flight HUD (FlightHudReady): Unity's readout steps aside
         float _stateTimer;
@@ -81,8 +83,8 @@ namespace LuckyNumbers.Planet
         [Inject]
         public LandingPresenter(PlanetScene config, PlanetView view, PlayerView player, GroundView ground,
                                 IFirstPerson firstPerson, PlayerInput input, PlayerShip playerShip, FlightState state,
-                                ISubscriber<FlightHudReady> hudReady, PlayerVoyage voyage,
-                                IPublisher<SceneChangeRequested> scenes)
+                                ISubscriber<FlightHudReady> hudReady, ISubscriber<DevWarpRequested> warps,
+                                PlayerVoyage voyage, IPublisher<SceneChangeRequested> scenes)
         {
             _voyage = voyage;
             _scenes = scenes;
@@ -99,6 +101,15 @@ namespace LuckyNumbers.Planet
             {
                 _pageHud = e.On;
                 if (_pageHud && _phase == Phase.Flying) _view.Hint("", 0f);
+            });
+            _warps = warps;
+            // Dev (the page's inspector): "land" sets the ship down on the pad, so you're on foot in seconds.
+            _warpSubscription = _warps.Subscribe(e =>
+            {
+                if (e.To != "land" || _phase != Phase.Flying) return;
+                _position = _pad + Vector3.up * 2f;
+                Debug.Log("[Landing] dev: skip to touchdown");
+                Land(Vector3.up);
             });
         }
 
@@ -644,6 +655,7 @@ namespace LuckyNumbers.Planet
         {
             _state.Flying.Value = false;
             _hudSubscription?.Dispose();
+            _warpSubscription?.Dispose();
             _done?.TrySetCanceled();
         }
     }

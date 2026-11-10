@@ -6,7 +6,8 @@
 //
 // --steps: JSON list run after --wait, coordinates are fractions of the game canvas (0..1, top-left):
 //   [{"drag":[x1,y1,x2,y2]}, {"scroll":[x,y,notches]}, {"sleep":1}, {"shot":"a.png"}, {"click":[x,y]}, {"wait":"text"},
-//    {"fps":5}, {"key":["KeyW",2]}, {"key":["ShiftLeft+KeyW",2]}]  (fps: measure 5 s; key: hold for 2 s; sleep is in seconds)
+//    {"fps":5}, {"key":["KeyW",2]}, {"key":["ShiftLeft+KeyW",2]}, {"js":"LN.send(...)"}]
+//   (fps: measure 5 s; key: hold for 2 s; sleep is in seconds; js: run in the page, prints the result)
 // Prints the page's console lines. Without --steps it takes one screenshot to <out.png>.
 import { spawn } from "node:child_process";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
@@ -82,6 +83,10 @@ const mouse = (type, p, buttons = 0) => send("Input.dispatchMouseEvent",
 
 for (const step of steps) {
   if (step.sleep) await sleep(step.sleep * 1000);
+  if (step.js) { // run page JS, e.g. {"js":"LN.send('DevWarpRequested',{to:'wreck'})"}; prints the result
+    const r = await send("Runtime.evaluate", { expression: step.js, awaitPromise: true, returnByValue: true });
+    console.log(`js: ${JSON.stringify(r.result?.result?.value ?? r.result?.exceptionDetails?.text ?? null)}`);
+  }
   if (step.wait) await waitConsole(step.wait);
   if (step.click) {
     const p = px(step.click);

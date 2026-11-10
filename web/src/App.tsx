@@ -233,6 +233,9 @@ function Inspector() {
           <button type="button" onClick={() => LN.send("InputActionPerformed", { action: "Map" })}>
             Map
           </button>
+          <button type="button" title="Planet: set the ship down on the pad" onClick={() => LN.send("DevWarpRequested", { to: "land" })}>
+            Skip landing
+          </button>
         </div>
         <SendForm />
       </section>
