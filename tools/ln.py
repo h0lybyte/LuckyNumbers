@@ -6,6 +6,7 @@
     python3 tools/ln.py serve         serve the Web build with COOP/COEP headers
     python3 tools/ln.py bake-grasps   bake weapons' finger grips into weapons.json (needs the build served)
     python3 tools/ln.py deploy        push the Web build to itch.io with butler
+    python3 tools/ln.py bump          start the next CHANGELOG.md entry (patch; minor/major) from merged PRs
 
 Unity is located from ProjectVersion.txt + the Unity Hub install folder.
 Override with UNITY_PATH=/path/to/Unity(.exe).
@@ -203,6 +204,53 @@ def changelog_version() -> tuple[str, str]:
 def cmd_version(args) -> int:
     version, notes = changelog_version()
     print(notes if args.notes else version)
+    return 0
+
+
+def next_version(version: str, part: str) -> str:
+    """0.3.0 + patch -> 0.3.1, + minor -> 0.4.0, + major -> 1.0.0 (a pre-release suffix is dropped)."""
+    major, minor, patch = (int(n) for n in version.split("-")[0].split("."))
+    if part == "major":
+        return f"{major + 1}.0.0"
+    if part == "minor":
+        return f"{major}.{minor + 1}.0"
+    return f"{major}.{minor}.{patch + 1}"
+
+
+def merged_since(tag: str) -> list[str]:
+    """PR titles merged since `tag` (merge commits' first body line), oldest first; else plain commit subjects."""
+    def log(*extra: str) -> str:
+        rng = f"{tag}..HEAD" if tag else "HEAD"
+        return subprocess.run(["git", "log", rng, "--reverse", *extra], cwd=ROOT, capture_output=True,
+                              text=True, check=True).stdout
+    titles = [t.strip() for t in log("--merges", "--grep=^Merge pull request", "--format=%b%x00").split("\0")]
+    titles = [t.splitlines()[0] for t in titles if t]
+    if not titles:
+        titles = [t for t in log("--no-merges", "--format=%s").splitlines() if t]
+    return titles
+
+
+def cmd_bump(args) -> int:
+    version, _ = changelog_version()
+    new = next_version(version, args.part)
+    tag = f"v{version}"
+    if subprocess.run(["git", "rev-parse", "-q", "--verify", f"refs/tags/{tag}"], cwd=ROOT,
+                      capture_output=True).returncode != 0:
+        print(f"{tag} isn't tagged yet: release it before starting the next version", file=sys.stderr)
+        return 1
+    if args.notes_file:
+        notes = Path(args.notes_file).read_text(encoding="utf-8").strip()
+    else:
+        titles = merged_since(tag)
+        if not titles:
+            print(f"nothing merged since {tag}", file=sys.stderr)
+            return 1
+        notes = "\n".join(f"- {t}" for t in titles)
+    text = CHANGELOG.read_text(encoding="utf-8")
+    m = VERSION_HEADING.search(text)
+    entry = f"## {new} ({time.strftime('%Y-%m-%d')})\n\n{notes}\n\n"
+    CHANGELOG.write_text(text[:m.start()] + entry + text[m.start():], encoding="utf-8")
+    print(new)
     return 0
 
 
@@ -757,6 +805,11 @@ def main(argv=None) -> int:
     s = sub.add_parser("version", help="print the game version from CHANGELOG.md")
     s.add_argument("--notes", action="store_true", help="print that entry's release notes instead")
     s.set_defaults(func=cmd_version)
+
+    s = sub.add_parser("bump", help="add the next version's entry to CHANGELOG.md (notes: PRs merged since the tag)")
+    s.add_argument("part", nargs="?", default="patch", choices=("patch", "minor", "major"))
+    s.add_argument("--notes-file", help="use this file's text as the notes instead")
+    s.set_defaults(func=cmd_bump)
 
     s = sub.add_parser("secrets", help="push .env values to GitHub Actions secrets (never printed)")
     s.add_argument("--dry-run", action="store_true", help="only show which keys are set / empty")
