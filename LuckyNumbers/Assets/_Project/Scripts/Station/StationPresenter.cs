@@ -48,6 +48,7 @@ namespace LuckyNumbers.Station
         readonly ISubscriber<StationCallAnswered> _answers;
         readonly ISubscriber<StationPlanRequested> _plans;
         readonly ISubscriber<PsxModeRequested> _psxRequests;
+        readonly ISubscriber<DevWarpRequested> _warps;
         readonly CancellationTokenSource _cts = new();
         readonly List<IDisposable> _subscriptions = new();
         static readonly int Psx = Shader.PropertyToID("_LnPsx");
@@ -71,7 +72,7 @@ namespace LuckyNumbers.Station
                                 PlayerShip playerShip, IPublisher<SceneChangeRequested> scenes,
                                 ISubscriber<StationLightsRequested> lightRequests, ISubscriber<InputActionPerformed> actions,
                                 ISubscriber<StationCallAnswered> answers, ISubscriber<StationPlanRequested> plans,
-                                ISubscriber<PsxModeRequested> psxRequests)
+                                ISubscriber<PsxModeRequested> psxRequests, ISubscriber<DevWarpRequested> warps)
         {
             _config = config;
             _station = station;
@@ -89,6 +90,7 @@ namespace LuckyNumbers.Station
             _answers = answers;
             _plans = plans;
             _psxRequests = psxRequests;
+            _warps = warps;
         }
 
         public void Start()
@@ -110,6 +112,7 @@ namespace LuckyNumbers.Station
             _state.MapOpen.Value = false;
             _subscriptions.Add(_answers.Subscribe(_ => Answer()));
             _subscriptions.Add(_plans.Subscribe(e => Rebuild(e.Plan)));
+            _subscriptions.Add(_warps.Subscribe(e => WarpTo(e.To)));
             _subscriptions.Add(_psxRequests.Subscribe(e => SetPsx(e.On)));
 
             var spawn = StationPlan.Centre(_station.Plan.Spawn);
@@ -171,6 +174,34 @@ namespace LuckyNumbers.Station
             if (gun.TryGetComponent<Rigidbody>(out var body)) { body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
             gun.transform.SetPositionAndRotation(spawn + facing * new Vector3(0.25f, 0.35f, 1.0f), facing * Quaternion.Euler(0f, 80f, 0f));
             gun.gameObject.SetActive(true);
+        }
+
+        /// <summary>
+        /// Dev (the page's inspector): stand 1.6 m from the first prop of piece `piece` (e.g. "cryo_pod"), on the side
+        /// of its room's middle, facing it. For looking at things up close quickly.
+        /// </summary>
+        void WarpTo(string piece)
+        {
+            if (_layout == null || string.IsNullOrEmpty(piece)) return;
+            var prop = _layout.Props.Find(p => p.Piece == piece);
+            if (prop == null) { Debug.Log($"[Station] dev warp: no prop '{piece}'"); return; }
+            var at = _station.Plan.PlanToWorld(prop.Col, prop.Row);
+            // Towards the nearest room's middle: that's the open side of something against a wall.
+            var inside = at + Vector3.forward;
+            var best = float.MaxValue;
+            foreach (var r in _layout.Rooms)
+            {
+                var c = _station.Plan.PlanToWorld(r.Col, r.Row);
+                var d = Vector3.Distance(c, at);
+                if (d < best) { best = d; inside = c; }
+            }
+            var away = Vector3.ProjectOnPlane(inside - at, Vector3.up);
+            if (away.sqrMagnitude < 0.01f) away = Vector3.forward;
+            var stand = at + away.normalized * 1.6f;
+            stand.y = _player.Body.transform.position.y;
+            var face = at - stand;
+            Teleport(stand, Mathf.Atan2(face.x, face.z) * Mathf.Rad2Deg);
+            Debug.Log($"[Station] dev warp to {piece}");
         }
 
         void Teleport(Vector3 position, float yaw)
