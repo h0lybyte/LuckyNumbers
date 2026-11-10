@@ -147,7 +147,30 @@ namespace LuckyNumbers.Editor
                    ("moonTemplate", moonTemplate));
             mapCamGo.SetActive(false);
 
-            FreighterRig(collide: true);   // the wreck: the museum freighter, solid, so you walk around (and onto) it
+            var wreck = FreighterRig(collide: true);   // the wreck: the museum freighter, solid, so you walk around (and onto) it
+            var fighter = ShipRig(collide: true, name: "Fighter");   // your ship: you fly it in and land it (solid once parked)
+            // Chase camera for flying in (off until then).
+            var flightGo = new GameObject("FlightCamera");
+            var flightCam = flightGo.AddComponent<Camera>();
+            flightCam.clearFlags = CameraClearFlags.Skybox;
+            flightCam.fieldOfView = 65f;
+            flightCam.nearClipPlane = 0.1f;
+            flightCam.farClipPlane = 3000f;
+            flightCam.cullingMask = cam.cullingMask;   // the world, not the arms or the map
+            flightGo.SetActive(false);
+            // Beacon over the wreck (shown while you fly in): built here, not at runtime, so the build never needs a
+            // primitive's collider type it may have stripped.
+            var beaconMat = MaterialAsset("Beacon", "Universal Render Pipeline/Unlit");
+            beaconMat.color = new Color(1f, 0.55f, 0.15f, 1f);
+            EditorUtility.SetDirty(beaconMat);
+            var beam = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            beam.name = "WreckBeacon";
+            Object.DestroyImmediate(beam.GetComponent<Collider>());
+            beam.GetComponent<MeshRenderer>().sharedMaterial = beaconMat;
+            beam.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            beam.transform.localScale = new Vector3(1.6f, 160f, 1.6f);   // 320 m tall
+            beam.SetActive(false);
+            Assign(view, ("wreck", wreck), ("fighter", fighter), ("flightCamera", flightCam), ("wreckBeacon", beam.transform));
             Scopes<PlanetScope>();
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Planet.unity");
         }
@@ -338,12 +361,12 @@ namespace LuckyNumbers.Editor
         const string FighterDir = "Assets/_Project/Art/Models/Fighter";
 
         /// <summary>The fighter: pivot (+Z forward) around the model (nose is +X in the file), all skins listed.</summary>
-        static void ShipRig(bool collide = false)
+        static ShipView ShipRig(bool collide = false, string name = "Ship")
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>($"{FighterDir}/fighter1.fbx")
                         ?? throw new System.Exception("fighter1.fbx missing");
             var material = MaterialAsset("Ship", "LuckyNumbers/Ship");
-            var view = new GameObject("Ship").AddComponent<ShipView>();
+            var view = new GameObject(name).AddComponent<ShipView>();
             var pivot = new GameObject("Pivot").transform;
             pivot.SetParent(view.transform, false);
             var ship = (GameObject)PrefabUtility.InstantiatePrefab(model);
@@ -355,7 +378,12 @@ namespace LuckyNumbers.Editor
                 r.sharedMaterial = material;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 // Collider baked here: imported meshes aren't CPU-readable at runtime (ArtImport).
-                if (collide && r.TryGetComponent<MeshFilter>(out var mf)) r.gameObject.AddComponent<MeshCollider>().sharedMesh = mf.sharedMesh;
+                if (collide && r.TryGetComponent<MeshFilter>(out var mf))
+                {
+                    var c = r.gameObject.AddComponent<MeshCollider>();   // convex: no hollows to get stuck in
+                    c.sharedMesh = mf.sharedMesh;
+                    c.convex = true;
+                }
             }
             var skins = new System.Collections.Generic.List<Texture2D>();
             foreach (var guid in AssetDatabase.FindAssets("t:Texture2D", new[] { $"{FighterDir}/Skins" }))
@@ -371,6 +399,7 @@ namespace LuckyNumbers.Editor
             for (var i = 0; i < skins.Count; i++) sk.GetArrayElementAtIndex(i).objectReferenceValue = skins[i];
             so.ApplyModifiedPropertiesWithoutUndo();
             pivot.gameObject.SetActive(false);
+            return view;
         }
 
         const string FreighterDir = "Assets/_Project/Art/Models/CargoShip";
@@ -382,7 +411,7 @@ namespace LuckyNumbers.Editor
         /// Textures/tex_0005), its own look kept (no skins). Pivot +Z forward; length measured from the model.
         /// With `collide`: the convex pieces of cargo_ship_collision.obj (tools/collision/decompose.py).
         /// </summary>
-        static void FreighterRig(bool collide = false)
+        static ShipView FreighterRig(bool collide = false)
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>($"{FreighterDir}/cargo_ship.fbx")
                         ?? throw new System.Exception("cargo_ship.fbx missing");
@@ -444,6 +473,7 @@ namespace LuckyNumbers.Editor
             so.ApplyModifiedPropertiesWithoutUndo();
             Debug.Log($"[SceneBuilder] freighter: {renderers.Length} parts, {bounds.size.x:0.#} x {bounds.size.y:0.#} x {bounds.size.z:0.#} m");
             pivot.gameObject.SetActive(false);
+            return view;
         }
 
         sealed class Rig

@@ -1161,7 +1161,7 @@ namespace LuckyNumbers.Model
             GroundNoiseScale = 0.018f,
             ChunkSize = 48.0f,
             ChunkResolution = 33,
-            ViewChunks = 2,
+            ViewChunks = 3,
             SurfaceNoiseScale = 0.12f,
             WalkSpeed = 4.5f,
             SprintSpeed = 8.0f,
@@ -1652,6 +1652,43 @@ namespace LuckyNumbers.Model
                 ZoomFrom = 1.06f,
                 OpenSeconds = 1.6f,
                 CloseSeconds = 0.8f,
+            },
+            Landing = new FlightLanding
+            {
+                ShipLength = 9.0f,
+                StartAltitude = 110.0f,
+                StartDistance = 260.0f,
+                StartSpeed = 30.0f,
+                Gravity = 9.8f,
+                Thrust = 22.0f,
+                Boost = 2.0f,
+                Lift = 16.0f,
+                Drag = 0.35f,
+                ThrottlePerSecond = 0.6f,
+                TurnDegreesPerPixel = 0.08f,
+                RollDegreesPerSecond = 90.0f,
+                TurnDamping = 4.0f,
+                RollReturnDegreesPerSecond = 25.0f,
+                MaxTouchdownVertical = 4.0f,
+                MaxTouchdownHorizontal = 7.0f,
+                MaxTouchdownTilt = 18.0f,
+                ChaseDistance = 2.2f,
+                ChaseHeight = 0.7f,
+                Hint = "Mouse: pitch and turn - A/D roll - W/S throttle - Shift boost - Space lift. Land slow and level near the wreck.",
+                LandedText = "Landed.",
+                CrashedText = "Too hard. Try again.",
+                LandedLines =
+                {
+                    new Dialogue
+                    {
+                        Speaker = "You",
+                        Text = "Down in one piece. Now, where's that cargo?",
+                        DurationSeconds = 3.5f,
+                        CharsPerSecond = 30.0f,
+                    },
+                },
+                WingLift = 0.011f,
+                Grip = 1.5f,
             },
         };
 
