@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using LuckyNumbers.Cargo;
+using LuckyNumbers.Core;
 using LuckyNumbers.Intro;
 using LuckyNumbers.Model;
 using MessagePipe;
@@ -41,6 +42,9 @@ namespace LuckyNumbers.Planet
         readonly IFirstPerson _firstPerson;
         readonly PlayerHealth _health;
         readonly CharacterSheet _sheet;
+        readonly IInventory _pack;
+        readonly PlayerInventory _packState;
+        readonly ISubscriber<ItemEffectRequested> _itemEffects;
         readonly IPublisher<CharacterXpGained> _xp;
         readonly RelicInventory _inventory;
         readonly IPublisher<RelicRolled> _rolled;
@@ -65,6 +69,7 @@ namespace LuckyNumbers.Planet
         [Inject]
         public RelicsPresenter(ICrashSite site, PlanetView view, PlayerView player, GroundView ground, IFirstPerson firstPerson,
                                PlayerHealth health, CharacterSheet sheet, IPublisher<CharacterXpGained> xp,
+                               IInventory pack, PlayerInventory packState, ISubscriber<ItemEffectRequested> itemEffects,
                                RelicInventory inventory, IPublisher<RelicRolled> rolled,
                                ISubscriber<InputActionPerformed> actions, ISubscriber<RelicUseRequested> useRequests,
                                IBufferedSubscriber<UniverseSeedChanged> seeds, ISubscriber<DevWarpRequested> warps)
@@ -77,6 +82,9 @@ namespace LuckyNumbers.Planet
             _firstPerson = firstPerson;
             _health = health;
             _sheet = sheet;
+            _pack = pack;
+            _packState = packState;
+            _itemEffects = itemEffects;
             _xp = xp;
             _inventory = inventory;
             _rolled = rolled;
@@ -99,6 +107,9 @@ namespace LuckyNumbers.Planet
             _subscriptions.Add(_useRequests.Subscribe(e => _useRequest = e.Index));
             _subscriptions.Add(_seeds.Subscribe(e => _luck = e.Luck));   // the title's roll: its luck die, 0..1 (-1: none)
             _subscriptions.Add(_warps.Subscribe(e => Warp(e.To)));
+            // Pack consumables (ping beacon, flare) reveal relics the same way relic rolls do.
+            _subscriptions.Add(_itemEffects.Subscribe(e => Apply(e.Effect, new RelicRoll { Amount = e.Amount, Seconds = e.Seconds })));
+            _pack.ClearRelics();   // a fresh crash site: the last one's relics aren't in the pack any more
         }
 
         public void Tick()
@@ -140,7 +151,8 @@ namespace LuckyNumbers.Planet
             _use = false;
 
             // Effects that last.
-            _firstPerson.SpeedScale = Time.time < _slowUntil ? _slowScale : 1f;
+            var load = _packState.Speed.Value > 0f ? _packState.Speed.Value : 1f;   // a heavy pack slows you
+            _firstPerson.SpeedScale = (Time.time < _slowUntil ? _slowScale : 1f) * load;
             UpdateReveal(me);
 
             var selected = Selected();
@@ -227,6 +239,17 @@ namespace LuckyNumbers.Planet
 
         void Take(Lying l)
         {
+            // Into the pack first: no room, it stays where it lies.
+            var desc = l.Relic.Artifact != null
+                ? $"{l.Relic.Artifact.Figure}, {l.Relic.Artifact.Era}. {l.Relic.Artifact.Lore}"
+                : $"From {l.Relic.Origin}. {l.Relic.Material} {l.Relic.Culture?.Name} {l.Relic.Kind?.Name}.";
+            if (!_pack.TryAdd(PackItem(l.Relic), l.Relic.Name, desc, l.Relic.Value, _held.Count))
+            {
+                var full = (GameContent.Items.FullPrompt ?? "No room for {name}").Replace("{name}", l.Relic.Name);
+                DialogueLine.Play(new Dialogue { Speaker = "Pack", Text = full, DurationSeconds = 2.5f, CharsPerSecond = 60f },
+                                  _view.Dialogue, _cts.Token).Forget();
+                return;
+            }
             l.Taken = true;
             l.Shape.gameObject.SetActive(false);
             if (l.Beam != null) l.Beam.gameObject.SetActive(false);
@@ -245,6 +268,15 @@ namespace LuckyNumbers.Planet
                 : new Dialogue { Speaker = "Relic", Text = $"A {l.Relic.Name}, from {l.Relic.Origin}. Worth {l.Relic.Value:N0} credits.",
                                  DurationSeconds = 3f, CharsPerSecond = 45f };
             DialogueLine.Play(line, _view.Dialogue, _cts.Token).Forget();
+        }
+
+        /// <summary>The pack item a relic takes up: its artifact id, else its kind, else the default.</summary>
+        static string PackItem(Relic relic)
+        {
+            var items = GameContent.Items;
+            foreach (var r in items.RelicItems) if (relic.Artifact != null && r.Relic == relic.Artifact.Id) return r.Item;
+            foreach (var r in items.RelicItems) if (r.Relic == relic.Kind?.Id) return r.Item;
+            return items.DefaultRelicItem;
         }
 
         Relic Selected() => _inventory.Selected.Value >= 0 && _inventory.Selected.Value < _held.Count ? _held[_inventory.Selected.Value] : null;

@@ -109,6 +109,26 @@ export interface LoadingState {
 }
 
 /**
+ * What's in the pack (Core/InventoryPresenter; the page's Inventory tab). Each item
+ * "uid|id|name|kind|x|y|rot|shape|bulk|value|color|description|actions": shape already rotated (rows "/"),
+ * color "#rrggbb", actions bits 1 = use, 2 = drop.
+ */
+export interface PlayerInventory {
+  width: number;
+  height: number;
+  items: string[];
+  bulk: number;
+  bulkLimit: number;
+  bulkMax: number;
+  /** 0 light, 1 encumbered, 2 overloaded; and the walking speed that gives. */
+  load: number;
+  speed: number;
+  value: number;
+  /** The last thing that didn't fit, or that happened ("No room for ..."). */
+  message: string;
+}
+
+/**
  * Flying in, for the page's flight HUD (the steps, the pad arrow, instruments, landing gauges): in the air /
  * crashed / landed; altitude, climb, speed and the set speed (m, m/s); hovering, boost; the pad's distance and
  * bearing from your nose (degrees, + right); descent, drift and tilt against the touchdown limits; why you
@@ -287,6 +307,22 @@ export interface InputActionPerformed {
   action: InputAction;
 }
 
+/** The page's grid: put item `uid` at cell (x, y) (its shape's top left), turned `rot` quarter turns clockwise. */
+export interface InventoryMoveRequested {
+  uid: number;
+  x: number;
+  y: number;
+  rot: number;
+}
+
+export interface InventoryUseRequested {
+  uid: number;
+}
+
+export interface InventoryDropRequested {
+  uid: number;
+}
+
 /** The page draws the flight HUD: Unity's own text readout and controls line step aside. */
 export interface FlightHudReady {
   on: boolean;
@@ -334,6 +370,7 @@ export interface WebStates {
   CharacterSheet: CharacterSheet;
   FlowState: FlowState;
   LoadingState: LoadingState;
+  PlayerInventory: PlayerInventory;
   FlightState: FlightState;
   MapState: MapState;
   LandingSite: LandingSite;
@@ -361,6 +398,9 @@ export interface WebEvents {
   CutsceneStepStarted: CutsceneStepStarted;
   CutsceneFinished: CutsceneFinished;
   InputActionPerformed: InputActionPerformed;
+  InventoryMoveRequested: InventoryMoveRequested;
+  InventoryUseRequested: InventoryUseRequested;
+  InventoryDropRequested: InventoryDropRequested;
   FlightHudReady: FlightHudReady;
   PlayerDamaged: PlayerDamaged;
   PlayerHealed: PlayerHealed;
@@ -373,6 +413,6 @@ export interface WebEvents {
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "DevWarpRequested" | "RelicUseRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "InputActionPerformed" | "FlightHudReady" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
+export type InboundEvent = "DevWarpRequested" | "RelicUseRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "InputActionPerformed" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "FlightHudReady" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
 
-export const STATE_NAMES = ["RelicInventory", "CharacterSheet", "FlowState", "LoadingState", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "StationState", "DiceState"] as const;
+export const STATE_NAMES = ["RelicInventory", "CharacterSheet", "FlowState", "LoadingState", "PlayerInventory", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "StationState", "DiceState"] as const;

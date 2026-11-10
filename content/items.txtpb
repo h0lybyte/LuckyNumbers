@@ -1,0 +1,123 @@
+# proto-file: luckynumbers/v1/inventory.proto
+# proto-message: luckynumbers.v1.ItemConfig
+# The pack: a 10 x 6 grid; items fit by shape ("#" filled, "." empty, rows split by "/"), drag to move, R rotates.
+# Bulk is weight: up to STR x bulk_per_str is free, past it you're encumbered, past STR x overload_per_str
+# overloaded. Placeholder numbers; tune with gameplay.
+
+grid_width: 10
+grid_height: 6
+bulk_per_str: 0.5
+overload_per_str: 1.0
+encumbered_speed: 0.8
+overloaded_speed: 0.55
+full_prompt: "No room in your pack for {name}"
+
+# ---- consumables -------------------------------------------------------------------------------------------
+
+items {
+  id: "medpatch" name: "Med-patch" kind: ITEM_KIND_CONSUMABLE consumable: true
+  description: "Stick it on, feel better. Heals 4." shape: "#" bulk: 0.1 value: 40
+  color { r: 0.95 g: 0.3 b: 0.4 a: 1 }
+  effects: [RELIC_EFFECT_HEAL] amount: 4
+}
+items {
+  id: "trauma_kit" name: "Trauma kit" kind: ITEM_KIND_CONSUMABLE consumable: true
+  description: "Field surgery in a box. Back to full HP and Stamina." shape: "##" bulk: 0.5 value: 220
+  color { r: 0.95 g: 0.2 b: 0.3 a: 1 }
+  effects: [RELIC_EFFECT_FULL_HEAL]
+}
+items {
+  id: "rations" name: "Ration bar" kind: ITEM_KIND_CONSUMABLE consumable: true
+  description: "Tastes like packing foam. Heals 2." shape: "#/#" bulk: 0.2 value: 10
+  color { r: 0.85 g: 0.65 b: 0.3 a: 1 }
+  effects: [RELIC_EFFECT_HEAL] amount: 2
+}
+items {
+  id: "ping" name: "Ping beacon" kind: ITEM_KIND_CONSUMABLE consumable: true
+  description: "One-shot sonar. Shows the nearest relic for 25 s." shape: "#" bulk: 0.2 value: 90
+  color { r: 0.2 g: 0.9 b: 1 a: 1 }
+  effects: [RELIC_EFFECT_REVEAL_NEAREST] seconds: 25
+}
+items {
+  id: "flare" name: "Survey flare" kind: ITEM_KIND_CONSUMABLE consumable: true
+  description: "Lights up the whole site: every relic for 20 s." shape: "#/#/#" bulk: 0.4 value: 160
+  color { r: 1 g: 0.55 b: 0.2 a: 1 }
+  effects: [RELIC_EFFECT_REVEAL_ALL] seconds: 20
+}
+
+# ---- gear (Equipment, next) --------------------------------------------------------------------------------
+
+items {
+  id: "sidearm" name: "Sidearm" kind: ITEM_KIND_WEAPON slot: EQUIP_SLOT_WEAPON
+  description: "Compact coil pistol. Every pilot has one." shape: "##/#." bulk: 1 value: 350
+  color { r: 0.6 g: 0.7 b: 0.8 a: 1 }
+}
+items {
+  id: "rifle" name: "Salvage rifle" kind: ITEM_KIND_WEAPON slot: EQUIP_SLOT_WEAPON
+  description: "Long, heavy, reliable." shape: "####/..#." bulk: 2.5 value: 900
+  color { r: 0.55 g: 0.6 b: 0.7 a: 1 }
+}
+items {
+  id: "cutter" name: "Plasma cutter" kind: ITEM_KIND_TOOL slot: EQUIP_SLOT_TOOL
+  description: "Opens hulls, crates and anything else in the way." shape: "###" bulk: 2 value: 600
+  color { r: 1 g: 0.45 b: 0.15 a: 1 }
+}
+items {
+  id: "multitool" name: "Multitool" kind: ITEM_KIND_TOOL slot: EQUIP_SLOT_TOOL
+  description: "Forty tools, one of which is always the right one." shape: "#/#" bulk: 0.3 value: 120
+  color { r: 0.8 g: 0.8 b: 0.3 a: 1 }
+}
+items {
+  id: "datapad" name: "Datapad" kind: ITEM_KIND_TOOL slot: EQUIP_SLOT_TOOL
+  description: "Cracked screen, cracked firmware. Talks to old locks." shape: "##" bulk: 0.3 value: 250
+  color { r: 0.3 g: 0.9 b: 0.6 a: 1 }
+}
+items {
+  id: "scanner" name: "Relic scanner" kind: ITEM_KIND_TOOL slot: EQUIP_SLOT_HANDS
+  description: "Reads age and origin off anything old." shape: "##/##" bulk: 1 value: 480
+  color { r: 0.4 g: 0.7 b: 1 a: 1 }
+}
+items {
+  id: "helmet" name: "Pressure helmet" kind: ITEM_KIND_ARMOR slot: EQUIP_SLOT_HEAD
+  description: "Keeps your head inside and the vacuum out." shape: "##/##" bulk: 1.5 value: 400
+  color { r: 0.75 g: 0.8 b: 0.9 a: 1 }
+}
+items {
+  id: "jacket" name: "Flight jacket" kind: ITEM_KIND_ARMOR slot: EQUIP_SLOT_BODY
+  description: "Armoured lining, a lot of pockets." shape: "##/##/##" bulk: 2 value: 300
+  color { r: 0.35 g: 0.45 b: 0.6 a: 1 }
+}
+items {
+  id: "rig" name: "Hauler rig" kind: ITEM_KIND_ARMOR slot: EQUIP_SLOT_BODY
+  description: "Exo-frame for lifting what you shouldn't." shape: "###/.#./###" bulk: 4 value: 1200
+  color { r: 0.9 g: 0.7 b: 0.2 a: 1 }
+}
+
+# ---- relics (what a picked-up relic takes up) ----------------------------------------------------------------
+
+items {
+  id: "relic_amulet" name: "Amulet" kind: ITEM_KIND_RELIC
+  description: "Small, old and worth a lot." shape: "#" bulk: 0.2 value: 0
+  color { r: 0.3 g: 0.85 b: 0.7 a: 1 }
+}
+items {
+  id: "relic_vase" name: "Vase" kind: ITEM_KIND_RELIC
+  description: "Fragile. Pack it carefully." shape: "#/#" bulk: 1 value: 0
+  color { r: 0.85 g: 0.55 b: 0.35 a: 1 }
+}
+items {
+  id: "relic" name: "Relic" kind: ITEM_KIND_RELIC
+  description: "Something from the freighter's hold." shape: "#" bulk: 0.5 value: 0
+  color { r: 0.7 g: 0.6 b: 0.9 a: 1 }
+}
+relic_items { relic: "amulet" item: "relic_amulet" }
+relic_items { relic: "vase" item: "relic_vase" }
+default_relic_item: "relic"
+
+# ---- starting kits (CharacterClass.id) -------------------------------------------------------------------------
+
+kits { class_id: "ace"     items: ["sidearm", "jacket", "medpatch", "medpatch", "ping"] }
+kits { class_id: "breaker" items: ["cutter", "rig", "helmet", "rations", "medpatch"] }
+kits { class_id: "hacker"  items: ["datapad", "multitool", "scanner", "ping", "ping", "medpatch"] }
+kits { class_id: "medic"   items: ["trauma_kit", "medpatch", "medpatch", "medpatch", "scanner", "rations"] }
+kits { class_id: "fixer"   items: ["sidearm", "datapad", "flare", "rations", "rations"] }

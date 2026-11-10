@@ -1205,6 +1205,322 @@ namespace LuckyNumbers.Model
             ShipSize = 0.1f,
         };
 
+        /// <summary>From <c>content/items.txtpb</c>.</summary>
+        public static readonly ItemConfig Items = new ItemConfig
+        {
+            GridWidth = 10,
+            GridHeight = 6,
+            Items =
+            {
+                new ItemDef
+                {
+                    Id = "medpatch",
+                    Name = "Med-patch",
+                    Description = "Stick it on, feel better. Heals 4.",
+                    Kind = ItemKind.Consumable,
+                    Shape = "#",
+                    Bulk = 0.1f,
+                    Value = 40,
+                    Color = new Rgba(0.95f, 0.3f, 0.4f, 1.0f),
+                    Effects =
+                    {
+                        RelicEffect.Heal,
+                    },
+                    Amount = 4.0f,
+                    Consumable = true,
+                },
+                new ItemDef
+                {
+                    Id = "trauma_kit",
+                    Name = "Trauma kit",
+                    Description = "Field surgery in a box. Back to full HP and Stamina.",
+                    Kind = ItemKind.Consumable,
+                    Shape = "##",
+                    Bulk = 0.5f,
+                    Value = 220,
+                    Color = new Rgba(0.95f, 0.2f, 0.3f, 1.0f),
+                    Effects =
+                    {
+                        RelicEffect.FullHeal,
+                    },
+                    Consumable = true,
+                },
+                new ItemDef
+                {
+                    Id = "rations",
+                    Name = "Ration bar",
+                    Description = "Tastes like packing foam. Heals 2.",
+                    Kind = ItemKind.Consumable,
+                    Shape = "#/#",
+                    Bulk = 0.2f,
+                    Value = 10,
+                    Color = new Rgba(0.85f, 0.65f, 0.3f, 1.0f),
+                    Effects =
+                    {
+                        RelicEffect.Heal,
+                    },
+                    Amount = 2.0f,
+                    Consumable = true,
+                },
+                new ItemDef
+                {
+                    Id = "ping",
+                    Name = "Ping beacon",
+                    Description = "One-shot sonar. Shows the nearest relic for 25 s.",
+                    Kind = ItemKind.Consumable,
+                    Shape = "#",
+                    Bulk = 0.2f,
+                    Value = 90,
+                    Color = new Rgba(0.2f, 0.9f, 1.0f, 1.0f),
+                    Effects =
+                    {
+                        RelicEffect.RevealNearest,
+                    },
+                    Seconds = 25.0f,
+                    Consumable = true,
+                },
+                new ItemDef
+                {
+                    Id = "flare",
+                    Name = "Survey flare",
+                    Description = "Lights up the whole site: every relic for 20 s.",
+                    Kind = ItemKind.Consumable,
+                    Shape = "#/#/#",
+                    Bulk = 0.4f,
+                    Value = 160,
+                    Color = new Rgba(1.0f, 0.55f, 0.2f, 1.0f),
+                    Effects =
+                    {
+                        RelicEffect.RevealAll,
+                    },
+                    Seconds = 20.0f,
+                    Consumable = true,
+                },
+                new ItemDef
+                {
+                    Id = "sidearm",
+                    Name = "Sidearm",
+                    Description = "Compact coil pistol. Every pilot has one.",
+                    Kind = ItemKind.Weapon,
+                    Slot = EquipSlot.Weapon,
+                    Shape = "##/#.",
+                    Bulk = 1.0f,
+                    Value = 350,
+                    Color = new Rgba(0.6f, 0.7f, 0.8f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "rifle",
+                    Name = "Salvage rifle",
+                    Description = "Long, heavy, reliable.",
+                    Kind = ItemKind.Weapon,
+                    Slot = EquipSlot.Weapon,
+                    Shape = "####/..#.",
+                    Bulk = 2.5f,
+                    Value = 900,
+                    Color = new Rgba(0.55f, 0.6f, 0.7f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "cutter",
+                    Name = "Plasma cutter",
+                    Description = "Opens hulls, crates and anything else in the way.",
+                    Kind = ItemKind.Tool,
+                    Slot = EquipSlot.Tool,
+                    Shape = "###",
+                    Bulk = 2.0f,
+                    Value = 600,
+                    Color = new Rgba(1.0f, 0.45f, 0.15f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "multitool",
+                    Name = "Multitool",
+                    Description = "Forty tools, one of which is always the right one.",
+                    Kind = ItemKind.Tool,
+                    Slot = EquipSlot.Tool,
+                    Shape = "#/#",
+                    Bulk = 0.3f,
+                    Value = 120,
+                    Color = new Rgba(0.8f, 0.8f, 0.3f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "datapad",
+                    Name = "Datapad",
+                    Description = "Cracked screen, cracked firmware. Talks to old locks.",
+                    Kind = ItemKind.Tool,
+                    Slot = EquipSlot.Tool,
+                    Shape = "##",
+                    Bulk = 0.3f,
+                    Value = 250,
+                    Color = new Rgba(0.3f, 0.9f, 0.6f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "scanner",
+                    Name = "Relic scanner",
+                    Description = "Reads age and origin off anything old.",
+                    Kind = ItemKind.Tool,
+                    Slot = EquipSlot.Hands,
+                    Shape = "##/##",
+                    Bulk = 1.0f,
+                    Value = 480,
+                    Color = new Rgba(0.4f, 0.7f, 1.0f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "helmet",
+                    Name = "Pressure helmet",
+                    Description = "Keeps your head inside and the vacuum out.",
+                    Kind = ItemKind.Armor,
+                    Slot = EquipSlot.Head,
+                    Shape = "##/##",
+                    Bulk = 1.5f,
+                    Value = 400,
+                    Color = new Rgba(0.75f, 0.8f, 0.9f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "jacket",
+                    Name = "Flight jacket",
+                    Description = "Armoured lining, a lot of pockets.",
+                    Kind = ItemKind.Armor,
+                    Slot = EquipSlot.Body,
+                    Shape = "##/##/##",
+                    Bulk = 2.0f,
+                    Value = 300,
+                    Color = new Rgba(0.35f, 0.45f, 0.6f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "rig",
+                    Name = "Hauler rig",
+                    Description = "Exo-frame for lifting what you shouldn't.",
+                    Kind = ItemKind.Armor,
+                    Slot = EquipSlot.Body,
+                    Shape = "###/.#./###",
+                    Bulk = 4.0f,
+                    Value = 1200,
+                    Color = new Rgba(0.9f, 0.7f, 0.2f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "relic_amulet",
+                    Name = "Amulet",
+                    Description = "Small, old and worth a lot.",
+                    Kind = ItemKind.Relic,
+                    Shape = "#",
+                    Bulk = 0.2f,
+                    Color = new Rgba(0.3f, 0.85f, 0.7f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "relic_vase",
+                    Name = "Vase",
+                    Description = "Fragile. Pack it carefully.",
+                    Kind = ItemKind.Relic,
+                    Shape = "#/#",
+                    Bulk = 1.0f,
+                    Color = new Rgba(0.85f, 0.55f, 0.35f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "relic",
+                    Name = "Relic",
+                    Description = "Something from the freighter's hold.",
+                    Kind = ItemKind.Relic,
+                    Shape = "#",
+                    Bulk = 0.5f,
+                    Color = new Rgba(0.7f, 0.6f, 0.9f, 1.0f),
+                },
+            },
+            Kits =
+            {
+                new StartingKit
+                {
+                    ClassId = "ace",
+                    Items =
+                    {
+                        "sidearm",
+                        "jacket",
+                        "medpatch",
+                        "medpatch",
+                        "ping",
+                    },
+                },
+                new StartingKit
+                {
+                    ClassId = "breaker",
+                    Items =
+                    {
+                        "cutter",
+                        "rig",
+                        "helmet",
+                        "rations",
+                        "medpatch",
+                    },
+                },
+                new StartingKit
+                {
+                    ClassId = "hacker",
+                    Items =
+                    {
+                        "datapad",
+                        "multitool",
+                        "scanner",
+                        "ping",
+                        "ping",
+                        "medpatch",
+                    },
+                },
+                new StartingKit
+                {
+                    ClassId = "medic",
+                    Items =
+                    {
+                        "trauma_kit",
+                        "medpatch",
+                        "medpatch",
+                        "medpatch",
+                        "scanner",
+                        "rations",
+                    },
+                },
+                new StartingKit
+                {
+                    ClassId = "fixer",
+                    Items =
+                    {
+                        "sidearm",
+                        "datapad",
+                        "flare",
+                        "rations",
+                        "rations",
+                    },
+                },
+            },
+            BulkPerStr = 0.5f,
+            OverloadPerStr = 1.0f,
+            EncumberedSpeed = 0.8f,
+            OverloadedSpeed = 0.55f,
+            RelicItems =
+            {
+                new RelicItem
+                {
+                    Relic = "amulet",
+                    Item = "relic_amulet",
+                },
+                new RelicItem
+                {
+                    Relic = "vase",
+                    Item = "relic_vase",
+                },
+            },
+            DefaultRelicItem = "relic",
+            FullPrompt = "No room in your pack for {name}",
+        };
+
         /// <summary>From <c>content/planet.txtpb</c>.</summary>
         public static readonly PlanetScene Planet = new PlanetScene
         {
