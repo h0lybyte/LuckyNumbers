@@ -55,17 +55,19 @@
     transition-duration: 0.12s;
 }
 
-.ln-button:hover {
-    color: rgb(230, 253, 255);
-    background-color: rgba(0, 229, 255, 0.18);
+/* Hover inverts (solid cyan, dark text) so the label stays crisp. Unity's default theme styles
+   .unity-button:hover:enabled / :active:enabled; match that specificity so ours wins. */
+.unity-button.ln-button:hover:enabled {
+    color: rgb(3, 10, 20);
+    background-color: rgb(0, 229, 255);
     border-color: rgb(0, 229, 255);
-    text-shadow: 0 0 8px rgba(0, 229, 255, 0.9);
+    border-left-color: rgb(255, 43, 214);
     translate: 3px 0;
 }
 
-.ln-button:active {
-    color: rgb(255, 255, 255);
-    background-color: rgba(255, 43, 214, 0.3);
+.unity-button.ln-button:active:enabled {
+    color: rgb(3, 10, 20);
+    background-color: rgb(255, 43, 214);
     border-color: rgb(255, 43, 214);
 }
 
@@ -140,7 +142,7 @@
 
 /* Unity's default theme styles .unity-button:hover:enabled; match it so ours wins. */
 .unity-button.ln-credit:hover:enabled {
-    background-color: rgba(0, 229, 255, 0.1);
+    background-color: rgba(0, 229, 255, 0.06);
     border-color: rgb(0, 229, 255);
 }
 

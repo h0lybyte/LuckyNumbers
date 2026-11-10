@@ -117,7 +117,7 @@ html, body {
   transition: opacity 120ms ease, border-color 120ms ease;
   backdrop-filter: blur(6px);
 }
-.icon-button:hover, .icon-button:focus-visible { opacity: 1; border-color: var(--neon); }
+.icon-button:hover, .icon-button:focus-visible { opacity: 1; border-color: var(--neon); background: var(--neon); color: #030a14; }
 .icon-button[hidden] { display: none; }
 
 #toolbar button:not(.icon-button) {
