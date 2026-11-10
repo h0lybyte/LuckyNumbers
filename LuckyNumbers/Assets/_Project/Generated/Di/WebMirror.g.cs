@@ -28,6 +28,7 @@ namespace LuckyNumbers.Model
     {
         public static readonly string[] States =
         {
+            "RelicInventory",
             "FlowState",
             "LoadingState",
             "MapState",
@@ -43,68 +44,94 @@ namespace LuckyNumbers.Model
         {
             var d = new CompositeDisposable();
             {
-                var s = c.Resolve<FlowState>();
-                d.Add(s.Scene.Subscribe(_ => sink.MarkState(0)));
+                var s = c.Resolve<RelicInventory>();
+                NotifyCollectionChangedEventHandler<string> hItems = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(0);
+                s.Items.CollectionChanged += hItems;
+                d.Add(Disposable.Create(() => s.Items.CollectionChanged -= hItems));
+                d.Add(s.Selected.Subscribe(_ => sink.MarkState(0)));
+                d.Add(s.Cooldown.Subscribe(_ => sink.MarkState(0)));
+                d.Add(s.Lying.Subscribe(_ => sink.MarkState(0)));
+                d.Add(s.Reveal.Subscribe(_ => sink.MarkState(0)));
                 sink.MarkState(0);
             }
             {
-                var s = c.Resolve<LoadingState>();
-                d.Add(s.Progress.Subscribe(_ => sink.MarkState(1)));
-                d.Add(s.Ready.Subscribe(_ => sink.MarkState(1)));
+                var s = c.Resolve<FlowState>();
+                d.Add(s.Scene.Subscribe(_ => sink.MarkState(1)));
                 sink.MarkState(1);
             }
             {
-                var s = c.Resolve<MapState>();
-                d.Add(s.Open.Subscribe(_ => sink.MarkState(2)));
+                var s = c.Resolve<LoadingState>();
+                d.Add(s.Progress.Subscribe(_ => sink.MarkState(2)));
+                d.Add(s.Ready.Subscribe(_ => sink.MarkState(2)));
                 sink.MarkState(2);
             }
             {
-                var s = c.Resolve<LandingSite>();
-                d.Add(s.Valid.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.Body.Subscribe(_ => sink.MarkState(3)));
+                var s = c.Resolve<MapState>();
+                d.Add(s.Open.Subscribe(_ => sink.MarkState(3)));
                 sink.MarkState(3);
             }
             {
-                var s = c.Resolve<PlayerShip>();
-                d.Add(s.Skin.Subscribe(_ => sink.MarkState(4)));
+                var s = c.Resolve<LandingSite>();
+                d.Add(s.Valid.Subscribe(_ => sink.MarkState(4)));
+                d.Add(s.Body.Subscribe(_ => sink.MarkState(4)));
                 sink.MarkState(4);
             }
             {
-                var s = c.Resolve<PlayerHealth>();
-                d.Add(s.Current.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.Max.Subscribe(_ => sink.MarkState(5)));
+                var s = c.Resolve<PlayerShip>();
+                d.Add(s.Skin.Subscribe(_ => sink.MarkState(5)));
                 sink.MarkState(5);
             }
             {
-                var s = c.Resolve<StationState>();
-                d.Add(s.Lights.Subscribe(_ => sink.MarkState(6)));
-                d.Add(s.Room.Subscribe(_ => sink.MarkState(6)));
-                d.Add(s.Call.Subscribe(_ => sink.MarkState(6)));
-                d.Add(s.Caller.Subscribe(_ => sink.MarkState(6)));
-                d.Add(s.Objective.Subscribe(_ => sink.MarkState(6)));
-                d.Add(s.Prompt.Subscribe(_ => sink.MarkState(6)));
-                d.Add(s.Psx.Subscribe(_ => sink.MarkState(6)));
-                d.Add(s.Plan.Subscribe(_ => sink.MarkState(6)));
-                d.Add(s.MapOpen.Subscribe(_ => sink.MarkState(6)));
-                d.Add(s.PlayerCol.Subscribe(_ => sink.MarkState(6)));
-                d.Add(s.PlayerRow.Subscribe(_ => sink.MarkState(6)));
-                d.Add(s.PlayerYaw.Subscribe(_ => sink.MarkState(6)));
-                d.Add(s.DockCol.Subscribe(_ => sink.MarkState(6)));
-                d.Add(s.DockRow.Subscribe(_ => sink.MarkState(6)));
-                NotifyCollectionChangedEventHandler<string> hRooms = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(6);
-                s.Rooms.CollectionChanged += hRooms;
-                d.Add(Disposable.Create(() => s.Rooms.CollectionChanged -= hRooms));
+                var s = c.Resolve<PlayerHealth>();
+                d.Add(s.Current.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.Max.Subscribe(_ => sink.MarkState(6)));
                 sink.MarkState(6);
             }
             {
-                var s = c.Resolve<DiceState>();
-                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(7);
-                s.Faces.CollectionChanged += hFaces;
-                d.Add(Disposable.Create(() => s.Faces.CollectionChanged -= hFaces));
-                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(7)));
-                d.Add(s.Seed.Subscribe(_ => sink.MarkState(7)));
+                var s = c.Resolve<StationState>();
+                d.Add(s.Lights.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Room.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Call.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Caller.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Objective.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Prompt.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Psx.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Plan.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.MapOpen.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.PlayerCol.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.PlayerRow.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.PlayerYaw.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.DockCol.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.DockRow.Subscribe(_ => sink.MarkState(7)));
+                NotifyCollectionChangedEventHandler<string> hRooms = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(7);
+                s.Rooms.CollectionChanged += hRooms;
+                d.Add(Disposable.Create(() => s.Rooms.CollectionChanged -= hRooms));
                 sink.MarkState(7);
             }
+            {
+                var s = c.Resolve<DiceState>();
+                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(8);
+                s.Faces.CollectionChanged += hFaces;
+                d.Add(Disposable.Create(() => s.Faces.CollectionChanged -= hFaces));
+                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.Seed.Subscribe(_ => sink.MarkState(8)));
+                sink.MarkState(8);
+            }
+            d.Add(c.Resolve<ISubscriber<RelicRolled>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("RelicRolled"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<DevWarpRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("DevWarpRequested"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<RelicUseRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("RelicUseRequested"), e);
+                sink.EndEvent();
+            }));
             d.Add(c.Resolve<ISubscriber<SceneChangeRequested>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("SceneChangeRequested"), e);
@@ -183,14 +210,15 @@ namespace LuckyNumbers.Model
         {
             switch (index)
             {
-                case 0: Write(b, c.Resolve<FlowState>()); break;
-                case 1: Write(b, c.Resolve<LoadingState>()); break;
-                case 2: Write(b, c.Resolve<MapState>()); break;
-                case 3: Write(b, c.Resolve<LandingSite>()); break;
-                case 4: Write(b, c.Resolve<PlayerShip>()); break;
-                case 5: Write(b, c.Resolve<PlayerHealth>()); break;
-                case 6: Write(b, c.Resolve<StationState>()); break;
-                case 7: Write(b, c.Resolve<DiceState>()); break;
+                case 0: Write(b, c.Resolve<RelicInventory>()); break;
+                case 1: Write(b, c.Resolve<FlowState>()); break;
+                case 2: Write(b, c.Resolve<LoadingState>()); break;
+                case 3: Write(b, c.Resolve<MapState>()); break;
+                case 4: Write(b, c.Resolve<LandingSite>()); break;
+                case 5: Write(b, c.Resolve<PlayerShip>()); break;
+                case 6: Write(b, c.Resolve<PlayerHealth>()); break;
+                case 7: Write(b, c.Resolve<StationState>()); break;
+                case 8: Write(b, c.Resolve<DiceState>()); break;
             }
         }
 
@@ -199,6 +227,12 @@ namespace LuckyNumbers.Model
         {
             switch (name)
             {
+                case "DevWarpRequested":
+                    c.Resolve<IPublisher<DevWarpRequested>>().Publish(new DevWarpRequested(Json.Get(o, "to") as string ?? ""));
+                    return true;
+                case "RelicUseRequested":
+                    c.Resolve<IPublisher<RelicUseRequested>>().Publish(new RelicUseRequested((int)Json.Number(Json.Get(o, "index"))));
+                    return true;
                 case "SceneChangeRequested":
                     c.Resolve<IPublisher<SceneChangeRequested>>().Publish(new SceneChangeRequested(GameSceneParse(Json.Get(o, "target"))));
                     return true;
@@ -223,6 +257,32 @@ namespace LuckyNumbers.Model
                 default:
                     return false;
             }
+        }
+
+        static void Write(StringBuilder b, RelicInventory s)
+        {
+            b.Append('{');
+            b.Append("\"items\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Items)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Str(b, x);
+                }
+            }
+            b.Append(']');
+            b.Append(",\"selected\":");
+            Json.Num(b, s.Selected.Value);
+            b.Append(",\"cooldown\":");
+            Json.Num(b, s.Cooldown.Value);
+            b.Append(",\"lying\":");
+            Json.Num(b, s.Lying.Value);
+            b.Append(",\"reveal\":");
+            Json.Str(b, s.Reveal.Value);
+            b.Append('}');
         }
 
         static void Write(StringBuilder b, FlowState s)
@@ -344,6 +404,40 @@ namespace LuckyNumbers.Model
             b.Append(s.Rolling.Value ? "true" : "false");
             b.Append(",\"seed\":");
             Json.Num(b, s.Seed.Value);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, RelicRolled e)
+        {
+            b.Append('{');
+            b.Append("\"relic\":");
+            Json.Str(b, e.Relic);
+            b.Append(",\"roll\":");
+            Json.Num(b, e.Roll);
+            b.Append(",\"bonus\":");
+            Json.Num(b, e.Bonus);
+            b.Append(",\"total\":");
+            Json.Num(b, e.Total);
+            b.Append(",\"title\":");
+            Json.Str(b, e.Title);
+            b.Append(",\"text\":");
+            Json.Str(b, e.Text);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, DevWarpRequested e)
+        {
+            b.Append('{');
+            b.Append("\"to\":");
+            Json.Str(b, e.To);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, RelicUseRequested e)
+        {
+            b.Append('{');
+            b.Append("\"index\":");
+            Json.Num(b, e.Index);
             b.Append('}');
         }
 
@@ -507,6 +601,7 @@ namespace LuckyNumbers.Model
                 case InputAction.Sprint: return "Sprint";
                 case InputAction.AnyButton: return "AnyButton";
                 case InputAction.Map: return "Map";
+                case InputAction.UseRelic: return "UseRelic";
                 default: return ((int)v).ToString(CultureInfo.InvariantCulture);
             }
         }
@@ -525,6 +620,7 @@ namespace LuckyNumbers.Model
                 case "Sprint": return InputAction.Sprint;
                 case "AnyButton": return InputAction.AnyButton;
                 case "Map": return InputAction.Map;
+                case "UseRelic": return InputAction.UseRelic;
                 default: return default;
             }
         }

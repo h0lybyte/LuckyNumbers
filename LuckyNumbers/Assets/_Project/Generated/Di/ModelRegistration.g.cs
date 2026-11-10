@@ -12,6 +12,9 @@ namespace LuckyNumbers.Model
         /// <summary>Registers a MessagePipe broker for every (ln.event) message.</summary>
         public static void RegisterModelEvents(this IContainerBuilder builder, MessagePipeOptions options)
         {
+            builder.RegisterMessageBroker<RelicRolled>(options);
+            builder.RegisterMessageBroker<DevWarpRequested>(options);
+            builder.RegisterMessageBroker<RelicUseRequested>(options);
             builder.RegisterMessageBroker<SceneChangeRequested>(options);
             builder.RegisterMessageBroker<SceneEntered>(options);
             builder.RegisterMessageBroker<UniverseSeedChanged>(options);
@@ -31,6 +34,7 @@ namespace LuckyNumbers.Model
         /// <summary>Registers every (ln.state) class as a singleton.</summary>
         public static void RegisterModelState(this IContainerBuilder builder)
         {
+            builder.Register<RelicInventory>(Lifetime.Singleton);
             builder.Register<FlowState>(Lifetime.Singleton);
             builder.Register<LoadingState>(Lifetime.Singleton);
             builder.Register<CameraHandoff>(Lifetime.Singleton);

@@ -12,6 +12,8 @@ namespace LuckyNumbers.Planet
     public interface IFirstPerson
     {
         bool Active { get; set; }
+        /// <summary>Multiplies walking and running speed (1 = normal; relics can slow you).</summary>
+        float SpeedScale { get; set; }
         /// <summary>Head yaw/pitch (degrees) the player takes over from.</summary>
         void Look(float yawDegrees, float pitchDegrees);
     }
@@ -50,6 +52,7 @@ namespace LuckyNumbers.Planet
         Vector3 _reachFrom;
 
         public bool Active { get; set; }
+        public float SpeedScale { get; set; } = 1f;
 
         public void Look(float yawDegrees, float pitchDegrees)
         {
@@ -104,7 +107,7 @@ namespace LuckyNumbers.Planet
             var grounded = body.isGrounded;
             var move = _input.Move.Value;
             var running = _input.Sprinting.Value;
-            var speed = running ? _config.SprintSpeed : _config.WalkSpeed;
+            var speed = (running ? _config.SprintSpeed : _config.WalkSpeed) * SpeedScale;
             var yawRot = Quaternion.Euler(0f, _yaw, 0f);
             var wish = yawRot * new Vector3(move.X, 0f, move.Y);
             if (wish.sqrMagnitude > 1f) wish.Normalize();

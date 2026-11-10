@@ -20,7 +20,8 @@ export type InputAction =
   | "Interact"
   | "Sprint"
   | "AnyButton"
-  | "Map";
+  | "Map"
+  | "UseRelic";
 
 export type CallPhase =
   | "None"
@@ -39,6 +40,18 @@ export type MenuAction =
   | "Play"
   | "Settings"
   | "Credits";
+
+/**
+ * What you carry (mirrored to the page's inventory strip): each item "id|name|figure|culture", the selected one,
+ * seconds until it's ready again, relics still lying out, and the bearing of a revealed relic.
+ */
+export interface RelicInventory {
+  items: string[];
+  selected: number;
+  cooldown: number;
+  lying: number;
+  reveal: string;
+}
 
 export interface FlowState {
   scene: GameScene;
@@ -106,6 +119,29 @@ export interface DiceState {
   faces: number[];
   rolling: boolean;
   seed: number;
+}
+
+/** A relic was used: the d20, your luck bonus, the total, and what it did. */
+export interface RelicRolled {
+  relic: string;
+  roll: number;
+  bonus: number;
+  total: number;
+  title: string;
+  text: string;
+}
+
+/**
+ * Dev (the page's inspector): put you on foot beside "artifact" (the nearest named one still lying out), "relic"
+ * (the nearest of any) or the "wreck". For trying things out quickly.
+ */
+export interface DevWarpRequested {
+  to: string;
+}
+
+/** The page's inventory: use (and select) item `index`. */
+export interface RelicUseRequested {
+  index: number;
 }
 
 export interface SceneChangeRequested {
@@ -176,6 +212,7 @@ export interface MenuItemSelected {
 
 /** Every (ln.web) state, by name: the page holds the latest snapshot of each. */
 export interface WebStates {
+  RelicInventory: RelicInventory;
   FlowState: FlowState;
   LoadingState: LoadingState;
   MapState: MapState;
@@ -188,6 +225,9 @@ export interface WebStates {
 
 /** Every (ln.web) event, by name: Unity -> page as they happen. */
 export interface WebEvents {
+  RelicRolled: RelicRolled;
+  DevWarpRequested: DevWarpRequested;
+  RelicUseRequested: RelicUseRequested;
   SceneChangeRequested: SceneChangeRequested;
   SceneEntered: SceneEntered;
   UniverseSeedChanged: UniverseSeedChanged;
@@ -205,6 +245,6 @@ export interface WebEvents {
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "SceneChangeRequested" | "InputActionPerformed" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
+export type InboundEvent = "DevWarpRequested" | "RelicUseRequested" | "SceneChangeRequested" | "InputActionPerformed" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
 
-export const STATE_NAMES = ["FlowState", "LoadingState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "StationState", "DiceState"] as const;
+export const STATE_NAMES = ["RelicInventory", "FlowState", "LoadingState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "StationState", "DiceState"] as const;

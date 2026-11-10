@@ -9,6 +9,31 @@ using R3;
 
 namespace LuckyNumbers.Model
 {
+    public enum RelicEffect
+    {
+        None = 0,
+        /// <summary>
+        /// Health back: `amount` points.
+        /// </summary>
+        Heal = 1,
+        /// <summary>
+        /// Health back to full.
+        /// </summary>
+        FullHeal = 2,
+        /// <summary>
+        /// You move at `amount` of your speed for `seconds`.
+        /// </summary>
+        Slow = 3,
+        /// <summary>
+        /// A beam over the nearest relic still lying out, and its bearing on the HUD, for `seconds`.
+        /// </summary>
+        RevealNearest = 4,
+        /// <summary>
+        /// Beams over every relic still lying out, for `seconds`.
+        /// </summary>
+        RevealAll = 5,
+    }
+
     /// <summary>
     /// The museum freighter and its cargo of relics, all generated from the lucky number (Cargo.Manifest).
     /// </summary>
@@ -26,9 +51,151 @@ namespace LuckyNumbers.Model
         public int MaxRelics { get; set; }
         public List<RelicCulture> Cultures { get; } = new List<RelicCulture>();
         public List<RelicKind> Kinds { get; } = new List<RelicKind>();
+        /// <summary>
+        /// Named artifacts: always aboard, first in the hold (each its own file: content/relics/&lt;id&gt;.txtpb).
+        /// </summary>
+        public List<RelicArtifact> Artifacts { get; } = new List<RelicArtifact>();
+        /// <summary>
+        /// Your luck die (the title's dice) adds up to this to every relic roll.
+        /// </summary>
+        public int LuckBonus { get; set; }
+        /// <summary>
+        /// At the crash site the relics lie scattered this far (metres) from the wreck; E picks one up from this close.
+        /// </summary>
+        public float ScatterMin { get; set; }
+        public float ScatterMax { get; set; }
+        public float PickupDistance { get; set; }
+        /// <summary>
+        /// Prompts ({name}): picking up, and using what you carry.
+        /// </summary>
+        public string PickupPrompt { get; set; }
+        public string UsePrompt { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public CargoConfig Clone() => (CargoConfig)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// A named artifact: a real figure's relic, with a d20 table for what happens when you use it.
+    /// </summary>
+    public sealed class RelicArtifact
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        /// <summary>
+        /// Who it belonged to, when, and a line about them (shown when you pick it up).
+        /// </summary>
+        public string Figure { get; set; }
+        public string Era { get; set; }
+        public string Lore { get; set; }
+        /// <summary>
+        /// RelicCulture.id and RelicKind.id: its look and place in the manifest.
+        /// </summary>
+        public string Culture { get; set; }
+        public string Kind { get; set; }
+        public int Value { get; set; }
+        public Rgba ColorA { get; set; }
+        public Rgba ColorB { get; set; }
+        /// <summary>
+        /// Seconds before it can be used again.
+        /// </summary>
+        public float CooldownSeconds { get; set; }
+        /// <summary>
+        /// What a d20 roll does: the first row whose range holds the total (a natural 1 is always row 1's).
+        /// </summary>
+        public List<RelicRoll> Rolls { get; } = new List<RelicRoll>();
+        /// <summary>
+        /// Its own model (file name in Art/Models/Relics, built into the scene); empty: the kind's generic shape.
+        /// </summary>
+        public string Model { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public RelicArtifact Clone() => (RelicArtifact)MemberwiseClone();
+    }
+
+    public sealed class RelicRoll
+    {
+        public int Min { get; set; }
+        public int Max { get; set; }
+        public string Title { get; set; }
+        public string Text { get; set; }
+        public List<RelicEffect> Effects { get; } = new List<RelicEffect>();
+        public float Amount { get; set; }
+        public float Seconds { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public RelicRoll Clone() => (RelicRoll)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// What you carry (mirrored to the page's inventory strip): each item "id|name|figure|culture", the selected one,
+    /// seconds until it's ready again, relics still lying out, and the bearing of a revealed relic.
+    /// </summary>
+    public sealed class RelicInventory : IDisposable
+    {
+        public readonly ObservableList<string> Items = new ObservableList<string>();
+        public readonly ReactiveProperty<int> Selected = new ReactiveProperty<int>();
+        public readonly ReactiveProperty<float> Cooldown = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<int> Lying = new ReactiveProperty<int>();
+        public readonly ReactiveProperty<string> Reveal = new ReactiveProperty<string>();
+
+        public void Dispose()
+        {
+            Selected.Dispose();
+            Cooldown.Dispose();
+            Lying.Dispose();
+            Reveal.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// A relic was used: the d20, your luck bonus, the total, and what it did.
+    /// </summary>
+    public readonly struct RelicRolled
+    {
+        public readonly string Relic;
+        public readonly int Roll;
+        public readonly int Bonus;
+        public readonly int Total;
+        public readonly string Title;
+        public readonly string Text;
+
+        public RelicRolled(string relic, int roll, int bonus, int total, string title, string text)
+        {
+            Relic = relic;
+            Roll = roll;
+            Bonus = bonus;
+            Total = total;
+            Title = title;
+            Text = text;
+        }
+    }
+
+    /// <summary>
+    /// Dev (the page's inspector): put you on foot beside "artifact" (the nearest named one still lying out), "relic"
+    /// (the nearest of any) or the "wreck". For trying things out quickly.
+    /// </summary>
+    public readonly struct DevWarpRequested
+    {
+        public readonly string To;
+
+        public DevWarpRequested(string to)
+        {
+            To = to;
+        }
+    }
+
+    /// <summary>
+    /// The page's inventory: use (and select) item `index`.
+    /// </summary>
+    public readonly struct RelicUseRequested
+    {
+        public readonly int Index;
+
+        public RelicUseRequested(int index)
+        {
+            Index = index;
+        }
     }
 
     /// <summary>

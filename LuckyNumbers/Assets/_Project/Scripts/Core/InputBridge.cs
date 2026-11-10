@@ -26,6 +26,7 @@ namespace LuckyNumbers.Core
             ("Player/Interact", ModelInputAction.Interact),
             ("Player/Sprint", ModelInputAction.Sprint),
             ("Player/Map", ModelInputAction.Map),
+            ("Player/UseRelic", ModelInputAction.UseRelic),
         };
 
         readonly IPublisher<InputActionPerformed> _publisher;

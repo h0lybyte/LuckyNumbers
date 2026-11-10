@@ -99,6 +99,28 @@ namespace LuckyNumbers.Model
                     ColorA = new Rgba(0.2f, 0.95f, 0.75f, 1.0f),
                     ColorB = new Rgba(0.55f, 0.2f, 0.95f, 1.0f),
                 },
+                new RelicCulture
+                {
+                    Id = "han",
+                    Name = "Han Chinese",
+                    Materials =
+                    {
+                        "jade",
+                        "bronze",
+                        "lacquered bronze",
+                        "celadon",
+                    },
+                    Origins =
+                    {
+                        "a Luoyang observatory",
+                        "a Nanyang tomb",
+                        "the Han imperial archive",
+                    },
+                    Weight = 0.8f,
+                    ValueScale = 1.6f,
+                    ColorA = new Rgba(0.18f, 0.62f, 0.52f, 1.0f),
+                    ColorB = new Rgba(0.72f, 0.52f, 0.25f, 1.0f),
+                },
             },
             Kinds =
             {
@@ -117,6 +139,95 @@ namespace LuckyNumbers.Model
                     ValueMax = 1500.0f,
                 },
             },
+            Artifacts =
+            {
+                new RelicArtifact
+                {
+                    Id = "zhang_heng_water_amulet",
+                    Name = "Water Amulet",
+                    Figure = "Zhang Heng",
+                    Era = "Eastern Han, 2nd century CE",
+                    Lore = "Jade carved for Zhang Heng, whose water-driven sphere turned with the heavens and whose bronze dragons pointed the way to distant quakes.",
+                    Culture = "han",
+                    Kind = "amulet",
+                    Value = 4800,
+                    ColorA = new Rgba(0.18f, 0.62f, 0.52f, 1.0f),
+                    ColorB = new Rgba(0.35f, 0.75f, 0.95f, 1.0f),
+                    CooldownSeconds = 12.0f,
+                    Rolls =
+                    {
+                        new RelicRoll
+                        {
+                            Min = 1,
+                            Max = 1,
+                            Title = "Flood",
+                            Text = "Water bursts from the jade and soaks you through. You slog on, slowed.",
+                            Effects =
+                            {
+                                RelicEffect.Slow,
+                            },
+                            Amount = 0.5f,
+                            Seconds = 8.0f,
+                        },
+                        new RelicRoll
+                        {
+                            Min = 2,
+                            Max = 7,
+                            Title = "Trickle",
+                            Text = "A cool trickle runs over your hands. A little strength comes back.",
+                            Effects =
+                            {
+                                RelicEffect.Heal,
+                            },
+                            Amount = 10.0f,
+                        },
+                        new RelicRoll
+                        {
+                            Min = 8,
+                            Max = 14,
+                            Title = "Spring",
+                            Text = "A clear spring wells up from the amulet. You feel much better.",
+                            Effects =
+                            {
+                                RelicEffect.Heal,
+                            },
+                            Amount = 35.0f,
+                        },
+                        new RelicRoll
+                        {
+                            Min = 15,
+                            Max = 19,
+                            Title = "Dragon's Pearl",
+                            Text = "A bronze dragon's pearl drops and rolls, pointing to the nearest relic.",
+                            Effects =
+                            {
+                                RelicEffect.RevealNearest,
+                            },
+                            Seconds = 25.0f,
+                        },
+                        new RelicRoll
+                        {
+                            Min = 20,
+                            Max = 20,
+                            Title = "Heavenly Tide",
+                            Text = "The sky turns like Zhang Heng's sphere: you are whole again, and every relic shines.",
+                            Effects =
+                            {
+                                RelicEffect.FullHeal,
+                                RelicEffect.RevealAll,
+                            },
+                            Seconds = 30.0f,
+                        },
+                    },
+                    Model = "water_amulet",
+                },
+            },
+            LuckBonus = 3,
+            ScatterMin = 10.0f,
+            ScatterMax = 34.0f,
+            PickupDistance = 2.2f,
+            PickupPrompt = "E: pick up the {name}",
+            UsePrompt = "R: use the {name}",
         };
 
         /// <summary>From <c>content/credits.txtpb</c>.</summary>
@@ -152,6 +263,17 @@ namespace LuckyNumbers.Model
                             Url = "https://retrovandal.itch.io/low-poly-space-ship-pack",
                             Notes = "From a 2005 3D Game Resources skinning competition. Skins (named after their authors): IdolKnight (1st), Krulspeld (2nd), Kaos Kiwi (3rd), Lordshadow (4th), Wilko, Cinfa, Crono782, Cubik, Freelancer, Jodomatis, NMT3000, Psychic Parrot, Robin, Shadee, Snaz, Thor and Psionic.",
                             Path = "LuckyNumbers/Assets/_Project/Art/Models/Fighter/README-psionic.txt",
+                        },
+                        new Credit
+                        {
+                            What = "Water Amulet (Zhang Heng's relic)",
+                            Title = "Amulet (Blend Swap #80554)",
+                            Author = "Blend Swap author (name to confirm)",
+                            License = "CC BY 3.0",
+                            Url = "https://www.blendswap.com/blends/view/80554",
+                            LicenseUrl = "https://creativecommons.org/licenses/by/3.0/",
+                            Notes = "Changes: exported low-poly (chain subdivision off), modifiers baked, recoloured with the relic shader (tools/blender/export_relic.py).",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Models/Relics/LICENSE-blendswap-80554.html",
                         },
                         new Credit
                         {

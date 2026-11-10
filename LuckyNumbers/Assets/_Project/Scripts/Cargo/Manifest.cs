@@ -12,8 +12,10 @@ namespace LuckyNumbers.Cargo
         public string Material, Origin;
         public int Value;
         public uint Seed;
-        /// <summary>"gilded copper Tibetan amulet".</summary>
-        public string Name => $"{Material} {Culture.Name} {Kind.Name}";
+        /// <summary>A named artifact (content/relics): its own name, figure, lore and d20 table. Null: procedural.</summary>
+        public RelicArtifact Artifact;
+        /// <summary>"gilded copper Tibetan amulet", or an artifact's own name ("Water Amulet").</summary>
+        public string Name => Artifact != null ? Artifact.Name : $"{Material} {Culture.Name} {Kind.Name}";
     }
 
     /// <summary>
@@ -35,6 +37,16 @@ namespace LuckyNumbers.Cargo
             m.Museum = Pick(config.Museums, ref rng) ?? "Galactic Museum";
             var total = 0f;
             foreach (var c in config.Cultures) total += math.max(0f, c.Weight);
+            // Named artifacts first: always aboard.
+            foreach (var a in config.Artifacts)
+            {
+                var culture = config.Cultures.Find(c => c.Id == a.Culture) ?? (config.Cultures.Count > 0 ? config.Cultures[0] : null);
+                var kind = config.Kinds.Find(k => k.Id == a.Kind) ?? (config.Kinds.Count > 0 ? config.Kinds[0] : null);
+                if (culture == null || kind == null) continue;
+                m.Relics.Add(new Relic { Culture = culture, Kind = kind, Material = "", Origin = a.Figure, Value = a.Value,
+                                         Seed = rng.NextUInt() | 1u, Artifact = a });
+                m.TotalValue += a.Value;
+            }
             var count = rng.NextInt(math.max(1, config.MinRelics), math.max(config.MinRelics, config.MaxRelics) + 1);
             for (var i = 0; i < count && total > 0f && config.Kinds.Count > 0; i++)
             {

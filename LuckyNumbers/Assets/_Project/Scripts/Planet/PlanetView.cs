@@ -16,6 +16,10 @@ namespace LuckyNumbers.Planet
         [SerializeField] LuckyNumbers.Intro.ShipView fighter;  // your ship
         [SerializeField] Camera flightCamera;                 // chase camera while you fly (off otherwise)
         [SerializeField] Transform wreckBeacon;               // unlit beam marking the wreck while you fly in (off otherwise)
+        [SerializeField] Transform amuletTemplate;            // relic shapes (off): copied per relic at the crash site
+        [SerializeField] Transform vaseTemplate;
+        [SerializeField] Transform relicBeamTemplate;         // thin beam over a revealed relic
+        [SerializeField] Transform[] artifactModels = System.Array.Empty<Transform>();   // named artifacts' own models (off), by name
         [SerializeField] Transform landingPad;                // ring on the ground where to land (flight assist; off otherwise)
 
         [Ui("flash")] VisualElement _flash;
@@ -34,6 +38,17 @@ namespace LuckyNumbers.Planet
         public LuckyNumbers.Intro.ShipView Fighter => fighter;
         public Camera FlightCamera => flightCamera;
         public Transform WreckBeacon => wreckBeacon;
+        public Transform AmuletTemplate => amuletTemplate;
+        public Transform VaseTemplate => vaseTemplate;
+        public Transform RelicBeamTemplate => relicBeamTemplate;
+
+        /// <summary>A named artifact's model template by name (RelicArtifact.model), or null.</summary>
+        public Transform ArtifactModel(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return null;
+            foreach (var t in artifactModels) if (t != null && t.name == name) return t;
+            return null;
+        }
         public Transform LandingPad => landingPad;
 
         /// <summary>Flight HUD: readout line (null = hide the HUD) and a big centred message (null = none).</summary>

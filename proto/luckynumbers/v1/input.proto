@@ -20,6 +20,8 @@ enum InputAction {
   INPUT_ACTION_ANY_BUTTON = 7;
   // Open/close the planet map.
   INPUT_ACTION_MAP = 8;
+  // Use the relic you're holding (R).
+  INPUT_ACTION_USE_RELIC = 9;
 }
 
 // Continuous axes, sampled every frame.

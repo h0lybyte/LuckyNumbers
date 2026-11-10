@@ -29,6 +29,10 @@ namespace LuckyNumbers.Model
         /// Open/close the planet map.
         /// </summary>
         Map = 8,
+        /// <summary>
+        /// Use the relic you're holding (R).
+        /// </summary>
+        UseRelic = 9,
     }
 
     /// <summary>

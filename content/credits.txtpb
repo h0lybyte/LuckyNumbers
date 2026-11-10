@@ -28,6 +28,16 @@ sections {
     path: "LuckyNumbers/Assets/_Project/Art/Models/Fighter/README-psionic.txt"
   }
   credits {
+    what: "Water Amulet (Zhang Heng's relic)"
+    title: "Amulet (Blend Swap #80554)"
+    author: "Blend Swap author (name to confirm)"
+    license: "CC BY 3.0"
+    url: "https://www.blendswap.com/blends/view/80554"
+    license_url: "https://creativecommons.org/licenses/by/3.0/"
+    notes: "Changes: exported low-poly (chain subdivision off), modifiers baked, recoloured with the relic shader (tools/blender/export_relic.py)."
+    path: "LuckyNumbers/Assets/_Project/Art/Models/Relics/LICENSE-blendswap-80554.html"
+  }
+  credits {
     what: "Space station corridors and rooms (cream panels, leaning walls, ribs, portholes, doorways, deck)"
     title: "PSX Starship Kit Free"
     author: "heyheythere"

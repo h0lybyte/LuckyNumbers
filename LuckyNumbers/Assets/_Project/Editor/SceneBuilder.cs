@@ -181,8 +181,47 @@ namespace LuckyNumbers.Editor
             pad.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             pad.transform.localScale = new Vector3(14f, 0.04f, 14f);   // a 14 m disc, flat on the ground
             pad.SetActive(false);
+            // Relic shapes (copied per relic at the crash site, coloured per relic): an amulet (a jade disc on a cord
+            // ring) and a vase (round body, neck, lip). No colliders: you pick them up by walking close.
+            var relicMat = MaterialAsset("Relic", "LuckyNumbers/Relic");
+            var relicRoot = new GameObject("RelicTemplates").transform;
+            Transform Part(Transform parent, PrimitiveType type, Vector3 position, Vector3 scale, Vector3 euler = default)
+            {
+                var go = GameObject.CreatePrimitive(type);
+                Object.DestroyImmediate(go.GetComponent<Collider>());
+                go.transform.SetParent(parent, false);
+                go.transform.localPosition = position;
+                go.transform.localScale = scale;
+                go.transform.localEulerAngles = euler;
+                var r = go.GetComponent<MeshRenderer>();
+                r.sharedMaterial = relicMat;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                return go.transform;
+            }
+            var amulet = new GameObject("Amulet").transform;
+            amulet.SetParent(relicRoot, false);
+            Part(amulet, PrimitiveType.Cylinder, Vector3.zero, new Vector3(0.34f, 0.025f, 0.34f), new Vector3(90f, 0f, 0f));      // the disc
+            Part(amulet, PrimitiveType.Cylinder, new Vector3(0f, 0f, 0.012f), new Vector3(0.12f, 0.02f, 0.12f), new Vector3(90f, 0f, 0f)); // boss
+            Part(amulet, PrimitiveType.Sphere, new Vector3(0f, 0.2f, 0f), new Vector3(0.06f, 0.06f, 0.06f));                   // cord bead
+            var vase = new GameObject("Vase").transform;
+            vase.SetParent(relicRoot, false);
+            Part(vase, PrimitiveType.Sphere, new Vector3(0f, 0.2f, 0f), new Vector3(0.38f, 0.42f, 0.38f));                      // body
+            Part(vase, PrimitiveType.Cylinder, new Vector3(0f, 0.46f, 0f), new Vector3(0.14f, 0.1f, 0.14f));                    // neck
+            Part(vase, PrimitiveType.Cylinder, new Vector3(0f, 0.57f, 0f), new Vector3(0.22f, 0.02f, 0.22f));                   // lip
+            var relicBeam = Part(relicRoot, PrimitiveType.Cylinder, Vector3.zero, new Vector3(0.18f, 30f, 0.18f));              // 60 m tall
+            relicBeam.name = "RelicBeam";
+            relicBeam.GetComponent<MeshRenderer>().sharedMaterial = beaconMat;
+            amulet.gameObject.SetActive(false);
+            vase.gameObject.SetActive(false);
+            relicBeam.gameObject.SetActive(false);
+            var artifacts = new[] { ArtifactModel(relicRoot, "water_amulet", 3f) };
             Assign(view, ("wreck", wreck), ("fighter", fighter), ("flightCamera", flightCam), ("wreckBeacon", beam.transform),
-                   ("landingPad", pad.transform));
+                   ("landingPad", pad.transform), ("amuletTemplate", amulet), ("vaseTemplate", vase), ("relicBeamTemplate", relicBeam));
+            var vso = new SerializedObject(view);
+            var models = vso.FindProperty("artifactModels");
+            models.arraySize = artifacts.Length;
+            for (var i = 0; i < artifacts.Length; i++) models.GetArrayElementAtIndex(i).objectReferenceValue = artifacts[i];
+            vso.ApplyModifiedPropertiesWithoutUndo();
             Scopes<PlanetScope>();
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Planet.unity");
         }
@@ -368,6 +407,46 @@ namespace LuckyNumbers.Editor
                 });
             }
             return list.ToArray();
+        }
+
+        const string RelicsDir = "Assets/_Project/Art/Models/Relics";
+
+        /// <summary>
+        /// A named artifact's own model (Art/Models/Relics/{name}.fbx), off, under `parent`: its parts get relic
+        /// materials by sub-mesh order: gold metal, the main gem in water blue, the crest gem pale; chains gold.
+        /// Scaled up so a 13 cm amulet reads on the ground.
+        /// </summary>
+        static Transform ArtifactModel(Transform parent, string name, float scale)
+        {
+            var fbx = AssetDatabase.LoadAssetAtPath<GameObject>($"{RelicsDir}/{name}.fbx")
+                      ?? throw new System.Exception($"{name}.fbx missing in {RelicsDir}");
+            Material Mat(string asset, Color a, Color b, float glow)
+            {
+                var m = MaterialAsset(asset, "LuckyNumbers/Relic");
+                m.SetColor("_ColorA", a);
+                m.SetColor("_ColorB", b);
+                m.SetFloat("_Glow", glow);
+                EditorUtility.SetDirty(m);
+                return m;
+            }
+            var gold = Mat("RelicGold", new Color(0.62f, 0.44f, 0.12f), new Color(0.95f, 0.78f, 0.35f), 0.35f);
+            var gem = Mat("RelicWaterGem", new Color(0.08f, 0.32f, 0.62f), new Color(0.35f, 0.78f, 0.98f), 1.2f);
+            var crest = Mat("RelicCrestGem", new Color(0.55f, 0.85f, 0.9f), new Color(0.9f, 1f, 1f), 0.9f);
+            var root = new GameObject(name).transform;
+            root.SetParent(parent, false);
+            var model = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
+            model.transform.SetParent(root, false);
+            model.transform.localScale = Vector3.one * scale;
+            foreach (var r in model.GetComponentsInChildren<MeshRenderer>())
+            {
+                var count = r.GetComponent<MeshFilter>().sharedMesh.subMeshCount;
+                var mats = new Material[count];
+                for (var i = 0; i < count; i++) mats[i] = count == 1 ? gold : i == 0 ? gold : i == 1 ? gem : crest;
+                r.sharedMaterials = mats;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            root.gameObject.SetActive(false);
+            return root;
         }
 
         const string FighterDir = "Assets/_Project/Art/Models/Fighter";

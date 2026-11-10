@@ -18,6 +18,103 @@ message CargoConfig {
   int32 max_relics = 4;
   repeated RelicCulture cultures = 5;
   repeated RelicKind kinds = 6;
+  // Named artifacts: always aboard, first in the hold (each its own file: content/relics/<id>.txtpb).
+  repeated RelicArtifact artifacts = 7;
+  repeated string artifact_refs = 8 [(ln.ref) = "artifacts"];
+  // Your luck die (the title's dice) adds up to this to every relic roll.
+  int32 luck_bonus = 9;
+  // At the crash site the relics lie scattered this far (metres) from the wreck; E picks one up from this close.
+  float scatter_min = 10;
+  float scatter_max = 11;
+  float pickup_distance = 12;
+  // Prompts ({name}): picking up, and using what you carry.
+  string pickup_prompt = 13;
+  string use_prompt = 14;
+}
+
+// A named artifact: a real figure's relic, with a d20 table for what happens when you use it.
+message RelicArtifact {
+  string id = 1;
+  string name = 2;
+  // Who it belonged to, when, and a line about them (shown when you pick it up).
+  string figure = 3;
+  string era = 4;
+  string lore = 5;
+  // RelicCulture.id and RelicKind.id: its look and place in the manifest.
+  string culture = 6;
+  string kind = 7;
+  int32 value = 8;
+  Rgba color_a = 9;
+  Rgba color_b = 10;
+  // Seconds before it can be used again.
+  float cooldown_seconds = 11;
+  // What a d20 roll does: the first row whose range holds the total (a natural 1 is always row 1's).
+  repeated RelicRoll rolls = 12;
+  // Its own model (file name in Art/Models/Relics, built into the scene); empty: the kind's generic shape.
+  string model = 13;
+}
+
+enum RelicEffect {
+  RELIC_EFFECT_NONE = 0;
+  // Health back: `amount` points.
+  RELIC_EFFECT_HEAL = 1;
+  // Health back to full.
+  RELIC_EFFECT_FULL_HEAL = 2;
+  // You move at `amount` of your speed for `seconds`.
+  RELIC_EFFECT_SLOW = 3;
+  // A beam over the nearest relic still lying out, and its bearing on the HUD, for `seconds`.
+  RELIC_EFFECT_REVEAL_NEAREST = 4;
+  // Beams over every relic still lying out, for `seconds`.
+  RELIC_EFFECT_REVEAL_ALL = 5;
+}
+
+message RelicRoll {
+  int32 min = 1;
+  int32 max = 2;
+  string title = 3;
+  string text = 4;
+  repeated RelicEffect effects = 5;
+  float amount = 6;
+  float seconds = 7;
+}
+
+// What you carry (mirrored to the page's inventory strip): each item "id|name|figure|culture", the selected one,
+// seconds until it's ready again, relics still lying out, and the bearing of a revealed relic.
+message RelicInventory {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  repeated string items = 1;
+  int32 selected = 2;
+  float cooldown = 3;
+  int32 lying = 4;
+  string reveal = 5;
+}
+
+// A relic was used: the d20, your luck bonus, the total, and what it did.
+message RelicRolled {
+  option (ln.event) = true;
+  option (ln.web) = true;
+  string relic = 1;
+  int32 roll = 2;
+  int32 bonus = 3;
+  int32 total = 4;
+  string title = 5;
+  string text = 6;
+}
+
+// Dev (the page's inspector): put you on foot beside "artifact" (the nearest named one still lying out), "relic"
+// (the nearest of any) or the "wreck". For trying things out quickly.
+message DevWarpRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  string to = 1;
+}
+
+// The page's inventory: use (and select) item `index`.
+message RelicUseRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  int32 index = 1;
 }
 
 // Where a relic comes from: its name, what it's made of, where it was found, its colours (for the relic shaders).
