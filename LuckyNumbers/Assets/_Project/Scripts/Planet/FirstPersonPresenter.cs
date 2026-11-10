@@ -16,6 +16,12 @@ namespace LuckyNumbers.Planet
         float SpeedScale { get; set; }
         /// <summary>Head yaw/pitch (degrees) the player takes over from.</summary>
         void Look(float yawDegrees, float pitchDegrees);
+        /// <summary>What the hands hold (null: nothing, or still reaching for it).</summary>
+        Rigidbody Held { get; }
+        /// <summary>Reach for and pick up this thing as if E were pressed looking at it (scripts: the range's bake run).</summary>
+        bool PickUp(Rigidbody thing);
+        /// <summary>Put down what's held, as E does.</summary>
+        void Drop();
     }
 
     /// <summary>
@@ -65,6 +71,22 @@ namespace LuckyNumbers.Planet
 
         public bool Active { get; set; }
         public float SpeedScale { get; set; } = 1f;
+
+        public Rigidbody Held => _held;
+
+        public bool PickUp(Rigidbody thing)
+        {
+            if (thing == null || _held != null || _reaching != null || _throwT >= 0f) return false;
+            _reaching = thing;
+            _reachT = 0f;
+            _crouchFor = math.clamp(_arms.ShoulderPosition(Right).y - thing.position.y - _arms.Reach(Right) * 0.8f, 0f, _config.CrouchDepth);
+            return true;
+        }
+
+        public void Drop()
+        {
+            if (_held != null && _throwT < 0f) Release(Vector3.zero);
+        }
 
         public void Look(float yawDegrees, float pitchDegrees)
         {
@@ -556,7 +578,10 @@ namespace LuckyNumbers.Planet
         void Grasp(Rigidbody rb, bool on, params int[] hands)
         {
             foreach (var c in rb.GetComponentsInChildren<MeshCollider>(true)) c.enabled = on;
-            foreach (var s in hands) _arms.SetGrasp(s, on, rb.name);
+            var gun = rb.GetComponent<WeaponView>();
+            var blade = rb.GetComponent<MeleeView>();
+            foreach (var s in hands)
+                _arms.SetGrasp(s, on, rb.name, gun != null ? gun.BakedGrip(s) : blade != null ? blade.BakedGrip(s) : null);
         }
 
         /// <summary>Tell the page (a toast) what the hands did with something: its model's name, not "Weapon x".</summary>

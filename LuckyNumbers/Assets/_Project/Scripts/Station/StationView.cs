@@ -45,6 +45,34 @@ namespace LuckyNumbers.Station
         public const float StationAtlasOffset = 320f / 2048f;
         readonly List<DoorState> _doors = new();
         readonly float[] _doorOpen = new float[MaxDoors];
+        /// <summary>Lids that sit flush on their body.</summary>
+        const float LidLift = 0.006f;
+
+        /// <summary>
+        /// The kits model some lids (the cryo pod's) flush on their body: the lid's outer face lies in the same plane as
+        /// the body's, and the two z-fight (a shimmering patch as you move). Lift each "*_lid" part a few millimetres
+        /// out along its thin axis, away from the body, so the lid always wins (like the corner posts, b6c8d79).
+        /// </summary>
+        static void LiftLids(List<(Mesh mesh, Matrix4x4 local)> list, List<string> names)
+        {
+            if (list.Count < 2) return;
+            var bodyCentre = Vector3.zero;
+            foreach (var (mesh, local) in list) bodyCentre += local.MultiplyPoint3x4(mesh.bounds.center);
+            bodyCentre /= list.Count;
+            for (var i = 0; i < list.Count; i++)
+            {
+                if (!names[i].EndsWith("_lid", StringComparison.OrdinalIgnoreCase)) continue;
+                var (mesh, local) = list[i];
+                var size = mesh.bounds.size;
+                var axis = size.x <= size.y && size.x <= size.z ? Vector3.right : size.y <= size.z ? Vector3.up : Vector3.forward;
+                // Out: the side of the lid facing away from the rest of the model.
+                var lidCentre = local.MultiplyPoint3x4(mesh.bounds.center);
+                var worldAxis = local.MultiplyVector(axis).normalized;
+                var sign = Vector3.Dot(lidCentre - bodyCentre, worldAxis) >= 0f ? 1f : -1f;
+                list[i] = (mesh, Matrix4x4.Translate(worldAxis * (sign * LidLift)) * local);
+            }
+        }
+
         static readonly int DoorOpen = Shader.PropertyToID("_LnDoorOpen");
         static readonly int Pools = Shader.PropertyToID("_Pools");
         static readonly int PoolPeriod = Shader.PropertyToID("_PoolPeriod");
@@ -105,8 +133,14 @@ namespace LuckyNumbers.Station
                 if (p.model == null) continue;
                 var root = p.model.transform.worldToLocalMatrix;
                 var list = new List<(Mesh, Matrix4x4)>();
+                var names = new List<string>();
                 foreach (var mf in p.model.GetComponentsInChildren<MeshFilter>(true))
-                    if (mf.sharedMesh != null) list.Add((mf.sharedMesh, root * mf.transform.localToWorldMatrix));
+                {
+                    if (mf.sharedMesh == null) continue;
+                    list.Add((mf.sharedMesh, root * mf.transform.localToWorldMatrix));
+                    names.Add(mf.name);
+                }
+                LiftLids(list, names);
                 parts[p.name] = list;
             }
             var lean = Mathf.Clamp01(config.RoomLean);

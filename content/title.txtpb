@@ -15,7 +15,7 @@ menu { label: "Credits" action: MENU_ACTION_CREDITS }
 # tune with a look at the title (space units, the title camera's scale).
 hangar {
   ship_length: 1.5
-  distance: 2.6
+  distance: 0   # 0: framed like the planet's chase camera, so it's the size you fly it at
   drop: -0.1
   spin_degrees_per_second: 24
   tilt_degrees: 18

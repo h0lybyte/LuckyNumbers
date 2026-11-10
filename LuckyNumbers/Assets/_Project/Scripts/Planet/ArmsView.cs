@@ -193,16 +193,69 @@ namespace LuckyNumbers.Planet
 
         /// <summary>Close a hand's fingers onto what it holds (colliders on this layer) instead of its pose's angles.</summary>
         /// <param name="key">What's held (e.g. its name): a grasp settled for it before is replayed at once.</param>
-        public void SetGrasp(int side, bool on, string key = null)
+        /// <param name="preset">A grip baked ahead of time (weapons.json): replayed from the first frame, if it's for this rig.</param>
+        public void SetGrasp(int side, bool on, string key = null, GraspData preset = null)
         {
             if (side >= 2) return;
             _grasp[side] = on;
             _palmPush[side] = 0f;
             _stable[side] = 0;
+            _onTarget[side] = 0;
             _graspKey[side] = on && key != null ? $"{key}/{side}/{(_trigger[side] ? "trigger" : "")}" : null;
+            if (_graspKey[side] != null && !Baked.ContainsKey(_graspKey[side]) && preset != null && UsePresets && side < _arms.Length)
+            {
+                var fromPreset = FromData(_arms[side], preset);
+                if (fromPreset != null)
+                {
+                    Baked[_graspKey[side]] = fromPreset;
+                    Debug.Log($"[Hands] {(side == 0 ? "left" : "right")} hand: using the baked grip of {key} from weapons.json");
+                }
+                else Debug.LogWarning($"[Hands] baked grip for {key} doesn't fit this rig (re-run tools/ln.py bake-grasps): solving it live");
+            }
             _baked[side] = _graspKey[side] != null && Baked.TryGetValue(_graspKey[side], out var b) ? b : null;
             if (_baked[side] != null) _palmPush[side] = _baked[side].Push;
         }
+
+        /// <summary>This hand's settled grip (null while it's still solving): for tools/ln.py bake-grasps.</summary>
+        public GraspData BakedGrip(int side)
+        {
+            if (side >= 2 || _baked[side] == null || side >= _arms.Length) return null;
+            var b = _baked[side];
+            var data = new GraspData { push = b.Push, touching = b.Contacts.Item1, fingers = b.Contacts.Item2 };
+            var list = new List<float>();
+            foreach (var finger in b.Joints)
+                foreach (var q in finger) { list.Add(R(q.x)); list.Add(R(q.y)); list.Add(R(q.z)); list.Add(R(q.w)); }
+            data.joints = list.Count / 4;
+            data.rotations = list.ToArray();
+            data.push = R(data.push);
+            return data;
+        }
+
+        static float R(float v) => Mathf.Round(v * 10000f) / 10000f;   // 4 decimals: under a tenth of a degree
+
+        static int JointCount(Arm arm)
+        {
+            var n = 0;
+            foreach (var f in arm.Fingers) n += f.Joints.Length;
+            return n;
+        }
+
+        static BakedGrasp FromData(Arm arm, GraspData d)
+        {
+            if (!d.Valid(JointCount(arm))) return null;
+            var baked = new BakedGrasp { Joints = new Quaternion[arm.Fingers.Length][], Push = d.push, Contacts = (d.touching, d.fingers) };
+            var k = 0;
+            for (var i = 0; i < arm.Fingers.Length; i++)
+            {
+                baked.Joints[i] = new Quaternion[arm.Fingers[i].Joints.Length];
+                for (var j = 0; j < baked.Joints[i].Length; j++, k += 4)
+                    baked.Joints[i][j] = new Quaternion(d.rotations[k], d.rotations[k + 1], d.rotations[k + 2], d.rotations[k + 3]).normalized;
+            }
+            return baked;
+        }
+
+        /// <summary>Off: ignore grips baked ahead of time and solve every one live (the range's bake run).</summary>
+        public static bool UsePresets = true;
 
         /// <summary>Forget every baked grasp (they're solved again on the next pickup).</summary>
         public static void ClearBakedGrasps() => Baked.Clear();
@@ -216,7 +269,7 @@ namespace LuckyNumbers.Planet
         static readonly Dictionary<string, BakedGrasp> Baked = new();
         readonly string[] _graspKey = new string[2];
         readonly BakedGrasp[] _baked = new BakedGrasp[2];
-        readonly int[] _stable = new int[2];
+        readonly int[] _stable = new int[2], _onTarget = new int[2];
         readonly float[] _lastPush = new float[2];
         const int SettleFrames = 15;
         readonly List<Quaternion>[] _previous = { new(), new() };   // per hand: last frame's finger rotations
@@ -326,6 +379,13 @@ namespace LuckyNumbers.Planet
                 else LastError[s] = 0f;
 
                 _posers[s].Apply(dt, _rig.PoseSpeed);
+                if (s < 2 && _grasp[s])
+                {
+                    // A gripping palm holds still: the idle clip ripples the palm bones the fingers hang from, which
+                    // moved a stored grip's fingertips off the thing (and made the live answer drift frame to frame).
+                    foreach (var f in arm.Fingers)
+                        if (f.Palm != null && _bind.TryGetValue(f.Palm, out var rest)) f.Palm.localRotation = rest;
+                }
                 if (s < 2 && _grasp[s] && _baked[s] != null)
                 {
                     // Replay: the settled answer, no physics. (Its bones still keep the other hand's fingers clear.)
@@ -337,11 +397,19 @@ namespace LuckyNumbers.Planet
                         Place(f, Mathf.Min(f.Joints.Length, _angles.Length));
                     }
                     GraspContacts[s] = baked.Contacts;
-                    if (Time.frameCount % 10 == 0)   // spot check (a few queries): does the stored answer still fit?
+                    // Spot check (a few queries) once the hand is really on its spot: fully weighted and on target for
+                    // a moment. While it's still coming up with the thing (the pickup), the stored grip just plays.
+                    _onTarget[s] = _weight[s] >= 0.999f && LastError[s] < 0.002f ? _onTarget[s] + 1 : 0;
+                    if (_onTarget[s] >= 10 && Time.frameCount % 10 == 0)
                     {
                         var inside = 0;
+                        var which = "";
                         foreach (var f in arm.Fingers)
-                            if (f.CurlAxes != null && f.Joints.Length > 0 && Hits(f, 0, Mathf.Min(f.Joints.Length, _angles.Length), 1 << gameObject.layer, fingers: false) >= 0) inside++;
+                            if (f.CurlAxes != null && f.Joints.Length > 0 && Hits(f, 0, Mathf.Min(f.Joints.Length, _angles.Length), 1 << gameObject.layer, fingers: false, tolerance: SettledTolerance) is var hb && hb >= 0)
+                            {
+                                inside++;
+                                which += $"{(which.Length > 0 ? ", " : "")}{f.Name} bone {hb}";
+                            }
                         GraspClipping[s] = inside;
                         GraspClippingMax[s] = Mathf.Max(GraspClippingMax[s], inside);
                         if (inside > 0)
@@ -350,7 +418,8 @@ namespace LuckyNumbers.Planet
                             // the stored answer no longer fits. Solve live again from here; it re-bakes once settled.
                             _baked[s] = null;
                             _stable[s] = 0;
-                            Debug.Log($"[Hands] {(s == 0 ? "left" : "right")} grasp of {_graspKey[s]?.Split('/')[0]} no longer fits: solving again");
+                            Debug.Log($"[Hands] {(s == 0 ? "left" : "right")} grasp of {_graspKey[s]?.Split('/')[0]} no longer fits ({which}; " +
+                                      $"IK error {LastError[s] * 1000f:0.0} mm, palm off {_palmPush[s] * 100f:0.0} cm): solving again");
                         }
                     }
                     continue;
@@ -361,7 +430,7 @@ namespace LuckyNumbers.Planet
                     var clipping = 0;
                     var names = "";
                     foreach (var f in arm.Fingers)
-                        if (f.CurlAxes != null && f.Joints.Length > 0 && Hits(f, 0, Mathf.Min(f.Joints.Length, _angles.Length), 1 << gameObject.layer, fingers: false) is var k && k >= 0)
+                        if (f.CurlAxes != null && f.Joints.Length > 0 && Hits(f, 0, Mathf.Min(f.Joints.Length, _angles.Length), 1 << gameObject.layer, fingers: false, tolerance: SettledTolerance) is var k && k >= 0)
                         {
                             clipping++;
                             names += $"{(names.Length > 0 ? ", " : "")}{f.Name} (bone {k})";
@@ -544,12 +613,14 @@ namespace LuckyNumbers.Planet
         }
 
         /// <summary>The first of a finger's bones (from `from`) that is in something on this layer, or -1.</summary>
-        int Hits(Finger f, int from, int n, int mask, bool fingers = true)
+        /// <param name="tolerance">Metres a bone may sink in and still count as clear: checks of a settled grip use one,
+        /// since its fingers rest exactly on the surface and the slightest rounding tips them in.</param>
+        int Hits(Finger f, int from, int n, int mask, bool fingers = true, float tolerance = 0f)
         {
             for (var k = from; k < n; k++)
             {
                 if (!Bone(f, k, out var a, out var b)) continue;
-                if (Physics.CheckCapsule(a, b, FingerRadius, mask, QueryTriggerInteraction.Ignore)) return k;
+                if (Physics.CheckCapsule(a, b, FingerRadius - tolerance, mask, QueryTriggerInteraction.Ignore)) return k;
                 if (k == 0 || !fingers) continue;   // roots: neighbouring knuckles sit this close anyway
                 foreach (var (c, d) in _placed)
                     if (SegmentDistance(a, b, c, d) < FingerGap) return k;
@@ -558,7 +629,8 @@ namespace LuckyNumbers.Planet
         }
 
         readonly List<(Vector3, Vector3)> _placed = new();
-        const float FingerGap = 0.013f;   // between two fingers' bone centrelines: about a finger's thickness
+        const float FingerGap = 0.013f;
+        const float SettledTolerance = 0.0015f;   // 1.5 mm: resting on the surface, not in it   // between two fingers' bone centrelines: about a finger's thickness
 
         /// <summary>A finger's bone k as a segment (the last runs on past its joint to the fingertip).</summary>
         static bool Bone(Finger f, int k, out Vector3 a, out Vector3 b)

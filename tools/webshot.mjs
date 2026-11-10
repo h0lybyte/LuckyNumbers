@@ -8,7 +8,8 @@
 //   [{"drag":[x1,y1,x2,y2]}, {"scroll":[x,y,notches]}, {"sleep":1}, {"shot":"a.png"}, {"click":[x,y]}, {"wait":"text"},
 //    {"fps":5}, {"key":["KeyW",2]}, {"key":["ShiftLeft+KeyW",2]}, {"js":"LN.send(...)"}]
 //   (fps: measure 5 s; key: hold for 2 s; sleep is in seconds; js: run in the page, prints the result)
-// Prints the page's console lines. Without --steps it takes one screenshot to <out.png>.
+// Prints the page's console lines (cut at 400 characters; --full keeps them whole). Without --steps it takes one
+// screenshot to <out.png>.
 import { spawn } from "node:child_process";
 import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -17,6 +18,7 @@ import { join } from "node:path";
 const [url, out, ...rest] = process.argv.slice(2);
 const opt = (name, def) => { const i = rest.indexOf(`--${name}`); return i >= 0 ? rest[i + 1] : def; };
 const waitFor = opt("wait", null);
+const full = rest.includes("--full");   // console lines whole (default: cut at 400 characters)
 const timeoutMs = Number(opt("timeout", "90")) * 1000;
 const [winW, winH] = opt("size", "1400x900").split("x").map(Number);
 const dpr = Number(opt("dpr", "1"));
@@ -53,7 +55,7 @@ ws.addEventListener("message", (ev) => {
   if (msg.method === "Runtime.consoleAPICalled") {
     const text = msg.params.args.map((a) => a.value ?? a.description ?? "").join(" ");
     consoleLines.push(text);
-    if (!/memorysetup|Content-Encoding/.test(text)) console.log(`[console.${msg.params.type}] ${text}`.slice(0, 400));
+    if (!/memorysetup|Content-Encoding/.test(text)) console.log(full ? `[console.${msg.params.type}] ${text}` : `[console.${msg.params.type}] ${text}`.slice(0, 400));
   }
   if (msg.method === "Runtime.exceptionThrown") console.log(`[exception] ${msg.params.exceptionDetails.text}`);
 });
