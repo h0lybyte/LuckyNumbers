@@ -914,6 +914,7 @@ kbd {
 }
 
 .sheet-ready {
+  margin-left: auto;
   height: 34px;
   padding: 0 22px;
   border: 1px solid var(--neon);
@@ -1060,6 +1061,45 @@ kbd {
 
 @media (max-width: 720px) {
   .pack { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---- short windows (laptop browser tabs, itch embeds): the panel compacts instead of scrolling ---- */
+
+@media (max-height: 820px) {
+  .sheet { inset: 2.5% max(var(--gap), 5%); padding: 10px 16px; }
+  .sheet-head { padding-bottom: 6px; }
+  .sheet-head h2 { font-size: 20px; margin: 0; }
+  .sheet-tabs { margin-bottom: 8px; }
+  .sheet-tabs button { height: 28px; }
+  .sheet-body { gap: 10px 20px; }
+  .sheet h3 { margin-bottom: 5px; }
+  .sheet-points { margin-bottom: 5px; }
+  /* All six abilities in one row. */
+  .ability-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+  .ability { padding: 5px 3px 4px; }
+  .ability-score { font-size: 24px; }
+  .ability-mod { font-size: 12px; }
+  .ability-roll { font-size: 9px; }
+  .ability-adjust { gap: 4px; margin-top: 4px; }
+  .ability-adjust button { min-width: 24px; height: 22px; padding: 0 6px; }
+  .sheet-vitals { gap: 7px; }
+  .sheet-blurb { margin-bottom: 8px; }
+  .sheet-skills li { padding: 2px 0; }
+  .sheet-foot { margin-top: 6px; padding-top: 6px; }
+  .sheet-ready { height: 30px; }
+  /* Six rows of the pack fit the window's height. */
+  .pack { --cell: clamp(24px, min(3.6vw, 7vh), 46px); }
+}
+
+@media (max-height: 560px) {
+  .sheet { inset: 1.5% max(var(--gap), 3%); padding: 8px 12px; }
+  .sheet-kicker, .sheet-sub { display: none; }
+  .sheet-head h2 { font-size: 17px; }
+  .sheet-tabs button { height: 26px; padding: 0 12px; }
+  .ability-score { font-size: 20px; }
+  .ability-roll { display: none; }
+  .sheet-foot > span { display: none; }
+  .pack { --cell: clamp(22px, min(3.6vw, 8.5vh), 46px); }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -2,6 +2,7 @@
 // screenshot. No dependencies (Node 22+ global WebSocket). Used by: python3 tools/ln.py webshot
 //
 //   node tools/webshot.mjs <url> <out.png> [--wait "console text"] [--timeout 90] [--steps JSON]
+//                          [--size 1400x900] [--dpr 1]   (window size, device pixel ratio: 2 = a retina screen)
 //
 // --steps: JSON list run after --wait, coordinates are fractions of the game canvas (0..1, top-left):
 //   [{"drag":[x1,y1,x2,y2]}, {"scroll":[x,y,notches]}, {"sleep":1}, {"shot":"a.png"}, {"click":[x,y]}, {"wait":"text"},
@@ -16,6 +17,8 @@ const [url, out, ...rest] = process.argv.slice(2);
 const opt = (name, def) => { const i = rest.indexOf(`--${name}`); return i >= 0 ? rest[i + 1] : def; };
 const waitFor = opt("wait", null);
 const timeoutMs = Number(opt("timeout", "90")) * 1000;
+const [winW, winH] = opt("size", "1400x900").split("x").map(Number);
+const dpr = Number(opt("dpr", "1"));
 const chrome = opt("chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome");
 const steps = JSON.parse(opt("steps", "null") ?? "null") ?? [{ sleep: 1.5 }, { shot: out }];
 if (!url || !out) { console.error("usage: webshot.mjs <url> <out.png> [--wait text] [--steps json]"); process.exit(2); }
@@ -23,7 +26,7 @@ if (!url || !out) { console.error("usage: webshot.mjs <url> <out.png> [--wait te
 const port = 9300 + Math.floor(Math.random() * 500);
 const profile = mkdtempSync(join(tmpdir(), "webshot-"));
 const proc = spawn(chrome, ["--headless=new", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
-  "--no-first-run", "--enable-unsafe-swiftshader", "--enable-unsafe-webgpu", "--window-size=1400,900",
+  "--no-first-run", "--enable-unsafe-swiftshader", "--enable-unsafe-webgpu", `--window-size=${winW},${winH}`, `--force-device-scale-factor=${dpr}`,
   "--hide-scrollbars",
   // LN_UNCAPPED=1: no vsync / frame limit, so {"fps"} shows real headroom instead of the display's 60.
   ...(process.env.LN_UNCAPPED ? ["--disable-gpu-vsync", "--disable-frame-rate-limit"] : []),
