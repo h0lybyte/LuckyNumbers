@@ -2,6 +2,10 @@
 (tube, bulb, strip), 0 elsewhere. The StationKit shader uses it to dim the lights (off) or turn them red
 (emergency) without touching the rest of the wall. RGB stays exactly as the kit shipped it.
 
+Then both are packed into one atlas (Art/Models/CombinedKit/atlas.png), so the whole station draws with one
+material: the starship kit's band (rows 0-288) stays where it is, the station kit's (rows 0-320) moves down to
+rows 320-640. StationView shifts station-kit UVs to match (StationView.StationAtlasOffset = 320 / 2048).
+
     python3 tools/kitmask.py            # rewrite both atlases' alpha from the regions below
     python3 tools/kitmask.py --preview  # also write Logs/kitmask-<kit>.png (mask in magenta over the atlas)
 
@@ -59,6 +63,24 @@ def mask(kit: str, preview: bool) -> None:
         print(f"  preview -> {out_path.relative_to(ROOT)}")
 
 
+STATION_BAND = 320   # rows of the station kit's atlas in use; also its offset in the combined atlas
+
+
+def combine() -> None:
+    ship = Image.open(MODELS / "StarshipKit" / "atlas.png").convert("RGBA")
+    station = Image.open(MODELS / "StationKit" / "atlas.png").convert("RGBA")
+    assert ship.size == station.size == (2048, 2048), "kit atlases are 2048 x 2048"
+    assert ship.getbbox() is None or ship.getchannel("R").getbbox()[3] <= STATION_BAND, "starship band overflows"
+    out = Image.new("RGBA", ship.size, (0, 0, 0, 0))
+    out.paste(ship.crop((0, 0, 2048, STATION_BAND)), (0, 0))
+    out.paste(station.crop((0, 0, 2048, STATION_BAND)), (0, STATION_BAND))
+    path = MODELS / "CombinedKit" / "atlas.png"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    out.save(path, optimize=True)
+    print(f"  combined -> {path.relative_to(ROOT)}")
+
+
 if __name__ == "__main__":
     for kit in REGIONS:
         mask(kit, "--preview" in sys.argv)
+    combine()

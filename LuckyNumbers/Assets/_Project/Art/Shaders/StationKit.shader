@@ -7,6 +7,11 @@
 // _Ambient; light texels are desaturated by _LightDesaturate, then tinted by _LightColor (rgb x a), unlit
 // by the baked shading. _Pulse (x = Hz, y = depth) pulses lights fully and surfaces at half depth.
 // StationView sets these from content/station.txtpb (on / off / emergency).
+//
+// Light pools (_Pools): surfaces a touch brighter under the room ceilings' lit rows (every _PoolPeriod m along Z),
+// only while the lamps are lit. PS1 look (global _LnPsx, toggled in game): vertices snap to a coarse screen
+// grid, textures warp affinely (screen-linear UVs: (uv*w, w) interpolated, divided per pixel; WebGL 2 has no
+// noperspective), colour drops to 15 bits with an ordered dither.
 Shader "LuckyNumbers/StationKit"
 {
     Properties
@@ -22,6 +27,8 @@ Shader "LuckyNumbers/StationKit"
         _LightDesaturate ("Light Desaturate", Range(0, 1)) = 0
         _Pulse ("Pulse (Hz, depth)", Vector) = (0, 0, 0, 0)
         _MaxLod ("Max mip (atlas tiles stay apart)", Range(0, 6)) = 3
+        _Pools ("Light pools", Range(0, 1)) = 0
+        _PoolPeriod ("Light pool period (m)", Float) = 4
     }
 
     SubShader
@@ -40,14 +47,18 @@ Shader "LuckyNumbers/StationKit"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST, _MainTex_TexelSize, _Tint, _FogColor, _Ambient, _LightColor, _Pulse;
-                float _Brightness, _FogStart, _FogEnd, _LightDesaturate, _MaxLod;
+                float _Brightness, _FogStart, _FogEnd, _LightDesaturate, _MaxLod, _Pools, _PoolPeriod;
             CBUFFER_END
+            float _LnPsx;            // global: 1 = PS1 look
+            float _LnDoorOpen[64];   // global: how open each door is (0..1, eased), indexed by uv2.x - 1
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
                 float2 uv : TEXCOORD0;
+                float2 door : TEXCOORD1;    // door leaves: (door index + 1, slide side +-1); 0 elsewhere
+                float2 slide : TEXCOORD2;   // door leaves: slide direction (world x, z)
                 float4 color : COLOR;
             };
 
@@ -57,14 +68,30 @@ Shader "LuckyNumbers/StationKit"
                 float2 uv : TEXCOORD0;
                 float4 color : COLOR;
                 float fog : TEXCOORD1;
+                float3 affine : TEXCOORD2;     // (uv * w, w): screen-linear UVs for the PS1 look
+                float3 positionWS : TEXCOORD3;
             };
 
             Varyings vert(Attributes v)
             {
                 Varyings o;
                 float3 positionWS = TransformObjectToWorld(v.positionOS.xyz);
+                // Doors are merged with the walls: their leaves slide 0.6 m apart into the wall here, not in C#.
+                if (v.door.x > 0.5)
+                {
+                    float open = _LnDoorOpen[min((int)(v.door.x - 0.5), 63)];
+                    positionWS += float3(v.slide.x, 0, v.slide.y) * (v.door.y * 0.6 * open);
+                }
                 o.positionCS = TransformWorldToHClip(positionWS);
+                if (_LnPsx > 0.5)
+                {
+                    // Wobble: snap to a 320-wide grid (scaled to the screen's aspect), like the PS1's integer vertices.
+                    float2 grid = float2(320.0, 320.0 * _ScreenParams.y / _ScreenParams.x) * 0.5;
+                    o.positionCS.xy = floor(o.positionCS.xy / o.positionCS.w * grid + 0.5) / grid * o.positionCS.w;
+                }
+                o.positionWS = positionWS;
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+                o.affine = float3(o.uv * o.positionCS.w, o.positionCS.w);
                 float3 n = TransformObjectToWorldNormal(v.normalOS);
                 // Up-facing a touch brighter, down-facing a touch darker: reads as overhead light.
                 float overhead = 0.9 + 0.12 * n.y;
@@ -91,11 +118,15 @@ Shader "LuckyNumbers/StationKit"
 
             float4 frag(Varyings i) : SV_Target
             {
-                float4 tex = SampleAtlas(i.uv);
+                float2 uv = _LnPsx > 0.5 ? i.affine.xy / i.affine.z : i.uv;
+                float4 tex = SampleAtlas(uv);
                 float3 albedo = tex.rgb;
                 float pulse = _Pulse.x > 0 ? 1.0 - _Pulse.y * (0.5 + 0.5 * sin(_Time.y * _Pulse.x * 6.2831853)) : 1.0;
 
                 float3 surface = albedo * i.color.rgb * _Tint.rgb * _Brightness * _Ambient.rgb * lerp(1.0, pulse, 0.5);
+                // Pools of light under the lit ceiling rows (rows at z = 0..2 mod period are lit: brightest at z = 1).
+                float pool = cos(6.2831853 * (i.positionWS.z - 1.0) / max(_PoolPeriod, 0.5));
+                surface *= 1.0 + _Pools * 0.22 * pool * saturate(_LightColor.a - 0.4);
                 float grey = dot(albedo, float3(0.3, 0.59, 0.11));
                 float3 lamp = lerp(albedo, grey.xxx, _LightDesaturate) * _LightColor.rgb * _LightColor.a * pulse;
                 // Unlit pieces (vertex alpha 0): their lamps are glass with the power off, whatever the mode.
@@ -104,6 +135,14 @@ Shader "LuckyNumbers/StationKit"
                 float3 color = lerp(surface, lamp, tex.a);
                 // Lit lamps cut through the fog a little (they're emitters); dark ones fog like walls.
                 color = lerp(color, _FogColor.rgb, i.fog * i.fog * (1.0 - 0.5 * tex.a * saturate(_LightColor.a - 1.0)));
+                if (_LnPsx > 0.5)
+                {
+                    // 15-bit colour (5 bits a channel) with a 4x4 ordered dither, as the PS1 output it.
+                    uint2 p = uint2(i.positionCS.xy) & 3;
+                    const float bayer[16] = { 0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5 };
+                    float dither = (bayer[p.y * 4 + p.x] + 0.5) / 16.0 - 0.5;
+                    color = floor(saturate(color) * 31.0 + 0.5 + dither) / 31.0;
+                }
                 return float4(color, 1);
             }
             ENDHLSL

@@ -9,6 +9,31 @@ using R3;
 
 namespace LuckyNumbers.Model
 {
+    public enum StationAction
+    {
+        Unspecified = 0,
+        /// <summary>
+        /// Step the lights: on -&gt; off -&gt; emergency -&gt; on.
+        /// </summary>
+        Lights = 1,
+        /// <summary>
+        /// Answer the call (while it rings).
+        /// </summary>
+        Answer = 2,
+        /// <summary>
+        /// Toggle the PS1 look.
+        /// </summary>
+        Psx = 3,
+    }
+
+    public enum CallPhase
+    {
+        None = 0,
+        Ringing = 1,
+        Active = 2,
+        Ended = 3,
+    }
+
     public enum StationLightMode
     {
         Unspecified = 0,
@@ -88,9 +113,143 @@ namespace LuckyNumbers.Model
         /// </summary>
         public int TallRoomCells { get; set; }
         public int TallLevels { get; set; }
+        /// <summary>
+        /// Room names, shown as you walk in (a cell of each room, plan coordinates: column, row from the top).
+        /// </summary>
+        public List<StationRoom> Rooms { get; } = new List<StationRoom>();
+        /// <summary>
+        /// Furniture and clutter from either kit, placed by plan coordinates (cell centres at whole numbers).
+        /// </summary>
+        public List<StationProp> Props { get; } = new List<StationProp>();
+        /// <summary>
+        /// Your ship, docked: walk up to it and press E to board (goes on to `next`).
+        /// </summary>
+        public StationDock Dock { get; set; }
+        /// <summary>
+        /// The call that comes in when you first walk into `call.room`.
+        /// </summary>
+        public StationCall Call { get; set; }
+        /// <summary>
+        /// Consoles and switches you can use with E.
+        /// </summary>
+        public List<StationSwitch> Switches { get; } = new List<StationSwitch>();
+        /// <summary>
+        /// Doors slide open when you come this close (metres).
+        /// </summary>
+        public float DoorOpenDistance { get; set; }
+        /// <summary>
+        /// Orange handrails along the corridor walls.
+        /// </summary>
+        public bool CorridorHandrails { get; set; }
+        /// <summary>
+        /// Lamp glow (bloom intensity; 0 = off) and light pools under the ceiling strips (0..1).
+        /// </summary>
+        public float Glow { get; set; }
+        public float LightPools { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public StationScene Clone() => (StationScene)MemberwiseClone();
+    }
+
+    public sealed class StationRoom
+    {
+        public string Name { get; set; }
+        public int Col { get; set; }
+        public int Row { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public StationRoom Clone() => (StationRoom)MemberwiseClone();
+    }
+
+    public sealed class StationProp
+    {
+        /// <summary>
+        /// Kit model name (file name in Art/Models/StationKit or StarshipKit), e.g. "crate_station".
+        /// </summary>
+        public string Piece { get; set; }
+        public float Col { get; set; }
+        public float Row { get; set; }
+        /// <summary>
+        /// Compass heading in degrees (0 = its front faces north).
+        /// </summary>
+        public float Yaw { get; set; }
+        /// <summary>
+        /// You bump into it (a box from its model's bounds).
+        /// </summary>
+        public bool Solid { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public StationProp Clone() => (StationProp)MemberwiseClone();
+    }
+
+    public sealed class StationDock
+    {
+        public float Col { get; set; }
+        public float Row { get; set; }
+        public float Yaw { get; set; }
+        /// <summary>
+        /// Ship length in metres.
+        /// </summary>
+        public float Length { get; set; }
+        /// <summary>
+        /// How close (metres from the hull) you need to be to board.
+        /// </summary>
+        public float BoardDistance { get; set; }
+        public string BoardPrompt { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public StationDock Clone() => (StationDock)MemberwiseClone();
+    }
+
+    public sealed class StationCallLine
+    {
+        public string Speaker { get; set; }
+        public string Text { get; set; }
+        public float Seconds { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public StationCallLine Clone() => (StationCallLine)MemberwiseClone();
+    }
+
+    public sealed class StationCall
+    {
+        /// <summary>
+        /// Room name (StationRoom.name) that sets it off.
+        /// </summary>
+        public string Room { get; set; }
+        public string Caller { get; set; }
+        /// <summary>
+        /// Prompt while it rings ({caller} works); E or the page's Answer button picks up.
+        /// </summary>
+        public string RingPrompt { get; set; }
+        /// <summary>
+        /// Lines; {planet} is the world the station orbits, {ship} / {museum} the freighter's (cargo manifest).
+        /// </summary>
+        public List<StationCallLine> Lines { get; } = new List<StationCallLine>();
+        public float CharsPerSecond { get; set; }
+        /// <summary>
+        /// What to do next, shown once the call ends.
+        /// </summary>
+        public string Objective { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public StationCall Clone() => (StationCall)MemberwiseClone();
+    }
+
+    public sealed class StationSwitch
+    {
+        public float Col { get; set; }
+        public float Row { get; set; }
+        public StationAction Action { get; set; }
+        public string Prompt { get; set; }
+        /// <summary>
+        /// Optional kit model to show there (e.g. a console: "lab_bench"), placed like a prop.
+        /// </summary>
+        public string Piece { get; set; }
+        public float Yaw { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public StationSwitch Clone() => (StationSwitch)MemberwiseClone();
     }
 
     /// <summary>
@@ -99,10 +258,69 @@ namespace LuckyNumbers.Model
     public sealed class StationState : IDisposable
     {
         public readonly ReactiveProperty<StationLightMode> Lights = new ReactiveProperty<StationLightMode>();
+        /// <summary>
+        /// The room you're in (StationRoom.name), or "" in corridors.
+        /// </summary>
+        public readonly ReactiveProperty<string> Room = new ReactiveProperty<string>();
+        public readonly ReactiveProperty<CallPhase> Call = new ReactiveProperty<CallPhase>();
+        public readonly ReactiveProperty<string> Caller = new ReactiveProperty<string>();
+        /// <summary>
+        /// What to do next ("Board your ship in the docking bay"), and the E prompt you're standing at.
+        /// </summary>
+        public readonly ReactiveProperty<string> Objective = new ReactiveProperty<string>();
+        public readonly ReactiveProperty<string> Prompt = new ReactiveProperty<string>();
+        /// <summary>
+        /// PS1 look: vertex snapping, affine textures, dither.
+        /// </summary>
+        public readonly ReactiveProperty<bool> Psx = new ReactiveProperty<bool>();
+        /// <summary>
+        /// The plan as built (rows joined with \n), for the page's layout editor.
+        /// </summary>
+        public readonly ReactiveProperty<string> Plan = new ReactiveProperty<string>();
 
         public void Dispose()
         {
             Lights.Dispose();
+            Room.Dispose();
+            Call.Dispose();
+            Caller.Dispose();
+            Objective.Dispose();
+            Prompt.Dispose();
+            Psx.Dispose();
+            Plan.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// The page (or a console) answers the ringing call.
+    /// </summary>
+    public readonly struct StationCallAnswered
+    {
+    }
+
+    /// <summary>
+    /// The page's layout editor: rebuild the station from this plan (rows joined with \n).
+    /// </summary>
+    public readonly struct StationPlanRequested
+    {
+        public readonly string Plan;
+
+        public StationPlanRequested(string plan)
+        {
+            Plan = plan;
+        }
+    }
+
+    /// <summary>
+    /// Toggle the PS1 look (the page or a console).
+    /// </summary>
+    public readonly struct PsxModeRequested
+    {
+        public readonly bool On;
+
+        public PsxModeRequested(bool on)
+        {
+            On = on;
         }
     }
 

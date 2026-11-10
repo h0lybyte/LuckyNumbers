@@ -3,6 +3,7 @@
 # The player's station, north (row 0) facing the planet it orbits. Rooms: observation gallery (north
 # windows), docking bay (west; the airlock E is your way out to the ship), central hub, comms (east),
 # three crew cabins (you start in the middle one, P), storage (south-west) and engineering (east).
+# Your ship is docked in the bay (dock below): board it to leave.
 # One character per 2 m cell; see StationScene in station.proto for the legend.
 
 plan: "###########W#W#W#W#W#W#W#W#W#W#W############"
@@ -16,7 +17,7 @@ plan: "#............#########D#####################"
 plan: "#............#####.........#####.......#####"
 plan: "#............#####.........#####.......W####"
 plan: "#............#####.........DcccD.......#####"
-plan: "#E...........DcccD.........#####.......W####"
+plan: "#............DcccD.........#####.......W####"
 plan: "#............#####.........#####.......#####"
 plan: "#............#####.........#################"
 plan: "#............#####.........#################"
@@ -47,7 +48,7 @@ orbit: ""
 orbit_diameters: 1.8
 spawn_yaw: 0
 next: GAME_SCENE_INTRO
-hint: "WASD to move - mouse to look - lights: the page's inspector (`)"
+hint: "WASD to move - mouse to look - E to use things"
 ceiling_light_every: 2
 
 # Light modes. Lights keep their painted colour when on; off, they go grey-dark and the station dims;
@@ -68,3 +69,89 @@ emergency {
   pulse_hz: 0.8
   pulse_depth: 0.55
 }
+
+door_open_distance: 2.6
+corridor_handrails: true
+glow: 0.8
+light_pools: 0.35
+
+# --- Rooms (a cell inside each; plan coordinates: column, row from the top) ---
+rooms { name: "Observation Gallery" col: 20 row: 2 }
+rooms { name: "Docking Bay" col: 5 row: 10 }
+rooms { name: "Hub" col: 22 row: 11 }
+rooms { name: "Comms" col: 35 row: 10 }
+rooms { name: "Crew Cabin A" col: 17 row: 22 }
+rooms { name: "Your Cabin" col: 23 row: 22 }
+rooms { name: "Crew Cabin C" col: 29 row: 22 }
+rooms { name: "Storage" col: 6 row: 23 }
+rooms { name: "Engineering" col: 38 row: 20 }
+
+# --- Your ship, nose north in the middle of the bay ---
+dock { col: 6.5 row: 12 yaw: 0 length: 9 board_distance: 2.5 board_prompt: "E: board your ship" }
+
+# --- The call: it comes in as you reach the hub ---
+call {
+  room: "Hub"
+  caller: "Dispatch"
+  ring_prompt: "Incoming call from {caller} - E to answer"
+  chars_per_second: 38
+  lines { speaker: "Dispatch" text: "You're up. Good. We've got a situation." seconds: 3.5 }
+  lines { speaker: "Dispatch" text: "A museum freighter, the {ship}, just sent a mayday. It's going down over {planet}." seconds: 5.5 }
+  lines { speaker: "Dispatch" text: "{museum} relics on board. Salvage rights go to whoever reaches the wreck first." seconds: 5.5 }
+  lines { speaker: "Dispatch" text: "Your ship's fuelled in the docking bay. Go." seconds: 3.5 }
+  objective: "Board your ship in the Docking Bay (west of the hub)"
+}
+
+# --- Consoles (E) ---
+switches { col: 35 row: 7.78 action: STATION_ACTION_ANSWER prompt: "E: answer the call" piece: "lab_bench" yaw: 180 }
+switches { col: 38 row: 16.78 action: STATION_ACTION_LIGHTS prompt: "E: cycle the station lights" piece: "lab_bench" yaw: 180 }
+switches { col: 40.3 row: 16.78 action: STATION_ACTION_PSX prompt: "E: toggle the retro display" piece: "lab_bench" yaw: 180 }
+
+# --- Props ---
+# Observation gallery: chairs facing the windows.
+props { piece: "chair_station" col: 13 row: 2 yaw: 0 solid: true }
+props { piece: "chair_station" col: 17 row: 2 yaw: 0 solid: true }
+props { piece: "chair_station" col: 21 row: 2 yaw: 0 solid: true }
+props { piece: "chair_station" col: 25 row: 2 yaw: 0 solid: true }
+props { piece: "chair_station" col: 29 row: 2 yaw: 0 solid: true }
+# Docking bay: cargo along the walls.
+props { piece: "crate_station" col: 1.3 row: 6.3 yaw: 0 solid: true }
+props { piece: "crate_station" col: 1.3 row: 7 yaw: 10 solid: true }
+props { piece: "crate_small" col: 1.9 row: 6.4 yaw: 25 solid: true }
+props { piece: "barrel" col: 1.3 row: 16.6 yaw: 0 solid: true }
+props { piece: "barrel" col: 1.75 row: 16.7 yaw: 40 solid: true }
+props { piece: "crate_case" col: 11.5 row: 16.6 yaw: 0 solid: true }
+props { piece: "crate_case" col: 11.5 row: 16.2 yaw: 12 solid: true }
+props { piece: "canister" col: 11.6 row: 6.4 yaw: 0 solid: true }
+# Hub: a few things in transit.
+props { piece: "crate_station" col: 18.4 row: 8.4 yaw: 5 solid: true }
+props { piece: "crate_small" col: 18.4 row: 9 yaw: 30 solid: true }
+props { piece: "canister" col: 25.6 row: 14.6 yaw: 0 solid: true }
+props { piece: "barrel" col: 25.6 row: 8.4 yaw: 0 solid: true }
+# Comms: chairs at the console.
+props { piece: "chair_station" col: 34.5 row: 9.1 yaw: 0 solid: true }
+props { piece: "chair_station" col: 35.6 row: 9.1 yaw: 10 solid: true }
+# Cabins: a cryo pod against the back wall, a chair.
+props { piece: "cryo_pod" col: 17 row: 24.25 yaw: 0 solid: true }
+props { piece: "chair_station" col: 18.6 row: 21.6 yaw: 200 solid: true }
+props { piece: "cryo_pod" col: 24 row: 24.25 yaw: 0 solid: true }
+props { piece: "chair_station" col: 22.4 row: 23.4 yaw: 160 solid: true }
+props { piece: "cryo_pod" col: 29 row: 24.25 yaw: 0 solid: true }
+props { piece: "crate_small" col: 30.6 row: 21.4 yaw: 15 solid: true }
+# Storage: stacked crates, canisters, barrels.
+props { piece: "crate_station" col: 3.3 row: 21.3 yaw: 0 solid: true }
+props { piece: "crate_station" col: 3.3 row: 21.85 yaw: 0 solid: true }
+props { piece: "crate_station" col: 3.85 row: 21.3 yaw: 5 solid: true }
+props { piece: "crate_small" col: 4.4 row: 21.3 yaw: 20 solid: true }
+props { piece: "canister" col: 8.6 row: 21.3 yaw: 0 solid: true }
+props { piece: "canister" col: 9.0 row: 21.5 yaw: 0 solid: true }
+props { piece: "canister" col: 8.8 row: 25.6 yaw: 0 solid: true }
+props { piece: "barrel" col: 3.3 row: 26.25 yaw: 0 solid: true }
+props { piece: "barrel" col: 3.8 row: 26.25 yaw: 30 solid: true }
+props { piece: "crate_case" col: 6.5 row: 26.25 yaw: 0 solid: true }
+props { piece: "crate_case" col: 7.0 row: 26.25 yaw: 8 solid: true }
+# Engineering: drums by the windows.
+props { piece: "barrel" col: 41.3 row: 25.4 yaw: 0 solid: true }
+props { piece: "barrel" col: 40.8 row: 25.6 yaw: 0 solid: true }
+props { piece: "canister" col: 36.3 row: 25.6 yaw: 0 solid: true }
+props { piece: "crate_station" col: 36.4 row: 21 yaw: 90 solid: true }

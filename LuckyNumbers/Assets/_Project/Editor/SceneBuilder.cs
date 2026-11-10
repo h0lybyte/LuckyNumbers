@@ -265,16 +265,45 @@ namespace LuckyNumbers.Editor
             Assign(view, ("document", ui));
 
             var station = new GameObject("Station").AddComponent<LuckyNumbers.Station.StationView>();
-            station.Init(KitMaterial("StationKit"), KitMaterial("StarshipKit"), MaterialAsset("StationGlass", "LuckyNumbers/StationGlass"),
+            station.Init(KitMaterial("CombinedKit"), MaterialAsset("StationGlass", "LuckyNumbers/StationGlass"),
                          KitPieces("StationKit", "StarshipKit"));
             EditorUtility.SetDirty(station);
+
+            // Your ship, docked in the bay (StationPresenter shows and poses it); solid, so you walk round it.
+            ShipRig(collide: true);
+
+            // Lamp glow: bloom on the station camera (its strength set from content by StationPresenter).
+            eyes.GetUniversalAdditionalCameraData().renderPostProcessing = true;
+            var volume = new GameObject("Glow").AddComponent<UnityEngine.Rendering.Volume>();
+            volume.isGlobal = true;
+            volume.sharedProfile = GlowProfile();
 
             Scopes<LuckyNumbers.Station.StationScope>();
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Station.unity");
         }
 
+        /// <summary>The station's bloom profile (an asset): lamps above 1.0 glow; strength comes from content.</summary>
+        static UnityEngine.Rendering.VolumeProfile GlowProfile()
+        {
+            const string path = "Assets/_Project/Settings/StationGlow.asset";
+            var profile = AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.VolumeProfile>(path);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<UnityEngine.Rendering.VolumeProfile>();
+                AssetDatabase.CreateAsset(profile, path);
+            }
+            if (!profile.TryGet<Bloom>(out var bloom)) bloom = profile.Add<Bloom>(true);
+            bloom.threshold.Override(1.02f);
+            bloom.intensity.Override(0.8f);
+            bloom.scatter.Override(0.6f);
+            bloom.highQualityFiltering.Override(false);   // cheaper on the Web
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssetIfDirty(profile);
+            return profile;
+        }
+
         /// <summary>One material per kit (its atlas, StationKit shader), saved as an asset.</summary>
-        static Material KitMaterial(string kit)
+        public static Material KitMaterial(string kit)
         {
             var mat = MaterialAsset(kit, "LuckyNumbers/StationKit");
             mat.mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>($"{KitsDir}/{kit}/atlas.png")
@@ -294,7 +323,11 @@ namespace LuckyNumbers.Editor
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
                 list.Add(new LuckyNumbers.Station.StationView.KitPiece
-                    { name = System.IO.Path.GetFileNameWithoutExtension(path), model = AssetDatabase.LoadAssetAtPath<GameObject>(path) });
+                {
+                    name = System.IO.Path.GetFileNameWithoutExtension(path),
+                    model = AssetDatabase.LoadAssetAtPath<GameObject>(path),
+                    kit = kit == "StationKit" ? 0 : 1,   // which band of the combined atlas its UVs need
+                });
             }
             return list.ToArray();
         }

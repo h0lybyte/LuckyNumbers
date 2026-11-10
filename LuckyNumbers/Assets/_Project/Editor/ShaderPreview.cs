@@ -196,8 +196,8 @@ namespace LuckyNumbers.Editor
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var view = new GameObject("Station").AddComponent<LuckyNumbers.Station.StationView>();
-            view.Init(KitMaterial("StationKit"), KitMaterial("StarshipKit"), new Material(Find("LuckyNumbers/StationGlass")),
-                      KitPieces("StationKit", "StarshipKit"));
+            view.Init(new Material(SceneBuilder.KitMaterial("CombinedKit")), new Material(Find("LuckyNumbers/StationGlass")),
+                      SceneBuilder.KitPieces("StationKit", "StarshipKit"));
 
             // Outside: the seeded sky and a planet the station orbits, north of the hangar (its windows face it),
             // lit by a sun up and to the east. The windows should show these, not the kits' painted stars.
@@ -291,26 +291,6 @@ namespace LuckyNumbers.Editor
             view.SetLights(LuckyNumbers.Model.StationLightMode.On);
             Debug.Log($"[ShaderPreview] station: {rooms.Count} rooms (largest {big[0].Count} cells), corridor run " +
                       $"{runFrom} -> {runTo}");
-        }
-
-        static Material KitMaterial(string kit)
-        {
-            var atlas = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/_Project/Art/Models/{kit}/atlas.png")
-                        ?? throw new System.Exception($"{kit}/atlas.png not imported");
-            return new Material(Find("LuckyNumbers/StationKit")) { mainTexture = atlas };
-        }
-
-        static LuckyNumbers.Station.StationView.KitPiece[] KitPieces(params string[] kits)
-        {
-            var list = new System.Collections.Generic.List<LuckyNumbers.Station.StationView.KitPiece>();
-            foreach (var kit in kits)
-            foreach (var guid in AssetDatabase.FindAssets("t:Model", new[] { $"Assets/_Project/Art/Models/{kit}" }))
-            {
-                var path = AssetDatabase.GUIDToAssetPath(guid);
-                list.Add(new LuckyNumbers.Station.StationView.KitPiece
-                    { name = Path.GetFileNameWithoutExtension(path), model = AssetDatabase.LoadAssetAtPath<GameObject>(path) });
-            }
-            return list.ToArray();
         }
 
         /// <summary>Cameras rendered into a 2 x 2 grid (each at half size), saved to Logs/.</summary>

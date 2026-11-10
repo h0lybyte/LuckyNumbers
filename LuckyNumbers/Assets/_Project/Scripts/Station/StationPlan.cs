@@ -72,6 +72,7 @@ namespace LuckyNumbers.Station
         public const string WallRoom = WallCorridor + Flat, WallRoomLights = WallCorridorLights + Flat;
         public const string PortholeRoom = Porthole + Flat;
         public const string Post = "post_ship", DoorwayShip = "wall_doorway_ship";
+        public const string Door = "door_ship", Handrail = "handrail";
 
         /// <summary>Doorway opening (wall_doorway_ship, fits door_ship: 1.2 x 2.19 m).</summary>
         const float DoorWidth = 1.2f, DoorHeight = 2.19f, WallThickness = 0.2f;
@@ -97,7 +98,7 @@ namespace LuckyNumbers.Station
         /// <param name="ceilingLightEvery">Rooms light every nth row of ceiling tiles (corridors: every tile).</param>
         /// <param name="tallRoomCells">Rooms with at least this many cells get <paramref name="tallLevels"/> storeys.</param>
         public StationPlan(IReadOnlyList<string> rows, int lightEvery, int ceilingLightEvery = 1, int tallRoomCells = 0,
-                           int tallLevels = 1)
+                           int tallLevels = 1, bool handrails = false)
         {
             _ceilingEvery = Math.Max(1, ceilingLightEvery);
             Depth = rows.Count;
@@ -163,6 +164,9 @@ namespace LuckyNumbers.Station
                     if (kind == Kind.Corridor)
                     {
                         name = next == Kind.Window ? Porthole : lit ? WallCorridorLights : WallCorridor;
+                        // The rail is modelled on the wall's centre line: bring it out to the wall's face (0.1 m in).
+                        if (handrails && next != Kind.Window)
+                            Pieces.Add(new Piece(Handrail, Kit.Starship, edge - new Vector3(dir.x, 0, dir.y) * 0.1f, turn, cell));
                     }
                     else if (levels > 1)
                     {
@@ -288,6 +292,16 @@ namespace LuckyNumbers.Station
 
         public Kind At(Vector2Int c) =>
             c.x >= 0 && c.y >= 0 && c.x < Width && c.y < Depth ? _cells[c.x, c.y] : Kind.Solid;
+
+        /// <summary>Plan coordinates (column, row from the top; whole numbers are cell centres) -> world, on the deck.</summary>
+        public Vector3 PlanToWorld(float col, float row) => new((col + 0.5f) * Cell, 0f, (Depth - 1 - row + 0.5f) * Cell);
+
+        /// <summary>The cell under a plan coordinate.</summary>
+        public Vector2Int PlanCell(float col, float row) => new(Mathf.RoundToInt(col), Depth - 1 - Mathf.RoundToInt(row));
+
+        /// <summary>Place an extra piece (props, consoles): merged with the station like the rest.</summary>
+        public void Add(string name, Kit kit, Vector3 position, Quaternion rotation) =>
+            Pieces.Add(new Piece(name, kit, position, rotation, CellOf(position)));
 
         public static Vector3 Centre(Vector2Int cell) => new((cell.x + 0.5f) * Cell, 0, (cell.y + 0.5f) * Cell);
 

@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { LN, useLNEvent, useLNReady, useLNState } from "./ln";
 import { installFreeMouseKey, usePointerLocked } from "./pointer";
+import { StationHud, StationTools } from "./station";
 import type { GameScene, InboundEvent, WebEvents } from "./ln";
 
 export function App({ dock }: { dock: HTMLElement | null }) {
@@ -24,10 +25,16 @@ export function App({ dock }: { dock: HTMLElement | null }) {
   return (
     <>
       <Hud />
+      <StationHudGate />
       <Toasts />
       {inspector && dock && createPortal(<Inspector />, dock)}
     </>
   );
+}
+
+function StationHudGate() {
+  const flow = useLNState("FlowState");
+  return flow?.scene === "Station" ? <StationHud /> : null;
 }
 
 // ---- HUD ------------------------------------------------------------------------------------------
@@ -38,6 +45,7 @@ function Hud() {
   const mapOpen = useLNState("MapState")?.open ?? false;
   const locked = usePointerLocked();
   useEffect(installFreeMouseKey, []);
+  if (flow?.scene === "Station") return <PointerHint locked={locked} />;
   if (flow?.scene !== "Planet") return null;
 
   return (
@@ -177,6 +185,13 @@ function Inspector() {
         </div>
         <SendForm />
       </section>
+
+      {LN.states.FlowState?.scene === "Station" && (
+        <section className="station-tools">
+          <h3>Station</h3>
+          <StationTools />
+        </section>
+      )}
 
       <section>
         <h3>States</h3>
