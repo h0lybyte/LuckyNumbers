@@ -1,0 +1,565 @@
+{
+  "items": [
+    {
+      "name": "rifle_block",
+      "kind": "gun",
+      "submeshes": [
+        "metal",
+        "lights"
+      ],
+      "hold": {
+        "grip": [
+          -0.0014,
+          -0.0681,
+          -0.1052
+        ],
+        "foregrip": [
+          -0.0033,
+          -0.0417,
+          0.0107
+        ],
+        "muzzle": [
+          -0.0018,
+          0.0381,
+          0.4643
+        ],
+        "offset": [
+          0.08,
+          -0.24,
+          0.38
+        ],
+        "scale": 1.0,
+        "arms_shift": [
+          0.12,
+          -0.05,
+          0.0
+        ],
+        "grip_palm": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "grip_along": [
+          0.0,
+          -0.4472,
+          0.8944
+        ],
+        "fore_palm": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "fore_along": [
+          0.4472,
+          0.0,
+          0.8944
+        ]
+      }
+    },
+    {
+      "name": "rifle_vent",
+      "kind": "gun",
+      "submeshes": [
+        "metal",
+        "darker metal",
+        "lights"
+      ],
+      "hold": {
+        "grip": [
+          -0.0004,
+          -0.0559,
+          -0.0683
+        ],
+        "foregrip": [
+          -0.0005,
+          -0.0424,
+          0.0443
+        ],
+        "muzzle": [
+          0.0003,
+          0.0521,
+          0.4907
+        ],
+        "offset": [
+          0.08,
+          -0.22,
+          0.38
+        ],
+        "scale": 0.8,
+        "arms_shift": [
+          0.12,
+          -0.05,
+          0.0
+        ],
+        "grip_palm": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "grip_along": [
+          0.0,
+          -0.4472,
+          0.8944
+        ],
+        "fore_palm": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "fore_along": [
+          0.4472,
+          0.0,
+          0.8944
+        ]
+      }
+    },
+    {
+      "name": "sniper_barrel",
+      "kind": "gun",
+      "submeshes": [
+        "metal",
+        "darker metal",
+        "lights"
+      ],
+      "hold": {
+        "grip": [
+          0.0001,
+          -0.0962,
+          -0.1741
+        ],
+        "foregrip": [
+          -0.0008,
+          -0.085,
+          -0.0532
+        ],
+        "muzzle": [
+          -0.0,
+          -0.0232,
+          0.6382
+        ],
+        "offset": [
+          0.08,
+          -0.22,
+          0.38
+        ],
+        "scale": 0.75,
+        "arms_shift": [
+          0.12,
+          -0.05,
+          0.0
+        ],
+        "grip_palm": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "grip_along": [
+          0.0,
+          -0.4472,
+          0.8944
+        ],
+        "fore_palm": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "fore_along": [
+          0.4472,
+          0.0,
+          0.8944
+        ]
+      }
+    },
+    {
+      "name": "sniper",
+      "kind": "gun",
+      "submeshes": [
+        "metal",
+        "darker metal",
+        "lights"
+      ],
+      "hold": {
+        "grip": [
+          0.0007,
+          -0.0593,
+          -0.1344
+        ],
+        "foregrip": [
+          -0.0006,
+          -0.0172,
+          0.0946
+        ],
+        "muzzle": [
+          -0.0,
+          0.0061,
+          0.5904
+        ],
+        "offset": [
+          0.08,
+          -0.2,
+          0.32
+        ],
+        "scale": 0.65,
+        "arms_shift": [
+          0.12,
+          0.0,
+          0.0
+        ],
+        "grip_palm": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "grip_along": [
+          0.0,
+          -0.4472,
+          0.8944
+        ],
+        "fore_palm": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "fore_along": [
+          0.4472,
+          0.0,
+          0.8944
+        ]
+      }
+    },
+    {
+      "name": "sniper_long",
+      "kind": "gun",
+      "submeshes": [
+        "metal",
+        "darker metal",
+        "lights"
+      ],
+      "hold": {
+        "grip": [
+          0.0,
+          -0.0978,
+          -0.1765
+        ],
+        "foregrip": [
+          0.0004,
+          -0.0947,
+          -0.0036
+        ],
+        "muzzle": [
+          -0.0,
+          -0.024,
+          0.6586
+        ],
+        "offset": [
+          0.08,
+          -0.22,
+          0.38
+        ],
+        "scale": 0.7,
+        "arms_shift": [
+          0.12,
+          -0.05,
+          0.0
+        ],
+        "grip_palm": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "grip_along": [
+          0.0,
+          -0.4472,
+          0.8944
+        ],
+        "fore_palm": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "fore_along": [
+          0.4472,
+          0.0,
+          0.8944
+        ]
+      }
+    },
+    {
+      "name": "rifle_grip",
+      "kind": "gun",
+      "submeshes": [
+        "metal",
+        "lights"
+      ],
+      "hold": {
+        "grip": [
+          -0.0,
+          -0.0572,
+          -0.1295
+        ],
+        "foregrip": [
+          0.0001,
+          -0.0426,
+          -0.0071
+        ],
+        "muzzle": [
+          -0.0,
+          0.071,
+          0.5021
+        ],
+        "offset": [
+          0.08,
+          -0.26,
+          0.36
+        ],
+        "scale": 0.9,
+        "arms_shift": [
+          0.12,
+          -0.05,
+          0.0
+        ],
+        "grip_palm": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "grip_along": [
+          0.0,
+          -0.4472,
+          0.8944
+        ],
+        "fore_palm": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "fore_along": [
+          0.4472,
+          0.0,
+          0.8944
+        ]
+      }
+    },
+    {
+      "name": "carbine",
+      "kind": "gun",
+      "submeshes": [
+        "metal",
+        "lights"
+      ],
+      "hold": {
+        "grip": [
+          -0.0002,
+          -0.0865,
+          -0.0659
+        ],
+        "foregrip": [
+          0.0003,
+          -0.0647,
+          0.0484
+        ],
+        "muzzle": [
+          -0.0002,
+          0.0316,
+          0.3966
+        ],
+        "offset": [
+          0.12,
+          -0.22,
+          0.36
+        ],
+        "scale": 1.0,
+        "arms_shift": [
+          0.12,
+          -0.05,
+          0.0
+        ],
+        "grip_palm": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "grip_along": [
+          0.0,
+          -0.4472,
+          0.8944
+        ],
+        "fore_palm": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "fore_along": [
+          0.4472,
+          0.0,
+          0.8944
+        ]
+      }
+    },
+    {
+      "name": "heavy_cannon",
+      "kind": "gun",
+      "submeshes": [
+        "metal",
+        "darker metal",
+        "lights"
+      ],
+      "hold": {
+        "grip": [
+          0.0,
+          0.142,
+          -0.42
+        ],
+        "foregrip": [
+          0.0,
+          0.226,
+          0.06
+        ],
+        "muzzle": [
+          0.0002,
+          -0.0809,
+          0.5152
+        ],
+        "offset": [
+          0.08,
+          -0.18,
+          0.14
+        ],
+        "scale": 0.7,
+        "arms_shift": [
+          0.12,
+          0.0,
+          0.0
+        ],
+        "grip_palm": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "grip_along": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "fore_palm": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "fore_along": [
+          0.0,
+          0.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "name": "rifle_sleek",
+      "kind": "gun",
+      "submeshes": [
+        "metal",
+        "darker metal",
+        "lights"
+      ],
+      "hold": {
+        "grip": [
+          0.0003,
+          -0.0476,
+          -0.0946
+        ],
+        "foregrip": [
+          0.0005,
+          -0.0161,
+          0.0711
+        ],
+        "muzzle": [
+          -0.0002,
+          0.0547,
+          0.3439
+        ],
+        "offset": [
+          0.08,
+          -0.2,
+          0.3
+        ],
+        "scale": 1.0,
+        "arms_shift": [
+          0.12,
+          0.0,
+          0.0
+        ],
+        "grip_palm": [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        "grip_along": [
+          0.0,
+          -0.4472,
+          0.8944
+        ],
+        "fore_palm": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "fore_along": [
+          0.4472,
+          0.0,
+          0.8944
+        ]
+      }
+    },
+    {
+      "name": "hammer",
+      "kind": "melee",
+      "submeshes": [
+        "metal",
+        "darker metal",
+        "lights"
+      ]
+    },
+    {
+      "name": "knife",
+      "kind": "melee",
+      "submeshes": [
+        "metal",
+        "darker metal",
+        "lights"
+      ]
+    },
+    {
+      "name": "mod_scope",
+      "kind": "mod",
+      "submeshes": [
+        "metal",
+        "darker metal",
+        "lights"
+      ]
+    },
+    {
+      "name": "mod_sight",
+      "kind": "mod",
+      "submeshes": [
+        "metal",
+        "lights"
+      ]
+    },
+    {
+      "name": "mod_box",
+      "kind": "mod",
+      "submeshes": [
+        "metal",
+        "lights"
+      ]
+    },
+    {
+      "name": "mod_grip",
+      "kind": "mod",
+      "submeshes": [
+        "metal",
+        "darker metal"
+      ]
+    }
+  ]
+}

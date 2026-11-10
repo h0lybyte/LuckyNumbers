@@ -21,6 +21,7 @@ Docs: [docs/](docs/README.md)
 - Space station corridors and rooms (cream panels, leaning walls, ribs, portholes, doorways, deck): [PSX Starship Kit Free](https://heyheythere.itch.io/psx-starship-kit-free) by heyheythere ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/))
 - Space station props (imported for later: cryo pods, crates, lab bench, chairs) and early room walls: [PSX Sci-Fi Station Kit Free](https://heyheythere.itch.io/psx-sci-fi-station-kit-free) by heyheythere ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/))
 - First-person arms (rig, 13 animations, skin and glove textures): [PSX First Person Arms](https://drillimpact.itch.io/psx-first-person-arms-free) by DrillImpact (CC0, public domain)
+- Futuristic weapons: 9 guns (rifles, snipers, carbine, heavy cannon), 2 melee weapons (hammer, knife) and gun mods (scope, sight, grip, box): [Free Futuristic Weapon Assets](https://niko-3d-models.itch.io/free-futuristic-weapon-assets) by Niko-3d-models (Free with credit)
 - Planet shader look: [Simple 2D Planet shader](https://www.shadertoy.com/view/Wcf3W7) by Ikkemcwood (Shadertoy)
 - Seeded nebula sky (layered gas, dark dust, emission knots): [Nebula Background Shadertoy Study (inspiration)](https://github.com/guinetik) by guinetik
 - Forming-system dust disk: [Protoplanetary disk (inspiration)](https://www.shadertoy.com/view/MdtGRl) by Duke (Shadertoy)
@@ -28,7 +29,7 @@ Docs: [docs/](docs/README.md)
 - 3D simplex noise: [webgl-noise](https://github.com/ashima/webgl-noise) by Ian McEwan, Stefan Gustavson and Ashima Arts (MIT)
 - UI font: [Exo 2](https://github.com/googlefonts/Exo-2.0) by Natanael Gama / The Exo 2 Project Authors (SIL Open Font License 1.1)
 - HUD readout font (web overlay): [Share Tech Mono](https://fonts.google.com/specimen/Share+Tech+Mono) by Carrois Apostrophe (SIL Open Font License 1.1)
-- Libraries: [UniTask](https://github.com/Cysharp/UniTask), [R3](https://github.com/Cysharp/R3), [ObservableCollections](https://github.com/Cysharp/ObservableCollections), [MessagePipe](https://github.com/Cysharp/MessagePipe), [VContainer](https://github.com/hadashiA/VContainer), [NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity) (MIT)
+- Libraries: [UniTask](https://github.com/Cysharp/UniTask), [OpenIK](https://github.com/WouterApts/openik-unity), [R3](https://github.com/Cysharp/R3), [ObservableCollections](https://github.com/Cysharp/ObservableCollections), [MessagePipe](https://github.com/Cysharp/MessagePipe), [VContainer](https://github.com/hadashiA/VContainer), [NuGetForUnity](https://github.com/GlitchEnzo/NuGetForUnity) (MIT)
 
 Details: [CREDITS.md](CREDITS.md) (also in the game: title screen, Credits).
 <!-- credits:end -->

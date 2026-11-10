@@ -22,19 +22,23 @@ namespace LuckyNumbers.Planet
     /// Walk + look on the ground (CharacterController): WASD, mouse (pointer lock on click), Shift to run,
     /// Space to jump. Feel is procedural: head bob from stride, arms sway against the look, pump when running,
     /// rise in the air, shake after the crash. Hands: palms go flat on things you face up close; E picks up a
-    /// pebble (crouching and stepping in for it), E drops it, click throws it.
+    /// pebble (crouching and stepping in for it), E drops it, click throws it. A gun (WeaponView) is held in view
+    /// instead, both hands on it (IK to its grip and foregrip), and click fires it; a melee weapon (MeleeView) is held
+    /// by the handle in the right fist, and click swings it.
     /// </summary>
     [Presenter]
     public sealed class FirstPersonPresenter : IStartable, ITickable, IDisposable, IFirstPerson
     {
-        const int Right = 1;   // the carrying hand
+        const int Left = 0, Right = 1;   // right: the carrying hand
         const float MaxLean = 0.25f;   // metres the head (and arms with it) may lean toward a far reach
         readonly PlanetScene _config;
         readonly PlayerView _player;
         readonly ArmsView _arms;
         readonly PlayerInput _input;
         readonly ISubscriber<InputActionPerformed> _actions;
+        readonly IPublisher<ItemHandled> _handled;
         IDisposable _subscription;
+        float _reportAt = float.MaxValue;   // when to toast how well the hands settled on what they just picked up
 
         float _yaw, _pitch, _vertical, _stride, _moving, _landDip, _errorLogAt, _sprint, _air, _crouch, _awakeAt = -1f;
         bool _jump, _interact, _wasGrounded = true, _wasPressed, _lockSeen;
@@ -51,6 +55,14 @@ namespace LuckyNumbers.Planet
         float _reachT, _crouchFor, _carry, _throwT = -1f, _throwAt;
         Vector3 _reachFrom;
 
+        // A gun in hand: held in view (parented to the eyes), the hands on it; recoil kick (metres, decays).
+        WeaponView _weapon;
+        MeleeView _melee;
+        Vector3 _armsShift;   // the whole arms rig, shifted toward the held gun (eased)
+        float _kick;
+        Vector3 _viewBob;
+        Quaternion _viewTilt = Quaternion.identity;
+
         public bool Active { get; set; }
         public float SpeedScale { get; set; } = 1f;
 
@@ -62,8 +74,9 @@ namespace LuckyNumbers.Planet
 
         [Inject]
         public FirstPersonPresenter(PlanetScene config, PlayerView player, ArmsView arms, PlayerInput input,
-                                    ISubscriber<InputActionPerformed> actions)
+                                    ISubscriber<InputActionPerformed> actions, IPublisher<ItemHandled> handled)
         {
+            _handled = handled;
             _config = config;
             _player = player;
             _arms = arms;
@@ -157,8 +170,10 @@ namespace LuckyNumbers.Planet
             // Arms lag against the look and follow the stride.
             var target = new Vector3(-lookDelta.y, lookDelta.x, 0f) * _config.Sway;
             _sway = Vector3.Lerp(_sway, target, 1f - math.exp(-10f * dt));
-            _arms.Pose(new Vector3(bobX, bobY * 0.6f - _landDip * 0.04f, 0f),
-                       Quaternion.Euler(math.clamp(_sway.x, -6f, 6f), math.clamp(_sway.y, -6f, 6f), -bobX * 30f));
+            _viewBob = new Vector3(bobX, bobY * 0.6f - _landDip * 0.04f, 0f);
+            _viewTilt = Quaternion.Euler(math.clamp(_sway.x, -6f, 6f), math.clamp(_sway.y, -6f, 6f), -bobX * 30f);
+            _armsShift = Vector3.Lerp(_armsShift, _weapon != null && _held != null ? _weapon.ArmsShift : Vector3.zero, 1f - math.exp(-8f * dt));
+            _arms.Pose(_viewBob + _armsShift, _viewTilt);
             Hands(dt, click);
             _interact = false;
         }
@@ -178,6 +193,7 @@ namespace LuckyNumbers.Planet
             var eye = _player.Camera.transform;
             if (_config.DebugReach) { DebugReach(eye); return; }
             Carry(dt, eye, click);
+            if (_weapon != null) return;   // both hands are on the gun
             for (var s = 0; s < 2; s++)
                 if (s != Right || (_reaching == null && _held == null && _throwT < 0f)) Touch(s, dt, eye);
         }
@@ -273,6 +289,18 @@ namespace LuckyNumbers.Planet
                     _arms.SetPose(Right, "open");   // anticipation: fingers open on the way down
                     _arms.ReachTo(Right, shoulder + reach, Smooth(_reachT * 2f), Vector3.down, eye.forward);
                 }
+                else if (_reaching.TryGetComponent<MeleeView>(out var blade))
+                {
+                    // A melee weapon: the right fist closes on the handle and brings it up to the ready.
+                    if (_melee == null) GrabMelee(_reaching, blade, eye);
+                    HoldMelee(dt, false);
+                }
+                else if (_reaching.TryGetComponent<WeaponView>(out var gun))
+                {
+                    // A gun: the right hand brings it up into view; the left joins it on the way.
+                    if (_weapon == null) GrabWeapon(_reaching, gun, eye);
+                    HoldWeapon(eye, dt, Smooth((_reachT - 0.5f) * 2f));
+                }
                 else
                 {
                     if (_reaching.transform.parent != _arms.HandBone(Right)) Grab(_reaching);
@@ -281,10 +309,50 @@ namespace LuckyNumbers.Planet
                     _reachFrom = Vector3.Lerp(_reachFrom == Vector3.zero ? _reaching.position : _reachFrom, hold, Smooth((_reachT - 0.5f) * 2f));
                     _arms.ReachTo(Right, _reachFrom, 1f, Vector3.Lerp(Vector3.down, eye.up, Smooth((_reachT - 0.5f) * 2f)), eye.forward);
                 }
-                if (_reachT >= 1f) { _held = _reaching; _reaching = null; _reachFrom = Vector3.zero; _carry = 1f; }
+                if (_reachT >= 1f)
+                {
+                    _held = _reaching; _reaching = null; _reachFrom = Vector3.zero; _carry = 1f;
+                    if (_weapon != null || _melee != null) _reportAt = Time.time + 1f;   // once the hold has settled
+                }
                 return;
             }
             _crouch = math.max(0f, _crouch - dt * 2f);
+
+            if (_held != null && _melee != null)
+            {
+                if (click) _melee.TrySwing();
+                HoldMelee(dt, true);
+                if (Time.time >= _reportAt)
+                {
+                    _reportAt = float.MaxValue;
+                    var (rt, rf) = _arms.GraspContacts[Right];
+                    Toast(_held, "holding", $"right hand IK error {_arms.LastError[Right] * 100f:0.0} cm; fingers on it {rt}/{rf}");
+                }
+                return;
+            }
+
+            if (_held != null && _weapon != null)
+            {
+                HoldWeapon(eye, dt, 1f);
+                if (Time.time >= _reportAt)
+                {
+                    _reportAt = float.MaxValue;
+                    var (lt, lf) = _arms.GraspContacts[Left];
+                    var (rt, rf) = _arms.GraspContacts[Right];
+                    Toast(_held, "holding", $"IK error: left {_arms.LastError[Left] * 100f:0.0} cm, right {_arms.LastError[Right] * 100f:0.0} cm; " +
+                                            $"fingers on it: left {lt}/{lf}, right {rt}/{rf}");
+                }
+                if (Time.time > _errorLogAt)
+                {
+                    _errorLogAt = Time.time + 2f;
+                    Debug.Log($"[Hands] fingers inside {_held.name} over the last 2 s: left {_arms.GraspClippingMax[Left]}, right {_arms.GraspClippingMax[Right]} (at most); now left [{_arms.GraspClippingNames[Left]}] right [{_arms.GraspClippingNames[Right]}]");
+                    _arms.GraspClippingMax[Left] = _arms.GraspClippingMax[Right] = 0;
+                    Debug.Log($"[Hands] holding {_held.name}: IK error L {_arms.LastError[Left]:0.000} m R {_arms.LastError[Right]:0.000} m; " +
+                              $"shoulders (eye space) L {eye.InverseTransformPoint(_arms.ShoulderPosition(Left))} R {eye.InverseTransformPoint(_arms.ShoulderPosition(Right))}");
+                }
+                if (click) Fire(eye);
+                return;
+            }
 
             if (_held != null && _throwT < 0f)
             {
@@ -341,6 +409,7 @@ namespace LuckyNumbers.Planet
             if (rb.TryGetComponent<Collider>(out var c)) c.enabled = false;
             _arms.Hold(Right, rb.transform);
             Debug.Log($"[Hands] grabbed {rb.name}");
+            Toast(rb, "picked up", "carried on the palm - click throws");
         }
 
         /// <summary>
@@ -354,12 +423,123 @@ namespace LuckyNumbers.Planet
             t.localPosition = Vector3.Lerp(t.localPosition, _arms.PalmRest(Right, radius), 1f - math.exp(-25f * dt));
         }
 
+        void GrabWeapon(Rigidbody rb, WeaponView gun, Transform eye)
+        {
+            rb.isKinematic = true;
+            rb.interpolation = RigidbodyInterpolation.None;
+            if (rb.TryGetComponent<Collider>(out var c)) c.enabled = false;
+            rb.transform.SetParent(eye, true);   // eased into the hold pose from where it lay
+            ArmsView.SetLayer(rb.transform, _arms.gameObject.layer);
+            _weapon = gun;
+            _kick = 0f;
+            _arms.SetTriggerFinger(Right, true);
+            Grasp(rb, true, Left, Right);
+            Debug.Log($"[Hands] picked up {rb.name}");
+            Toast(rb, "picked up", $"gun - scale {gun.HeldScale:0.00}, arms shift {gun.ArmsShift.x * 100f:0} cm");
+        }
+
+        void GrabMelee(Rigidbody rb, MeleeView blade, Transform eye)
+        {
+            rb.isKinematic = true;
+            rb.interpolation = RigidbodyInterpolation.None;
+            if (rb.TryGetComponent<Collider>(out var c)) c.enabled = false;
+            rb.transform.SetParent(eye, true);   // eased into the ready from where it lay
+            ArmsView.SetLayer(rb.transform, _arms.gameObject.layer);
+            _melee = blade;
+            blade.Take(_player.Body.transform);
+            Grasp(rb, true, Right);
+            Debug.Log($"[Hands] picked up {rb.name}");
+            Toast(rb, "picked up", "melee - click swings");
+        }
+
+        /// <summary>
+        /// Pose the melee weapon (camera space: at the ready, or along its swing), swaying with the arms, and close
+        /// the right fist on its handle. `held`: fully in hand (snappy), else still coming up from the pickup (eased).
+        /// </summary>
+        void HoldMelee(float dt, bool held)
+        {
+            var blade = _melee;
+            var t = blade.transform;
+            blade.ViewPose(out var fist, out var rot);
+            fist += _viewBob;
+            rot = _viewTilt * rot;
+            var pos = fist - rot * blade.Grip;
+            var k = blade.Swinging ? 1f : 1f - math.exp(-(held ? 30f : 9f) * dt);   // a swing is posed exactly
+            t.localPosition = Vector3.Lerp(t.localPosition, pos, k);
+            t.localRotation = Quaternion.Slerp(t.localRotation, rot, k);
+            blade.FistOn(out var wrist, out var palm, out var along);
+            _arms.ReachTo(Right, wrist, 1f, palm, along);
+            _arms.SetPose(Right, "fist");
+        }
+
+        /// <summary>
+        /// Ease the gun into its hold (camera space: grip at its hold offset, barrel converging on the crosshair a way
+        /// ahead, swaying and bobbing with the arms, kicked back by recoil), then put the hands on it: the right on
+        /// the grip, the left (`left` 0..1) on the foregrip.
+        /// </summary>
+        void HoldWeapon(Transform eye, float dt, float left)
+        {
+            var gun = _weapon;
+            var t = gun.transform;
+            _kick = math.lerp(_kick, 0f, 1f - math.exp(-14f * dt));
+            var hold = gun.HoldOffset + _viewBob - Vector3.forward * _kick;
+            var aim = Quaternion.LookRotation(new Vector3(0f, 0f, 25f) - hold, Vector3.up);
+            var rot = _viewTilt * aim * Quaternion.Euler(-_kick * 160f, 0f, 0f);   // muzzle climbs with the kick
+            var pos = hold - rot * (gun.Grip * gun.HeldScale);
+            var k = 1f - math.exp(-(left < 1f ? 9f : 40f) * dt);
+            t.localPosition = Vector3.Lerp(t.localPosition, pos, k);
+            t.localRotation = Quaternion.Slerp(t.localRotation, rot, k);
+            t.localScale = Vector3.Lerp(t.localScale, Vector3.one * gun.HeldScale, k);
+
+            // Each hand on its socket (WeaponView: by default the right palm on the pistol grip's left side, knuckles
+            // forward and down its rake; the left palm up under the handguard): the wrist sits back along the fingers
+            // and off the palm from where the hand closes. The fingers then curl onto the gun (ArmsView's grasp).
+            var along = t.TransformDirection(gun.GripAlong).normalized;
+            var palm = Vector3.ProjectOnPlane(t.TransformDirection(gun.GripPalm), along).normalized;
+            _arms.ReachTo(Right, t.TransformPoint(gun.Grip) - along * 0.075f - palm * 0.035f, 1f, palm, along);
+            _arms.SetPose(Right, "grip");
+            along = t.TransformDirection(gun.ForeAlong).normalized;
+            palm = Vector3.ProjectOnPlane(t.TransformDirection(gun.ForePalm), along).normalized;
+            _arms.ReachTo(Left, t.TransformPoint(gun.Foregrip) - along * 0.075f - palm * 0.035f, Smooth(left), palm, along);
+            _arms.SetPose(Left, left > 0.3f ? "grip" : "open");
+        }
+
+        /// <summary>Fire at what the crosshair is on (first hit that isn't us), or far ahead.</summary>
+        void Fire(Transform eye)
+        {
+            var target = eye.position + eye.forward * 80f;
+            var best = float.MaxValue;
+            var n = Physics.RaycastNonAlloc(eye.position, eye.forward, _hits, 80f, ~0, QueryTriggerInteraction.Ignore);
+            for (var i = 0; i < n; i++)
+            {
+                if (_hits[i].collider.transform.IsChildOf(_player.Body.transform)) continue;
+                if (_hits[i].distance < best) { best = _hits[i].distance; target = _hits[i].point; }
+            }
+            if (_weapon.TryFire(target, _player.Body.transform)) _kick += _weapon.Recoil;
+        }
+
         void Release(Vector3 velocity)
         {
             var rb = _held;
             _held = null;
             if (rb == null) return;
+            Grasp(rb, false, Left, Right);
+            _arms.SetTriggerFinger(Right, false);
+            if (_melee != null)
+            {
+                _melee.Take(null);
+                _melee = null;
+                _arms.SetPose(Right, null);
+            }
+            if (_weapon != null)
+            {
+                _weapon = null;
+                _arms.ReachTo(Left, Vector3.zero, 0f);
+                _arms.SetPose(Left, null);
+                _arms.SetPose(Right, null);
+            }
             rb.transform.SetParent(null, true);
+            rb.transform.localScale = Vector3.one;   // a held gun is shrunk for the view
             ArmsView.SetLayer(rb.transform, 0);
             if (rb.TryGetComponent<Collider>(out var c)) c.enabled = true;
             rb.isKinematic = false;
@@ -368,6 +548,23 @@ namespace LuckyNumbers.Planet
             rb.angularVelocity = UnityEngine.Random.insideUnitSphere * 8f;
             if (velocity == Vector3.zero) _arms.SetPose(Right, null);
             Debug.Log(velocity == Vector3.zero ? $"[Hands] dropped {rb.name}" : $"[Hands] threw {rb.name} at {velocity.magnitude:0.0} m/s");
+            Toast(rb, velocity == Vector3.zero ? "dropped" : "threw", velocity == Vector3.zero ? "" : $"{velocity.magnitude:0.0} m/s");
+            _reportAt = float.MaxValue;
+        }
+
+        /// <summary>A held thing's exact-shape colliders on (the fingers close onto them) or off, and those hands' grasp.</summary>
+        void Grasp(Rigidbody rb, bool on, params int[] hands)
+        {
+            foreach (var c in rb.GetComponentsInChildren<MeshCollider>(true)) c.enabled = on;
+            foreach (var s in hands) _arms.SetGrasp(s, on, rb.name);
+        }
+
+        /// <summary>Tell the page (a toast) what the hands did with something: its model's name, not "Weapon x".</summary>
+        void Toast(Component thing, string action, string detail)
+        {
+            var name = thing.name.StartsWith("Weapon ") ? thing.name.Substring("Weapon ".Length) : thing.name;
+            _handled.Publish(new ItemHandled(name, action, detail));
+            if (action == "holding") Debug.Log($"[Hands] holding {name}: {detail}");   // marker for ln.py webshot
         }
 
         static float Smooth(float x) { x = math.saturate(x); return x * x * (3f - 2f * x); }

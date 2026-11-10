@@ -22,6 +22,10 @@ namespace LuckyNumbers.Model
         /// The player's space station, where their ship is docked.
         /// </summary>
         Station = 4,
+        /// <summary>
+        /// Dev: a shooting range (every weapon on a bench, targets downrange) for testing holds and firing.
+        /// </summary>
+        Range = 5,
     }
 
     public sealed class FlowState : IDisposable

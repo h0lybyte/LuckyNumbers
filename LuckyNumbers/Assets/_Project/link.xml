@@ -13,4 +13,8 @@
   <assembly fullname="MessagePipe" preserve="all" />
   <assembly fullname="MessagePipe.VContainer" preserve="all" />
   <assembly fullname="VContainer" preserve="all" />
+  <!-- Made only at runtime (GameObject.CreatePrimitive: weapon bolts), so nothing in a scene keeps it. -->
+  <assembly fullname="UnityEngine.PhysicsModule">
+    <type fullname="UnityEngine.CapsuleCollider" preserve="all" />
+  </assembly>
 </linker>
