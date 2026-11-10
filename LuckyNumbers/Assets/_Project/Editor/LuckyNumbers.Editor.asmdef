@@ -8,6 +8,7 @@
         "LuckyNumbers.Space",
         "LuckyNumbers.Intro",
         "LuckyNumbers.Planet",
+        "LuckyNumbers.Hands",
         "Unity.RenderPipelines.Universal.Runtime",
         "LuckyNumbers.Model",
         "LuckyNumbers.Station",
