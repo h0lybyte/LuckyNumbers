@@ -276,6 +276,7 @@ namespace LuckyNumbers.Planet
                     _player.Body.enabled = false;
                     body.position = new Vector3(body.position.x, _ground.SurfaceAt(body.position) + 0.3f, body.position.z);
                     _player.Body.enabled = true;
+                    Debug.LogWarning($"[CrashSite] under the ground at {body.position}: put back on it");
                 }
             }
             // Sun at "infinity": a fixed direction from wherever the player is.

@@ -284,12 +284,15 @@ namespace LuckyNumbers.Planet
             foreach (var l in _lying)
                 if (l.Beam != null) l.Beam.gameObject.SetActive(on && !l.Taken && (_revealAll || l == nearest));
             var text = "";
-            if (on && nearest != null)
+            // Nothing left lying out: the pearl points back to the wreck instead.
+            var at = nearest != null ? nearest.Rest : _view.Wreck != null ? _view.Wreck.Pivot.position : me;
+            var label = nearest != null ? nearest.Relic.Name : "The wreck";
+            if (on && (nearest != null || _view.Wreck != null))
             {
-                var to = nearest.Rest - me;
+                var to = at - me;
                 var bearing = (Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg + 360f) % 360f;
                 string[] compass = { "north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west" };
-                text = $"{nearest.Relic.Name}: {new Vector2(to.x, to.z).magnitude:0} m {compass[Mathf.RoundToInt(bearing / 45f) % 8]}";
+                text = $"{label}: {new Vector2(to.x, to.z).magnitude:0} m {compass[Mathf.RoundToInt(bearing / 45f) % 8]}";
             }
             if (_inventory.Reveal.Value != text) _inventory.Reveal.Value = text;
         }

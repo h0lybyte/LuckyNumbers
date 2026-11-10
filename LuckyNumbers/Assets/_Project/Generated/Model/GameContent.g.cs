@@ -29,8 +29,6 @@ namespace LuckyNumbers.Model
                 "Interstellar Heritage Trust",
                 "Museum of Before",
             },
-            MinRelics = 6,
-            MaxRelics = 11,
             Cultures =
             {
                 new RelicCulture
@@ -448,7 +446,7 @@ namespace LuckyNumbers.Model
                     Dialogue = new Dialogue
                     {
                         Speaker = "{ship} - MAYDAY",
-                        Text = "{museum} freighter going down over {planet}. Cargo: {relics} relics, {cargo}.",
+                        Text = "{museum} freighter going down over {planet}. Cargo: {cargo}.",
                         DurationSeconds = 6.5f,
                         CharsPerSecond = 34.0f,
                         Overlap = true,

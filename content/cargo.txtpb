@@ -5,8 +5,10 @@
 ship_names: ["MSV Curator", "MSV Long Memory", "MSV Patient Archive", "MSV Quiet Reliquary", "MSV Old Light"]
 museums: ["Galactic Museum of Antiquities", "Hall of Lost Worlds", "Interstellar Heritage Trust", "Museum of Before"]
 
-min_relics: 6
-max_relics: 11
+# Procedural relics (cultures x kinds below): none for now. The hold carries only the named artifacts
+# (artifact_refs), each with its own model. Raise these to scatter generated relics again.
+min_relics: 0
+max_relics: 0
 
 cultures {
   id: "tibetan"

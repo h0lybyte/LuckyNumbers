@@ -224,7 +224,7 @@ namespace LuckyNumbers.Planet
             Vector3 Gear(float right, float forward) => _position + _rotation * new Vector3(right * half, -half * 0.18f, forward * half);
             var lowest = float.MaxValue;
             foreach (var g in new[] { Gear(0f, 0.7f), Gear(-0.55f, -0.5f), Gear(0.55f, -0.5f) })
-                lowest = math.min(lowest, g.y - _ground.HeightAt(g));
+                lowest = math.min(lowest, g.y - _ground.SurfaceAt(g, 0f));   // the mesh you'd hit, not the height function
             var normal = _ground.NormalAt(_position);
             var vertical = -Vector3.Dot(_velocity, normal);
             var horizontal = Vector3.ProjectOnPlane(_velocity, normal).magnitude;
@@ -446,7 +446,7 @@ namespace LuckyNumbers.Planet
             // Settle on the ground, upright along the slope.
             var forward = Vector3.ProjectOnPlane(_rotation * Vector3.forward, normal).normalized;
             _rotation = Quaternion.LookRotation(forward, normal);
-            _position.y = _ground.HeightAt(_position) + L.ShipLength * 0.5f * 0.18f;
+            _position.y = _ground.SurfaceAt(_position) + L.ShipLength * 0.5f * 0.18f;   // resting on the mesh
             Ship.Pose(_position, _rotation);
             Ship.SetHeat(0f, 0.3f);
             SetSolid(true);
@@ -490,7 +490,7 @@ namespace LuckyNumbers.Planet
             if (flatForward.sqrMagnitude < 1e-4f) flatForward = _rotation * Vector3.up;
             var want = _position - flatForward.normalized * (L.ShipLength * L.ChaseDistance) + Vector3.up * (L.ShipLength * L.ChaseHeight);
             _camPos = Vector3.Lerp(_camPos, want, 1f - math.exp(-5f * dt));
-            var floor = _ground.HeightAt(_camPos) + 1.5f;                       // never under the ground
+            var floor = _ground.SurfaceAt(_camPos) + 1.5f;                      // never under the ground (its mesh)
             if (_camPos.y < floor) _camPos.y = floor;
             // Assisted: tilt a little with the bank, and widen the view with speed (a sense of speed).
             var camUp = Assisted ? Vector3.Slerp(Vector3.up, _rotation * Vector3.up, math.saturate(A.CameraBank)) : Vector3.up;

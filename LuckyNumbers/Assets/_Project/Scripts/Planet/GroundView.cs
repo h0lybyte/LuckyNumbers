@@ -137,7 +137,9 @@ namespace LuckyNumbers.Planet
         /// vertices the mesh runs a little above the smooth height function on a hill's curve, so placing a body by
         /// HeightAt alone can start it inside the mesh, where it falls through. Falls back to HeightAt.
         /// </summary>
-        public float SurfaceAt(Vector3 world)
+        /// <param name="missMargin">If no chunk is there yet (still streaming in), HeightAt plus this: placing things a
+        /// little above where the mesh could be beats placing them inside it.</param>
+        public float SurfaceAt(Vector3 world, float missMargin = 0.6f)
         {
             var h = HeightAt(world);
             var from = new Vector3(world.x, h + 40f, world.z);
@@ -145,7 +147,7 @@ namespace LuckyNumbers.Planet
             var best = float.MinValue;
             foreach (var hit in hits)
                 if (hit.collider.GetComponentInParent<GroundView>() == this) best = Mathf.Max(best, hit.point.y);
-            return best > float.MinValue ? best : h;
+            return best > float.MinValue ? best : h + missMargin;
         }
         /// <summary>Ground normal under a world point (from the height function, like the chunk normals).</summary>
         public Vector3 NormalAt(Vector3 world) => Normal(new float2(world.x, world.z), 0.5f);
