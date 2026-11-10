@@ -192,9 +192,72 @@ namespace LuckyNumbers.Model
         /// </summary>
         public float WingLift { get; set; }
         public float Grip { get; set; }
+        /// <summary>
+        /// Flight assist (on unless disabled): easier to fly, same feel.
+        /// </summary>
+        public FlightAssist Assist { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public FlightLanding Clone() => (FlightLanding)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// Flight assist: the throttle sets a speed and the ship holds it (engine forward, air brakes back), and Space
+    /// is a hover: the lift thrusters hold a controlled descent (faster up high, gentle near the ground), bleed off
+    /// drift and level the ship, so touching down inside the limits is a matter of holding Space over the spot.
+    /// </summary>
+    public sealed class FlightAssist
+    {
+        public bool Disabled { get; set; }
+        /// <summary>
+        /// Throttle 0..1 maps to 0..max_speed (m/s; Shift boost: x boost_speed). How hard the engine and the air
+        /// brakes push towards it (m/s^2 at most; per m/s of difference).
+        /// </summary>
+        public float MaxSpeed { get; set; }
+        public float BoostSpeed { get; set; }
+        public float Brake { get; set; }
+        public float SpeedGain { get; set; }
+        /// <summary>
+        /// Hover (Space): descent speed (m/s) at the ground and at most (up high: altitude x descent_per_metre),
+        /// how fast it reaches it (per second), drift bleed (per second) and levelling (degrees per second).
+        /// </summary>
+        public float HoverDescent { get; set; }
+        public float MaxDescent { get; set; }
+        public float DescentPerMetre { get; set; }
+        public float HoverGain { get; set; }
+        public float HoverDriftDamping { get; set; }
+        public float HoverLevelDegreesPerSecond { get; set; }
+        /// <summary>
+        /// Below this altitude (m) the wings level themselves this many times faster when you let go of roll.
+        /// </summary>
+        public float LowAltitude { get; set; }
+        public float LowLevelFactor { get; set; }
+        /// <summary>
+        /// Steering: the mouse turns your heading (around the world's up) and pitch, capped (degrees per second, and
+        /// pitch at most max_pitch either way), and the ship banks into turns (degrees of roll per degree/second of
+        /// turn, at most max_bank); A/D add roll on top.
+        /// </summary>
+        public float MaxTurnRate { get; set; }
+        public float MaxPitch { get; set; }
+        public float BankPerTurn { get; set; }
+        public float MaxBank { get; set; }
+        /// <summary>
+        /// A landing pad on the flattest spot this far from the wreck (metres), marked on the ground and the HUD.
+        /// </summary>
+        public float PadMinDistance { get; set; }
+        public float PadMaxDistance { get; set; }
+        /// <summary>
+        /// Chase camera: extra field of view at full speed (degrees), and how much it tilts with the bank (0..1).
+        /// </summary>
+        public float SpeedFov { get; set; }
+        public float CameraBank { get; set; }
+        /// <summary>
+        /// Hover cushion: the last few metres the descent eases off further (metres it starts at).
+        /// </summary>
+        public float CushionHeight { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public FlightAssist Clone() => (FlightAssist)MemberwiseClone();
     }
 
     /// <summary>

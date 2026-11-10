@@ -115,7 +115,31 @@ landing {
   grip: 1.5
   chase_distance: 2.2
   chase_height: 0.7
-  hint: "Mouse: pitch and turn - A/D roll - W/S throttle - Shift boost - Space lift. Land slow and level near the wreck."
+  hint: "Mouse: pitch and turn - A/D roll - W/S speed - Shift boost - hold Space to hover down. Land slow and level by the wreck."
+  # Flight assist: W/S set a speed the ship holds (air brakes slow it); Space hovers it down under control.
+  assist {
+    max_speed: 50
+    boost_speed: 1.6
+    brake: 14
+    speed_gain: 1.2
+    hover_descent: 1.6
+    max_descent: 10
+    descent_per_metre: 0.12
+    hover_gain: 2.5
+    hover_drift_damping: 0.9
+    hover_level_degrees_per_second: 45
+    low_altitude: 30
+    low_level_factor: 3
+    max_turn_rate: 70
+    max_pitch: 35
+    bank_per_turn: 0.45
+    max_bank: 35
+    pad_min_distance: 40
+    pad_max_distance: 55
+    speed_fov: 14
+    camera_bank: 0.3
+    cushion_height: 5
+  }
   landed_text: "Landed."
   crashed_text: "Too hard. Try again."
   landed_lines { speaker: "You" text: "Down in one piece. Now, where's that cargo?" duration_seconds: 3.5 chars_per_second: 30 }

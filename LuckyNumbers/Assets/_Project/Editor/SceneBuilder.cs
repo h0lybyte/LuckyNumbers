@@ -170,7 +170,19 @@ namespace LuckyNumbers.Editor
             beam.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             beam.transform.localScale = new Vector3(1.6f, 160f, 1.6f);   // 320 m tall
             beam.SetActive(false);
-            Assign(view, ("wreck", wreck), ("fighter", fighter), ("flightCamera", flightCam), ("wreckBeacon", beam.transform));
+            // Landing pad (flight assist): a flat green ring the presenter puts on the flattest spot near the wreck.
+            var padMat = MaterialAsset("LandingPad", "Universal Render Pipeline/Unlit");
+            padMat.color = new Color(0.27f, 0.75f, 0.35f, 1f);
+            EditorUtility.SetDirty(padMat);
+            var pad = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            pad.name = "LandingPad";
+            Object.DestroyImmediate(pad.GetComponent<Collider>());
+            pad.GetComponent<MeshRenderer>().sharedMaterial = padMat;
+            pad.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            pad.transform.localScale = new Vector3(14f, 0.04f, 14f);   // a 14 m disc, flat on the ground
+            pad.SetActive(false);
+            Assign(view, ("wreck", wreck), ("fighter", fighter), ("flightCamera", flightCam), ("wreckBeacon", beam.transform),
+                   ("landingPad", pad.transform));
             Scopes<PlanetScope>();
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Planet.unity");
         }
