@@ -82,6 +82,12 @@ namespace LuckyNumbers.Model
         /// Controls line shown on arrival.
         /// </summary>
         public string Hint { get; set; }
+        /// <summary>
+        /// Big rooms get more headroom: rooms of at least tall_room_cells cells are tall_levels storeys of 3 m high
+        /// (walls stacked: upright below, the room lean on top; walls close over their 3 m doorways). 0 = none.
+        /// </summary>
+        public int TallRoomCells { get; set; }
+        public int TallLevels { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public StationScene Clone() => (StationScene)MemberwiseClone();

@@ -38,6 +38,10 @@ light_every: 2
 chunk_cells: 6
 room_lean: 0.4
 
+# Headroom: the gallery, docking bay and hub (60+ cells) are two storeys (6 m) high.
+tall_room_cells: 60
+tall_levels: 2
+
 # In your universe: orbiting the planet the freighter goes down on, its north windows facing it.
 orbit: ""
 orbit_diameters: 1.8

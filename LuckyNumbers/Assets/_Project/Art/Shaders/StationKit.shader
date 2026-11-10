@@ -21,6 +21,7 @@ Shader "LuckyNumbers/StationKit"
         _LightColor ("Light Color (rgb x a)", Color) = (1, 1, 1, 1.15)
         _LightDesaturate ("Light Desaturate", Range(0, 1)) = 0
         _Pulse ("Pulse (Hz, depth)", Vector) = (0, 0, 0, 0)
+        _MaxLod ("Max mip (atlas tiles stay apart)", Range(0, 6)) = 3
     }
 
     SubShader
@@ -38,8 +39,8 @@ Shader "LuckyNumbers/StationKit"
             SAMPLER(sampler_MainTex);
 
             CBUFFER_START(UnityPerMaterial)
-                float4 _MainTex_ST, _Tint, _FogColor, _Ambient, _LightColor, _Pulse;
-                float _Brightness, _FogStart, _FogEnd, _LightDesaturate;
+                float4 _MainTex_ST, _MainTex_TexelSize, _Tint, _FogColor, _Ambient, _LightColor, _Pulse;
+                float _Brightness, _FogStart, _FogEnd, _LightDesaturate, _MaxLod;
             CBUFFER_END
 
             struct Attributes
@@ -73,9 +74,24 @@ Shader "LuckyNumbers/StationKit"
                 return o;
             }
 
+            // Sharp bilinear: point-sampled texels (the PS1 look) whose edges blend over about one screen pixel, so
+            // texel boundaries don't stair-step up close; when a pixel covers more than a texel (far off, grazing),
+            // the mip chain takes over instead of skipping texels (the shimmer and broken lines). The mip level is
+            // capped (_MaxLod) so neighbouring tiles of the atlas don't bleed into each other.
+            float4 SampleAtlas(float2 uv)
+            {
+                float2 size = _MainTex_TexelSize.zw;
+                float2 t = uv * size;
+                float2 texelsPerPixel = max(fwidth(t), 1e-5);
+                float2 edge = clamp((frac(t) - 0.5) / texelsPerPixel, -0.5, 0.5);
+                float2 sharp = (floor(t) + 0.5 + edge) / size;
+                float lod = clamp(log2(max(texelsPerPixel.x, texelsPerPixel.y)), 0.0, _MaxLod);
+                return SAMPLE_TEXTURE2D_LOD(_MainTex, sampler_MainTex, sharp, lod);
+            }
+
             float4 frag(Varyings i) : SV_Target
             {
-                float4 tex = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
+                float4 tex = SampleAtlas(i.uv);
                 float3 albedo = tex.rgb;
                 float pulse = _Pulse.x > 0 ? 1.0 - _Pulse.y * (0.5 + 0.5 * sin(_Time.y * _Pulse.x * 6.2831853)) : 1.0;
 

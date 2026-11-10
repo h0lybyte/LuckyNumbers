@@ -68,7 +68,7 @@ namespace LuckyNumbers.Station
         {
             Clear();
             _config = config;
-            Plan = new StationPlan(config.Plan, config.LightEvery, config.CeilingLightEvery);
+            Plan = new StationPlan(config.Plan, config.LightEvery, config.CeilingLightEvery, config.TallRoomCells, config.TallLevels);
             var chunk = Math.Max(1, config.ChunkCells);
 
             // Each piece's meshes with their transform inside the model (FBX parts: a doorway has 3, a viewport 5).
@@ -83,7 +83,11 @@ namespace LuckyNumbers.Station
                 parts[p.name] = list;
             }
             var lean = Mathf.Clamp01(config.RoomLean);
-            foreach (var name in new List<string>(parts.Keys)) parts[name + StationPlan.Flat] = Flatten(parts[name], lean);
+            foreach (var name in new List<string>(parts.Keys))
+            {
+                parts[name + StationPlan.Flat] = Flatten(parts[name], lean);
+                parts[name + StationPlan.Upright] = Flatten(parts[name], 0f);
+            }
 
             // Windows: the kits paint stars on their glass. Split those panes off (glassMaterial), so a window
             // is a real opening onto whatever is outside: the sky, the planet, the rest of the station.

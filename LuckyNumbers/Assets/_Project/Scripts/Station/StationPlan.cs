@@ -52,6 +52,8 @@ namespace LuckyNumbers.Station
         // Piece names = the kits' FBX file names. Everything is the starship kit's cream panels: corridors lean in,
         // rooms use the same walls with the lean pushed upright (Flat: StationView derives those meshes).
         public const string Flat = "@flat";
+        /// <summary>The same wall with its lean pushed fully upright: lower storeys of tall rooms.</summary>
+        public const string Upright = "@upright";
         public const string FloorDeck = "floor_deck", Ceiling = "ceiling_corridor";
         public const string WallCorridor = "wall_corridor", WallCorridorLights = "wall_corridor_lights";
         public const string Porthole = "wall_corridor_porthole", Rib = "corridor_rib";
@@ -74,9 +76,15 @@ namespace LuckyNumbers.Station
         readonly Kind[,] _cells;
 
         readonly int _ceilingEvery;
+        int[,] _levels;   // storeys per cell (1, or more in tall rooms)
+
+        /// <summary>Storeys (3 m each) over a cell.</summary>
+        public int Levels(Vector2Int c) => c.x >= 0 && c.y >= 0 && c.x < Width && c.y < Depth ? _levels[c.x, c.y] : 1;
 
         /// <param name="ceilingLightEvery">Rooms light every nth row of ceiling tiles (corridors: every tile).</param>
-        public StationPlan(IReadOnlyList<string> rows, int lightEvery, int ceilingLightEvery = 1)
+        /// <param name="tallRoomCells">Rooms with at least this many cells get <paramref name="tallLevels"/> storeys.</param>
+        public StationPlan(IReadOnlyList<string> rows, int lightEvery, int ceilingLightEvery = 1, int tallRoomCells = 0,
+                           int tallLevels = 1)
         {
             _ceilingEvery = Math.Max(1, ceilingLightEvery);
             Depth = rows.Count;
@@ -96,7 +104,17 @@ namespace LuckyNumbers.Station
                 for (var x = 0; x < Width && Spawn.x < 0; x++)
                     if (_cells[x, z] == Kind.Room) Spawn = new Vector2Int(x, z);
 
+            _levels = new int[Width, Depth];
+            for (var z = 0; z < Depth; z++)
+            for (var x = 0; x < Width; x++)
+                _levels[x, z] = 1;
+            if (tallRoomCells > 0 && tallLevels > 1)
+                foreach (var room in Rooms())
+                    if (room.Count >= tallRoomCells)
+                        foreach (var c in room) _levels[c.x, c.y] = tallLevels;
+
             var corners = new Dictionary<Vector2Int, int>();   // grid vertex (in metres) -> axes of room walls meeting there
+            var cornerLevels = new Dictionary<Vector2Int, int>();
             for (var z = 0; z < Depth; z++)
             for (var x = 0; x < Width; x++)
             {
@@ -113,11 +131,16 @@ namespace LuckyNumbers.Station
                     var next = At(cell + dir);
                     var edge = centre + new Vector3(dir.x, 0, dir.y) * (Cell / 2f);
                     var turn = Quaternion.LookRotation(new Vector3(dir.x, 0, dir.y));
+                    var levels = Levels(cell);
                     if (Walkable(next))
                     {
                         // Ribs across a corridor between two of its cells (once per edge: north/east side only).
                         if (kind == Kind.Corridor && next == Kind.Corridor && d < 2)
                             Pieces.Add(new Piece(Rib, Kit.Starship, edge, turn, cell));
+                        // A tall room over a lower neighbour (its doorway): close the wall above the opening.
+                        for (var l = Levels(cell + dir); l < levels; l++)
+                            Pieces.Add(new Piece(l == levels - 1 ? WallRoom : WallRoom.Replace(Flat, Upright), Kit.Starship,
+                                                 edge + Vector3.up * (Height * l), turn, cell));
                         continue;
                     }
 
@@ -128,32 +151,49 @@ namespace LuckyNumbers.Station
                     {
                         name = next == Kind.Window ? Porthole : lit ? WallCorridorLights : WallCorridor;
                     }
+                    else if (levels > 1)
+                    {
+                        // Tall room: windows and upright walls below, the room's leaning wall on the top storey.
+                        for (var l = 1; l < levels; l++)
+                        {
+                            var top = l == levels - 1;
+                            var upper = top ? (lit ? WallRoomLights : WallRoom) : WallCorridor + Upright;
+                            Pieces.Add(new Piece(upper, Kit.Starship, edge + Vector3.up * (Height * l), turn, cell));
+                        }
+                        name = next == Kind.Window ? Porthole + Upright : WallCorridor + Upright;
+                    }
                     else
                     {
                         name = next == Kind.Window && kind == Kind.Room ? PortholeRoom : lit ? WallRoomLights : WallRoom;
-                        // Posts go where room walls turn a corner: note both ends of this wall and its axis.
+                    }
+                    if (kind != Kind.Corridor)
+                    {
+                        // Posts go where room walls turn a corner: note both ends of this wall, its axis and height.
                         var axis = dir.x != 0 ? 1 : 2;   // wall runs along Z (1) or X (2)
                         var side = new Vector2Int(dir.y, -dir.x);   // along the wall
                         var mid = new Vector2Int(Mathf.RoundToInt(edge.x), Mathf.RoundToInt(edge.z));
                         foreach (var end in new[] { mid + side, mid - side })
+                        {
                             corners[end] = corners.TryGetValue(end, out var a) ? a | axis : axis;
+                            cornerLevels[end] = Math.Max(levels, cornerLevels.TryGetValue(end, out var lv) ? lv : 1);
+                        }
                     }
                     Pieces.Add(new Piece(name, kit, edge, turn, cell));
                     WallBox(edge, dir);
                 }
             }
 
-            // Deck and ceiling: one slab each under / over the whole plan (walls keep you inside), not one per cell.
+            // Deck: one slab under the whole plan (walls keep you inside), not one per cell.
             var span = new Vector3(Width * Cell, 0.1f, Depth * Cell);
             var middle = new Vector3(Width * Cell / 2f, 0f, Depth * Cell / 2f);
-            Boxes.Add(new Box(middle - Vector3.up * 0.05f, span));
-            Boxes.Add(new Box(middle + Vector3.up * (Height + 0.05f), span));
+            Boxes.Add(new Box(middle - Vector3.up * 0.05f, span));   // (no ceiling slab: a jump never reaches 3 m)
 
             foreach (var (vertex, axes) in corners)
             {
                 if (axes != 3) continue;   // a straight run: the walls meet flush, no post
                 var p = new Vector3(vertex.x, 0, vertex.y);
-                Pieces.Add(new Piece(Post, Kit.Starship, p, Quaternion.identity, CellOf(p)));
+                for (var l = 0; l < cornerLevels[vertex]; l++)
+                    Pieces.Add(new Piece(Post, Kit.Starship, p + Vector3.up * (Height * l), Quaternion.identity, CellOf(p)));
             }
         }
 
@@ -233,7 +273,8 @@ namespace LuckyNumbers.Station
             // direction so their strips line up in rows.
             var alongX = kind != Kind.Corridor || Walkable(At(cell + Dirs[1])) || Walkable(At(cell + Dirs[3]));
             var unlit = kind != Kind.Corridor && cell.y % _ceilingEvery != 0;
-            Pieces.Add(new Piece(Ceiling, Kit.Starship, centre, alongX ? Quaternion.identity : Quaternion.Euler(0, 90, 0),
+            var raise = Vector3.up * (Height * (Levels(cell) - 1));   // the ceiling piece is modelled at 3 m
+            Pieces.Add(new Piece(Ceiling, Kit.Starship, centre + raise, alongX ? Quaternion.identity : Quaternion.Euler(0, 90, 0),
                                  cell, unlit));
         }
 

@@ -46,6 +46,10 @@ message StationScene {
   GameScene next = 13;
   // Controls line shown on arrival.
   string hint = 14;
+  // Big rooms get more headroom: rooms of at least tall_room_cells cells are tall_levels storeys of 3 m high
+  // (walls stacked: upright below, the room lean on top; walls close over their 3 m doorways). 0 = none.
+  int32 tall_room_cells = 15;
+  int32 tall_levels = 16;
 }
 
 // Live station state (mirrored to the web page).

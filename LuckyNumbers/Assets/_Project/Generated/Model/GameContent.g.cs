@@ -1722,6 +1722,8 @@ namespace LuckyNumbers.Model
             OrbitDiameters = 1.8f,
             Next = GameScene.Intro,
             Hint = "WASD to move - mouse to look - lights: the page's inspector (`)",
+            TallRoomCells = 60,
+            TallLevels = 2,
         };
 
         /// <summary>From <c>content/title.txtpb</c>.</summary>

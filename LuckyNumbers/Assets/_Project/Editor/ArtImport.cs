@@ -11,12 +11,16 @@ namespace LuckyNumbers.Editor
     /// - Textures in either: capped at 512 with crunch so the download stays small.
     /// - Modular kits (Art/Models/*Kit/, the PSX station and starship kits): meshes stay readable (StationView
     ///   merges them into chunks at runtime) and uncompressed (pieces must meet exactly on the 2 m grid); the
-    ///   atlas keeps its full size, point-filtered without mipmaps (crisp PS1 texels; mostly empty, crunches small).
+    ///   atlas keeps its full size, bilinear with mipmaps: the StationKit shader samples it "sharp bilinear"
+    ///   (crisp PS1 texels up close, one anti-aliased pixel at texel edges, mips far off: no shimmer).
     /// </summary>
     public sealed class ArtImport : AssetPostprocessor
     {
         const string Models = "Assets/_Project/Art/Models/";
         const string Characters = "Assets/_Project/Art/Characters/";
+
+        /// <summary>Bump when these rules change: Unity re-imports what they cover (otherwise old settings stick).</summary>
+        public override uint GetVersion() => 2;   // 2: kit atlases mipmapped + trilinear (sharp-bilinear sampling)
 
         bool Ours => assetPath.StartsWith(Models) || assetPath.StartsWith(Characters);
         bool Kit => assetPath.StartsWith(Models) && assetPath.Substring(Models.Length).Split('/')[0].EndsWith("Kit");
@@ -66,8 +70,9 @@ namespace LuckyNumbers.Editor
             if (Kit)
             {
                 t.maxTextureSize = 2048;
-                t.mipmapEnabled = false;
-                t.filterMode = FilterMode.Point;
+                t.mipmapEnabled = true;
+                t.mipmapFilter = TextureImporterMipFilter.BoxFilter;
+                t.filterMode = FilterMode.Trilinear;
                 t.anisoLevel = 0;
                 t.wrapMode = TextureWrapMode.Clamp;
             }
