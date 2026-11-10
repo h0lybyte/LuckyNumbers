@@ -12,7 +12,7 @@ namespace LuckyNumbers.Planet
     ///  1. clips: a base layer for both arms (crossfades, e.g. relax / run) and one masked layer per arm
     ///     (one-shots like a throw) over it
     ///  2. life: breathing, stride swing (pumped when running), arms rising in the air, wrists drifting, tremor
-    ///  3. IK: hands reach world points (touch, grab, carry), leaning the rig in a little for far ones
+    ///  3. IK: hands reach world points (touch, grab, carry); Reaching tells the body how far to lean in
     ///  4. finger poses (content/hands/poses/*), then fidget showing through as the pose allows
     /// Rendered by the viewmodel camera, so they never clip into walls.
     /// </summary>
@@ -22,7 +22,6 @@ namespace LuckyNumbers.Planet
         [SerializeField] Transform pivot;          // under the camera; sway rotates/moves this
         [SerializeField] Animator animator;
         [SerializeField] AnimationClip[] clips;    // from arms_rig.fbx, set by the scene builder
-        const float MaxLean = 0.22f;  // metres the rig may lean toward a reach (more shows the arm mesh's cut ends)
 
         PlayableGraph _graph;
         AnimationLayerMixerPlayable _layers;
@@ -45,14 +44,23 @@ namespace LuckyNumbers.Planet
         public readonly float[] LastError = new float[2];
 
         public int ArmCount => _arms.Length;
+        /// <summary>World offset the hands' targets are past a comfortable reach (averaged; negative along = closer).</summary>
+        public Vector3 Reaching { get; private set; }
+        public bool IsReaching { get; private set; }
         public Vector3 ShoulderPosition(int side) => _arms[side].Upper.position;
         public float Reach(int side) => _arms[side].Reach;
         public string CurrentPose(int side) => _posers.Length > side ? _posers[side].Current : null;
-        /// <summary>The middle of the palm, a little off the skin (where a held thing sits).</summary>
-        public Vector3 PalmPoint(int side)
+        /// <summary>
+        /// Where something `radius` metres round rests on the palm, in the hand bone's own space: the middle of the
+        /// palm, lifted off the skin by its radius. Constant for the hand, so a held thing parented there rides
+        /// with it exactly, whatever the animation and IK do this frame.
+        /// </summary>
+        public Vector3 PalmRest(int side, float radius)
         {
             var a = _arms[side];
-            return a.Hand.position + a.Hand.TransformDirection(a.FingerAxis) * 0.075f + a.Hand.TransformDirection(a.PalmAxis) * 0.04f;
+            var world = a.Hand.position + a.Hand.TransformDirection(a.FingerAxis) * 0.075f
+                      + a.Hand.TransformDirection(a.PalmAxis) * (0.02f + radius);
+            return a.Hand.InverseTransformPoint(world);
         }
         public Transform HandBone(int side) => _arms[side].Hand;
 
@@ -235,17 +243,20 @@ namespace LuckyNumbers.Planet
                                                   -outward * Mathf.Sin(t * 0.6f + s) * _breath));
             }
 
-            // Lean in: for targets past plain arm's reach, move the whole rig toward them (up to MaxLean).
-            var lean = Vector3.zero;
-            var leaning = 0;
+            // How far past a comfortable reach the hands' targets are (signed: negative = closer). The body leans by
+            // it (FirstPersonPresenter moves the head): moving the arms rig itself forward shows the open ends of
+            // the arm mesh, which sit just behind the camera.
+            var reaching = Vector3.zero;
+            var reachers = 0;
             for (var s = 0; s < _arms.Length && s < 2; s++)
             {
                 if (_weight[s] <= 0f) continue;
                 var to = _target[s] - _arms[s].Upper.position;
-                var excess = to.magnitude - _arms[s].Reach * 0.92f;
-                if (excess > 0f) { lean += to.normalized * (Mathf.Min(excess, MaxLean) * _weight[s]); leaning++; }
+                reaching += to.normalized * ((to.magnitude - _arms[s].Reach * 0.92f) * _weight[s]);
+                reachers++;
             }
-            if (leaning > 0) pivot.position += lean / leaning;
+            Reaching = reachers > 0 ? reaching / reachers : Vector3.zero;
+            IsReaching = reachers > 0;
 
             for (var s = 0; s < _arms.Length && s < 2; s++)
             {

@@ -23,7 +23,7 @@ fingers { name: "ring"   palm: "palm.03.{side}" joints: ["f_ring.01.{side}", "f_
 fingers { name: "pinky"  palm: "palm.04.{side}" joints: ["f_pinky.01.{side}", "f_pinky.02.{side}", "f_pinky.03.{side}"] }
 
 eye: "camera"
-shrug_degrees: 12
+shrug_degrees: 6   # more swings the top of the upper arm (an open end of the mesh) into view
 max_reach: 0.985
 
 # Finger poses (content/hands/poses/*), blended at pose_speed per second.

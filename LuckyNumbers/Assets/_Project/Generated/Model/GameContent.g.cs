@@ -949,7 +949,7 @@ namespace LuckyNumbers.Model
                     },
                 },
                 Eye = "camera",
-                ShrugDegrees = 12.0f,
+                ShrugDegrees = 6.0f,
                 MaxReach = 0.985f,
                 Poses =
                 {
