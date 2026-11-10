@@ -1674,7 +1674,7 @@ namespace LuckyNumbers.Model
                 MaxTouchdownTilt = 18.0f,
                 ChaseDistance = 2.2f,
                 ChaseHeight = 0.7f,
-                Hint = "Mouse: pitch and turn - A/D roll - W/S throttle - Shift boost - Space lift. Land slow and level near the wreck.",
+                Hint = "Mouse: pitch and turn - A/D roll - W/S speed - Shift boost - hold Space to hover down. Land slow and level by the wreck.",
                 LandedText = "Landed.",
                 CrashedText = "Too hard. Try again.",
                 LandedLines =
@@ -1689,6 +1689,21 @@ namespace LuckyNumbers.Model
                 },
                 WingLift = 0.011f,
                 Grip = 1.5f,
+                Assist = new FlightAssist
+                {
+                    MaxSpeed = 50.0f,
+                    BoostSpeed = 1.6f,
+                    Brake = 14.0f,
+                    SpeedGain = 1.2f,
+                    HoverDescent = 1.6f,
+                    MaxDescent = 10.0f,
+                    DescentPerMetre = 0.12f,
+                    HoverGain = 2.5f,
+                    HoverDriftDamping = 0.9f,
+                    HoverLevelDegreesPerSecond = 45.0f,
+                    LowAltitude = 30.0f,
+                    LowLevelFactor = 3.0f,
+                },
             },
         };
 

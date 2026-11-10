@@ -15,6 +15,11 @@ namespace LuckyNumbers.Planet
     /// mouse pitches and yaws, A/D roll (wings level themselves when you let go), W/S throttle, Shift boost,
     /// Space lift thrusters, under gravity and air drag. Touch down slow, level and gentle, or crash and start
     /// over. Landed: you step out beside your ship and walk (first person).
+    ///
+    /// Flight assist (FlightLanding.assist, on by default): W/S set a speed the ship holds, the engine pushing
+    /// forward and air brakes pulling back, so letting off really slows you; Space hovers: the thrusters hold a
+    /// controlled descent (quick up high, gentle near the ground), bleed off drift and level the ship. The HUD
+    /// shows descent, drift and tilt against the touchdown limits (green / amber / red) once you're low.
     /// </summary>
     [Presenter]
     public sealed class LandingPresenter : ITickable, IArrival, IDisposable
@@ -55,6 +60,8 @@ namespace LuckyNumbers.Planet
         }
 
         FlightLanding L => _config.Landing;
+        FlightAssist A => _config.Landing.Assist;
+        bool Assisted => A != null && !A.Disabled;
         ShipView Ship => _view.Fighter;
         Vector3 Wreck => _view.Wreck.Pivot.position;
 
@@ -88,7 +95,8 @@ namespace LuckyNumbers.Planet
             _rotation = Quaternion.LookRotation(toWreck.normalized, Vector3.up);
             _velocity = _rotation * Vector3.forward * L.StartSpeed;
             _spin = Vector3.zero;
-            _throttle = 0.35f;
+            // Assisted, the throttle is a speed: start at the speed you arrive with.
+            _throttle = Assisted ? math.saturate(L.StartSpeed / math.max(1f, A.MaxSpeed)) : 0.35f;
             _camPos = _position - _rotation * Vector3.forward * (L.ShipLength * L.ChaseDistance * 3f) + Vector3.up * L.ShipLength;
             SetSolid(false);
             _phase = Phase.Flying;
@@ -122,10 +130,24 @@ namespace LuckyNumbers.Planet
             var want = new Vector3(-look.y * L.TurnDegreesPerPixel / dt, look.x * L.TurnDegreesPerPixel / dt, -move.X * L.RollDegreesPerSecond);
             _spin = Vector3.Lerp(_spin, want, 1f - math.exp(-L.TurnDamping * dt));
             _rotation = _rotation * Quaternion.Euler(_spin * dt);
+            var altitudeNow = _position.y - _ground.HeightAt(_position);
+            var hovering = Assisted && _input.Lifting.Value;
             if (math.abs(move.X) < 0.1f)
             {
+                // Wings level themselves when you let go of roll; quicker low down with the assist.
                 var level = Quaternion.LookRotation(_rotation * Vector3.forward, Vector3.up);
-                _rotation = Quaternion.RotateTowards(_rotation, level, L.RollReturnDegreesPerSecond * dt);
+                var rate = L.RollReturnDegreesPerSecond * (Assisted && altitudeNow < A.LowAltitude ? math.max(1f, A.LowLevelFactor) : 1f);
+                _rotation = Quaternion.RotateTowards(_rotation, level, rate * dt);
+            }
+            if (hovering && math.abs(look.y) < 0.5f)
+            {
+                // Hovering, the nose comes level too (pitch and roll), keeping the heading: ready to touch down.
+                // Low down "level" means the ground's slope under you (touchdown tilt is measured against it).
+                var up = altitudeNow < A.LowAltitude ? _ground.NormalAt(_position) : Vector3.up;
+                var nose = Vector3.ProjectOnPlane(_rotation * Vector3.forward, up);
+                if (nose.sqrMagnitude > 1e-4f)
+                    _rotation = Quaternion.RotateTowards(_rotation, Quaternion.LookRotation(nose, up),
+                                                         A.HoverLevelDegreesPerSecond * dt);
             }
 
             // Forces: main engine (throttle, boost), lift thrusters, gravity, drag.
@@ -133,10 +155,35 @@ namespace LuckyNumbers.Planet
             var boost = _input.Sprinting.Value ? L.Boost : 1f;
             var forward = _rotation * Vector3.forward;
             var airspeed = math.max(0f, Vector3.Dot(_velocity, forward));
-            var accel = forward * (L.Thrust * _throttle * boost)
+            Vector3 accel;
+            if (Assisted)
+            {
+                // Speed hold: the engine pushes towards the throttle's speed, the air brakes pull back down to it.
+                var target = _throttle * A.MaxSpeed * (_input.Sprinting.Value ? math.max(1f, A.BoostSpeed) : 1f);
+                if (hovering) target = math.min(target, L.MaxTouchdownHorizontal * 0.6f);   // creep: safe to touch down
+                var push = math.clamp((target - airspeed) * A.SpeedGain, -A.Brake, L.Thrust * boost);
+                accel = forward * push
+                      + _rotation * Vector3.up * (L.WingLift * airspeed * airspeed)
+                      + Vector3.down * L.Gravity;
+                if (hovering)
+                {
+                    // Hover: thrusters hold a descent (faster up high, gentle near the ground), straight up in the
+                    // world so it doesn't matter how the ship is tilted, and drift bleeds off.
+                    var descent = math.clamp(altitudeNow * A.DescentPerMetre, A.HoverDescent, math.max(A.HoverDescent, A.MaxDescent));
+                    var wing = L.WingLift * airspeed * airspeed * math.max(0f, (_rotation * Vector3.up).y);
+                    var up = math.clamp(L.Gravity - wing + (-descent - _velocity.y) * A.HoverGain, 0f, L.Lift * 1.6f);
+                    accel += Vector3.up * up;
+                    var drift = new Vector3(_velocity.x, 0f, _velocity.z);
+                    _velocity -= drift * (1f - math.exp(-A.HoverDriftDamping * dt));
+                }
+            }
+            else
+            {
+                accel = forward * (L.Thrust * _throttle * boost)
                       + _rotation * Vector3.up * (L.WingLift * airspeed * airspeed)            // wings: glide fast, sink slow
                       + (_input.Lifting.Value ? _rotation * Vector3.up * L.Lift : Vector3.zero)
                       + Vector3.down * L.Gravity;
+            }
             _velocity += accel * dt;
             _velocity *= math.exp(-L.Drag * dt);
             // Grip: the air bleeds off sideways drift (along the wings), more the faster you go, so the ship
@@ -177,8 +224,22 @@ namespace LuckyNumbers.Planet
             var flat = new Vector3(to.x, 0f, to.z);
             var heading = Vector3.SignedAngle(Vector3.ProjectOnPlane(_rotation * Vector3.forward, Vector3.up), flat, Vector3.up);
             var turn = math.abs(heading) < 8f ? "ahead" : heading < 0f ? $"{-heading:0} deg left" : $"{heading:0} deg right";
-            _view.Flight($"ALT {altitude:0} m    CLIMB {-vertical:+0.0;-0.0} m/s    SPEED {_velocity.magnitude:0} m/s    " +
-                         $"THROTTLE {_throttle * 100f:0}%{(boost > 1f ? " BOOST" : "")}    WRECK {flat.magnitude:0} m {turn}", null);
+            var power = Assisted
+                ? $"SET {_throttle * A.MaxSpeed * (_input.Sprinting.Value ? math.max(1f, A.BoostSpeed) : 1f):0} m/s{(hovering ? "  HOVER" : "")}"
+                : $"THROTTLE {_throttle * 100f:0}%{(boost > 1f ? " BOOST" : "")}";
+            var hud = $"ALT {altitude:0} m    CLIMB {-vertical:+0.0;-0.0} m/s    SPEED {_velocity.magnitude:0} m/s    {power}    " +
+                      $"WRECK {flat.magnitude:0} m {turn}";
+            // Low down: the three touchdown limits, each green (fine), amber (close) or red (would crash).
+            if (altitude < 40f)
+                hud += $"\n{Gauge("DESCENT", vertical, L.MaxTouchdownVertical, "m/s")}    " +
+                       $"{Gauge("DRIFT", horizontal, L.MaxTouchdownHorizontal, "m/s")}    {Gauge("TILT", tilt, L.MaxTouchdownTilt, "deg")}";
+            _view.Flight(hud, null);
+        }
+
+        static string Gauge(string label, float value, float limit, string unit)
+        {
+            var colour = value <= limit * 0.7f ? "#46a758" : value <= limit ? "#e5a23a" : "#e5484d";
+            return $"{label} <color={colour}>{math.max(0f, value):0.0} {unit}</color> / {limit:0}";
         }
 
         void Crash(string why)
