@@ -271,3 +271,57 @@ kbd {
 .s-window { background: #4a7bd1; }
 .s-start { background: #46a758; }
 .plan-editor .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; }
+
+/* ---- station map (M) ---- */
+
+.map-chip {
+  position: absolute;
+  left: max(var(--gap), env(safe-area-inset-left));
+  bottom: max(var(--gap), env(safe-area-inset-bottom));
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--muted);
+  backdrop-filter: blur(6px);
+}
+
+.station-map {
+  position: absolute;
+  inset: 8% 10%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  padding: 12px;
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  background: rgba(8, 10, 14, 0.88);
+  backdrop-filter: blur(8px);
+  animation: toast-in 160ms ease-out;
+}
+.station-map .map-head { display: flex; gap: 10px; align-items: baseline; margin-bottom: 8px; }
+.station-map .muted { color: var(--muted); }
+.station-map .hint { margin-left: auto; font-size: 12px; }
+.station-map svg { width: 100%; height: 100%; }
+.m-room { fill: #3a4250; }
+.m-corridor { fill: #2a3039; }
+.m-door { fill: #e5a23a; }
+.m-window { fill: #4a7bd1; }
+.m-label {
+  fill: rgba(232, 230, 225, 0.75);
+  text-anchor: middle;
+  dominant-baseline: middle;
+  letter-spacing: 0.08px;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.m-label.here { fill: #fff; font-weight: 600; }
+.m-dock circle { fill: rgba(70, 167, 88, 0.18); stroke: #46a758; stroke-width: 0.12; }
+.m-dock path { fill: #46a758; }
+.m-dock text { font-size: 1px; fill: #46a758; text-anchor: middle; }
+.m-dock.goal circle { animation: goal 1.4s ease-in-out infinite; }
+@keyframes goal { 50% { fill: rgba(70, 167, 88, 0.45); } }
+.m-you path { fill: #fff; stroke: #e5484d; stroke-width: 0.12; }

@@ -253,6 +253,9 @@ namespace LuckyNumbers.Editor
             var (eyes, viewmodel) = PlayerRig();
             eyes.tag = "Untagged";                          // the space camera is the main (base) camera
             eyes.farClipPlane = 200f;                       // the station only; space draws underneath
+            // Depth precision goes with far / near: 5 cm (walls never come closer; the arms have their own camera)
+            // keeps millimetre offsets (posts proud of walls) resolved out to the far end of the big rooms.
+            eyes.nearClipPlane = 0.05f;
             var eyesData = eyes.GetUniversalAdditionalCameraData();
             eyesData.cameraStack.Clear();
             eyesData.renderType = CameraRenderType.Overlay;

@@ -31,8 +31,10 @@ namespace LuckyNumbers.Station
             public readonly Vector2Int Cell;
             /// <summary>Its painted lights stay dark in every mode (e.g. every other room ceiling).</summary>
             public readonly bool Unlit;
+            public readonly Vector3 Scale;
 
-            public Piece(string name, Kit kit, Vector3 position, Quaternion rotation, Vector2Int cell, bool unlit = false)
+            public Piece(string name, Kit kit, Vector3 position, Quaternion rotation, Vector2Int cell, bool unlit = false,
+                         Vector3? scale = null)
             {
                 Name = name;
                 Kit = kit;
@@ -40,6 +42,7 @@ namespace LuckyNumbers.Station
                 Rotation = rotation;
                 Cell = cell;
                 Unlit = unlit;
+                Scale = scale ?? Vector3.one;
             }
         }
 
@@ -73,6 +76,12 @@ namespace LuckyNumbers.Station
         public const string PortholeRoom = Porthole + Flat;
         public const string Post = "post_ship", DoorwayShip = "wall_doorway_ship";
         public const string Door = "door_ship", Handrail = "handrail";
+
+        /// <summary>
+        /// Posts are 0.2 m square on a corner, so their faces land exactly on the two walls' faces (0.1 m out):
+        /// coplanar surfaces z-fight, a flickering 10 cm strip up every corner. A touch thicker, they sit ~8 mm proud.
+        /// </summary>
+        static readonly Vector3 PostScale = new(1.08f, 1f, 1.08f);
 
         /// <summary>Doorway opening (wall_doorway_ship, fits door_ship: 1.2 x 2.19 m).</summary>
         const float DoorWidth = 1.2f, DoorHeight = 2.19f, WallThickness = 0.2f;
@@ -228,7 +237,7 @@ namespace LuckyNumbers.Station
                 var b = new Vector3(c2.x - s.x, 0, c2.y - s.y);
                 var v = new Vector3(vx * Cell, 0, vz * Cell);
                 Hips.Add(new Hip(v, a, b, around[(solid + 2) % 4]));
-                Pieces.Add(new Piece(Post, Kit.Starship, v, Quaternion.identity, around[(solid + 2) % 4]));
+                Pieces.Add(new Piece(Post, Kit.Starship, v, Quaternion.identity, around[(solid + 2) % 4], false, PostScale));
             }
 
             foreach (var (vertex, axes) in corners)
@@ -236,7 +245,7 @@ namespace LuckyNumbers.Station
                 if (axes != 3) continue;   // a straight run: the walls meet flush, no post
                 var p = new Vector3(vertex.x, 0, vertex.y);
                 for (var l = 0; l < cornerLevels[vertex]; l++)
-                    Pieces.Add(new Piece(Post, Kit.Starship, p + Vector3.up * (Height * l), Quaternion.identity, CellOf(p)));
+                    Pieces.Add(new Piece(Post, Kit.Starship, p + Vector3.up * (Height * l), Quaternion.identity, CellOf(p), false, PostScale));
             }
         }
 

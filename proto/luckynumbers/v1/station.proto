@@ -217,6 +217,15 @@ message StationState {
   bool psx = 7;
   // The plan as built (rows joined with \n), for the page's layout editor.
   string plan = 8;
+  // The station map (M): open or not, where you are and which way you face (plan coordinates; yaw: compass
+  // degrees), your ship's dock, and every room as "name|col|row".
+  bool map_open = 9;
+  float player_col = 10;
+  float player_row = 11;
+  float player_yaw = 12;
+  float dock_col = 13;
+  float dock_row = 14;
+  repeated string rooms = 15;
 }
 
 // The page (or a console) answers the ringing call.

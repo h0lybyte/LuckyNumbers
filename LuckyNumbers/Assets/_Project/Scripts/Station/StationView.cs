@@ -195,7 +195,7 @@ namespace LuckyNumbers.Station
             {
                 if (!parts.TryGetValue(piece.Name, out var meshes)) { missing.Add(piece.Name); continue; }
                 var c = new Vector2Int(piece.Cell.x / chunk, piece.Cell.y / chunk);
-                var world = Matrix4x4.TRS(piece.Position, piece.Rotation, Vector3.one);
+                var world = Matrix4x4.TRS(piece.Position, piece.Rotation, piece.Scale);
                 Add((c, false), meshes, world, piece.Kit, new Meta { Unlit = piece.Unlit });
                 // Glass: one mesh for the whole station (cheap to draw, not worth culling per chunk): one draw call.
                 if (panes.TryGetValue(piece.Name, out var glass)) Add((Vector2Int.zero, true), glass, world, piece.Kit, default);

@@ -377,6 +377,17 @@ namespace LuckyNumbers.Model
         /// The plan as built (rows joined with \n), for the page's layout editor.
         /// </summary>
         public readonly ReactiveProperty<string> Plan = new ReactiveProperty<string>();
+        /// <summary>
+        /// The station map (M): open or not, where you are and which way you face (plan coordinates; yaw: compass
+        /// degrees), your ship's dock, and every room as "name|col|row".
+        /// </summary>
+        public readonly ReactiveProperty<bool> MapOpen = new ReactiveProperty<bool>();
+        public readonly ReactiveProperty<float> PlayerCol = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> PlayerRow = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> PlayerYaw = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> DockCol = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> DockRow = new ReactiveProperty<float>();
+        public readonly ObservableList<string> Rooms = new ObservableList<string>();
 
         public void Dispose()
         {
@@ -388,6 +399,12 @@ namespace LuckyNumbers.Model
             Prompt.Dispose();
             Psx.Dispose();
             Plan.Dispose();
+            MapOpen.Dispose();
+            PlayerCol.Dispose();
+            PlayerRow.Dispose();
+            PlayerYaw.Dispose();
+            DockCol.Dispose();
+            DockRow.Dispose();
         }
     }
 

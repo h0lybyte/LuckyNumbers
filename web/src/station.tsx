@@ -14,7 +14,69 @@ export function StationHud() {
       <RoomBanner room={state.room} />
       {(state.call === "Ringing" || state.call === "Active") && <CallPanel phase={state.call} caller={state.caller} />}
       {state.objective && state.call === "Ended" && <div className="objective">{state.objective}</div>}
+      {state.mapOpen && <StationMap state={state} />}
+      {!state.mapOpen && <div className="map-chip">Map <kbd>M</kbd></div>}
     </>
+  );
+}
+
+/** M: the whole station from above (the live plan), rooms named, your ship's dock, you as an arrow. */
+function StationMap({ state }: { state: NonNullable<ReturnType<typeof useLNState<"StationState">>> }) {
+  const rows = useMemo(() => state.plan.split("\n"), [state.plan]);
+  const width = Math.max(0, ...rows.map((r) => r.length));
+  const cells = useMemo(() => {
+    const out: { x: number; y: number; kind: string }[] = [];
+    rows.forEach((row, y) => {
+      for (let x = 0; x < row.length; x++) {
+        const k = swatch(row[x]);
+        if (k !== "wall") out.push({ x, y, kind: k === "start" ? "room" : k });
+      }
+    });
+    return out;
+  }, [rows]);
+  // Each room's label: along its top edge, sized to fit its width (scanned out from its cell in the plan).
+  const isRoom = (x: number, y: number) => ".PE".includes(rows[y]?.[x] ?? "#");
+  const rooms = state.rooms.map((r) => {
+    const [name, c, rw] = r.split("|");
+    const col = Math.round(Number(c));
+    let row = Math.round(Number(rw));
+    let left = col;
+    let right = col;
+    while (isRoom(left - 1, row)) left--;
+    while (isRoom(right + 1, row)) right++;
+    while (isRoom(col, row - 1)) row--;
+    const width = right - left + 1;
+    const size = Math.min(1.1, (width * 0.92) / (name.length * 0.7));
+    return { name, col: (left + right) / 2, row: row + 0.2 + size * 0.6, size };
+  });
+  const here = rooms.find((r) => r.name === state.room);
+  return (
+    <div className="station-map">
+      <div className="map-head">
+        <strong>Station</strong>
+        <span className="muted">{state.room || "Corridor"}</span>
+        <span className="muted hint">M to close</span>
+      </div>
+      <svg viewBox={`-0.5 -0.5 ${width + 1} ${rows.length + 1}`} preserveAspectRatio="xMidYMid meet">
+        {cells.map((c) => (
+          <rect key={`${c.x},${c.y}`} x={c.x} y={c.y} width={1.02} height={1.02} className={`m-${c.kind}`} />
+        ))}
+        {rooms.map((r) => (
+          <text key={r.name} x={r.col + 0.5} y={r.row} fontSize={r.size}
+                className={`m-label${here?.name === r.name ? " here" : ""}`}>
+            {r.name}
+          </text>
+        ))}
+        <g className={`m-dock${state.call === "Ended" ? " goal" : ""}`} transform={`translate(${state.dockCol + 0.5} ${state.dockRow + 0.5})`}>
+          <circle r={1.6} />
+          <path d="M 0 -1.1 L 0.7 0.9 L 0 0.5 L -0.7 0.9 Z" />
+          <text y={2.9}>Your ship</text>
+        </g>
+        <g className="m-you" transform={`translate(${state.playerCol + 0.5} ${state.playerRow + 0.5}) rotate(${state.playerYaw})`}>
+          <path d="M 0 -0.9 L 0.6 0.6 L 0 0.25 L -0.6 0.6 Z" />
+        </g>
+      </svg>
+    </div>
   );
 }
 

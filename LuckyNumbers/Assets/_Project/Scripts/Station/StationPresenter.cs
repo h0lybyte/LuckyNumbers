@@ -54,7 +54,7 @@ namespace LuckyNumbers.Station
 
         StationLayout _layout;   // as built: content's, seeded (generator), or the page's editor
         readonly Dictionary<Vector2Int, string> _roomOf = new();
-        bool _inSpace, _leaving, _interact;
+        bool _inSpace, _leaving, _interact, _toggleMap, _closeMap;
         Vector3 _orbitPosition, _dockPosition;
         Bounds _hull;   // the docked ship's world bounds (boarding is measured from it)
         Quaternion _stationInSpace = Quaternion.identity;
@@ -101,7 +101,13 @@ namespace LuckyNumbers.Station
             _state.Caller.Value = _config.Call?.Caller ?? "";
             _state.Objective.Value = "";
             _subscriptions.Add(_lightRequests.Subscribe(e => SetLights(e.Mode)));
-            _subscriptions.Add(_actions.Subscribe(e => { if (e.Action == InputAction.Interact) _interact = true; }));
+            _subscriptions.Add(_actions.Subscribe(e =>
+            {
+                if (e.Action == InputAction.Interact) _interact = true;
+                if (e.Action == InputAction.Map) _toggleMap = true;      // M: the station map (overlay)
+                if (e.Action == InputAction.Cancel) _closeMap = true;
+            }));
+            _state.MapOpen.Value = false;
             _subscriptions.Add(_answers.Subscribe(_ => Answer()));
             _subscriptions.Add(_plans.Subscribe(e => Rebuild(e.Plan)));
             _subscriptions.Add(_psxRequests.Subscribe(e => SetPsx(e.On)));
@@ -136,6 +142,14 @@ namespace LuckyNumbers.Station
                 foreach (var c in cells) _roomOf[c] = name;
             }
             _state.Plan.Value = string.Join("\n", layout.Plan);
+            // For the map: every room ("name|col|row") and the dock.
+            _state.Rooms.Clear();
+            foreach (var r in layout.Rooms) _state.Rooms.Add($"{r.Name}|{r.Col}|{r.Row}");
+            if (layout.Dock != null)
+            {
+                _state.DockCol.Value = layout.Dock.Col;
+                _state.DockRow.Value = layout.Dock.Row;
+            }
         }
 
         /// <summary>Lamp glow: the scene's bloom (a Volume built by SceneBuilder), from content.</summary>
@@ -227,6 +241,22 @@ namespace LuckyNumbers.Station
             _ui.Fade(_fade);
 
             var position = _player.Body.transform.position;
+
+            // The map: M toggles it, Esc closes it; it follows you (plan coordinates, compass heading).
+            if (_toggleMap) _state.MapOpen.Value = !_state.MapOpen.Value;
+            else if (_closeMap && _state.MapOpen.Value) _state.MapOpen.Value = false;
+            _toggleMap = _closeMap = false;
+            var plan = _station.Plan;
+            var col = position.x / StationPlan.Cell - 0.5f;
+            var row = plan.Depth - 1 - (position.z / StationPlan.Cell - 0.5f);
+            var yaw = eyes.transform.eulerAngles.y;
+            if (Mathf.Abs(col - _state.PlayerCol.Value) > 0.05f || Mathf.Abs(row - _state.PlayerRow.Value) > 0.05f)
+            {
+                _state.PlayerCol.Value = col;
+                _state.PlayerRow.Value = row;
+            }
+            if (Mathf.Abs(Mathf.DeltaAngle(yaw, _state.PlayerYaw.Value)) > 3f) _state.PlayerYaw.Value = yaw;
+
             _station.UpdateDoors(position, _config.DoorOpenDistance > 0f ? _config.DoorOpenDistance : 2.6f, dt);
 
             // Room you're in, and the call it may set off.

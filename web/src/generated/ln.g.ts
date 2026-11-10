@@ -89,6 +89,17 @@ export interface StationState {
   psx: boolean;
   /** The plan as built (rows joined with \n), for the page's layout editor. */
   plan: string;
+  /**
+   * The station map (M): open or not, where you are and which way you face (plan coordinates; yaw: compass
+   * degrees), your ship's dock, and every room as "name|col|row".
+   */
+  mapOpen: boolean;
+  playerCol: number;
+  playerRow: number;
+  playerYaw: number;
+  dockCol: number;
+  dockRow: number;
+  rooms: string[];
 }
 
 export interface DiceState {

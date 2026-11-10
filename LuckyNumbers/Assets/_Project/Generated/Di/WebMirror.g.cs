@@ -85,6 +85,15 @@ namespace LuckyNumbers.Model
                 d.Add(s.Prompt.Subscribe(_ => sink.MarkState(6)));
                 d.Add(s.Psx.Subscribe(_ => sink.MarkState(6)));
                 d.Add(s.Plan.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.MapOpen.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.PlayerCol.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.PlayerRow.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.PlayerYaw.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.DockCol.Subscribe(_ => sink.MarkState(6)));
+                d.Add(s.DockRow.Subscribe(_ => sink.MarkState(6)));
+                NotifyCollectionChangedEventHandler<string> hRooms = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(6);
+                s.Rooms.CollectionChanged += hRooms;
+                d.Add(Disposable.Create(() => s.Rooms.CollectionChanged -= hRooms));
                 sink.MarkState(6);
             }
             {
@@ -289,6 +298,30 @@ namespace LuckyNumbers.Model
             b.Append(s.Psx.Value ? "true" : "false");
             b.Append(",\"plan\":");
             Json.Str(b, s.Plan.Value);
+            b.Append(",\"mapOpen\":");
+            b.Append(s.MapOpen.Value ? "true" : "false");
+            b.Append(",\"playerCol\":");
+            Json.Num(b, s.PlayerCol.Value);
+            b.Append(",\"playerRow\":");
+            Json.Num(b, s.PlayerRow.Value);
+            b.Append(",\"playerYaw\":");
+            Json.Num(b, s.PlayerYaw.Value);
+            b.Append(",\"dockCol\":");
+            Json.Num(b, s.DockCol.Value);
+            b.Append(",\"dockRow\":");
+            Json.Num(b, s.DockRow.Value);
+            b.Append(",\"rooms\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Rooms)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Str(b, x);
+                }
+            }
+            b.Append(']');
             b.Append('}');
         }
 
