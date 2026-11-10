@@ -239,6 +239,14 @@ namespace LuckyNumbers.Editor
                 Eye(At(5.2f, 4.8f), At(6.6f, 1f, 1.5f)),        // hangar's north-east corner
                 Eye(At(12.5f, 3f), At(15f, 5.5f, 1.4f)),        // corridor turning south
             }, "preview-station-joins.png");
+            // Corridor joins up close: portholes, the turn's inner (convex) corner, the end at a doorway.
+            SaveGrid(new[]
+            {
+                Eye(At(11.5f, 3.4f, 1.5f), At(11.5f, 2f, 2.2f)),       // portholes (north wall)
+                Eye(At(15.2f, 4.6f, 2.2f), At(14.2f, 2.8f, 2.7f)),     // turn: inner corner, looking up at it
+                Eye(At(14.6f, 3.2f, 1.7f), At(15.6f, 2.4f, 2.6f)),     // turn: outer corner (the leans cross)
+                Eye(At(7.4f, 3.3f, 2f), At(8.6f, 2.4f, 2.6f)),         // from the doorway into the corridor: lean ends
+            }, "preview-station-corridor.png");
         }
 
         static Material KitMaterial(string kit)
