@@ -17,9 +17,10 @@ namespace LuckyNumbers.Planet
     /// <summary>
     /// The freighter's relics at the crash site (content/cargo.txtpb, the same manifest the MAYDAY read out):
     /// scattered round the wreck, glowing, the named artifacts closest. Walk up and E picks one up (an artifact
-    /// tells you whose it was); R uses the one you hold: a d20, plus up to luck_bonus from your luck die, picks a
-    /// row of its table (a natural 1 is always row 1), whose effects happen: health back, slowed, a beam over the
-    /// nearest relic or all of them. Rolls are seeded by the lucky number, so a universe always rolls the same.
+    /// tells you whose it was, and either earns XP); R uses the one you hold: a d20, plus up to luck_bonus from your
+    /// luck die and your sheet's relic ability modifier (CharacterSheet.relic_bonus), picks a row of its table (a
+    /// natural 1 is always row 1, a natural 20 the last), whose effects happen: health back (HP first, the rest to
+    /// Stamina), slowed, a beam over the nearest relic or all of them. Rolls are seeded by the lucky number, so a universe always rolls the same.
     /// Inventory and rolls go to the page (RelicInventory, RelicRolled): its strip and the d20.
     /// </summary>
     [Presenter]
@@ -39,6 +40,8 @@ namespace LuckyNumbers.Planet
         readonly GroundView _ground;
         readonly IFirstPerson _firstPerson;
         readonly PlayerHealth _health;
+        readonly CharacterSheet _sheet;
+        readonly IPublisher<CharacterXpGained> _xp;
         readonly RelicInventory _inventory;
         readonly IPublisher<RelicRolled> _rolled;
         readonly ISubscriber<InputActionPerformed> _actions;
@@ -61,7 +64,8 @@ namespace LuckyNumbers.Planet
 
         [Inject]
         public RelicsPresenter(ICrashSite site, PlanetView view, PlayerView player, GroundView ground, IFirstPerson firstPerson,
-                               PlayerHealth health, RelicInventory inventory, IPublisher<RelicRolled> rolled,
+                               PlayerHealth health, CharacterSheet sheet, IPublisher<CharacterXpGained> xp,
+                               RelicInventory inventory, IPublisher<RelicRolled> rolled,
                                ISubscriber<InputActionPerformed> actions, ISubscriber<RelicUseRequested> useRequests,
                                IBufferedSubscriber<UniverseSeedChanged> seeds, ISubscriber<DevWarpRequested> warps)
         {
@@ -72,6 +76,8 @@ namespace LuckyNumbers.Planet
             _ground = ground;
             _firstPerson = firstPerson;
             _health = health;
+            _sheet = sheet;
+            _xp = xp;
             _inventory = inventory;
             _rolled = rolled;
             _actions = actions;
@@ -231,6 +237,8 @@ namespace LuckyNumbers.Planet
             if (l.Relic.Artifact != null || _inventory.Selected.Value < 0) _inventory.Selected.Value = _held.Count - 1;
             _inventory.Lying.Value = _lying.FindAll(x => !x.Taken).Count;
             Debug.Log($"[Relics] picked up {l.Relic.Name} ({l.Relic.Value} cr)");
+            var xp = l.Relic.Artifact != null ? GameContent.Character.XpPerArtifact : GameContent.Character.XpPerRelic;
+            if (xp > 0) _xp.Publish(new CharacterXpGained(xp, l.Relic.Name));
             var a = l.Relic.Artifact;
             var line = a != null
                 ? new Dialogue { Speaker = $"{a.Name} - {a.Figure}, {a.Era}", Text = a.Lore, DurationSeconds = 5f, CharsPerSecond = 45f }
@@ -249,14 +257,15 @@ namespace LuckyNumbers.Planet
             if (a == null || a.Rolls.Count == 0 || Time.time < _cooldownUntil) return;
             var rng = new Random((_site.Seed ^ (0xD20u * (uint)(++_uses))) | 1u);
             var roll = rng.NextInt(1, 21);
-            var bonus = _luck >= 0f ? (int)math.round(_luck * math.max(0, Config.LuckBonus)) : 0;
-            var total = roll == 1 ? 1 : math.min(20, roll + bonus);
+            var bonus = (_luck >= 0f ? (int)math.round(_luck * math.max(0, Config.LuckBonus)) : 0) + _sheet.RelicBonus.Value;
+            // Naturals stand: 1 is always a 1, 20 always a 20.
+            var total = roll == 1 ? 1 : roll == 20 ? 20 : math.clamp(roll + bonus, 1, 20);
             RelicRoll row = null;
             foreach (var r in a.Rolls) if (total >= r.Min && total <= r.Max) { row = r; break; }
             row ??= a.Rolls[a.Rolls.Count - 1];
             foreach (var effect in row.Effects) Apply(effect, row);
             _cooldownUntil = Time.time + a.CooldownSeconds;
-            _rolled.Publish(new RelicRolled(a.Name, roll, roll == 1 ? 0 : total - roll, total, row.Title, row.Text));
+            _rolled.Publish(new RelicRolled(a.Name, roll, total - roll, total, row.Title, row.Text));
             Debug.Log($"[Relics] {a.Name}: d20 {roll} + {bonus} = {total}: {row.Title}");
             DialogueLine.Play(new Dialogue { Speaker = $"{a.Name}: {total} - {row.Title}", Text = row.Text, DurationSeconds = 4f, CharsPerSecond = 50f },
                               _view.Dialogue, _cts.Token).Forget();
@@ -267,10 +276,17 @@ namespace LuckyNumbers.Planet
             switch (effect)
             {
                 case RelicEffect.Heal:
-                    _health.Current.Value = Mathf.Min(_health.Max.Value, _health.Current.Value + Mathf.RoundToInt(row.Amount));
+                {
+                    // HP first; what's left over tops up Stamina.
+                    var amount = Mathf.RoundToInt(row.Amount);
+                    var toHp = Mathf.Min(amount, _health.Max.Value - _health.Current.Value);
+                    _health.Current.Value += toHp;
+                    _sheet.Stamina.Value = Mathf.Min(_sheet.StaminaMax.Value, _sheet.Stamina.Value + amount - toHp);
                     break;
+                }
                 case RelicEffect.FullHeal:
                     _health.Current.Value = _health.Max.Value;
+                    _sheet.Stamina.Value = _sheet.StaminaMax.Value;
                     break;
                 case RelicEffect.Slow:
                     _slowScale = math.clamp(row.Amount, 0.1f, 1f);

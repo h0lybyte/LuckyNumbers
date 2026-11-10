@@ -27,12 +27,12 @@ rolls {
 rolls {
   min: 2 max: 7 title: "Trickle"
   text: "A cool trickle runs over your hands. A little strength comes back."
-  effects: [RELIC_EFFECT_HEAL] amount: 10
+  effects: [RELIC_EFFECT_HEAL] amount: 3
 }
 rolls {
   min: 8 max: 14 title: "Spring"
   text: "A clear spring wells up from the amulet. You feel much better."
-  effects: [RELIC_EFFECT_HEAL] amount: 35
+  effects: [RELIC_EFFECT_HEAL] amount: 8
 }
 rolls {
   min: 15 max: 19 title: "Dragon's Pearl"

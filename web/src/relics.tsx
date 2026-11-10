@@ -1,4 +1,4 @@
-// Relics at the crash site: the d20 when you use one (tumbles, lands on the roll, + luck = total, what it did),
+// Relics at the crash site: the d20 when you use one (tumbles, lands on the roll, + luck and sheet = total, what it did),
 // the inventory strip (click to use), and a revealed relic's bearing. Unity rolls; this only shows it.
 import { useEffect, useRef, useState } from "react";
 import { LN, useLNEvent, useLNState } from "./ln";
@@ -81,7 +81,7 @@ function D20() {
           <>
             <div className="d20-sum">
               d20 <b>{roll.roll}</b>
-              {roll.bonus > 0 && <> + luck <b>{roll.bonus}</b></>} = <b>{roll.total}</b>
+              {roll.bonus !== 0 && <> {roll.bonus > 0 ? "+" : "\u2212"} mods <b>{Math.abs(roll.bonus)}</b></>} = <b>{roll.total}</b>
             </div>
             <div className="d20-title">{roll.title}</div>
             <div className="d20-line">{roll.text}</div>

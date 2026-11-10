@@ -15,6 +15,11 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<RelicRolled>(options);
             builder.RegisterMessageBroker<DevWarpRequested>(options);
             builder.RegisterMessageBroker<RelicUseRequested>(options);
+            builder.RegisterMessageBroker<CharacterAbilityAdjustRequested>(options);
+            builder.RegisterMessageBroker<CharacterClassRequested>(options);
+            builder.RegisterMessageBroker<CharacterOriginRequested>(options);
+            builder.RegisterMessageBroker<CharacterResetRequested>(options);
+            builder.RegisterMessageBroker<CharacterXpGained>(options);
             builder.RegisterMessageBroker<SceneChangeRequested>(options);
             builder.RegisterMessageBroker<SceneEntered>(options);
             builder.RegisterMessageBroker<UniverseSeedChanged>(options);
@@ -36,6 +41,7 @@ namespace LuckyNumbers.Model
         public static void RegisterModelState(this IContainerBuilder builder)
         {
             builder.Register<RelicInventory>(Lifetime.Singleton);
+            builder.Register<CharacterSheet>(Lifetime.Singleton);
             builder.Register<FlowState>(Lifetime.Singleton);
             builder.Register<LoadingState>(Lifetime.Singleton);
             builder.Register<CameraHandoff>(Lifetime.Singleton);

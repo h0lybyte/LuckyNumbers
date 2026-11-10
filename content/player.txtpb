@@ -2,6 +2,7 @@
 # proto-message: luckynumbers.v1.PlayerConfig
 # Placeholder value; tune with gameplay.
 
+# Only used when content/character.txtpb has no abilities; otherwise HP comes from the character sheet.
 max_health: 100
 
 # Your ship's starting skin (any file name in Art/Models/Fighter/Skins). Customisable later.
