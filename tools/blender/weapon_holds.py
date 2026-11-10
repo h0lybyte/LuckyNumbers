@@ -1,5 +1,8 @@
 """Work out how the first-person arms hold each gun in Art/Models/Weapons, and write it into weapons.json.
 
+Pipeline: export_weapons.py (models; rewrites weapons.json) -> this (holds) -> tools/ln.py scenes + build-web + serve
+-> tools/ln.py bake-grasps (finger grips, from the game itself) -> tools/ln.py scenes (the weapons carry it all).
+
 Usage (after tools/blender/export_weapons.py, which rewrites weapons.json):
     blender -b --disable-autoexec --python tools/blender/weapon_holds.py -- <Art/Models/Weapons dir> [--render <out dir>]
 
@@ -338,7 +341,10 @@ for item in index["items"]:
         render(name, path, shape, h, render_dir)
         rendered.append(name)
 
+import re
 with open(index_path, "w") as f:
-    json.dump(index, f, indent=2)
-    f.write("\n")
+    # Like tools/ln.py bake-grasps: indented, but arrays of plain numbers on one line.
+    text = re.sub(r"\[\s*(-?[\d.e+-]+(?:,\s*-?[\d.e+-]+)*)\s*\]",
+                  lambda m: "[" + ", ".join(x.strip() for x in m.group(1).split(",")) + "]", json.dumps(index, indent=2))
+    f.write(text + "\n")
 print("WROTE", index_path, "renders:", rendered)

@@ -38,6 +38,12 @@ namespace LuckyNumbers.Planet
         [SerializeField] float recoil = 0.035f;                      // metres back per shot (pitch follows)
 
         public Vector3 Grip => grip;
+        [Header("Baked grips (weapons.json, tools/ln.py bake-grasps)")]
+        [SerializeField] LuckyNumbers.Hands.GraspData graspLeft;
+        [SerializeField] LuckyNumbers.Hands.GraspData graspRight;
+        public LuckyNumbers.Hands.GraspData BakedGrip(int side) => side == 0 ? graspLeft : graspRight;
+        public void InitGrips(LuckyNumbers.Hands.GraspData left, LuckyNumbers.Hands.GraspData right) { graspLeft = left; graspRight = right; }
+
         public Vector3 Foregrip => foregrip;
         public Vector3 HoldOffset => holdOffset;
         public float HeldScale => heldScale;

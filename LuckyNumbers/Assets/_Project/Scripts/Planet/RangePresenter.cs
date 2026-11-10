@@ -1,4 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using LuckyNumbers.Hands;
 using LuckyNumbers.Model;
 using MessagePipe;
 using UnityEngine;
@@ -16,6 +20,8 @@ namespace LuckyNumbers.Planet
     /// V cycles a picture-in-picture view of the hands and what they hold (top left): right side, left side, top, the
     /// hands up close (right, left, below), off.
     /// It draws only the arms' layer, from beside the eyes, so walls never block it and it moves with your look.
+    /// ?ln-bake picks up every gun and melee weapon in turn, solves each hand's grip live and logs it as a "[Bake]"
+    /// JSON line: tools/ln.py bake-grasps runs that headless and writes the grips into weapons.json.
     /// </summary>
     public sealed class RangePresenter : IStartable, IDisposable
     {
@@ -25,6 +31,7 @@ namespace LuckyNumbers.Planet
         readonly ArmsView _arms;
         readonly ISubscriber<InputActionPerformed> _actions;
         IDisposable _subscription;
+        readonly CancellationTokenSource _cts = new();
         Camera _side;
         int _view;   // index into Views (0: off)
 
@@ -59,6 +66,8 @@ namespace LuckyNumbers.Planet
         {
             Time.timeScale = 1f;
             _subscription?.Dispose();
+            _cts.Cancel();
+            ArmsView.UsePresets = true;
         }
 
         public void Start()
@@ -76,8 +85,47 @@ namespace LuckyNumbers.Planet
             var start = StartAt();
             if (start != null) Face(start);
             _firstPerson.Active = true;
+            if (url.Contains("ln-bake")) Bake(_cts.Token).Forget();
             Debug.Log($"[Range] ready: {Object.FindObjectsByType<WeaponView>().Length} guns, " +
                       $"{Object.FindObjectsByType<MeleeView>().Length} melee{(start != null ? $", at {start.name}" : "")}"); // marker for ln.py webshot
+        }
+
+        [Serializable] sealed class BakeLine { public string item; public GraspData left, right; }
+
+        /// <summary>Every gun and melee weapon in turn: pick it up, wait for each hand's grip to settle, log it, put it down.</summary>
+        async UniTaskVoid Bake(CancellationToken ct)
+        {
+            ArmsView.UsePresets = false;   // solve each one fresh
+            ArmsView.ClearBakedGrasps();
+            var items = new List<(Rigidbody body, int[] hands)>();
+            foreach (var gun in Object.FindObjectsByType<WeaponView>()) items.Add((gun.GetComponent<Rigidbody>(), new[] { 0, 1 }));
+            foreach (var blade in Object.FindObjectsByType<MeleeView>()) items.Add((blade.GetComponent<Rigidbody>(), new[] { 1 }));
+            var baked = 0;
+            foreach (var (body, hands) in items)
+            {
+                var name = body.name.StartsWith("Weapon ") ? body.name.Substring("Weapon ".Length) : body.name;
+                Face(body.transform);
+                await UniTask.Delay(400, cancellationToken: ct);
+                if (!_firstPerson.PickUp(body)) { Debug.LogWarning($"[Bake] couldn't pick up {name}"); continue; }
+                var waited = 0f;
+                while (waited < 15f && (_firstPerson.Held != body || Array.Exists(hands, s => _arms.BakedGrip(s) == null)))
+                {
+                    await UniTask.Yield(ct);
+                    waited += Time.unscaledDeltaTime;
+                }
+                if (_firstPerson.Held == body && !Array.Exists(hands, s => _arms.BakedGrip(s) == null))
+                {
+                    var line = new BakeLine { item = name };
+                    foreach (var s in hands) if (s == 0) line.left = _arms.BakedGrip(0); else line.right = _arms.BakedGrip(1);
+                    Debug.Log("[Bake] " + JsonUtility.ToJson(line));
+                    baked++;
+                }
+                else Debug.LogWarning($"[Bake] {name}: the grip never settled (15 s)");
+                _firstPerson.Drop();
+                await UniTask.Delay(600, cancellationToken: ct);
+            }
+            ArmsView.UsePresets = true;
+            Debug.Log($"[Bake] done: {baked} of {items.Count}");
         }
 
         static bool SideViewAtStart() => (Application.absoluteURL ?? "").Contains("ln-sideview");   // start with it on

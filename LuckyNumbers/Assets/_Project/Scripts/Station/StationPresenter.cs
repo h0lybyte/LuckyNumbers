@@ -171,9 +171,19 @@ namespace LuckyNumbers.Station
             var gun = UnityEngine.Object.FindAnyObjectByType<WeaponView>(FindObjectsInactive.Include);
             if (gun == null) return;
             var facing = Quaternion.Euler(0f, yaw, 0f);
-            if (gun.TryGetComponent<Rigidbody>(out var body)) { body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
-            gun.transform.SetPositionAndRotation(spawn + facing * new Vector3(0.25f, 0.35f, 1.0f), facing * Quaternion.Euler(0f, 80f, 0f));
+            var at = spawn + facing * new Vector3(0.25f, 0.35f, 1.0f);
+            var turned = facing * Quaternion.Euler(0f, 80f, 0f);
+            gun.transform.SetPositionAndRotation(at, turned);
             gun.gameObject.SetActive(true);
+            if (gun.TryGetComponent<Rigidbody>(out var body))
+            {
+                // Move the body too: setting only the transform, the next physics step puts it back where the body
+                // was (the rifle stayed by the first spawn after the station was rebuilt from your lucky number).
+                body.position = at;
+                body.rotation = turned;
+                body.linearVelocity = Vector3.zero;
+                body.angularVelocity = Vector3.zero;
+            }
         }
 
         /// <summary>
