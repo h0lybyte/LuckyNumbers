@@ -121,6 +121,7 @@ namespace LuckyNumbers.Title
                 var at = cam.position + cam.forward * MatchedDistance(h) - below;
                 var facing = Quaternion.LookRotation(-cam.forward, cam.up);   // nose toward the camera at 0
                 _ship.Pose(at, facing * Quaternion.AngleAxis(h.TiltDegrees, Vector3.right) * Quaternion.AngleAxis(angle, Vector3.up));
+                _ship.SetThrust(Vector3.zero, Vector3.zero);   // on display: the mains idle
                 await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
             }
             _ship.Hide();

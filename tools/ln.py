@@ -291,7 +291,8 @@ def cmd_overlay(args) -> int:
 
 def cmd_preview(args) -> int:
     method, png = {"ship": ("RenderShip", "preview-ship.png"), "arms": ("RenderArms", "preview-arms.png"),
-                   "station": ("RenderStation", "preview-station.png")}.get(
+                   "station": ("RenderStation", "preview-station.png"),
+                   "exhaust": ("RenderExhaust", "preview-exhaust.png")}.get(
         args.what, ("RenderSpace", "preview-space.png"))
     code, log = run_unity(["-executeMethod", f"LuckyNumbers.Editor.ShaderPreview.{method}"],
                           "ln-preview.log", args.force, graphics=True)
@@ -774,7 +775,7 @@ def main(argv=None) -> int:
     s.set_defaults(func=cmd_bake_grasps)
 
     s = sub.add_parser("preview", help="render shaders to LuckyNumbers/Logs/preview-<what>.png")
-    s.add_argument("what", nargs="?", choices=["space", "ship", "arms", "station"], default="space")
+    s.add_argument("what", nargs="?", choices=["space", "ship", "arms", "station", "exhaust"], default="space")
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
     s.set_defaults(func=cmd_preview)
 

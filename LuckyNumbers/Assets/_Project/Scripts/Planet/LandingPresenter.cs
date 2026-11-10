@@ -67,6 +67,7 @@ namespace LuckyNumbers.Planet
 
         Phase _phase;
         Vector3 _velocity, _spin;      // m/s; degrees/s around the ship's right (pitch), up (yaw), forward (roll)
+        Vector3 _jetSpin;              // the spin the jets last saw (they fire to change it)
         Quaternion _rotation;
         Vector3 _position;
         float _throttle, _phaseTime;
@@ -148,7 +149,7 @@ namespace LuckyNumbers.Planet
                 // Crashed on the way out: hovering above where you'd parked, still leaving.
                 _position = _parked + Vector3.up * 40f;
                 _velocity = Vector3.zero;
-                _spin = Vector3.zero;
+                _spin = _jetSpin = Vector3.zero;
                 _rotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(_rotation * Vector3.forward, Vector3.up).normalized, Vector3.up);
                 _heading = _rotation.eulerAngles.y;
                 _pitch = _bank = _yawRate = _pitchRate = 0f;
@@ -167,7 +168,7 @@ namespace LuckyNumbers.Planet
             _position = start;
             _rotation = Quaternion.LookRotation(toWreck.normalized, Vector3.up);
             _velocity = _rotation * Vector3.forward * L.StartSpeed;
-            _spin = Vector3.zero;
+            _spin = _jetSpin = Vector3.zero;
             _heading = _rotation.eulerAngles.y;
             _pitch = _bank = _yawRate = _pitchRate = 0f;
             // Assisted, the throttle is a speed: start at the speed you arrive with.
@@ -269,6 +270,8 @@ namespace LuckyNumbers.Planet
                 _velocity -= right * (Vector3.Dot(_velocity, right) * (1f - math.exp(-L.Grip * math.saturate(airspeed / 25f) * dt)));
                 _position += _velocity * dt;
                 Ship.SetHeat(0f, 0.6f + 1.4f * _throttle * boost + (_input.Lifting.Value ? 0.6f : 0f));   // engines glow with thrust
+                // Jets: the mains with the throttle, the belly with the lift thrusters, the small ones to turn.
+                Ship.SetThrust(new Vector3(0f, _input.Lifting.Value ? 1f : 0f, _throttle), JetTurn(dt, math.max(90f, L.RollDegreesPerSecond)), boost);
             }
 
             // Touchdown: the lowest of three gear points reaches the ground.
@@ -474,6 +477,25 @@ namespace LuckyNumbers.Planet
             if (_velocity.y - groundRate < -cap) _velocity.y = groundRate - cap;
             _position += _velocity * dt;
             Ship.SetHeat(0f, 0.6f + 0.9f * (_velocity.magnitude / math.max(1f, H.MaxSpeed)) * boost + (pushing ? 0.5f : 0.2f));
+            // Jets, in the ship's frame: this frame's change of velocity (its share of what the assist can do in a
+            // frame, so a hard push or brake burns full), plus holding the ship up and its speed against the air.
+            var toShip = Quaternion.Inverse(_rotation);
+            var ask = toShip * (change / math.max(rate, 1e-4f));
+            var hold = toShip * (Vector3.up * 0.3f + _velocity / math.max(1f, H.MaxSpeed) * 0.5f);
+            Ship.SetThrust(ask + hold, JetTurn(dt, H.TurnRate), boost);
+        }
+
+        /// <summary>
+        /// What the jets do to turn (ShipView.SetThrust): they kick to start and stop a turn (the spin's change,
+        /// against `rate` degrees/s reached in a quarter second) and keep a little burn while it turns.
+        /// </summary>
+        Vector3 JetTurn(float dt, float rate)
+        {
+            rate = math.max(1f, rate);
+            var change = (_spin - _jetSpin) / math.max(dt, 1e-4f);
+            _jetSpin = _spin;
+            var turn = change / (rate * 4f) + _spin / rate * 0.4f;
+            return new Vector3(math.clamp(turn.x, -1f, 1f), math.clamp(turn.y, -1f, 1f), math.clamp(turn.z, -1f, 1f));
         }
 
         static string Gauge(string label, float value, float limit, string unit)
@@ -490,8 +512,9 @@ namespace LuckyNumbers.Planet
             _phase = Phase.Crashed;
             _phaseTime = 0f;
             _velocity = Vector3.zero;
-            _spin = Vector3.zero;
+            _spin = _jetSpin = Vector3.zero;
             Ship.SetHeat(0.9f, 0.2f);                                          // scorched
+            Ship.EnginesOff(instant: true);
             _view.Flight("", _pageHud ? null : L.CrashedText);
             Debug.Log($"[Landing] crashed: {why}");
             FlashAsync().Forget();
@@ -517,6 +540,7 @@ namespace LuckyNumbers.Planet
             _position.y = _ground.SurfaceAt(_position) + L.ShipLength * 0.5f * 0.18f;   // resting on the mesh
             Ship.Pose(_position, _rotation);
             Ship.SetHeat(0f, 0.3f);
+            Ship.EnginesOff();                                                 // parked: the flames die down
             SetSolid(true);
             _parked = _position;
             if (_beacon != null) _beacon.gameObject.SetActive(false);
@@ -558,13 +582,7 @@ namespace LuckyNumbers.Planet
         {
             if (_phase != Phase.Landed || _boarding || !_firstPerson.Active || L.OrbitAltitude <= 0f) return "";
             // From the hull (its bounds), not the middle: a 24 m ship can be boarded from any side.
-            var hull = new Bounds(_position, Vector3.zero);
-            var first = true;
-            foreach (var r in Ship.Pivot.GetComponentsInChildren<Renderer>())
-            {
-                if (first) { hull = r.bounds; first = false; }
-                else hull.Encapsulate(r.bounds);
-            }
+            var hull = Ship.Hull;
             var flat = new Vector3(feet.x, hull.center.y, feet.z);
             var reach = L.BoardDistance > 0f ? L.BoardDistance : 4f;
             return Vector3.Distance(hull.ClosestPoint(flat), flat) <= reach ? L.BoardPrompt ?? "E: board your ship" : "";
@@ -592,7 +610,7 @@ namespace LuckyNumbers.Planet
             _site.Follow(Ship.Pivot, _view.FlightCamera.transform);
             SetSolid(false);
             _velocity = Vector3.zero;
-            _spin = Vector3.zero;
+            _spin = _jetSpin = Vector3.zero;
             _heading = _rotation.eulerAngles.y;
             _pitch = _bank = _yawRate = _pitchRate = 0f;
             var flatForward = Vector3.ProjectOnPlane(_rotation * Vector3.forward, Vector3.up).normalized;

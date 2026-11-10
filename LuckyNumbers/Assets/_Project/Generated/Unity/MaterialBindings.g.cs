@@ -170,5 +170,40 @@ namespace LuckyNumbers.Model
             material.SetFloat(PlanetLook_TerminatorSoftness, look.TerminatorSoftness);
             material.SetFloat(PlanetLook_AxialTiltDegrees, look.AxialTiltDegrees);
         }
+
+        public const string ExhaustLookShader = "LuckyNumbers/Exhaust";
+        static readonly int ExhaustLook_CoreColor = Shader.PropertyToID("_CoreColor");
+        static readonly int ExhaustLook_EdgeColor = Shader.PropertyToID("_EdgeColor");
+        static readonly int ExhaustLook_Intensity = Shader.PropertyToID("_Intensity");
+        static readonly int ExhaustLook_Softness = Shader.PropertyToID("_Softness");
+        static readonly int ExhaustLook_Falloff = Shader.PropertyToID("_Falloff");
+        static readonly int ExhaustLook_Taper = Shader.PropertyToID("_Taper");
+        static readonly int ExhaustLook_NoiseScale = Shader.PropertyToID("_NoiseScale");
+        static readonly int ExhaustLook_FlowSpeed = Shader.PropertyToID("_FlowSpeed");
+        static readonly int ExhaustLook_Turbulence = Shader.PropertyToID("_Turbulence");
+        static readonly int ExhaustLook_Diamonds = Shader.PropertyToID("_Diamonds");
+        static readonly int ExhaustLook_DiamondStrength = Shader.PropertyToID("_DiamondStrength");
+        static readonly int ExhaustLook_HaloSize = Shader.PropertyToID("_HaloSize");
+        static readonly int ExhaustLook_HaloIntensity = Shader.PropertyToID("_HaloIntensity");
+        static readonly int ExhaustLook_Flicker = Shader.PropertyToID("_Flicker");
+
+        /// <summary>Copies every field to the matching LuckyNumbers/Exhaust property.</summary>
+        public static void ApplyTo(this ExhaustLook look, Material material)
+        {
+            material.SetColor(ExhaustLook_CoreColor, look.CoreColor.ToColor());
+            material.SetColor(ExhaustLook_EdgeColor, look.EdgeColor.ToColor());
+            material.SetFloat(ExhaustLook_Intensity, look.Intensity);
+            material.SetFloat(ExhaustLook_Softness, look.Softness);
+            material.SetFloat(ExhaustLook_Falloff, look.Falloff);
+            material.SetFloat(ExhaustLook_Taper, look.Taper);
+            material.SetFloat(ExhaustLook_NoiseScale, look.NoiseScale);
+            material.SetFloat(ExhaustLook_FlowSpeed, look.FlowSpeed);
+            material.SetFloat(ExhaustLook_Turbulence, look.Turbulence);
+            material.SetFloat(ExhaustLook_Diamonds, look.Diamonds);
+            material.SetFloat(ExhaustLook_DiamondStrength, look.DiamondStrength);
+            material.SetFloat(ExhaustLook_HaloSize, look.HaloSize);
+            material.SetFloat(ExhaustLook_HaloIntensity, look.HaloIntensity);
+            material.SetFloat(ExhaustLook_Flicker, look.Flicker);
+        }
     }
 }

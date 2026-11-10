@@ -221,13 +221,9 @@ namespace LuckyNumbers.Station
             _ship.Show(PlayerShipSkin.Current(_playerShip), dock.Length);
             // Resting on its belly a little above the deck, nose along the dock's heading.
             _ship.Pose(_dockPosition + Vector3.up * (dock.Length * 0.16f), Quaternion.Euler(0f, dock.Yaw, 0f));
-            var first = true;
-            foreach (var r in _ship.GetComponentsInChildren<Renderer>())
-            {
-                if (first) { _hull = r.bounds; first = false; }
-                else _hull.Encapsulate(r.bounds);
-            }
-            if (first) _hull = new Bounds(_dockPosition, Vector3.one * dock.Length);
+            _ship.EnginesOff(instant: true);   // docked: engines cold
+            _hull = _ship.Hull;                 // the hull only, not its (unlit) flames
+            if (_hull.size == Vector3.zero) _hull = new Bounds(_dockPosition, Vector3.one * dock.Length);
         }
 
         /// <summary>Wait for the universe, then park its camera in orbit around the station's body.</summary>

@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+import "luckynumbers/v1/common.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Engine exhaust (content/engines.txtpb, Core/ShipView): every jet on a ship is a flame that lights up when it
+// helps the move being asked for. Whoever flies the ship says what it wants: a push in the ship's frame and a turn;
+// each jet works out its own share from where it sits and which way it points, so the mains burn for forward,
+// the belly jets for up, the side jets for strafing, and pairs at the ends fire against each other to turn and
+// roll. Mains idle with a low flame and stretch with boost; the small jets (RCS) puff.
+message EngineConfig {
+  option (ln.config) = true;
+  // Per ship model (ShipView.engines names one).
+  repeated ShipEngines ships = 1;
+  // Looks: main engines, and the small manoeuvring jets.
+  ExhaustLook main_look = 2;
+  ExhaustLook rcs_look = 3;
+  // Seconds for a flame to come up to what's asked / die back down.
+  float spool_up_seconds = 4;
+  float spool_down_seconds = 5;
+  // Main engines' flame with nothing asked of them (0..1), while the engines run.
+  float idle = 6;
+  // A small jet fires only above this share (so a tiny correction doesn't light every jet).
+  float rcs_threshold = 7;
+  // How much longer the mains burn at full boost (x their length).
+  float boost_stretch = 8;
+}
+
+message ShipEngines {
+  // The model: "fighter", "freighter".
+  string ship = 1;
+  repeated Thruster thrusters = 2;
+  // What it turns about (roughly its centre of mass), pivot space.
+  Vec3 centre = 3;
+}
+
+// One jet. Position and sizes in the model's pivot space: +Z forward (nose), +Y up, +X right, in model units
+// (the fighter is 0.49 long; ShipView scales it with the ship).
+message Thruster {
+  string name = 1;
+  // The nozzle's centre.
+  Vec3 position = 2;
+  // Where the flame points (it pushes the ship the other way). Normalised at load.
+  Vec3 direction = 3;
+  // Nozzle radius and the flame's length at full thrust.
+  float radius = 4;
+  float length = 5;
+  // A main engine: main_look, idles, stretches with boost. Otherwise a manoeuvring jet (rcs_look).
+  bool main = 6;
+}
+
+// Shader properties of LuckyNumbers/Exhaust (additive flame: a tapered tube plus a glow at the nozzle).
+message ExhaustLook {
+  option (ln.material) = "LuckyNumbers/Exhaust";
+  // Hot centre near the nozzle, and the colour it cools to at the edges and the tail.
+  Rgba core_color = 1;
+  Rgba edge_color = 2;
+  optional float intensity = 3;
+  // Higher = softer, thinner edges (seen side-on the flame fades out towards its rim).
+  optional float softness = 4;
+  // Higher = the flame fades sooner along its length.
+  optional float falloff = 5;
+  // Tail radius, share of the nozzle's.
+  optional float taper = 6;
+  // Turbulence: noise size along the flame, how fast it flows out, and how much it varies the brightness.
+  optional float noise_scale = 7;
+  optional float flow_speed = 8;
+  optional float turbulence = 9;
+  // Shock diamonds: bright bands along the flame (count over its length, strength at full thrust; 0 = none).
+  optional float diamonds = 10;
+  optional float diamond_strength = 11;
+  // The glow at the nozzle (seen from behind, where the tube is edge-on): size x the nozzle radius, brightness.
+  optional float halo_size = 12;
+  optional float halo_intensity = 13;
+  // Flicker: quick brightness wobble.
+  optional float flicker = 14;
+}

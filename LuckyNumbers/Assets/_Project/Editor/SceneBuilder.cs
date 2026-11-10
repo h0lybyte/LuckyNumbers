@@ -757,7 +757,7 @@ namespace LuckyNumbers.Editor
         }
 
         /// <summary>The fighter: pivot (+Z forward) around the model (nose is +X in the file), all skins listed.</summary>
-        static ShipView ShipRig(bool collide = false, string name = "Ship")
+        internal static ShipView ShipRig(bool collide = false, string name = "Ship")
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>($"{FighterDir}/fighter1.fbx")
                         ?? throw new System.Exception("fighter1.fbx missing");
@@ -795,9 +795,20 @@ namespace LuckyNumbers.Editor
             var sk = so.FindProperty("skins");
             sk.arraySize = skins.Count;
             for (var i = 0; i < skins.Count; i++) sk.GetArrayElementAtIndex(i).objectReferenceValue = skins[i];
+            // Engine flames: the fighter's jet layout (content/engines.txtpb), built by ShipView at runtime.
+            so.FindProperty("engines").stringValue = "fighter";
+            so.FindProperty("exhaust").objectReferenceValue = ExhaustMaterial();
             so.ApplyModifiedPropertiesWithoutUndo();
             pivot.gameObject.SetActive(false);
             return view;
+        }
+
+        /// <summary>The engine flames' base material (ShipView copies it per look: mains, manoeuvring jets).</summary>
+        static Material ExhaustMaterial()
+        {
+            var m = MaterialAsset("Exhaust", "LuckyNumbers/Exhaust");
+            EditorUtility.SetDirty(m);
+            return m;
         }
 
         const string FreighterDir = "Assets/_Project/Art/Models/CargoShip";
@@ -809,7 +820,7 @@ namespace LuckyNumbers.Editor
         /// Textures/tex_0005), its own look kept (no skins). Pivot +Z forward; length measured from the model.
         /// With `collide`: the convex pieces of cargo_ship_collision.obj (tools/collision/decompose.py).
         /// </summary>
-        static ShipView FreighterRig(bool collide = false)
+        internal static ShipView FreighterRig(bool collide = false)
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>($"{FreighterDir}/cargo_ship.fbx")
                         ?? throw new System.Exception("cargo_ship.fbx missing");
@@ -870,6 +881,8 @@ namespace LuckyNumbers.Editor
             rs.arraySize = renderers.Length;
             for (var i = 0; i < renderers.Length; i++) rs.GetArrayElementAtIndex(i).objectReferenceValue = renderers[i];
             so.FindProperty("skins").arraySize = 0;
+            so.FindProperty("engines").stringValue = "freighter";   // content/engines.txtpb
+            so.FindProperty("exhaust").objectReferenceValue = ExhaustMaterial();
             so.ApplyModifiedPropertiesWithoutUndo();
             Debug.Log($"[SceneBuilder] freighter: {renderers.Length} parts, {bounds.size.x:0.#} x {bounds.size.y:0.#} x {bounds.size.z:0.#} m");
             pivot.gameObject.SetActive(false);
