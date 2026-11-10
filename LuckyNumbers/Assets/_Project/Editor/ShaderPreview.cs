@@ -214,9 +214,6 @@ namespace LuckyNumbers.Editor
             view.Build(config);
             var plan = view.Plan;
 
-            // Plan coordinates (column, row from the top, as in the .txtpb) -> eye-height point in that cell.
-            Vector3 At(float col, float row, float y = 1.6f) =>
-                new Vector3((col + 0.5f) * 2f, y, (plan.Depth - 1 - row + 0.5f) * 2f);
             Camera Eye(Vector3 from, Vector3 to)
             {
                 var cam = new GameObject("Eye").AddComponent<Camera>();
@@ -227,6 +224,28 @@ namespace LuckyNumbers.Editor
                 cam.transform.SetPositionAndRotation(from, Quaternion.LookRotation(to - from));
                 return cam;
             }
+            Vector3 Eyes(Vector2Int cell, float y = 1.6f) => LuckyNumbers.Station.StationPlan.Centre(cell) + Vector3.up * y;
+            // A room seen from its south end, looking north (the planet side, where most windows are).
+            Camera RoomView(System.Collections.Generic.List<Vector2Int> room)
+            {
+                int minX = int.MaxValue, maxX = int.MinValue, minZ = int.MaxValue, maxZ = int.MinValue;
+                foreach (var c in room)
+                {
+                    minX = Mathf.Min(minX, c.x); maxX = Mathf.Max(maxX, c.x);
+                    minZ = Mathf.Min(minZ, c.y); maxZ = Mathf.Max(maxZ, c.y);
+                }
+                var mid = (minX + maxX) / 2f;
+                var from = new Vector3((mid + 0.5f) * 2f, 1.6f, (minZ + 0.25f) * 2f);
+                var to = new Vector3((mid + 0.5f) * 2f, 1.9f, (maxZ + 1f) * 2f);
+                return Eye(from, to);
+            }
+
+            var rooms = plan.Rooms();
+            var spawnRoom = rooms.Find(r => r.Contains(plan.Spawn));
+            var spawn = Eye(Eyes(plan.Spawn), Eyes(plan.Spawn) + Quaternion.Euler(0, config.SpawnYaw, 0) * Vector3.forward * 4f);
+            var (runFrom, runTo) = plan.LongestCorridor();
+            var corridor = Eye(Eyes(runFrom), Eyes(runTo, 1.8f));
+            var big = rooms.FindAll(r => r != spawnRoom);
 
             var top = new GameObject("Top").AddComponent<Camera>();
             top.orthographic = true;
@@ -237,58 +256,22 @@ namespace LuckyNumbers.Editor
             top.transform.SetPositionAndRotation(new Vector3(size.x / 2f, 30f, size.y / 2f), Quaternion.Euler(90, 0, 0));
             top.farClipPlane = 60f;
 
-            SaveGrid(new[]
-            {
-                Eye(At(5.3f, 5.3f), At(2f, 1f, 1.9f)),         // hangar, towards its windows
-                Eye(At(8.6f, 3f), At(15f, 3f, 1.5f)),           // corridor, east
-                Eye(At(14f, 8.6f), At(17.5f, 8f, 1.7f)),        // viewing room, towards the windows
-                top,
-            }, "preview-station.png");
-            // Joins: both doorways, a corner post, the corridor's turn.
-            SaveGrid(new[]
-            {
-                Eye(At(10f, 3f), At(6.5f, 3f, 1.4f)),           // corridor -> hangar doorway
-                Eye(At(3f, 4.2f), At(3f, 7.5f, 1.2f)),          // hangar -> store doorway
-                Eye(At(5.2f, 4.8f), At(6.6f, 1f, 1.5f)),        // hangar's north-east corner
-                Eye(At(12.5f, 3f), At(15f, 5.5f, 1.4f)),        // corridor turning south
-            }, "preview-station-joins.png");
-            // Corridor joins up close: portholes, the turn's inner (convex) corner, the end at a doorway.
-            SaveGrid(new[]
-            {
-                Eye(At(11.5f, 3.4f, 1.5f), At(11.5f, 2f, 2.2f)),       // portholes (north wall)
-                Eye(At(15.2f, 4.6f, 2.2f), At(14.2f, 2.8f, 2.7f)),     // turn: inner corner, looking up at it
-                Eye(At(14.6f, 3.2f, 1.7f), At(15.6f, 2.4f, 2.6f)),     // turn: outer corner (the leans cross)
-                Eye(At(7.4f, 3.3f, 2f), At(8.6f, 2.4f, 2.6f)),         // from the doorway into the corridor: lean ends
-            }, "preview-station-corridor.png");
+            // Overview: where you start, the two biggest rooms, the plan from above.
+            SaveGrid(new[] { spawn, RoomView(big[0]), RoomView(big[1]), top }, "preview-station.png");
+            // More rooms and the longest corridor.
+            var more = new System.Collections.Generic.List<Camera>();
+            for (var i = 2; i < big.Count && more.Count < 3; i++) more.Add(RoomView(big[i]));
+            more.Add(corridor);
+            SaveGrid(more.ToArray(), "preview-station-rooms.png");
 
-            // Windows up close: they should open onto the sky and the planet (north), not painted stars.
-            SaveGrid(new[]
-            {
-                Eye(At(3f, 1.15f, 1.55f), At(3f, -6f, 1.2f)),       // hangar porthole, nose to the glass, planet ahead
-                Eye(At(4f, 1.6f, 1.5f), At(4.6f, -6f, 1.0f)),       // a step back, two portholes
-                Eye(At(11f, 3.25f, 1.55f), At(11.2f, -6f, 1.3f)),   // corridor porthole
-                Eye(At(15.6f, 8f, 1.55f), At(22f, 8f, 1.6f)),       // viewing room, east window (sky only)
-            }, "preview-station-windows.png");
-
-            // Light modes: corridor and hangar, lights on / off / emergency (one row each).
-            var corridor = Eye(At(8.5f, 3f), At(15f, 3f, 1.8f));
-            var hangar = Eye(At(5.3f, 5.3f), At(2f, 1f, 1.9f));
+            // Light modes: corridor and the biggest room, lights on / off / emergency (one row each).
             var modes = new[] { LuckyNumbers.Model.StationLightMode.On, LuckyNumbers.Model.StationLightMode.Off,
                                 LuckyNumbers.Model.StationLightMode.Emergency };
-            SaveGrid(new[] { corridor, hangar }, modes.Length, "preview-station-lights.png",
+            SaveGrid(new[] { corridor, RoomView(big[0]) }, modes.Length, "preview-station-lights.png",
                      row => view.SetLights(modes[row]));
             view.SetLights(LuckyNumbers.Model.StationLightMode.On);
-
-            // Room lean: upright, the content value, the corridor's full lean (hangar and viewing room per row).
-            var leans = new[] { 0f, config.RoomLean, 1f };
-            var room = Eye(At(14f, 8.6f), At(17.5f, 8f, 1.7f));
-            SaveGrid(new[] { hangar, room }, leans.Length, "preview-station-lean.png", row =>
-            {
-                var c = config.Clone();
-                c.RoomLean = leans[row];
-                view.Build(c);
-            });
-            view.Build(config);
+            Debug.Log($"[ShaderPreview] station: {rooms.Count} rooms (largest {big[0].Count} cells), corridor run " +
+                      $"{runFrom} -> {runTo}");
         }
 
         static Material KitMaterial(string kit)

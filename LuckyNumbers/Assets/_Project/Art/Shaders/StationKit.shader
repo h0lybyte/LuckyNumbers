@@ -15,8 +15,8 @@ Shader "LuckyNumbers/StationKit"
         _Tint ("Tint", Color) = (1, 1, 1, 1)
         _Brightness ("Brightness", Float) = 1.15
         _FogColor ("Fog Color", Color) = (0.02, 0.025, 0.035, 1)
-        _FogStart ("Fog Start", Float) = 10
-        _FogEnd ("Fog End", Float) = 38
+        _FogStart ("Fog Start", Float) = 16
+        _FogEnd ("Fog End", Float) = 70
         _Ambient ("Ambient (surfaces)", Color) = (1, 1, 1, 1)
         _LightColor ("Light Color (rgb x a)", Color) = (1, 1, 1, 1.15)
         _LightDesaturate ("Light Desaturate", Range(0, 1)) = 0

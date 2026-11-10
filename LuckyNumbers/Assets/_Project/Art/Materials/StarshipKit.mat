@@ -30,8 +30,8 @@ Material:
     m_Ints: []
     m_Floats:
     - _Brightness: 1.15
-    - _FogEnd: 38
-    - _FogStart: 10
+    - _FogEnd: 70
+    - _FogStart: 16
     - _LightDesaturate: 0
     m_Colors:
     - _Ambient: {r: 1, g: 1, b: 1, a: 1}

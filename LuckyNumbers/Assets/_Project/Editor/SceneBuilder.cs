@@ -279,6 +279,8 @@ namespace LuckyNumbers.Editor
             var mat = MaterialAsset(kit, "LuckyNumbers/StationKit");
             mat.mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>($"{KitsDir}/{kit}/atlas.png")
                               ?? throw new System.Exception($"{kit}/atlas.png not imported");
+            mat.SetFloat("_FogStart", 16f);   // big rooms (the gallery is 48 m long): fade late
+            mat.SetFloat("_FogEnd", 70f);
             EditorUtility.SetDirty(mat);
             return mat;
         }

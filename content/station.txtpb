@@ -1,22 +1,41 @@
 # proto-file: luckynumbers/v1/station.proto
 # proto-message: luckynumbers.v1.StationScene
-# First pass (walls): a hangar with windows, a corridor round to a viewing room, and a small store.
+# The player's station, north (row 0) facing the planet it orbits. Rooms: observation gallery (north
+# windows), docking bay (west; the airlock E is your way out to the ship), central hub, comms (east),
+# three crew cabins (you start in the middle one, P), storage (south-west) and engineering (east).
 # One character per 2 m cell; see StationScene in station.proto for the legend.
 
-plan: "##WWWW#############"
-plan: "#......############"
-plan: "W..P...####WW#WW###"
-plan: "#......Dcccccccc###"
-plan: "W......########c###"
-plan: "#E.....########c###"
-plan: "###D###########D###"
-plan: "##...#########...W#"
-plan: "##...#########....W"
-plan: "##...#########...W#"
-plan: "###################"
+plan: "###########W#W#W#W#W#W#W#W#W#W#W############"
+plan: "##########........................##########"
+plan: "##########........................##########"
+plan: "##########........................##########"
+plan: "######################D#####################"
+plan: "###W#W#W#W#W##########c#####################"
+plan: "#............#########c#####################"
+plan: "#............#########D#####################"
+plan: "#............#####.........#####.......#####"
+plan: "#............#####.........#####.......W####"
+plan: "#............#####.........DcccD.......#####"
+plan: "#E...........DcccD.........#####.......W####"
+plan: "#............#####.........#####.......#####"
+plan: "#............#####.........#################"
+plan: "#............#####.........#################"
+plan: "#............#####.........#################"
+plan: "#............#########D#####################"
+plan: "#............#########c#############......##"
+plan: "######################c#############......W#"
+plan: "###########ccccccccccccccccccccccccD......##"
+plan: "###########c#####D#####D#####D######......W#"
+plan: "###.......#c####....##....##....####......##"
+plan: "###.......#c####....##.P..##....####......W#"
+plan: "###.......Dc####....##....##....####......##"
+plan: "###.......######....##....##....####......W#"
+plan: "###.......########W#####W#####W#####......##"
+plan: "###.......##################################"
+plan: "############################################"
 
 light_every: 2
-chunk_cells: 4
+chunk_cells: 6
 room_lean: 0.4
 
 # In your universe: orbiting the planet the freighter goes down on, its north windows facing it.

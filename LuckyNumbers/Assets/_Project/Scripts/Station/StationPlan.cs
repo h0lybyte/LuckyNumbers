@@ -143,12 +143,68 @@ namespace LuckyNumbers.Station
                 }
             }
 
+            // Deck and ceiling: one slab each under / over the whole plan (walls keep you inside), not one per cell.
+            var span = new Vector3(Width * Cell, 0.1f, Depth * Cell);
+            var middle = new Vector3(Width * Cell / 2f, 0f, Depth * Cell / 2f);
+            Boxes.Add(new Box(middle - Vector3.up * 0.05f, span));
+            Boxes.Add(new Box(middle + Vector3.up * (Height + 0.05f), span));
+
             foreach (var (vertex, axes) in corners)
             {
                 if (axes != 3) continue;   // a straight run: the walls meet flush, no post
                 var p = new Vector3(vertex.x, 0, vertex.y);
                 Pieces.Add(new Piece(Post, Kit.Starship, p, Quaternion.identity, CellOf(p)));
             }
+        }
+
+        /// <summary>Rooms: connected room cells (doorways and corridors separate them), largest first.</summary>
+        public List<List<Vector2Int>> Rooms()
+        {
+            var rooms = new List<List<Vector2Int>>();
+            var seen = new bool[Width, Depth];
+            for (var z = 0; z < Depth; z++)
+            for (var x = 0; x < Width; x++)
+            {
+                if (seen[x, z] || _cells[x, z] != Kind.Room) continue;
+                var room = new List<Vector2Int>();
+                var todo = new Stack<Vector2Int>();
+                todo.Push(new Vector2Int(x, z));
+                seen[x, z] = true;
+                while (todo.Count > 0)
+                {
+                    var c = todo.Pop();
+                    room.Add(c);
+                    foreach (var d in Dirs)
+                    {
+                        var n = c + d;
+                        if (At(n) != Kind.Room || seen[n.x, n.y]) continue;
+                        seen[n.x, n.y] = true;
+                        todo.Push(n);
+                    }
+                }
+                rooms.Add(room);
+            }
+            rooms.Sort((a, b) => b.Count.CompareTo(a.Count));
+            return rooms;
+        }
+
+        /// <summary>The longest straight run of corridor cells (its two end cells).</summary>
+        public (Vector2Int from, Vector2Int to) LongestCorridor()
+        {
+            var best = (from: Vector2Int.zero, to: Vector2Int.zero);
+            var bestLength = -1;
+            foreach (var step in new[] { Dirs[1], Dirs[0] })
+                for (var z = 0; z < Depth; z++)
+                for (var x = 0; x < Width; x++)
+                {
+                    var c = new Vector2Int(x, z);
+                    if (At(c) != Kind.Corridor || At(c - step) == Kind.Corridor) continue;   // runs start here
+                    var end = c;
+                    while (At(end + step) == Kind.Corridor) end += step;
+                    var length = Mathf.Abs(end.x - c.x) + Mathf.Abs(end.y - c.y);
+                    if (length > bestLength) { bestLength = length; best = (c, end); }
+                }
+            return best;
         }
 
         public Kind At(Vector2Int c) =>
@@ -179,8 +235,6 @@ namespace LuckyNumbers.Station
             var unlit = kind != Kind.Corridor && cell.y % _ceilingEvery != 0;
             Pieces.Add(new Piece(Ceiling, Kit.Starship, centre, alongX ? Quaternion.identity : Quaternion.Euler(0, 90, 0),
                                  cell, unlit));
-            Boxes.Add(new Box(centre - Vector3.up * 0.05f, new Vector3(Cell, 0.1f, Cell)));
-            Boxes.Add(new Box(up + Vector3.up * 0.05f, new Vector3(Cell, 0.1f, Cell)));
         }
 
         /// <summary>The doorway stands across the cell's middle, facing along the way through (N-S or E-W).</summary>
