@@ -36,6 +36,7 @@ namespace LuckyNumbers.Planet
         }
 
         readonly ICrashSite _site;
+        readonly IFighter _fighter;
         readonly PlanetView _view;
         readonly PlayerView _player;
         readonly GroundView _ground;
@@ -72,8 +73,10 @@ namespace LuckyNumbers.Planet
                                IInventory pack, PlayerInventory packState, ISubscriber<ItemEffectRequested> itemEffects,
                                RelicInventory inventory, IPublisher<RelicRolled> rolled,
                                ISubscriber<InputActionPerformed> actions, ISubscriber<RelicUseRequested> useRequests,
-                               IBufferedSubscriber<UniverseSeedChanged> seeds, ISubscriber<DevWarpRequested> warps)
+                               IBufferedSubscriber<UniverseSeedChanged> seeds, ISubscriber<DevWarpRequested> warps,
+                               IFighter fighter)
         {
+            _fighter = fighter;
             _warps = warps;
             _site = site;
             _view = view;
@@ -142,7 +145,10 @@ namespace LuckyNumbers.Planet
                     if (d < best) { best = d; near = l; }
                 }
             }
+            // E: a relic within reach first; else your landed ship, if you're beside it (flies you back out).
+            var board = onFoot && near == null ? _fighter.BoardPrompt(me) : "";
             if (_pickup && near != null) Take(near);
+            else if (_pickup && board != "") _fighter.Board();
             _pickup = false;
 
             if (_useRequest >= 0 && _useRequest < _held.Count) { _inventory.Selected.Value = _useRequest; _use = true; }
@@ -158,6 +164,7 @@ namespace LuckyNumbers.Planet
             var selected = Selected();
             _inventory.Cooldown.Value = math.max(0f, _cooldownUntil - Time.time);
             var prompt = near != null ? Fill(Config.PickupPrompt, near.Relic.Name)
+                       : board != "" ? board
                        : selected?.Artifact != null && onFoot && _inventory.Cooldown.Value <= 0f ? Fill(Config.UsePrompt, selected.Name) : "";
             if (prompt != _prompt)
             {
@@ -378,6 +385,7 @@ namespace LuckyNumbers.Planet
             }
             if (to == "wreck" || target == null) target = _view.Wreck.Pivot.position + Vector3.right * 14f;
             var at = target.Value + Vector3.back * 1.2f;
+            if (to == "ship" && _fighter.BoardingSpot is Vector3 spot) { at = spot; target = spot + (spot - me).normalized; }
             at.y = _ground.SurfaceAt(at) + 0.15f;
             var body = _player.Body;
             var face = target.Value - at;

@@ -149,4 +149,22 @@ namespace LuckyNumbers.Model
     public readonly struct ShipPickDone
     {
     }
+
+    /// <summary>
+    /// The trip so far (app-wide): set when you fly out of the planet's atmosphere, so the station knows you're back;
+    /// and your credits (the museum pays for relics you bring back), with the last payout for the page's toast.
+    /// </summary>
+    public sealed class PlayerVoyage : IDisposable
+    {
+        public readonly ReactiveProperty<bool> Returning = new ReactiveProperty<bool>();
+        public readonly ReactiveProperty<int> Credits = new ReactiveProperty<int>();
+        public readonly ReactiveProperty<int> LastPayout = new ReactiveProperty<int>();
+
+        public void Dispose()
+        {
+            Returning.Dispose();
+            Credits.Dispose();
+            LastPayout.Dispose();
+        }
+    }
 }

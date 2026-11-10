@@ -163,6 +163,9 @@ export interface FlightState {
   assisted: boolean;
   /** Hover-ship controls (the HUD's steps and keys follow them). */
   hoverShip: boolean;
+  /** Flying out (boarded after landing): climb to orbit_altitude to leave. */
+  leaving: boolean;
+  orbitAltitude: number;
 }
 
 /**
@@ -200,6 +203,16 @@ export interface ShipPicker {
   skin: string;
   index: number;
   count: number;
+}
+
+/**
+ * The trip so far (app-wide): set when you fly out of the planet's atmosphere, so the station knows you're back;
+ * and your credits (the museum pays for relics you bring back), with the last payout for the page's toast.
+ */
+export interface PlayerVoyage {
+  returning: boolean;
+  credits: number;
+  lastPayout: number;
 }
 
 /** Live station state (mirrored to the web page). */
@@ -247,7 +260,7 @@ export interface RelicRolled {
 
 /**
  * Dev (the page's inspector): put you on foot beside "artifact" (the nearest named one still lying out), "relic"
- * (the nearest of any) or the "wreck". For trying things out quickly.
+ * (the nearest of any), the "wreck" or your landed "ship". For trying things out quickly.
  */
 export interface DevWarpRequested {
   to: string;
@@ -433,6 +446,7 @@ export interface WebStates {
   PlayerShip: PlayerShip;
   PlayerHealth: PlayerHealth;
   ShipPicker: ShipPicker;
+  PlayerVoyage: PlayerVoyage;
   StationState: StationState;
   DiceState: DiceState;
 }
@@ -478,4 +492,4 @@ export interface WebEvents {
 /** Events the page may publish into the game. */
 export type InboundEvent = "DevWarpRequested" | "RelicUseRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
 
-export const STATE_NAMES = ["RelicInventory", "CharacterSheet", "FlowState", "LoadingState", "PlayerInventory", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "ShipPicker", "StationState", "DiceState"] as const;
+export const STATE_NAMES = ["RelicInventory", "CharacterSheet", "FlowState", "LoadingState", "PlayerInventory", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "ShipPicker", "PlayerVoyage", "StationState", "DiceState"] as const;

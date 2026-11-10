@@ -57,6 +57,7 @@ export function CharacterSheetGate() {
   };
 
   const flying = useLNState("FlightState")?.flying ?? false;
+  const credits = useLNState("PlayerVoyage")?.credits ?? 0;
   const scene = flow?.scene;
   if (scene !== "Station" && scene !== "Planet" && scene !== "Title") return null;
   return (
@@ -69,6 +70,11 @@ export function CharacterSheetGate() {
           <button type="button" className="ui chip" onClick={() => { setTab("inventory"); setOpen(true); }}>
             Pack <kbd>I</kbd>
           </button>
+          {credits > 0 && (
+            <span className="ui chip credits" title="Paid by the museum for the relics you brought back">
+              {credits.toLocaleString()} cr
+            </span>
+          )}
         </div>
       )}
       {shown && <Sheet onClose={close} setup={setup} tab={tab} setTab={setTab} />}

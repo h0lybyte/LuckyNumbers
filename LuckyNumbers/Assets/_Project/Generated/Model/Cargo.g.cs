@@ -173,7 +173,7 @@ namespace LuckyNumbers.Model
 
     /// <summary>
     /// Dev (the page's inspector): put you on foot beside "artifact" (the nearest named one still lying out), "relic"
-    /// (the nearest of any) or the "wreck". For trying things out quickly.
+    /// (the nearest of any), the "wreck" or your landed "ship". For trying things out quickly.
     /// </summary>
     public readonly struct DevWarpRequested
     {

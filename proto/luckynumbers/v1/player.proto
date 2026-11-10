@@ -87,3 +87,13 @@ message ShipPickDone {
   option (ln.event) = true;
   option (ln.web_in) = true;
 }
+
+// The trip so far (app-wide): set when you fly out of the planet's atmosphere, so the station knows you're back;
+// and your credits (the museum pays for relics you bring back), with the last payout for the page's toast.
+message PlayerVoyage {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  bool returning = 1;
+  int32 credits = 2;
+  int32 last_payout = 3;
+}

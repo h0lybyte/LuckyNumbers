@@ -26,6 +26,10 @@ namespace LuckyNumbers.Station
     /// Walking into the call's room rings it (E, or the page's Answer, picks up); Dispatch's lines play in the dialogue
     /// box, then the objective points at the ship. Consoles (E): lights on / off / emergency, the PS1 look. Doors slide
     /// open as you come near. The page can switch lights, the PS1 look and rebuild the whole plan (layout editor).
+    ///
+    /// Back from the planet (PlayerVoyage.returning): you step off beside your ship and the museum calls at once
+    /// (StationScene.homecoming), buying every relic in your pack for its value (credits) and XP for each; Dispatch
+    /// doesn't ring again.
     /// </summary>
     [Presenter]
     public sealed class StationPresenter : IStartable, IPostLateTickable, IDisposable
@@ -48,6 +52,15 @@ namespace LuckyNumbers.Station
         readonly ISubscriber<StationCallAnswered> _answers;
         readonly ISubscriber<StationPlanRequested> _plans;
         readonly ISubscriber<PsxModeRequested> _psxRequests;
+        readonly PlayerVoyage _voyage;
+        readonly IInventory _pack;
+        readonly IPublisher<CharacterXpGained> _xp;
+        bool _returning;
+        // The call playing (Dispatch's, or the museum's on your return), and what the museum paid.
+        List<StationCallLine> _callLines;
+        float _callCps;
+        string _callObjective, _caller = "", _relics = "", _payout = "0";
+        int _relicCount;
         readonly CancellationTokenSource _cts = new();
         readonly List<IDisposable> _subscriptions = new();
         static readonly int Psx = Shader.PropertyToID("_LnPsx");
@@ -71,8 +84,12 @@ namespace LuckyNumbers.Station
                                 PlayerShip playerShip, IPublisher<SceneChangeRequested> scenes,
                                 ISubscriber<StationLightsRequested> lightRequests, ISubscriber<InputActionPerformed> actions,
                                 ISubscriber<StationCallAnswered> answers, ISubscriber<StationPlanRequested> plans,
-                                ISubscriber<PsxModeRequested> psxRequests)
+                                ISubscriber<PsxModeRequested> psxRequests, PlayerVoyage voyage, IInventory pack,
+                                IPublisher<CharacterXpGained> xp)
         {
+            _voyage = voyage;
+            _pack = pack;
+            _xp = xp;
             _config = config;
             _station = station;
             _player = player;
@@ -97,8 +114,11 @@ namespace LuckyNumbers.Station
             SetLights(StationLightMode.On);
             SetGlow(_config.Glow);
             SetPsx(false);
+            _returning = _voyage.Returning.Value;
+            _voyage.Returning.Value = false;
             _state.Call.Value = CallPhase.None;
-            _state.Caller.Value = _config.Call?.Caller ?? "";
+            _caller = _config.Call?.Caller ?? "";
+            _state.Caller.Value = _caller;
             _state.Objective.Value = "";
             _subscriptions.Add(_lightRequests.Subscribe(e => SetLights(e.Mode)));
             _subscriptions.Add(_actions.Subscribe(e =>
@@ -124,6 +144,7 @@ namespace LuckyNumbers.Station
             _hintAlpha = 1f;
             _ui.Hint(_config.Hint, _hintAlpha);
             DockShip();
+            if (_returning) TeleportBesideShip();
             _flow.Preload(_config.Next);
             PlaceInSpace(_cts.Token).Forget();
         }
@@ -222,6 +243,7 @@ namespace LuckyNumbers.Station
                 Teleport(StationPlan.Centre(_station.Plan.Spawn), _config.SpawnYaw);
                 PlaceWeapon(StationPlan.Centre(_station.Plan.Spawn), _config.SpawnYaw);   // the new spawn's
                 DockShip();
+                if (_returning) TeleportBesideShip();
             }
             var manifest = LuckyNumbers.Cargo.Manifest.Generate(GameContent.Cargo, _space.Seed);
             _freighter = manifest.Ship;
@@ -235,6 +257,7 @@ namespace LuckyNumbers.Station
             _stationInSpace = Quaternion.LookRotation((Vector3)(at - (float3)_orbitPosition), Vector3.up);
             _space.Camera.nearClipPlane = math.max(0.001f, diameter * 0.01f);
             _inSpace = true;
+            if (_returning) Homecoming();
             Debug.Log($"[Station] ready: orbiting {target} \"{_planet}\" (seed {_space.Seed})"); // marker for ln.py webshot
         }
 
@@ -353,26 +376,83 @@ namespace LuckyNumbers.Station
         void Answer()
         {
             if (_state.Call.Value != CallPhase.Ringing) return;
+            StartCall(_config.Call.Lines, _config.Call.CharsPerSecond, _config.Call.Objective);
+        }
+
+        void StartCall(IEnumerable<StationCallLine> lines, float cps, string objective)
+        {
+            _callLines = new List<StationCallLine>(lines);
+            _callCps = cps > 0f ? cps : 36f;
+            _callObjective = objective;
             _state.Call.Value = CallPhase.Active;
             _line = 0;
             _lineTime = 0f;
         }
 
+        /// <summary>
+        /// Back from the planet: the museum buys what you carried back (each relic's value in credits, XP each) and
+        /// calls at once to say so. Dispatch's call doesn't ring (the call phase is past None).
+        /// </summary>
+        void Homecoming()
+        {
+            var home = _config.Homecoming;
+            if (home == null) return;
+            var sold = _pack.TakeRelics();
+            var total = 0;
+            var names = new List<string>();
+            foreach (var (name, value) in sold)
+            {
+                total += Mathf.Max(0, value);
+                names.Add(name);
+                if (home.XpPerRelic > 0) _xp.Publish(new CharacterXpGained(home.XpPerRelic, name));
+            }
+            _relicCount = sold.Count;
+            _relics = names.Count switch
+            {
+                0 => "",
+                1 => names[0],
+                _ => string.Join(", ", names.GetRange(0, names.Count - 1)) + " and " + names[^1],
+            };
+            _payout = total.ToString("N0");
+            _voyage.Credits.Value += total;
+            _voyage.LastPayout.Value = total;
+            _caller = Fill(home.Caller);
+            _state.Caller.Value = _caller;
+            Debug.Log($"[Station] back from the planet: {sold.Count} relic(s) sold for {total} cr ({_voyage.Credits.Value} cr total)");
+            StartCall(sold.Count > 0 ? home.PaidLines : home.EmptyLines, home.CharsPerSecond, home.Objective);
+            foreach (var line in _callLines) Debug.Log($"[Station] {Fill(line.Speaker)}: {Fill(line.Text)}");
+        }
+
+        /// <summary>Off the ship: on the deck beside it (the first open side of its hull), facing it.</summary>
+        void TeleportBesideShip()
+        {
+            var c = _hull.center;
+            var e = _hull.extents;
+            var sides = new[] { Vector3.right * (e.x + 1.4f), Vector3.left * (e.x + 1.4f), Vector3.back * (e.z + 1.4f), Vector3.forward * (e.z + 1.4f) };
+            foreach (var side in sides)
+            {
+                var at = new Vector3(c.x + side.x, 0f, c.z + side.z);
+                if (!StationPlan.Walkable(_station.Plan.At(StationPlan.CellOf(at)))) continue;
+                var face = Quaternion.LookRotation(-side.normalized, Vector3.up).eulerAngles.y;
+                Teleport(at, face);
+                return;
+            }
+        }
+
         void TickCall(float dt)
         {
-            var call = _config.Call;
-            if (call == null || _state.Call.Value != CallPhase.Active) return;
-            if (_line >= call.Lines.Count)
+            if (_callLines == null || _state.Call.Value != CallPhase.Active) return;
+            if (_line >= _callLines.Count)
             {
                 _ui.Dialogue(null, null, 0);
                 _state.Call.Value = CallPhase.Ended;
-                _state.Objective.Value = Fill(call.Objective);
+                _state.Objective.Value = Fill(_callObjective);
                 return;
             }
-            var line = call.Lines[_line];
+            var line = _callLines[_line];
             var text = Fill(line.Text);
             _lineTime += dt;
-            var cps = call.CharsPerSecond > 0f ? call.CharsPerSecond : 36f;
+            var cps = _callCps;
             _ui.Dialogue(Fill(line.Speaker), text, Mathf.FloorToInt(_lineTime * cps));
             var hold = Mathf.Max(line.Seconds, text.Length / cps + 1.2f);
             if (_lineTime >= hold)
@@ -382,8 +462,9 @@ namespace LuckyNumbers.Station
             }
         }
 
-        string Fill(string s) => (s ?? "").Replace("{caller}", _config.Call?.Caller ?? "")
-            .Replace("{planet}", _planet).Replace("{ship}", _freighter).Replace("{museum}", _museum);
+        string Fill(string s) => (s ?? "").Replace("{caller}", _caller)
+            .Replace("{planet}", _planet).Replace("{ship}", _freighter).Replace("{museum}", _museum)
+            .Replace("{relics}", _relics).Replace("{count}", _relicCount.ToString()).Replace("{credits}", _payout);
 
         void Board()
         {

@@ -183,9 +183,37 @@ namespace LuckyNumbers.Model
         /// Lay the station out from the lucky number instead of `plan` (rooms, props, consoles and dock from its rules).
         /// </summary>
         public StationGenerator Generator { get; set; }
+        /// <summary>
+        /// Coming back from the planet (PlayerVoyage.returning): you step off beside your ship and the museum calls to pay
+        /// for the relics you carried back.
+        /// </summary>
+        public StationReturn Homecoming { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public StationScene Clone() => (StationScene)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// The museum's call when you dock: it buys every relic in your pack (its value in credits) and you earn XP for each.
+    /// Lines fill {museum}, {planet}, {ship} (the freighter), {relics} (their names), {count} and {credits} (the payout).
+    /// </summary>
+    public sealed class StationReturn
+    {
+        public string Caller { get; set; }
+        /// <summary>
+        /// Played when you brought relics back; and when you didn't.
+        /// </summary>
+        public List<StationCallLine> PaidLines { get; } = new List<StationCallLine>();
+        public List<StationCallLine> EmptyLines { get; } = new List<StationCallLine>();
+        public float CharsPerSecond { get; set; }
+        /// <summary>
+        /// Shown once the call ends.
+        /// </summary>
+        public string Objective { get; set; }
+        public int XpPerRelic { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public StationReturn Clone() => (StationReturn)MemberwiseClone();
     }
 
     /// <summary>

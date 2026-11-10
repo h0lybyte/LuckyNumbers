@@ -215,6 +215,17 @@ namespace LuckyNumbers.Model
         /// stops when you let go; you fly it about and set it down. Easiest to land.
         /// </summary>
         public FlightHover Hover { get; set; }
+        /// <summary>
+        /// Leaving: on foot within board_distance (metres from the hull) of your landed ship, E boards it (board_prompt);
+        /// you lift off and fly it out, and past orbit_altitude (metres above the ground) you're back at the station.
+        /// </summary>
+        public float OrbitAltitude { get; set; }
+        public string BoardPrompt { get; set; }
+        public float BoardDistance { get; set; }
+        /// <summary>
+        /// Without the page's HUD: shown once you're aboard and climbing.
+        /// </summary>
+        public string TakeoffHint { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public FlightLanding Clone() => (FlightLanding)MemberwiseClone();
@@ -302,6 +313,11 @@ namespace LuckyNumbers.Model
         /// Hover-ship controls (the HUD's steps and keys follow them).
         /// </summary>
         public readonly ReactiveProperty<bool> HoverShip = new ReactiveProperty<bool>();
+        /// <summary>
+        /// Flying out (boarded after landing): climb to orbit_altitude to leave.
+        /// </summary>
+        public readonly ReactiveProperty<bool> Leaving = new ReactiveProperty<bool>();
+        public readonly ReactiveProperty<float> OrbitAltitude = new ReactiveProperty<float>();
 
         public void Dispose()
         {
@@ -325,6 +341,8 @@ namespace LuckyNumbers.Model
             CrashReason.Dispose();
             Assisted.Dispose();
             HoverShip.Dispose();
+            Leaving.Dispose();
+            OrbitAltitude.Dispose();
         }
     }
 

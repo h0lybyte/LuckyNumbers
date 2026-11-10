@@ -1211,3 +1211,24 @@ kbd {
   text-transform: uppercase;
   color: var(--muted);
 }
+
+/* Flying back out (flight.tsx): how far to orbit, where the pad arrow sits on the way in. */
+.flight-orbit {
+  position: absolute;
+  right: calc(max(var(--gap), env(safe-area-inset-right)) + 48px);
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 10px);
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  color: var(--neon);
+  font: 12px var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+.flight-orbit-bar { width: 160px; height: 6px; border: 1px solid var(--neon-soft); background: rgba(2, 8, 16, 0.7); }
+.flight-orbit-bar > div { height: 100%; background: var(--neon); box-shadow: 0 0 8px var(--neon); transition: width 0.2s linear; }
+.flight-orbit b { color: #e8fbff; font-weight: 600; }
+
+/* Credits (sheet.tsx chips): what the museum has paid you. */
+.chip.credits { cursor: default; color: var(--gold, #ffd166); border-color: rgba(255, 209, 102, 0.5); }
