@@ -36,7 +36,14 @@ namespace LuckyNumbers.Space
 
             var star = bodies[0];
             var planetCount = rules.MinPlanets + RoleIndex(roll.Worlds, rules.MaxPlanets - rules.MinPlanets + 1, ref rng);
-            var moonChance = math.saturate(rules.MoonChance * math.lerp(0.4f, 1.6f, luck));
+            // Moons: the moons die if there is one (few planets with one moon .. most with max_moons), else luck.
+            var moonDie = roll.Moons;
+            var moonChance = moonDie >= 0f
+                ? math.lerp(0.15f, 0.95f, math.saturate(moonDie))
+                : math.saturate(rules.MoonChance * math.lerp(0.4f, 1.6f, luck));
+            var maxMoons = moonDie >= 0f
+                ? math.max(1, (int)math.round(math.lerp(1f, rules.MaxMoons, math.saturate(moonDie))))
+                : rules.MaxMoons;
             var radius = rules.FirstOrbitRadius;
             var prevOuter = star.Scale * 0.5f;   // inner edge for the next orbit: star surface, then each system's apoapsis
             for (var i = 0; i < planetCount; i++)
@@ -48,7 +55,7 @@ namespace LuckyNumbers.Space
 
                 // Moons first: they decide how much room this planet's system needs.
                 var moons = new List<CelestialBody>();
-                var wantMoons = rules.Moons.Count > 0 && rng.NextFloat() < moonChance ? rng.NextInt(1, rules.MaxMoons + 1) : 0;
+                var wantMoons = rules.Moons.Count > 0 && rng.NextFloat() < moonChance ? rng.NextInt(1, maxMoons + 1) : 0;
                 var extent = scale * 0.5f;
                 for (var m = 0; m < wantMoons; m++)
                 {

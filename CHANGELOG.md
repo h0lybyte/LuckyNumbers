@@ -6,6 +6,12 @@ and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version
 
 ## 0.2.4 (2026-11-10)
 
+- New look: a neon sci-fi theme across the menus, the station and planet screens and the page overlay
+  (relics, the d20 and the landing HUD included), with readable hover states
+- The title's dice are four d20s: star, worlds, moons (new) and luck. Hover one (or tap it) to see what it
+  decides and what it rolled; every die also feeds the lucky number
+- Every launch opens on a fresh universe: the title rolls its own lucky number instead of always starting
+  on 3250720893
 - Bigger, sharper, truer-coloured ships at the crash site (the wrecked freighter and your fighter)
 - The first named relic: Zhang Heng's Water Amulet (Eastern Han, 2nd century CE). Find it by the wreck on
   your way in from the landing pad, pick it up (E) and use it (R): it rolls a d20, plus up to 3 from your
