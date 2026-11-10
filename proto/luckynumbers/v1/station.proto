@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+import "luckynumbers/v1/common.proto";
+import "luckynumbers/v1/flow.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// The player's space station (where their ship docks), built from the PSX station kit (rooms) and the
+// PSX starship kit (corridors) on their shared grid: 2 m cells, 3 m high. Laid out as an ASCII plan.
+message StationScene {
+  option (ln.config) = true;
+  // Rows of the plan, north (+Z) first, west (-X) on the left; one character per 2 m cell:
+  //   '#' or ' '  solid / outside
+  //   '.'         room floor: station-kit walls and deck plate
+  //   'c'         corridor: starship-kit leaning walls, ribs and a ceiling light
+  //   'D'         doorway: walkable; the doorway piece stands across the cell's middle, sides walled
+  //   'W'         window: solid; walls facing it are viewports (rooms) or portholes (corridors)
+  //   'P'         room floor where the player starts (facing spawn_yaw)
+  //   'E'         room floor that takes the player on to `next` (their ship's airlock)
+  repeated string plan = 1;
+  // Every nth wall along the grid gets the lit variant (light strips); 0 = never.
+  int32 light_every = 2;
+  // Cells per side of a mesh chunk: each chunk is one mesh per kit (one draw call each).
+  int32 chunk_cells = 4;
+  // How the station looks in each light mode (StationLightMode).
+  StationLightLook lights_on = 5;
+  StationLightLook lights_off = 6;
+  StationLightLook emergency = 7;
+  // Rooms use the corridor walls with their lean (2.3 to 3 m, 0.6 m in) cut back to this fraction:
+  // 0 = upright panels, 1 = the corridor's full lean.
+  float room_lean = 8;
+  // Rooms light every nth row of ceiling tiles (the rest keep their strip dark); corridors light every tile.
+  int32 ceiling_light_every = 9;
+
+  // Where the station hangs in the player's universe: orbiting this body (empty = the planet the freighter
+  // goes down on, from the lucky number), this many of its diameters from its centre, on its sunward side.
+  // The station's north (+Z, row 0 of the plan) faces the body, so north windows look at it.
+  string orbit = 10;
+  float orbit_diameters = 11;
+  // Player start: compass heading in degrees (0 = north, 90 = east).
+  float spawn_yaw = 12;
+  // Scene after the station (walking onto an 'E' cell).
+  GameScene next = 13;
+  // Controls line shown on arrival.
+  string hint = 14;
+  // Big rooms get more headroom: rooms of at least tall_room_cells cells are tall_levels storeys of 3 m high
+  // (walls stacked: upright below, the room lean on top; walls close over their 3 m doorways). 0 = none.
+  int32 tall_room_cells = 15;
+  int32 tall_levels = 16;
+}
+
+// Live station state (mirrored to the web page).
+message StationState {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  StationLightMode lights = 1;
+}
+
+// Switch the station's lights (the page may send it too: e.g. trip the emergency lighting).
+message StationLightsRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  StationLightMode mode = 1;
+}
+
+enum StationLightMode {
+  STATION_LIGHT_MODE_UNSPECIFIED = 0;
+  STATION_LIGHT_MODE_ON = 1;
+  // Power down: the painted lights go dark and the station dims.
+  STATION_LIGHT_MODE_OFF = 2;
+  // Red alert: every light turns red and pulses, the rest dims under a red cast.
+  STATION_LIGHT_MODE_EMERGENCY = 3;
+}
+
+// One light mode's look. The kits' painted lights are masked in their atlases' alpha (tools/kitmask.py);
+// the StationKit shader treats those texels as lights and everything else as surface.
+message StationLightLook {
+  // Surfaces (not lights): multiplies the atlas x baked shading. White = as the kit painted it.
+  Rgba ambient = 1;
+  // Light texels: tint (rgb) times intensity (a).
+  Rgba light = 2;
+  // Light texels go this far towards grey before the tint (1 = only the tint's colour shows).
+  float desaturate = 3;
+  // Pulse (lights, and surfaces at half depth): cycles per second; 0 = steady.
+  float pulse_hz = 4;
+  // How deep the pulse dips, 0..1.
+  float pulse_depth = 5;
+}

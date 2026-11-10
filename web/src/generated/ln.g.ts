@@ -2,12 +2,13 @@
 // source and regenerate.
 /* eslint-disable */
 
-/** Top-level game flow: Title -> Intro (cutscene) -> Planet. */
+/** Top-level game flow: Title -> Station (your station; the call) -> Intro (cutscene) -> Planet. */
 export type GameScene =
   | "Unspecified"
   | "Title"
   | "Intro"
-  | "Planet";
+  | "Planet"
+  | "Station";
 
 /** Discrete actions (button presses). Bound to devices in the Input System asset. */
 export type InputAction =
@@ -20,6 +21,12 @@ export type InputAction =
   | "Sprint"
   | "AnyButton"
   | "Map";
+
+export type StationLightMode =
+  | "Unspecified"
+  | "On"
+  | "Off"
+  | "Emergency";
 
 export type MenuAction =
   | "Unspecified"
@@ -60,6 +67,11 @@ export interface PlayerShip {
 export interface PlayerHealth {
   current: number;
   max: number;
+}
+
+/** Live station state (mirrored to the web page). */
+export interface StationState {
+  lights: StationLightMode;
 }
 
 export interface DiceState {
@@ -111,6 +123,11 @@ export interface PlayerDied {
   cause: string;
 }
 
+/** Switch the station's lights (the page may send it too: e.g. trip the emergency lighting). */
+export interface StationLightsRequested {
+  mode: StationLightMode;
+}
+
 export interface MenuItemSelected {
   action: MenuAction;
 }
@@ -123,6 +140,7 @@ export interface WebStates {
   LandingSite: LandingSite;
   PlayerShip: PlayerShip;
   PlayerHealth: PlayerHealth;
+  StationState: StationState;
   DiceState: DiceState;
 }
 
@@ -137,10 +155,11 @@ export interface WebEvents {
   PlayerDamaged: PlayerDamaged;
   PlayerHealed: PlayerHealed;
   PlayerDied: PlayerDied;
+  StationLightsRequested: StationLightsRequested;
   MenuItemSelected: MenuItemSelected;
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "SceneChangeRequested" | "InputActionPerformed" | "MenuItemSelected";
+export type InboundEvent = "SceneChangeRequested" | "InputActionPerformed" | "StationLightsRequested" | "MenuItemSelected";
 
-export const STATE_NAMES = ["FlowState", "LoadingState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "DiceState"] as const;
+export const STATE_NAMES = ["FlowState", "LoadingState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "StationState", "DiceState"] as const;

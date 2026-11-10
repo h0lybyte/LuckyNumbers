@@ -10,7 +10,7 @@ using R3;
 namespace LuckyNumbers.Model
 {
     /// <summary>
-    /// Top-level game flow: Title -&gt; Intro (cutscene) -&gt; Planet.
+    /// Top-level game flow: Title -&gt; Station (your station; the call) -&gt; Intro (cutscene) -&gt; Planet.
     /// </summary>
     public enum GameScene
     {
@@ -18,6 +18,10 @@ namespace LuckyNumbers.Model
         Title = 1,
         Intro = 2,
         Planet = 3,
+        /// <summary>
+        /// The player's space station, where their ship is docked.
+        /// </summary>
+        Station = 4,
     }
 
     public sealed class FlowState : IDisposable

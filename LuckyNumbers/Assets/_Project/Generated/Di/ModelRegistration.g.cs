@@ -21,6 +21,7 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<PlayerDamaged>(options);
             builder.RegisterMessageBroker<PlayerHealed>(options);
             builder.RegisterMessageBroker<PlayerDied>(options);
+            builder.RegisterMessageBroker<StationLightsRequested>(options);
             builder.RegisterMessageBroker<MenuItemSelected>(options);
         }
 
@@ -35,6 +36,7 @@ namespace LuckyNumbers.Model
             builder.Register<LandingSite>(Lifetime.Singleton);
             builder.Register<PlayerShip>(Lifetime.Singleton);
             builder.Register<PlayerHealth>(Lifetime.Singleton);
+            builder.Register<StationState>(Lifetime.Singleton);
             builder.Register<DiceState>(Lifetime.Singleton);
         }
     }

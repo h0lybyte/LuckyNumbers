@@ -1,0 +1,25 @@
+{
+    "name": "LuckyNumbers.Station",
+    "rootNamespace": "LuckyNumbers.Station",
+    "references": [
+        "LuckyNumbers.Attributes",
+        "LuckyNumbers.Model",
+        "LuckyNumbers.Core",
+        "LuckyNumbers.Planet",
+        "LuckyNumbers.Space",
+        "VContainer",
+        "MessagePipe",
+        "R3.Unity",
+        "UniTask",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

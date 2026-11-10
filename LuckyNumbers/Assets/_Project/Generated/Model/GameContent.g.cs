@@ -155,6 +155,28 @@ namespace LuckyNumbers.Model
                         },
                         new Credit
                         {
+                            What = "Space station corridors and rooms (cream panels, leaning walls, ribs, portholes, doorways, deck)",
+                            Title = "PSX Starship Kit Free",
+                            Author = "heyheythere",
+                            License = "CC BY 4.0",
+                            Url = "https://heyheythere.itch.io/psx-starship-kit-free",
+                            LicenseUrl = "https://creativecommons.org/licenses/by/4.0/",
+                            Notes = "Changes: an alpha channel added to atlas.png as a light mask (tools/kitmask.py), RGB unchanged; room walls derived from the corridor walls with their lean cut back, and window panes drawn as clear glass, at build time.",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Models/StarshipKit/LICENSE.txt",
+                        },
+                        new Credit
+                        {
+                            What = "Space station props (imported for later: cryo pods, crates, lab bench, chairs) and early room walls",
+                            Title = "PSX Sci-Fi Station Kit Free",
+                            Author = "heyheythere",
+                            License = "CC BY 4.0",
+                            Url = "https://heyheythere.itch.io/psx-sci-fi-station-kit-free",
+                            LicenseUrl = "https://creativecommons.org/licenses/by/4.0/",
+                            Notes = "Changes: an alpha channel added to atlas.png as a light mask (tools/kitmask.py), RGB unchanged.",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Models/StationKit/LICENSE.txt",
+                        },
+                        new Credit
+                        {
                             What = "First-person arms (rig, 13 animations, skin and glove textures)",
                             Title = "PSX First Person Arms",
                             Author = "DrillImpact",
@@ -1640,12 +1662,76 @@ namespace LuckyNumbers.Model
             ShipSkin = "idolknight",
         };
 
+        /// <summary>From <c>content/station.txtpb</c>.</summary>
+        public static readonly StationScene Station = new StationScene
+        {
+            Plan =
+            {
+                "###########W#W#W#W#W#W#W#W#W#W#W############",
+                "##########........................##########",
+                "##########........................##########",
+                "##########........................##########",
+                "######################D#####################",
+                "###W#W#W#W#W##########c#####################",
+                "#............#########c#####################",
+                "#............#########D#####################",
+                "#............#####.........#####.......#####",
+                "#............#####.........#####.......W####",
+                "#............#####.........DcccD.......#####",
+                "#E...........DcccD.........#####.......W####",
+                "#............#####.........#####.......#####",
+                "#............#####.........#################",
+                "#............#####.........#################",
+                "#............#####.........#################",
+                "#............#########D#####################",
+                "#............#########c#############......##",
+                "######################c#############......W#",
+                "###########ccccccccccccccccccccccccD......##",
+                "###########c#####D#####D#####D######......W#",
+                "###.......#c####....##....##....####......##",
+                "###.......#c####....##.P..##....####......W#",
+                "###.......Dc####....##....##....####......##",
+                "###.......######....##....##....####......W#",
+                "###.......########W#####W#####W#####......##",
+                "###.......##################################",
+                "############################################",
+            },
+            LightEvery = 2,
+            ChunkCells = 6,
+            LightsOn = new StationLightLook
+            {
+                Ambient = new Rgba(1.0f, 1.0f, 1.0f, 1.0f),
+                Light = new Rgba(1.0f, 1.0f, 1.0f, 1.15f),
+            },
+            LightsOff = new StationLightLook
+            {
+                Ambient = new Rgba(0.42f, 0.44f, 0.5f, 1.0f),
+                Light = new Rgba(0.3f, 0.29f, 0.27f, 1.0f),
+                Desaturate = 0.7f,
+            },
+            Emergency = new StationLightLook
+            {
+                Ambient = new Rgba(0.55f, 0.3f, 0.28f, 1.0f),
+                Light = new Rgba(1.0f, 0.12f, 0.06f, 1.6f),
+                Desaturate = 1.0f,
+                PulseHz = 0.8f,
+                PulseDepth = 0.55f,
+            },
+            RoomLean = 0.4f,
+            CeilingLightEvery = 2,
+            OrbitDiameters = 1.8f,
+            Next = GameScene.Intro,
+            Hint = "WASD to move - mouse to look - lights: the page's inspector (`)",
+            TallRoomCells = 60,
+            TallLevels = 2,
+        };
+
         /// <summary>From <c>content/title.txtpb</c>.</summary>
         public static readonly TitleScreen Title = new TitleScreen
         {
             Title = "Lucky Numbers",
             StartPrompt = "Drag to look around - scroll to zoom",
-            Next = GameScene.Intro,
+            Next = GameScene.Station,
             Backdrop = new SpaceBackdrop
             {
                 Stars = new StarfieldLook

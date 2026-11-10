@@ -187,6 +187,145 @@ namespace LuckyNumbers.Editor
             Debug.Log($"[ShaderPreview] wrote {outPath}");
         }
 
+        /// <summary>
+        /// The station (content/station.txtpb) from both PSX kits: three eye-height views and a top-down plan
+        /// (ceilings face down, so from above they're culled and the rooms show) to Logs/preview-station.png.
+        /// </summary>
+        [MenuItem("LuckyNumbers/Preview/Render Station")]
+        public static void RenderStation()
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var view = new GameObject("Station").AddComponent<LuckyNumbers.Station.StationView>();
+            view.Init(KitMaterial("StationKit"), KitMaterial("StarshipKit"), new Material(Find("LuckyNumbers/StationGlass")),
+                      KitPieces("StationKit", "StarshipKit"));
+
+            // Outside: the seeded sky and a planet the station orbits, north of the hangar (its windows face it),
+            // lit by a sun up and to the east. The windows should show these, not the kits' painted stars.
+            RenderSettings.skybox = new Material(Find("LuckyNumbers/Starfield"));
+            Shader.SetGlobalVector("_LnSunPosition", new Vector4(400f, 160f, 300f, 1f));
+            Shader.SetGlobalColor("_LnSunColor", new Color(1f, 0.95f, 0.88f));
+            var world = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            Object.DestroyImmediate(world.GetComponent<Collider>());
+            world.name = "Planet";
+            world.transform.position = new Vector3(4f, -40f, 140f);
+            world.transform.localScale = Vector3.one * 150f;
+            world.GetComponent<MeshRenderer>().sharedMaterial = new Material(Find("LuckyNumbers/Planet3D"));
+            var config = LuckyNumbers.Model.GameContent.Station;
+            view.Build(config);
+            var plan = view.Plan;
+
+            Camera Eye(Vector3 from, Vector3 to)
+            {
+                var cam = new GameObject("Eye").AddComponent<Camera>();
+                cam.fieldOfView = 70f;
+                cam.nearClipPlane = 0.05f;
+                cam.clearFlags = CameraClearFlags.Skybox;   // what's outside shows through the windows
+                cam.farClipPlane = 1000f;
+                cam.transform.SetPositionAndRotation(from, Quaternion.LookRotation(to - from));
+                return cam;
+            }
+            Vector3 Eyes(Vector2Int cell, float y = 1.6f) => LuckyNumbers.Station.StationPlan.Centre(cell) + Vector3.up * y;
+            // A room seen from its south end, looking north (the planet side, where most windows are).
+            Camera RoomView(System.Collections.Generic.List<Vector2Int> room)
+            {
+                int minX = int.MaxValue, maxX = int.MinValue, minZ = int.MaxValue, maxZ = int.MinValue;
+                foreach (var c in room)
+                {
+                    minX = Mathf.Min(minX, c.x); maxX = Mathf.Max(maxX, c.x);
+                    minZ = Mathf.Min(minZ, c.y); maxZ = Mathf.Max(maxZ, c.y);
+                }
+                var mid = (minX + maxX) / 2f;
+                var from = new Vector3((mid + 0.5f) * 2f, 1.6f, (minZ + 0.25f) * 2f);
+                var to = new Vector3((mid + 0.5f) * 2f, 1.9f, (maxZ + 1f) * 2f);
+                return Eye(from, to);
+            }
+
+            var rooms = plan.Rooms();
+            var spawnRoom = rooms.Find(r => r.Contains(plan.Spawn));
+            var spawn = Eye(Eyes(plan.Spawn), Eyes(plan.Spawn) + Quaternion.Euler(0, config.SpawnYaw, 0) * Vector3.forward * 4f);
+            var (runFrom, runTo) = plan.LongestCorridor();
+            var corridor = Eye(Eyes(runFrom), Eyes(runTo, 1.8f));
+            var big = rooms.FindAll(r => r != spawnRoom);
+
+            var top = new GameObject("Top").AddComponent<Camera>();
+            top.orthographic = true;
+            top.clearFlags = CameraClearFlags.SolidColor;
+            top.backgroundColor = new Color(0.05f, 0.05f, 0.08f);
+            var size = new Vector2(plan.Width, plan.Depth) * 2f;
+            top.orthographicSize = Mathf.Max(size.y, size.x * Height / Width) * 0.55f;
+            top.transform.SetPositionAndRotation(new Vector3(size.x / 2f, 30f, size.y / 2f), Quaternion.Euler(90, 0, 0));
+            top.farClipPlane = 60f;
+
+            // Overview: where you start, the two biggest rooms, the plan from above.
+            SaveGrid(new[] { spawn, RoomView(big[0]), RoomView(big[1]), top }, "preview-station.png");
+            // More rooms and the longest corridor.
+            var more = new System.Collections.Generic.List<Camera>();
+            for (var i = 2; i < big.Count && more.Count < 3; i++) more.Add(RoomView(big[i]));
+            more.Add(corridor);
+            SaveGrid(more.ToArray(), "preview-station-rooms.png");
+
+            // Light modes: corridor and the biggest room, lights on / off / emergency (one row each).
+            var modes = new[] { LuckyNumbers.Model.StationLightMode.On, LuckyNumbers.Model.StationLightMode.Off,
+                                LuckyNumbers.Model.StationLightMode.Emergency };
+            SaveGrid(new[] { corridor, RoomView(big[0]) }, modes.Length, "preview-station-lights.png",
+                     row => view.SetLights(modes[row]));
+            view.SetLights(LuckyNumbers.Model.StationLightMode.On);
+            Debug.Log($"[ShaderPreview] station: {rooms.Count} rooms (largest {big[0].Count} cells), corridor run " +
+                      $"{runFrom} -> {runTo}");
+        }
+
+        static Material KitMaterial(string kit)
+        {
+            var atlas = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/_Project/Art/Models/{kit}/atlas.png")
+                        ?? throw new System.Exception($"{kit}/atlas.png not imported");
+            return new Material(Find("LuckyNumbers/StationKit")) { mainTexture = atlas };
+        }
+
+        static LuckyNumbers.Station.StationView.KitPiece[] KitPieces(params string[] kits)
+        {
+            var list = new System.Collections.Generic.List<LuckyNumbers.Station.StationView.KitPiece>();
+            foreach (var kit in kits)
+            foreach (var guid in AssetDatabase.FindAssets("t:Model", new[] { $"Assets/_Project/Art/Models/{kit}" }))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                list.Add(new LuckyNumbers.Station.StationView.KitPiece
+                    { name = Path.GetFileNameWithoutExtension(path), model = AssetDatabase.LoadAssetAtPath<GameObject>(path) });
+            }
+            return list.ToArray();
+        }
+
+        /// <summary>Cameras rendered into a 2 x 2 grid (each at half size), saved to Logs/.</summary>
+        static void SaveGrid(Camera[] cams, string file) => SaveGrid(cams, 2, file, null, rowsAreCams: true);
+
+        /// <summary>
+        /// Grid of half-size tiles, 2 per row: either the cameras two by two (rowsAreCams), or the same cameras
+        /// on every row with <paramref name="beforeRow"/> run first (e.g. switching a look per row).
+        /// </summary>
+        static void SaveGrid(Camera[] cams, int rows, string file, System.Action<int> beforeRow, bool rowsAreCams = false)
+        {
+            int w = Width / 2, h = Height / 2;
+            var count = rowsAreCams ? Mathf.Min(cams.Length, rows * 2) : rows * 2;
+            var sheet = new Texture2D(Width, h * rows, TextureFormat.RGB24, false);
+            var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32);
+            for (var i = 0; i < count; i++)
+            {
+                var row = i / 2;
+                if (!rowsAreCams && i % 2 == 0) beforeRow?.Invoke(row);
+                var cam = rowsAreCams ? cams[i] : cams[i % 2];
+                var request = new RenderPipeline.StandardRequest { destination = rt };
+                if (RenderPipeline.SupportsRenderRequest(cam, request)) RenderPipeline.SubmitRenderRequest(cam, request);
+                else { cam.targetTexture = rt; cam.Render(); cam.targetTexture = null; }
+                var prev = RenderTexture.active;
+                RenderTexture.active = rt;
+                sheet.ReadPixels(new Rect(0, 0, w, h), (i % 2) * w, (rows - 1 - row) * h);
+                RenderTexture.active = prev;
+            }
+            sheet.Apply();
+            var path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", file));
+            File.WriteAllBytes(path, sheet.EncodeToPNG());
+            Debug.Log($"[ShaderPreview] wrote {path}");
+        }
+
         static Transform FindDeep(Transform t, string name)
         {
             if (t.name == name) return t;
