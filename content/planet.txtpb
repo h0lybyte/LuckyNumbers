@@ -129,6 +129,15 @@ landing {
     hover_level_degrees_per_second: 45
     low_altitude: 30
     low_level_factor: 3
+    max_turn_rate: 70
+    max_pitch: 35
+    bank_per_turn: 0.45
+    max_bank: 35
+    pad_min_distance: 40
+    pad_max_distance: 55
+    speed_fov: 14
+    camera_bank: 0.3
+    cushion_height: 5
   }
   landed_text: "Landed."
   crashed_text: "Too hard. Try again."

@@ -156,6 +156,21 @@ message FlightAssist {
   // Below this altitude (m) the wings level themselves this many times faster when you let go of roll.
   float low_altitude = 12;
   float low_level_factor = 13;
+  // Steering: the mouse turns your heading (around the world's up) and pitch, capped (degrees per second, and
+  // pitch at most max_pitch either way), and the ship banks into turns (degrees of roll per degree/second of
+  // turn, at most max_bank); A/D add roll on top.
+  float max_turn_rate = 14;
+  float max_pitch = 15;
+  float bank_per_turn = 16;
+  float max_bank = 17;
+  // A landing pad on the flattest spot this far from the wreck (metres), marked on the ground and the HUD.
+  float pad_min_distance = 18;
+  float pad_max_distance = 19;
+  // Chase camera: extra field of view at full speed (degrees), and how much it tilts with the bank (0..1).
+  float speed_fov = 20;
+  float camera_bank = 21;
+  // Hover cushion: the last few metres the descent eases off further (metres it starts at).
+  float cushion_height = 22;
 }
 
 // A Goldberg globe: hexagons plus exactly 12 pentagons (Euler), 10 * frequency^2 + 2 cells, each coloured by

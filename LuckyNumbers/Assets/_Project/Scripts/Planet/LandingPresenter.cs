@@ -40,6 +40,10 @@ namespace LuckyNumbers.Planet
         Quaternion _rotation;
         Vector3 _position;
         float _throttle, _phaseTime;
+        // Assisted steering: heading (around the world's up), pitch and bank, and the smoothed turn rates.
+        float _heading, _pitch, _bank, _yawRate, _pitchRate;
+        Vector3 _pad;                  // the landing pad: the flattest spot a little way from the wreck
+        Transform _padMarker;
         Vector3 _camPos;
         Transform _beacon;
         Collider[] _ownColliders = Array.Empty<Collider>();
@@ -74,6 +78,7 @@ namespace LuckyNumbers.Planet
             Ship.Show(PlayerShipSkin.Current(_playerShip), L.ShipLength);
             _ownColliders = Ship.Pivot.GetComponentsInChildren<Collider>(true);
             Beacon();
+            Pad();
             Restart();
             _site.Follow(Ship.Pivot, _view.FlightCamera.transform);
             for (var t = 0f; t < 1f; t += Time.deltaTime) { _view.Fade(1f - t); await UniTask.Yield(ct); }
@@ -95,6 +100,8 @@ namespace LuckyNumbers.Planet
             _rotation = Quaternion.LookRotation(toWreck.normalized, Vector3.up);
             _velocity = _rotation * Vector3.forward * L.StartSpeed;
             _spin = Vector3.zero;
+            _heading = _rotation.eulerAngles.y;
+            _pitch = _bank = _yawRate = _pitchRate = 0f;
             // Assisted, the throttle is a speed: start at the speed you arrive with.
             _throttle = Assisted ? math.saturate(L.StartSpeed / math.max(1f, A.MaxSpeed)) : 0.35f;
             _camPos = _position - _rotation * Vector3.forward * (L.ShipLength * L.ChaseDistance * 3f) + Vector3.up * L.ShipLength;
@@ -126,28 +133,22 @@ namespace LuckyNumbers.Planet
             var look = steering ? new Vector2(_input.Look.Value.X, _input.Look.Value.Y) : Vector2.zero;
             var move = _input.Move.Value;
 
-            // Turning: mouse pitch/yaw, A/D roll; settles with damping; wings level themselves when not rolling.
-            var want = new Vector3(-look.y * L.TurnDegreesPerPixel / dt, look.x * L.TurnDegreesPerPixel / dt, -move.X * L.RollDegreesPerSecond);
-            _spin = Vector3.Lerp(_spin, want, 1f - math.exp(-L.TurnDamping * dt));
-            _rotation = _rotation * Quaternion.Euler(_spin * dt);
             var altitudeNow = _position.y - _ground.HeightAt(_position);
             var hovering = Assisted && _input.Lifting.Value;
-            if (math.abs(move.X) < 0.1f)
+            if (Assisted) Steer(look, move.X, hovering, altitudeNow, dt);
+            else
+            {
+                // Turning: mouse pitch/yaw, A/D roll; settles with damping; wings level themselves when not rolling.
+                var want = new Vector3(-look.y * L.TurnDegreesPerPixel / dt, look.x * L.TurnDegreesPerPixel / dt, -move.X * L.RollDegreesPerSecond);
+                _spin = Vector3.Lerp(_spin, want, 1f - math.exp(-L.TurnDamping * dt));
+                _rotation = _rotation * Quaternion.Euler(_spin * dt);
+            }
+            if (!Assisted && math.abs(move.X) < 0.1f)
             {
                 // Wings level themselves when you let go of roll; quicker low down with the assist.
                 var level = Quaternion.LookRotation(_rotation * Vector3.forward, Vector3.up);
                 var rate = L.RollReturnDegreesPerSecond * (Assisted && altitudeNow < A.LowAltitude ? math.max(1f, A.LowLevelFactor) : 1f);
                 _rotation = Quaternion.RotateTowards(_rotation, level, rate * dt);
-            }
-            if (hovering && math.abs(look.y) < 0.5f)
-            {
-                // Hovering, the nose comes level too (pitch and roll), keeping the heading: ready to touch down.
-                // Low down "level" means the ground's slope under you (touchdown tilt is measured against it).
-                var up = altitudeNow < A.LowAltitude ? _ground.NormalAt(_position) : Vector3.up;
-                var nose = Vector3.ProjectOnPlane(_rotation * Vector3.forward, up);
-                if (nose.sqrMagnitude > 1e-4f)
-                    _rotation = Quaternion.RotateTowards(_rotation, Quaternion.LookRotation(nose, up),
-                                                         A.HoverLevelDegreesPerSecond * dt);
             }
 
             // Forces: main engine (throttle, boost), lift thrusters, gravity, drag.
@@ -170,6 +171,9 @@ namespace LuckyNumbers.Planet
                     // Hover: thrusters hold a descent (faster up high, gentle near the ground), straight up in the
                     // world so it doesn't matter how the ship is tilted, and drift bleeds off.
                     var descent = math.clamp(altitudeNow * A.DescentPerMetre, A.HoverDescent, math.max(A.HoverDescent, A.MaxDescent));
+                    // Cushion: the last few metres ease off further, so the gear settles rather than lands.
+                    if (A.CushionHeight > 0f && altitudeNow < A.CushionHeight)
+                        descent *= math.max(0.35f, altitudeNow / A.CushionHeight);
                     var wing = L.WingLift * airspeed * airspeed * math.max(0f, (_rotation * Vector3.up).y);
                     var up = math.clamp(L.Gravity - wing + (-descent - _velocity.y) * A.HoverGain, 0f, L.Lift * 1.6f);
                     accel += Vector3.up * up;
@@ -227,13 +231,76 @@ namespace LuckyNumbers.Planet
             var power = Assisted
                 ? $"SET {_throttle * A.MaxSpeed * (_input.Sprinting.Value ? math.max(1f, A.BoostSpeed) : 1f):0} m/s{(hovering ? "  HOVER" : "")}"
                 : $"THROTTLE {_throttle * 100f:0}%{(boost > 1f ? " BOOST" : "")}";
+            var toPad = _pad - _position;
+            var padFlat = new Vector3(toPad.x, 0f, toPad.z);
+            var padHeading = Vector3.SignedAngle(Vector3.ProjectOnPlane(_rotation * Vector3.forward, Vector3.up), padFlat, Vector3.up);
+            var padTurn = padFlat.magnitude < 6f ? "below" : math.abs(padHeading) < 8f ? "ahead"
+                        : padHeading < 0f ? $"{-padHeading:0} deg left" : $"{padHeading:0} deg right";
             var hud = $"ALT {altitude:0} m    CLIMB {-vertical:+0.0;-0.0} m/s    SPEED {_velocity.magnitude:0} m/s    {power}    " +
-                      $"WRECK {flat.magnitude:0} m {turn}";
+                      (Assisted ? $"<color=#46a758>PAD {padFlat.magnitude:0} m {padTurn}</color>" : $"WRECK {flat.magnitude:0} m {turn}");
             // Low down: the three touchdown limits, each green (fine), amber (close) or red (would crash).
             if (altitude < 40f)
                 hud += $"\n{Gauge("DESCENT", vertical, L.MaxTouchdownVertical, "m/s")}    " +
                        $"{Gauge("DRIFT", horizontal, L.MaxTouchdownHorizontal, "m/s")}    {Gauge("TILT", tilt, L.MaxTouchdownTilt, "deg")}";
             _view.Flight(hud, null);
+        }
+
+        /// <summary>
+        /// Assisted steering: the mouse turns the heading (around the world's up) and the pitch, rate-capped and
+        /// smoothed, pitch limited (no loops); the ship banks into its turns and A/D roll on top. Hovering, pitch and
+        /// bank settle to level, and low down level means the slope under you (touchdown tilt is measured against it).
+        /// </summary>
+        void Steer(Vector2 look, float roll, bool hovering, float altitude, float dt)
+        {
+            var settle = 1f - math.exp(-L.TurnDamping * dt);
+            var yawWant = math.clamp(look.x * L.TurnDegreesPerPixel / dt, -A.MaxTurnRate, A.MaxTurnRate);
+            var pitchWant = math.clamp(-look.y * L.TurnDegreesPerPixel / dt, -A.MaxTurnRate, A.MaxTurnRate);
+            _yawRate = math.lerp(_yawRate, yawWant, settle);
+            _pitchRate = math.lerp(_pitchRate, pitchWant, settle);
+            _heading += _yawRate * dt;
+            _pitch = math.clamp(_pitch + _pitchRate * dt, -A.MaxPitch, A.MaxPitch);
+            var bankWant = math.clamp(-_yawRate * A.BankPerTurn - roll * A.MaxBank, -A.MaxBank * 1.5f, A.MaxBank * 1.5f);
+            if (hovering)
+            {
+                // Settle to level: the pitch eases back unless you're pitching, the bank to a hover's gentle lean.
+                if (math.abs(look.y) < 0.5f) _pitch = Mathf.MoveTowards(_pitch, 0f, A.HoverLevelDegreesPerSecond * dt);
+                bankWant *= 0.3f;
+            }
+            var levelRate = altitude < A.LowAltitude ? math.max(1f, A.LowLevelFactor) : 1f;
+            _bank = math.lerp(_bank, bankWant, 1f - math.exp(-L.TurnDamping * levelRate * dt));
+            _rotation = Quaternion.Euler(_pitch, _heading, _bank);
+            if (hovering && altitude < A.LowAltitude)
+            {
+                var normal = _ground.NormalAt(_position);
+                var toSlope = Quaternion.FromToRotation(Vector3.up, normal);
+                // Fully on the slope by 60% of the way down from low_altitude, so the TILT gauge is green in time.
+                _rotation = Quaternion.Slerp(_rotation, toSlope * _rotation, math.saturate((A.LowAltitude - altitude) / (A.LowAltitude * 0.4f)));
+            }
+        }
+
+        /// <summary>The landing pad: the flattest spot in a ring round the wreck, marked with a ring on the ground.</summary>
+        void Pad()
+        {
+            _pad = Wreck;
+            if (!Assisted) return;
+            var best = float.MaxValue;
+            for (var r = A.PadMinDistance; r <= A.PadMaxDistance + 0.01f; r += math.max(1f, (A.PadMaxDistance - A.PadMinDistance) / 3f))
+                for (var a = 0; a < 360; a += 15)
+                {
+                    var p = Wreck + Quaternion.Euler(0f, a, 0f) * Vector3.forward * r;
+                    var slope = Vector3.Angle(_ground.NormalAt(p), Vector3.up);
+                    // The flattest, and of those the nearest the wreck.
+                    var score = slope + r * 0.02f;
+                    if (score >= best) continue;
+                    best = score;
+                    _pad = p;
+                }
+            _pad.y = _ground.HeightAt(_pad);
+            _padMarker = _view.LandingPad;
+            if (_padMarker == null) return;
+            _padMarker.SetPositionAndRotation(_pad + Vector3.up * 0.06f, Quaternion.FromToRotation(Vector3.up, _ground.NormalAt(_pad)));
+            _padMarker.gameObject.SetActive(true);
+            Debug.Log($"[Landing] pad {Vector3.Distance(_pad, Wreck):0} m from the wreck, {best:0.0} slope score");
         }
 
         static string Gauge(string label, float value, float limit, string unit)
@@ -272,7 +339,9 @@ namespace LuckyNumbers.Planet
             Ship.SetHeat(0f, 0.3f);
             SetSolid(true);
             if (_beacon != null) _beacon.gameObject.SetActive(false);
-            Debug.Log($"[Landing] landed {Vector3.Distance(_position, Wreck):0} m from the wreck");
+            if (_padMarker != null) _padMarker.gameObject.SetActive(false);
+            Debug.Log($"[Landing] landed {Vector3.Distance(_position, Wreck):0} m from the wreck, " +
+                      $"{Vector3.Distance(new Vector3(_position.x, 0, _position.z), new Vector3(_pad.x, 0, _pad.z)):0} m from the pad");
             StepOutAsync().Forget();
         }
 
@@ -311,7 +380,12 @@ namespace LuckyNumbers.Planet
             _camPos = Vector3.Lerp(_camPos, want, 1f - math.exp(-5f * dt));
             var floor = _ground.HeightAt(_camPos) + 1.5f;                       // never under the ground
             if (_camPos.y < floor) _camPos.y = floor;
-            cam.SetPositionAndRotation(_camPos, Quaternion.LookRotation(_position + _rotation * Vector3.forward * L.ShipLength - _camPos, Vector3.up));
+            // Assisted: tilt a little with the bank, and widen the view with speed (a sense of speed).
+            var camUp = Assisted ? Vector3.Slerp(Vector3.up, _rotation * Vector3.up, math.saturate(A.CameraBank)) : Vector3.up;
+            cam.SetPositionAndRotation(_camPos, Quaternion.LookRotation(_position + _rotation * Vector3.forward * L.ShipLength - _camPos, camUp));
+            if (Assisted)
+                _view.FlightCamera.fieldOfView = math.lerp(_view.FlightCamera.fieldOfView,
+                    65f + A.SpeedFov * math.saturate(_velocity.magnitude / math.max(1f, A.MaxSpeed)), 1f - math.exp(-3f * dt));
         }
 
         /// <summary>The tall orange beam over the wreck (built with the scene): visible through the haze.</summary>

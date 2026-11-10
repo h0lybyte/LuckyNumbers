@@ -232,6 +232,29 @@ namespace LuckyNumbers.Model
         /// </summary>
         public float LowAltitude { get; set; }
         public float LowLevelFactor { get; set; }
+        /// <summary>
+        /// Steering: the mouse turns your heading (around the world's up) and pitch, capped (degrees per second, and
+        /// pitch at most max_pitch either way), and the ship banks into turns (degrees of roll per degree/second of
+        /// turn, at most max_bank); A/D add roll on top.
+        /// </summary>
+        public float MaxTurnRate { get; set; }
+        public float MaxPitch { get; set; }
+        public float BankPerTurn { get; set; }
+        public float MaxBank { get; set; }
+        /// <summary>
+        /// A landing pad on the flattest spot this far from the wreck (metres), marked on the ground and the HUD.
+        /// </summary>
+        public float PadMinDistance { get; set; }
+        public float PadMaxDistance { get; set; }
+        /// <summary>
+        /// Chase camera: extra field of view at full speed (degrees), and how much it tilts with the bank (0..1).
+        /// </summary>
+        public float SpeedFov { get; set; }
+        public float CameraBank { get; set; }
+        /// <summary>
+        /// Hover cushion: the last few metres the descent eases off further (metres it starts at).
+        /// </summary>
+        public float CushionHeight { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public FlightAssist Clone() => (FlightAssist)MemberwiseClone();
