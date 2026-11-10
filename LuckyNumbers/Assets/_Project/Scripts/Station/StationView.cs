@@ -137,6 +137,17 @@ namespace LuckyNumbers.Station
             }
             if (missing.Count > 0) Debug.LogWarning($"[Station] no model for: {string.Join(", ", missing)}");
 
+            // Corridor corners: one small mesh per hip, in world space, merged with its chunk.
+            if (parts.TryGetValue(StationPlan.WallCorridor, out var corridorWall))
+                foreach (var hip in Plan.Hips)
+                {
+                    var mesh = HipMesh(hip, corridorWall);
+                    if (mesh == null) continue;
+                    var c = new Vector2Int(hip.Cell.x / chunk, hip.Cell.y / chunk);
+                    Add((c, StationPlan.Kit.Starship, false), new List<(Mesh, Matrix4x4)> { (mesh, Matrix4x4.identity) },
+                        Matrix4x4.identity, false);
+                }
+
             var triangles = 0;
             foreach (var ((c, kit, glass), list) in batches)
             {
@@ -182,6 +193,9 @@ namespace LuckyNumbers.Station
                 var b = mesh.bounds;
                 var lean = b.min.y >= 2.2f && b.size.z >= 0.4f;   // in the mesh's own space, before `local`
                 if (!lean || !mesh.isReadable) { result.Add((mesh, local)); continue; }
+                // Fully upright: drop the lean. The wall body's own face already runs up to 3 m behind it, and a lean
+                // pushed flat onto that plane would z-fight with it (flickering bands at 2.3-3 m).
+                if (keep <= 0.001f) continue;
                 var vertices = mesh.vertices;
                 var normals = mesh.normals;
                 // Which way is the front (into the cell)? The lean reaches furthest that way.
@@ -203,6 +217,73 @@ namespace LuckyNumbers.Station
                 result.Add((flat, local));
             }
             return result;
+        }
+
+        /// <summary>
+        /// The wedge at a convex corridor corner: each wall's lean (2.3 m up, 0.1 m out, to 3 m up, 0.6 m out)
+        /// carried on past the corner up to the diagonal where the two leans meet. Texture and baked shading are
+        /// sampled from the kit's own lean (mirrored along the wall), so the filler reads as the same panel.
+        /// </summary>
+        static Mesh HipMesh(StationPlan.Hip hip, List<(Mesh mesh, Matrix4x4 local)> wall)
+        {
+            Mesh lean = null;
+            foreach (var (m, _) in wall)
+                if (m.isReadable && m.bounds.min.y >= 2.2f && m.bounds.size.z >= 0.4f) lean = m;
+            if (lean == null) return null;
+            var lv = lean.vertices;
+            var luv = lean.uv;
+            var lcol = lean.colors;
+            // Corners of the lean in its own space: x = +-1 along the wall, bottom (y 2.3) and top (y 3).
+            int Nearest(float x, float y)
+            {
+                var best = 0;
+                var bestD = float.MaxValue;
+                for (var i = 0; i < lv.Length; i++)
+                {
+                    var d = (lv[i].x - x) * (lv[i].x - x) + (lv[i].y - y) * (lv[i].y - y);
+                    if (d < bestD) { bestD = d; best = i; }
+                }
+                return best;
+            }
+            int b1 = Nearest(1f, 2.3f), b0 = Nearest(-1f, 2.3f), t1 = Nearest(1f, 3f), t0 = Nearest(-1f, 3f);
+            Vector2 Uv(float s, float t) =>   // s metres past the corner (mirrored back along the wall), t 0..1 up the lean
+                Vector2.Lerp(Vector2.Lerp(luv[b1], luv[b0], s / 2f), Vector2.Lerp(luv[t1], luv[t0], s / 2f), t);
+            var colour = lcol.Length == lv.Length ? Color.Lerp(lcol[b1], lcol[t1], 0.5f) : Color.white;
+
+            var vertices = new List<Vector3>();
+            var uvs = new List<Vector2>();
+            var tris = new List<int>();
+            var up = Vector3.up;
+            void Side(Vector3 n, Vector3 along)
+            {
+                var v = hip.Vertex;
+                var q = new[]
+                {
+                    v + n * 0.1f + up * 2.3f,                       // s 0,   t 0
+                    v + n * 0.1f + along * 0.1f + up * 2.3f,        // s 0.1, t 0  (on the diagonal)
+                    v + n * 0.6f + along * 0.6f + up * 3f,          // s 0.6, t 1  (on the diagonal)
+                    v + n * 0.6f + up * 3f,                         // s 0,   t 1
+                };
+                var st = new[] { new Vector2(0f, 0f), new Vector2(0.1f, 0f), new Vector2(0.6f, 1f), new Vector2(0f, 1f) };
+                var start = vertices.Count;
+                for (var i = 0; i < 4; i++) { vertices.Add(q[i]); uvs.Add(Uv(st[i].x, st[i].y)); }
+                // Face into the corridor (towards n, i.e. away from the solid cell).
+                var flip = Vector3.Dot(Vector3.Cross(q[1] - q[0], q[3] - q[0]), n) < 0f;
+                if (flip) tris.AddRange(new[] { start, start + 3, start + 2, start, start + 2, start + 1 });
+                else tris.AddRange(new[] { start, start + 1, start + 2, start, start + 2, start + 3 });
+            }
+            Side(hip.NormalA, hip.NormalB);
+            Side(hip.NormalB, hip.NormalA);
+
+            var mesh = new Mesh { name = "Station hip" };
+            mesh.SetVertices(vertices);
+            mesh.SetUVs(0, uvs);
+            var colours = new Color[vertices.Count];
+            for (var i = 0; i < colours.Length; i++) colours[i] = colour;
+            mesh.colors = colours;
+            mesh.SetTriangles(tris, 0);
+            mesh.RecalculateNormals();
+            return mesh;
         }
 
         /// <summary>

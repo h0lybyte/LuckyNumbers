@@ -264,6 +264,25 @@ namespace LuckyNumbers.Editor
             more.Add(corridor);
             SaveGrid(more.ToArray(), "preview-station-rooms.png");
 
+            // Joins, to hunt overdraw: a doorway seen from the corridor and from its room, a corridor's inner
+            // turn, a tall room's corner and the wall over its doorway (cells in plan coordinates: column, row).
+            Vector3 P(float col, float row, float y = 1.6f) =>
+                new Vector3((col + 0.5f) * 2f, y, (plan.Depth - 1 - row + 0.5f) * 2f);
+            SaveGrid(new[]
+            {
+                Eye(P(15f, 11f, 1.7f), P(12.6f, 11f, 2.2f)),      // bay-hub corridor, looking west into the bay door
+                Eye(P(10.5f, 12.5f, 1.6f), P(14.5f, 10.8f, 2.4f)),// from inside the bay at its east door, up and right
+                Eye(P(12.4f, 19.6f, 2.1f), P(10.6f, 19f, 2.6f)),  // south corridor's turn down to storage: inner corner
+                Eye(P(2.2f, 15.8f, 1.6f), P(0.6f, 17.4f, 4.5f)),  // bay's south-west corner, looking up both storeys
+            }, "preview-station-joins.png");
+            SaveGrid(new[]
+            {
+                Eye(P(13.5f, 19f, 1.6f), P(10.5f, 19f, 2.4f)),    // along the south corridor to its west turn
+                Eye(P(11f, 19f, 1.0f), P(11.01f, 19.01f, 6f)),    // in the turn, straight up
+                Eye(P(11f, 21.5f, 1.6f), P(11f, 18.4f, 2.6f)),    // up the storage leg into the turn
+                Eye(P(12.4f, 19.6f, 2.1f), P(10.6f, 19f, 2.6f)),  // the gap shot again
+            }, "preview-station-turn.png");
+
             // Light modes: corridor and the biggest room, lights on / off / emergency (one row each).
             var modes = new[] { LuckyNumbers.Model.StationLightMode.On, LuckyNumbers.Model.StationLightMode.Off,
                                 LuckyNumbers.Model.StationLightMode.Emergency };

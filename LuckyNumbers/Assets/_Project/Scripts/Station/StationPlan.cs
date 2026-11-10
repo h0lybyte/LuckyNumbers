@@ -43,6 +43,18 @@ namespace LuckyNumbers.Station
             }
         }
 
+        /// <summary>
+        /// A convex corridor corner (the inside of a turn, or either side of a T): two leaning walls end at
+        /// <see cref="Vertex"/> without meeting. A leans towards <see cref="NormalA"/> and would carry on past the
+        /// corner along <see cref="NormalB"/> (and B the other way round); StationView fills the wedge between them.
+        /// </summary>
+        public readonly struct Hip
+        {
+            public readonly Vector3 Vertex, NormalA, NormalB;
+            public readonly Vector2Int Cell;
+            public Hip(Vector3 vertex, Vector3 a, Vector3 b, Vector2Int cell) { Vertex = vertex; NormalA = a; NormalB = b; Cell = cell; }
+        }
+
         public readonly struct Box
         {
             public readonly Vector3 Center, Size;
@@ -73,6 +85,7 @@ namespace LuckyNumbers.Station
         public readonly List<Vector2Int> Exits = new();
         public readonly List<Piece> Pieces = new();
         public readonly List<Box> Boxes = new();
+        public readonly List<Hip> Hips = new();
         readonly Kind[,] _cells;
 
         readonly int _ceilingEvery;
@@ -187,6 +200,32 @@ namespace LuckyNumbers.Station
             var span = new Vector3(Width * Cell, 0.1f, Depth * Cell);
             var middle = new Vector3(Width * Cell / 2f, 0f, Depth * Cell / 2f);
             Boxes.Add(new Box(middle - Vector3.up * 0.05f, span));   // (no ceiling slab: a jump never reaches 3 m)
+
+            // Convex corridor corners: a grid vertex with corridor on three sides and something solid on the fourth.
+            // The two walls round the solid cell end there, leaning away from each other: fill the gap (and post it).
+            for (var vz = 1; vz < Depth; vz++)
+            for (var vx = 1; vx < Width; vx++)
+            {
+                Vector2Int sw = new(vx - 1, vz - 1), se = new(vx, vz - 1), nw = new(vx - 1, vz), ne = new(vx, vz);
+                var around = new[] { sw, se, ne, nw };   // counter-clockwise
+                var solid = -1;
+                var corridors = 0;
+                for (var i = 0; i < 4; i++)
+                {
+                    var k = At(around[i]);
+                    if (k == Kind.Corridor) corridors++;
+                    else if (!Walkable(k)) solid = i;
+                }
+                if (corridors != 3 || solid < 0) continue;
+                var s = around[solid];
+                var c1 = around[(solid + 1) % 4];   // the solid cell's two corridor neighbours (by an edge)
+                var c2 = around[(solid + 3) % 4];
+                var a = new Vector3(c1.x - s.x, 0, c1.y - s.y);
+                var b = new Vector3(c2.x - s.x, 0, c2.y - s.y);
+                var v = new Vector3(vx * Cell, 0, vz * Cell);
+                Hips.Add(new Hip(v, a, b, around[(solid + 2) % 4]));
+                Pieces.Add(new Piece(Post, Kit.Starship, v, Quaternion.identity, around[(solid + 2) % 4]));
+            }
 
             foreach (var (vertex, axes) in corners)
             {
