@@ -4,6 +4,7 @@ package luckynumbers.v1;
 
 import "ln/options.proto";
 import "luckynumbers/v1/common.proto";
+import "luckynumbers/v1/flow.proto";
 
 option csharp_namespace = "LuckyNumbers.Model";
 
@@ -17,6 +18,8 @@ message StationScene {
   //   'c'         corridor: starship-kit leaning walls, ribs and a ceiling light
   //   'D'         doorway: walkable; the doorway piece stands across the cell's middle, sides walled
   //   'W'         window: solid; walls facing it are viewports (rooms) or portholes (corridors)
+  //   'P'         room floor where the player starts (facing spawn_yaw)
+  //   'E'         room floor that takes the player on to `next` (their ship's airlock)
   repeated string plan = 1;
   // Every nth wall along the grid gets the lit variant (light strips); 0 = never.
   int32 light_every = 2;
@@ -31,6 +34,32 @@ message StationScene {
   float room_lean = 8;
   // Rooms light every nth row of ceiling tiles (the rest keep their strip dark); corridors light every tile.
   int32 ceiling_light_every = 9;
+
+  // Where the station hangs in the player's universe: orbiting this body (empty = the planet the freighter
+  // goes down on, from the lucky number), this many of its diameters from its centre, on its sunward side.
+  // The station's north (+Z, row 0 of the plan) faces the body, so north windows look at it.
+  string orbit = 10;
+  float orbit_diameters = 11;
+  // Player start: compass heading in degrees (0 = north, 90 = east).
+  float spawn_yaw = 12;
+  // Scene after the station (walking onto an 'E' cell).
+  GameScene next = 13;
+  // Controls line shown on arrival.
+  string hint = 14;
+}
+
+// Live station state (mirrored to the web page).
+message StationState {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  StationLightMode lights = 1;
+}
+
+// Switch the station's lights (the page may send it too: e.g. trip the emergency lighting).
+message StationLightsRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  StationLightMode mode = 1;
 }
 
 enum StationLightMode {

@@ -5,10 +5,10 @@
 
 plan: "##WWWW#############"
 plan: "#......############"
-plan: "W......####WW#WW###"
+plan: "W..P...####WW#WW###"
 plan: "#......Dcccccccc###"
 plan: "W......########c###"
-plan: "#......########c###"
+plan: "#E.....########c###"
 plan: "###D###########D###"
 plan: "##...#########...W#"
 plan: "##...#########....W"
@@ -18,6 +18,13 @@ plan: "###################"
 light_every: 2
 chunk_cells: 4
 room_lean: 0.4
+
+# In your universe: orbiting the planet the freighter goes down on, its north windows facing it.
+orbit: ""
+orbit_diameters: 1.8
+spawn_yaw: 0
+next: GAME_SCENE_INTRO
+hint: "WASD to move - mouse to look - lights: the page's inspector (`)"
 ceiling_light_every: 2
 
 # Light modes. Lights keep their painted colour when on; off, they go grey-dark and the station dims;

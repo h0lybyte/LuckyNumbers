@@ -1669,10 +1669,10 @@ namespace LuckyNumbers.Model
             {
                 "##WWWW#############",
                 "#......############",
-                "W......####WW#WW###",
+                "W..P...####WW#WW###",
                 "#......Dcccccccc###",
                 "W......########c###",
-                "#......########c###",
+                "#E.....########c###",
                 "###D###########D###",
                 "##...#########...W#",
                 "##...#########....W",
@@ -1702,6 +1702,9 @@ namespace LuckyNumbers.Model
             },
             RoomLean = 0.4f,
             CeilingLightEvery = 2,
+            OrbitDiameters = 1.8f,
+            Next = GameScene.Intro,
+            Hint = "WASD to move - mouse to look - lights: the page's inspector (`)",
         };
 
         /// <summary>From <c>content/title.txtpb</c>.</summary>
@@ -1709,7 +1712,7 @@ namespace LuckyNumbers.Model
         {
             Title = "Lucky Numbers",
             StartPrompt = "Drag to look around - scroll to zoom",
-            Next = GameScene.Intro,
+            Next = GameScene.Station,
             Backdrop = new SpaceBackdrop
             {
                 Stars = new StarfieldLook

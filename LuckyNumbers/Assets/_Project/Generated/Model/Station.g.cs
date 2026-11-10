@@ -36,6 +36,8 @@ namespace LuckyNumbers.Model
         /// 'c'         corridor: starship-kit leaning walls, ribs and a ceiling light
         /// 'D'         doorway: walkable; the doorway piece stands across the cell's middle, sides walled
         /// 'W'         window: solid; walls facing it are viewports (rooms) or portholes (corridors)
+        /// 'P'         room floor where the player starts (facing spawn_yaw)
+        /// 'E'         room floor that takes the player on to `next` (their ship's airlock)
         /// </summary>
         public List<string> Plan { get; } = new List<string>();
         /// <summary>
@@ -61,9 +63,54 @@ namespace LuckyNumbers.Model
         /// Rooms light every nth row of ceiling tiles (the rest keep their strip dark); corridors light every tile.
         /// </summary>
         public int CeilingLightEvery { get; set; }
+        /// <summary>
+        /// Where the station hangs in the player's universe: orbiting this body (empty = the planet the freighter
+        /// goes down on, from the lucky number), this many of its diameters from its centre, on its sunward side.
+        /// The station's north (+Z, row 0 of the plan) faces the body, so north windows look at it.
+        /// </summary>
+        public string Orbit { get; set; }
+        public float OrbitDiameters { get; set; }
+        /// <summary>
+        /// Player start: compass heading in degrees (0 = north, 90 = east).
+        /// </summary>
+        public float SpawnYaw { get; set; }
+        /// <summary>
+        /// Scene after the station (walking onto an 'E' cell).
+        /// </summary>
+        public GameScene Next { get; set; }
+        /// <summary>
+        /// Controls line shown on arrival.
+        /// </summary>
+        public string Hint { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public StationScene Clone() => (StationScene)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// Live station state (mirrored to the web page).
+    /// </summary>
+    public sealed class StationState : IDisposable
+    {
+        public readonly ReactiveProperty<StationLightMode> Lights = new ReactiveProperty<StationLightMode>();
+
+        public void Dispose()
+        {
+            Lights.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Switch the station's lights (the page may send it too: e.g. trip the emergency lighting).
+    /// </summary>
+    public readonly struct StationLightsRequested
+    {
+        public readonly StationLightMode Mode;
+
+        public StationLightsRequested(StationLightMode mode)
+        {
+            Mode = mode;
+        }
     }
 
     /// <summary>

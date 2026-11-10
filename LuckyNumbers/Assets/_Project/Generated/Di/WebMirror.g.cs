@@ -34,6 +34,7 @@ namespace LuckyNumbers.Model
             "LandingSite",
             "PlayerShip",
             "PlayerHealth",
+            "StationState",
             "DiceState",
         };
 
@@ -75,13 +76,18 @@ namespace LuckyNumbers.Model
                 sink.MarkState(5);
             }
             {
+                var s = c.Resolve<StationState>();
+                d.Add(s.Lights.Subscribe(_ => sink.MarkState(6)));
+                sink.MarkState(6);
+            }
+            {
                 var s = c.Resolve<DiceState>();
-                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(6);
+                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(7);
                 s.Faces.CollectionChanged += hFaces;
                 d.Add(Disposable.Create(() => s.Faces.CollectionChanged -= hFaces));
-                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(6)));
-                d.Add(s.Seed.Subscribe(_ => sink.MarkState(6)));
-                sink.MarkState(6);
+                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Seed.Subscribe(_ => sink.MarkState(7)));
+                sink.MarkState(7);
             }
             d.Add(c.Resolve<ISubscriber<SceneChangeRequested>>().Subscribe(e =>
             {
@@ -128,6 +134,11 @@ namespace LuckyNumbers.Model
                 Write(sink.BeginEvent("PlayerDied"), e);
                 sink.EndEvent();
             }));
+            d.Add(c.Resolve<ISubscriber<StationLightsRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("StationLightsRequested"), e);
+                sink.EndEvent();
+            }));
             d.Add(c.Resolve<ISubscriber<MenuItemSelected>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("MenuItemSelected"), e);
@@ -147,7 +158,8 @@ namespace LuckyNumbers.Model
                 case 3: Write(b, c.Resolve<LandingSite>()); break;
                 case 4: Write(b, c.Resolve<PlayerShip>()); break;
                 case 5: Write(b, c.Resolve<PlayerHealth>()); break;
-                case 6: Write(b, c.Resolve<DiceState>()); break;
+                case 6: Write(b, c.Resolve<StationState>()); break;
+                case 7: Write(b, c.Resolve<DiceState>()); break;
             }
         }
 
@@ -161,6 +173,9 @@ namespace LuckyNumbers.Model
                     return true;
                 case "InputActionPerformed":
                     c.Resolve<IPublisher<InputActionPerformed>>().Publish(new InputActionPerformed(InputActionParse(Json.Get(o, "action"))));
+                    return true;
+                case "StationLightsRequested":
+                    c.Resolve<IPublisher<StationLightsRequested>>().Publish(new StationLightsRequested(StationLightModeParse(Json.Get(o, "mode"))));
                     return true;
                 case "MenuItemSelected":
                     c.Resolve<IPublisher<MenuItemSelected>>().Publish(new MenuItemSelected(MenuActionParse(Json.Get(o, "action"))));
@@ -221,6 +236,14 @@ namespace LuckyNumbers.Model
             Json.Num(b, s.Current.Value);
             b.Append(",\"max\":");
             Json.Num(b, s.Max.Value);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, StationState s)
+        {
+            b.Append('{');
+            b.Append("\"lights\":");
+            Json.Str(b, StationLightModeName(s.Lights.Value));
             b.Append('}');
         }
 
@@ -328,6 +351,14 @@ namespace LuckyNumbers.Model
             b.Append('}');
         }
 
+        static void Write(StringBuilder b, StationLightsRequested e)
+        {
+            b.Append('{');
+            b.Append("\"mode\":");
+            Json.Str(b, StationLightModeName(e.Mode));
+            b.Append('}');
+        }
+
         static void Write(StringBuilder b, MenuItemSelected e)
         {
             b.Append('{');
@@ -344,6 +375,7 @@ namespace LuckyNumbers.Model
                 case GameScene.Title: return "Title";
                 case GameScene.Intro: return "Intro";
                 case GameScene.Planet: return "Planet";
+                case GameScene.Station: return "Station";
                 default: return ((int)v).ToString(CultureInfo.InvariantCulture);
             }
         }
@@ -357,6 +389,7 @@ namespace LuckyNumbers.Model
                 case "Title": return GameScene.Title;
                 case "Intro": return GameScene.Intro;
                 case "Planet": return GameScene.Planet;
+                case "Station": return GameScene.Station;
                 default: return default;
             }
         }
@@ -392,6 +425,31 @@ namespace LuckyNumbers.Model
                 case "Sprint": return InputAction.Sprint;
                 case "AnyButton": return InputAction.AnyButton;
                 case "Map": return InputAction.Map;
+                default: return default;
+            }
+        }
+
+        static string StationLightModeName(StationLightMode v)
+        {
+            switch (v)
+            {
+                case StationLightMode.Unspecified: return "Unspecified";
+                case StationLightMode.On: return "On";
+                case StationLightMode.Off: return "Off";
+                case StationLightMode.Emergency: return "Emergency";
+                default: return ((int)v).ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
+        static StationLightMode StationLightModeParse(object v)
+        {
+            if (v is double n) return (StationLightMode)(int)n;
+            switch (v as string)
+            {
+                case "Unspecified": return StationLightMode.Unspecified;
+                case "On": return StationLightMode.On;
+                case "Off": return StationLightMode.Off;
+                case "Emergency": return StationLightMode.Emergency;
                 default: return default;
             }
         }

@@ -3,7 +3,15 @@
     "rootNamespace": "LuckyNumbers.Station",
     "references": [
         "LuckyNumbers.Attributes",
-        "LuckyNumbers.Model"
+        "LuckyNumbers.Model",
+        "LuckyNumbers.Core",
+        "LuckyNumbers.Planet",
+        "LuckyNumbers.Space",
+        "VContainer",
+        "MessagePipe",
+        "R3.Unity",
+        "UniTask",
+        "Unity.Mathematics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

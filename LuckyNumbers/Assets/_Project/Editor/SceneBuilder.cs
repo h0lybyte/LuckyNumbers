@@ -37,17 +37,19 @@ namespace LuckyNumbers.Editor
             BuildTitle(rig);
             BuildIntro(rig);
             BuildPlanet(rig);
+            BuildStation(rig);
 
             EditorBuildSettings.scenes = new[]
             {
                 new EditorBuildSettingsScene($"{ScenesDir}/Title.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/Intro.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/Planet.unity", true),
+                new EditorBuildSettingsScene($"{ScenesDir}/Station.unity", true),
             };
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>($"{ScenesDir}/SampleScene.unity") != null)
                 AssetDatabase.DeleteAsset($"{ScenesDir}/SampleScene.unity"); // URP template scene
             AssetDatabase.SaveAssets();
-            Debug.Log("[SceneBuilder] built Title, Intro, Planet; build settings = [Title, Intro, Planet]");
+            Debug.Log("[SceneBuilder] built Title, Intro, Planet, Station; build settings = [Title, Intro, Planet, Station]");
         }
 
         static void BuildTitle(Rig rig)
@@ -92,6 +94,70 @@ namespace LuckyNumbers.Editor
             var ground = new GameObject("Ground").AddComponent<GroundView>();
             Assign(ground, ("material", MaterialAsset("Ground", "LuckyNumbers/Ground")));
 
+            var (cam, _) = PlayerRig();
+
+            // Sun: a star sphere far away (moved with the player at runtime).
+            var sun = Sphere("Sun", rig.Star, null);
+            sun.transform.localScale = Vector3.one * 60f;
+            var view = new GameObject("PlanetView").AddComponent<PlanetView>();
+            Assign(view, ("document", ui), ("sun", sun));
+
+            // Map (M): a hex globe on its own layer, far from the world, with its own camera (off until opened).
+            var mapLayer = LayerMask.NameToLayer("Map");
+            if (mapLayer < 0) throw new System.Exception("layer Map missing (ProjectSettings/TagManager)");
+            cam.cullingMask &= ~(1 << mapLayer);
+            var mapGo = new GameObject("Map");
+            mapGo.transform.position = new Vector3(0f, 5000f, 0f);
+            var globe = new GameObject("Globe");
+            globe.transform.SetParent(mapGo.transform, false);
+            var globeFilter = globe.AddComponent<MeshFilter>();
+            var globeRenderer = globe.AddComponent<MeshRenderer>();
+            globeRenderer.sharedMaterial = MaterialAsset("HexMap", "LuckyNumbers/HexMap");
+            globeRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            var marker = MaterialAsset("MapMarker", "Universal Render Pipeline/Unlit");
+            Transform Marker(string name, PrimitiveType type, Vector3 scale)
+            {
+                var m = GameObject.CreatePrimitive(type);
+                m.name = name;
+                Object.DestroyImmediate(m.GetComponent<Collider>());
+                m.transform.SetParent(globe.transform, false);
+                m.transform.localScale = scale;
+                m.GetComponent<MeshRenderer>().sharedMaterial = marker;
+                return m.transform;
+            }
+            var crashMarker = Marker("Crash", PrimitiveType.Cylinder, new Vector3(0.02f, 0.04f, 0.02f));
+            var pinMarker = Marker("You", PrimitiveType.Sphere, Vector3.one * 0.022f);
+            // The system's star (its look set at runtime) and a moon template (Planet3D, copied per moon).
+            var mapStar = Sphere("Star", rig.Star, mapGo.transform);
+            var moonTemplate = Sphere("MoonTemplate", rig.Planet, mapGo.transform);
+            moonTemplate.gameObject.SetActive(false);
+            var mapCamGo = new GameObject("MapCamera");
+            mapCamGo.transform.SetParent(mapGo.transform, false);
+            mapCamGo.transform.localPosition = new Vector3(0f, 0f, -3f);
+            var mapCam = mapCamGo.AddComponent<Camera>();
+            mapCam.clearFlags = CameraClearFlags.Skybox;   // your universe's sky behind the globe
+            mapCam.cullingMask = 1 << mapLayer;
+            mapCam.fieldOfView = 40f;
+            mapCam.nearClipPlane = 0.05f;
+            mapCam.farClipPlane = 400f;                   // out to the star
+            ArmsView.SetLayer(mapGo.transform, mapLayer);
+            var mapView = mapGo.AddComponent<MapView>();
+            Assign(mapView, ("mapCamera", mapCam), ("globe", globe.transform), ("globeMesh", globeFilter), ("globeRenderer", globeRenderer),
+                   ("crash", crashMarker), ("pin", pinMarker), ("star", mapStar),
+                   ("moonTemplate", moonTemplate));
+            mapCamGo.SetActive(false);
+
+            FreighterRig(collide: true);   // the wreck: the museum freighter, solid, so you walk around (and onto) it
+            Scopes<PlanetScope>();
+            EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Planet.unity");
+        }
+
+        /// <summary>
+        /// First-person player: body (CharacterController) > head > eyes (camera) > arms pivot > arms rig, with the
+        /// arms on the Viewmodel layer drawn by an overlay camera stacked on the eyes. Returns both cameras.
+        /// </summary>
+        static (UnityEngine.Camera eyes, UnityEngine.Camera viewmodel) PlayerRig()
+        {
             // Player: body (CharacterController) > head > camera > arms pivot > arms rig (eye at the rig origin).
             var playerGo = new GameObject("Player");
             var cc = playerGo.AddComponent<CharacterController>();
@@ -167,60 +233,68 @@ namespace LuckyNumbers.Editor
             for (var i = 0; i < clips.Count; i++) cl.GetArrayElementAtIndex(i).objectReferenceValue = clips[i];
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            // Sun: a star sphere far away (moved with the player at runtime).
-            var sun = Sphere("Sun", rig.Star, null);
-            sun.transform.localScale = Vector3.one * 60f;
+            return (cam, vm);
+        }
+
+        const string KitsDir = "Assets/_Project/Art/Models";
+
+        /// <summary>
+        /// The player's station: the universe (SpaceRig, its camera the base of the stack) seen from orbit, and the
+        /// station + first-person player drawn over it by overlay cameras (eyes, then arms). StationPresenter turns
+        /// the space camera with the player's head, so windows look out at the real system.
+        /// </summary>
+        static void BuildStation(Rig rig)
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var ui = Document("UI", rig.Panel, "Planet");   // fade, hint, crosshair, dialogue box (for the call)
+            SpaceRig(rig, ui);
+            var spaceCam = Object.FindAnyObjectByType<UnityEngine.Camera>();
+
+            var (eyes, viewmodel) = PlayerRig();
+            eyes.tag = "Untagged";                          // the space camera is the main (base) camera
+            eyes.farClipPlane = 200f;                       // the station only; space draws underneath
+            var eyesData = eyes.GetUniversalAdditionalCameraData();
+            eyesData.cameraStack.Clear();
+            eyesData.renderType = CameraRenderType.Overlay;
+            var spaceData = spaceCam.GetUniversalAdditionalCameraData();
+            spaceData.cameraStack.Add(eyes);
+            spaceData.cameraStack.Add(viewmodel);
+            spaceCam.fieldOfView = eyes.fieldOfView;
+
             var view = new GameObject("PlanetView").AddComponent<PlanetView>();
-            Assign(view, ("document", ui), ("sun", sun));
+            Assign(view, ("document", ui));
 
-            // Map (M): a hex globe on its own layer, far from the world, with its own camera (off until opened).
-            var mapLayer = LayerMask.NameToLayer("Map");
-            if (mapLayer < 0) throw new System.Exception("layer Map missing (ProjectSettings/TagManager)");
-            cam.cullingMask &= ~(1 << mapLayer);
-            var mapGo = new GameObject("Map");
-            mapGo.transform.position = new Vector3(0f, 5000f, 0f);
-            var globe = new GameObject("Globe");
-            globe.transform.SetParent(mapGo.transform, false);
-            var globeFilter = globe.AddComponent<MeshFilter>();
-            var globeRenderer = globe.AddComponent<MeshRenderer>();
-            globeRenderer.sharedMaterial = MaterialAsset("HexMap", "LuckyNumbers/HexMap");
-            globeRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            var marker = MaterialAsset("MapMarker", "Universal Render Pipeline/Unlit");
-            Transform Marker(string name, PrimitiveType type, Vector3 scale)
+            var station = new GameObject("Station").AddComponent<LuckyNumbers.Station.StationView>();
+            station.Init(KitMaterial("StationKit"), KitMaterial("StarshipKit"), MaterialAsset("StationGlass", "LuckyNumbers/StationGlass"),
+                         KitPieces("StationKit", "StarshipKit"));
+            EditorUtility.SetDirty(station);
+
+            Scopes<LuckyNumbers.Station.StationScope>();
+            EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Station.unity");
+        }
+
+        /// <summary>One material per kit (its atlas, StationKit shader), saved as an asset.</summary>
+        static Material KitMaterial(string kit)
+        {
+            var mat = MaterialAsset(kit, "LuckyNumbers/StationKit");
+            mat.mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>($"{KitsDir}/{kit}/atlas.png")
+                              ?? throw new System.Exception($"{kit}/atlas.png not imported");
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
+        /// <summary>Every model in the kits' folders, by file name (the names StationPlan places).</summary>
+        public static LuckyNumbers.Station.StationView.KitPiece[] KitPieces(params string[] kits)
+        {
+            var list = new System.Collections.Generic.List<LuckyNumbers.Station.StationView.KitPiece>();
+            foreach (var kit in kits)
+            foreach (var guid in AssetDatabase.FindAssets("t:Model", new[] { $"{KitsDir}/{kit}" }))
             {
-                var m = GameObject.CreatePrimitive(type);
-                m.name = name;
-                Object.DestroyImmediate(m.GetComponent<Collider>());
-                m.transform.SetParent(globe.transform, false);
-                m.transform.localScale = scale;
-                m.GetComponent<MeshRenderer>().sharedMaterial = marker;
-                return m.transform;
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                list.Add(new LuckyNumbers.Station.StationView.KitPiece
+                    { name = System.IO.Path.GetFileNameWithoutExtension(path), model = AssetDatabase.LoadAssetAtPath<GameObject>(path) });
             }
-            var crashMarker = Marker("Crash", PrimitiveType.Cylinder, new Vector3(0.02f, 0.04f, 0.02f));
-            var pinMarker = Marker("You", PrimitiveType.Sphere, Vector3.one * 0.022f);
-            // The system's star (its look set at runtime) and a moon template (Planet3D, copied per moon).
-            var mapStar = Sphere("Star", rig.Star, mapGo.transform);
-            var moonTemplate = Sphere("MoonTemplate", rig.Planet, mapGo.transform);
-            moonTemplate.gameObject.SetActive(false);
-            var mapCamGo = new GameObject("MapCamera");
-            mapCamGo.transform.SetParent(mapGo.transform, false);
-            mapCamGo.transform.localPosition = new Vector3(0f, 0f, -3f);
-            var mapCam = mapCamGo.AddComponent<Camera>();
-            mapCam.clearFlags = CameraClearFlags.Skybox;   // your universe's sky behind the globe
-            mapCam.cullingMask = 1 << mapLayer;
-            mapCam.fieldOfView = 40f;
-            mapCam.nearClipPlane = 0.05f;
-            mapCam.farClipPlane = 400f;                   // out to the star
-            ArmsView.SetLayer(mapGo.transform, mapLayer);
-            var mapView = mapGo.AddComponent<MapView>();
-            Assign(mapView, ("mapCamera", mapCam), ("globe", globe.transform), ("globeMesh", globeFilter), ("globeRenderer", globeRenderer),
-                   ("crash", crashMarker), ("pin", pinMarker), ("star", mapStar),
-                   ("moonTemplate", moonTemplate));
-            mapCamGo.SetActive(false);
-
-            FreighterRig(collide: true);   // the wreck: the museum freighter, solid, so you walk around (and onto) it
-            Scopes<PlanetScope>();
-            EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Planet.unity");
+            return list.ToArray();
         }
 
         const string FighterDir = "Assets/_Project/Art/Models/Fighter";

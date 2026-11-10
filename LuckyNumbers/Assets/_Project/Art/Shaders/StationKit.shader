@@ -83,7 +83,7 @@ Shader "LuckyNumbers/StationKit"
                 float grey = dot(albedo, float3(0.3, 0.59, 0.11));
                 float3 lamp = lerp(albedo, grey.xxx, _LightDesaturate) * _LightColor.rgb * _LightColor.a * pulse;
                 // Unlit pieces (vertex alpha 0): their lamps are glass with the power off, whatever the mode.
-                float3 darkLamp = lerp(albedo, grey.xxx, 0.7) * 0.3;
+                float3 darkLamp = lerp(albedo, grey.xxx, 0.7) * 0.3 * _Ambient.rgb * lerp(1.0, pulse, 0.5);   // dims with the room
                 lamp = lerp(darkLamp, lamp, i.color.a);
                 float3 color = lerp(surface, lamp, tex.a);
                 // Lit lamps cut through the fog a little (they're emitters); dark ones fog like walls.

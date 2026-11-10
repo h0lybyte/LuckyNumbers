@@ -65,6 +65,10 @@ namespace LuckyNumbers.Station
         static readonly Vector2Int[] Dirs = { new(0, 1), new(1, 0), new(0, -1), new(-1, 0) }; // N, E, S, W
 
         public readonly int Width, Depth;
+        /// <summary>The 'P' cell (player start), or the first room cell.</summary>
+        public Vector2Int Spawn { get; private set; } = new(-1, -1);
+        /// <summary>'E' cells: walking onto one leaves the station.</summary>
+        public readonly List<Vector2Int> Exits = new();
         public readonly List<Piece> Pieces = new();
         public readonly List<Box> Boxes = new();
         readonly Kind[,] _cells;
@@ -80,7 +84,17 @@ namespace LuckyNumbers.Station
             _cells = new Kind[Width, Depth];
             for (var row = 0; row < Depth; row++)
             for (var x = 0; x < Width; x++)
-                _cells[x, Depth - 1 - row] = x < rows[row].Length ? Parse(rows[row][x]) : Kind.Solid;
+            {
+                var ch = x < rows[row].Length ? rows[row][x] : '#';
+                var cell = new Vector2Int(x, Depth - 1 - row);
+                _cells[cell.x, cell.y] = Parse(ch);
+                if (ch == 'P') Spawn = cell;
+                if (ch == 'E') Exits.Add(cell);
+            }
+            if (Spawn.x < 0)
+                for (var z = Depth - 1; z >= 0 && Spawn.x < 0; z--)
+                for (var x = 0; x < Width && Spawn.x < 0; x++)
+                    if (_cells[x, z] == Kind.Room) Spawn = new Vector2Int(x, z);
 
             var corners = new Dictionary<Vector2Int, int>();   // grid vertex (in metres) -> axes of room walls meeting there
             for (var z = 0; z < Depth; z++)
@@ -144,11 +158,11 @@ namespace LuckyNumbers.Station
 
         public static bool Walkable(Kind k) => k == Kind.Room || k == Kind.Corridor || k == Kind.Doorway;
 
-        static Vector2Int CellOf(Vector3 p) => new(Mathf.FloorToInt(p.x / Cell), Mathf.FloorToInt(p.z / Cell));
+        public static Vector2Int CellOf(Vector3 p) => new(Mathf.FloorToInt(p.x / Cell), Mathf.FloorToInt(p.z / Cell));
 
         static Kind Parse(char c) => c switch
         {
-            '.' => Kind.Room,
+            '.' or 'P' or 'E' => Kind.Room,
             'c' => Kind.Corridor,
             'D' => Kind.Doorway,
             'W' => Kind.Window,
