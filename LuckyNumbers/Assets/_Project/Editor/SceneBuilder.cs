@@ -268,6 +268,7 @@ namespace LuckyNumbers.Editor
         /// <summary>
         /// The museum freighter (CC BY, see CREDITS): one part per material, named after it (mat_0005 uses
         /// Textures/tex_0005), its own look kept (no skins). Pivot +Z forward; length measured from the model.
+        /// With `collide`: the convex pieces of cargo_ship_collision.obj (tools/collision/decompose.py).
         /// </summary>
         static void FreighterRig(bool collide = false)
         {
@@ -294,17 +295,33 @@ namespace LuckyNumbers.Editor
                 EditorUtility.SetDirty(mat);
                 r.sharedMaterial = mat;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                // Convex per part: the model is open shells and panels, so exact mesh colliders let you slip through a
-                // gap into the hollow hull and get stuck. A convex hull has no inside (gaps fill in; you walk over them).
-                if (collide && r.TryGetComponent<MeshFilter>(out var mf))
-                {
-                    var c = r.gameObject.AddComponent<MeshCollider>();
-                    c.sharedMesh = mf.sharedMesh;
-                    c.convex = true;
-                }
                 var b = r.bounds;
                 if (i == 0) bounds = b; else bounds.Encapsulate(b);
             }
+            // Solid collision: convex pieces from tools/collision/decompose.py (a watertight remesh decomposed, so no
+            // hollow to fall into, while gaps and overhangs stay open). One convex MeshCollider each, not rendered.
+            if (collide)
+            {
+                var source = AssetDatabase.LoadAssetAtPath<GameObject>($"{FreighterDir}/cargo_ship_collision.obj")
+                             ?? throw new System.Exception("cargo_ship_collision.obj missing (tools/collision/decompose.py)");
+                var hulls = (GameObject)PrefabUtility.InstantiatePrefab(source);
+                hulls.name = "Collision";
+                hulls.transform.SetParent(ship.transform, false);
+                var hullBounds = new Bounds();
+                var pieces = hulls.GetComponentsInChildren<MeshFilter>();
+                for (var i = 0; i < pieces.Length; i++)
+                {
+                    var hr = pieces[i].GetComponent<MeshRenderer>();
+                    if (i == 0) hullBounds = hr.bounds; else hullBounds.Encapsulate(hr.bounds);
+                    var c = pieces[i].gameObject.AddComponent<MeshCollider>();
+                    c.sharedMesh = pieces[i].sharedMesh;
+                    c.convex = true;
+                    Object.DestroyImmediate(hr);
+                }
+                Debug.Log($"[SceneBuilder] freighter collision: {pieces.Length} convex pieces, bounds {hullBounds.center} {hullBounds.size} " +
+                          $"(model {bounds.center} {bounds.size})");
+            }
+
             var so = new SerializedObject(view);
             so.FindProperty("pivot").objectReferenceValue = pivot;
             so.FindProperty("modelLength").floatValue = bounds.size.z;
