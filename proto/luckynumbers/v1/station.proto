@@ -26,6 +26,11 @@ message StationScene {
   StationLightLook lights_on = 5;
   StationLightLook lights_off = 6;
   StationLightLook emergency = 7;
+  // Rooms use the corridor walls with their lean (2.3 to 3 m, 0.6 m in) cut back to this fraction:
+  // 0 = upright panels, 1 = the corridor's full lean.
+  float room_lean = 8;
+  // Rooms light every nth row of ceiling tiles (the rest keep their strip dark); corridors light every tile.
+  int32 ceiling_light_every = 9;
 }
 
 enum StationLightMode {

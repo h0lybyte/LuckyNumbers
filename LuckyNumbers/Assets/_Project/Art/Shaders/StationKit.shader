@@ -67,7 +67,7 @@ Shader "LuckyNumbers/StationKit"
                 float3 n = TransformObjectToWorldNormal(v.normalOS);
                 // Up-facing a touch brighter, down-facing a touch darker: reads as overhead light.
                 float overhead = 0.9 + 0.12 * n.y;
-                o.color = float4(v.color.rgb * overhead, 1);
+                o.color = float4(v.color.rgb * overhead, v.color.a);   // a: 0 = this piece's lights stay dark
                 float dist = distance(GetCameraPositionWS(), positionWS);
                 o.fog = saturate((dist - _FogStart) / max(_FogEnd - _FogStart, 0.01));
                 return o;
@@ -82,6 +82,9 @@ Shader "LuckyNumbers/StationKit"
                 float3 surface = albedo * i.color.rgb * _Tint.rgb * _Brightness * _Ambient.rgb * lerp(1.0, pulse, 0.5);
                 float grey = dot(albedo, float3(0.3, 0.59, 0.11));
                 float3 lamp = lerp(albedo, grey.xxx, _LightDesaturate) * _LightColor.rgb * _LightColor.a * pulse;
+                // Unlit pieces (vertex alpha 0): their lamps are glass with the power off, whatever the mode.
+                float3 darkLamp = lerp(albedo, grey.xxx, 0.7) * 0.3;
+                lamp = lerp(darkLamp, lamp, i.color.a);
                 float3 color = lerp(surface, lamp, tex.a);
                 // Lit lamps cut through the fog a little (they're emitters); dark ones fog like walls.
                 color = lerp(color, _FogColor.rgb, i.fog * i.fog * (1.0 - 0.5 * tex.a * saturate(_LightColor.a - 1.0)));

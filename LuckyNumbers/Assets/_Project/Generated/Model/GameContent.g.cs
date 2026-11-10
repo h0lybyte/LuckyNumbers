@@ -1394,6 +1394,8 @@ namespace LuckyNumbers.Model
                 PulseHz = 0.8f,
                 PulseDepth = 0.55f,
             },
+            RoomLean = 0.4f,
+            CeilingLightEvery = 2,
         };
 
         /// <summary>From <c>content/title.txtpb</c>.</summary>

@@ -17,6 +17,8 @@ plan: "###################"
 
 light_every: 2
 chunk_cells: 4
+room_lean: 0.4
+ceiling_light_every: 2
 
 # Light modes. Lights keep their painted colour when on; off, they go grey-dark and the station dims;
 # in an emergency they turn red and pulse, and the walls take a red cast.

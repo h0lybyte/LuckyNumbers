@@ -6,7 +6,7 @@ namespace LuckyNumbers.Station
 {
     /// <summary>
     /// An ASCII station plan (StationScene.plan) -> kit pieces to place and boxes to collide with. Pure layout,
-    /// no rendering: StationView merges the pieces into meshes.
+    /// no rendering: StationView merges the pieces into meshes. Built from the PSX starship kit (cream panels).
     ///
     /// Grid (both PSX kits): 2 m cells, 3 m high. Cell (x, z) has its centre at (2x + 1, 0, 2z + 1); row 0 of the
     /// plan is the north edge (+Z). A wall stands on a cell's edge, front facing into the cell: the kit's walls
@@ -29,14 +29,17 @@ namespace LuckyNumbers.Station
             public readonly Vector3 Position;
             public readonly Quaternion Rotation;
             public readonly Vector2Int Cell;
+            /// <summary>Its painted lights stay dark in every mode (e.g. every other room ceiling).</summary>
+            public readonly bool Unlit;
 
-            public Piece(string name, Kit kit, Vector3 position, Quaternion rotation, Vector2Int cell)
+            public Piece(string name, Kit kit, Vector3 position, Quaternion rotation, Vector2Int cell, bool unlit = false)
             {
                 Name = name;
                 Kit = kit;
                 Position = position;
                 Rotation = rotation;
                 Cell = cell;
+                Unlit = unlit;
             }
         }
 
@@ -46,15 +49,18 @@ namespace LuckyNumbers.Station
             public Box(Vector3 center, Vector3 size) { Center = center; Size = size; }
         }
 
-        // Piece names = the kits' FBX file names.
-        public const string FloorRoom = "floor_station", FloorCorridor = "floor_deck";
-        public const string WallRoom = "wall_station", WallRoomLights = "wall_station_lights", Viewport = "wall_viewport";
-        public const string Post = "wall_post_station", DoorwayRoom = "wall_doorway_station";
+        // Piece names = the kits' FBX file names. Everything is the starship kit's cream panels: corridors lean in,
+        // rooms use the same walls with the lean pushed upright (Flat: StationView derives those meshes).
+        public const string Flat = "@flat";
+        public const string FloorDeck = "floor_deck", Ceiling = "ceiling_corridor";
         public const string WallCorridor = "wall_corridor", WallCorridorLights = "wall_corridor_lights";
-        public const string Porthole = "wall_corridor_porthole", Rib = "corridor_rib", CeilingCorridor = "ceiling_corridor";
+        public const string Porthole = "wall_corridor_porthole", Rib = "corridor_rib";
+        public const string WallRoom = WallCorridor + Flat, WallRoomLights = WallCorridorLights + Flat;
+        public const string PortholeRoom = Porthole + Flat;
+        public const string Post = "post_ship", DoorwayShip = "wall_doorway_ship";
 
-        /// <summary>Doorway opening (wall_doorway_station, fits door_station: 1.24 x 2.32 m).</summary>
-        const float DoorWidth = 1.24f, DoorHeight = 2.32f, WallThickness = 0.2f;
+        /// <summary>Doorway opening (wall_doorway_ship, fits door_ship: 1.2 x 2.19 m).</summary>
+        const float DoorWidth = 1.2f, DoorHeight = 2.19f, WallThickness = 0.2f;
 
         static readonly Vector2Int[] Dirs = { new(0, 1), new(1, 0), new(0, -1), new(-1, 0) }; // N, E, S, W
 
@@ -63,8 +69,12 @@ namespace LuckyNumbers.Station
         public readonly List<Box> Boxes = new();
         readonly Kind[,] _cells;
 
-        public StationPlan(IReadOnlyList<string> rows, int lightEvery)
+        readonly int _ceilingEvery;
+
+        /// <param name="ceilingLightEvery">Rooms light every nth row of ceiling tiles (corridors: every tile).</param>
+        public StationPlan(IReadOnlyList<string> rows, int lightEvery, int ceilingLightEvery = 1)
         {
+            _ceilingEvery = Math.Max(1, ceilingLightEvery);
             Depth = rows.Count;
             foreach (var r in rows) Width = Math.Max(Width, r.Length);
             _cells = new Kind[Width, Depth];
@@ -99,16 +109,14 @@ namespace LuckyNumbers.Station
 
                     var lit = lightEvery > 0 && (x + z + d) % lightEvery == 0;
                     string name;
-                    Kit kit;
+                    var kit = Kit.Starship;
                     if (kind == Kind.Corridor)
                     {
                         name = next == Kind.Window ? Porthole : lit ? WallCorridorLights : WallCorridor;
-                        kit = Kit.Starship;
                     }
                     else
                     {
-                        name = next == Kind.Window && kind == Kind.Room ? Viewport : lit ? WallRoomLights : WallRoom;
-                        kit = Kit.Station;
+                        name = next == Kind.Window && kind == Kind.Room ? PortholeRoom : lit ? WallRoomLights : WallRoom;
                         // Posts go where room walls turn a corner: note both ends of this wall and its axis.
                         var axis = dir.x != 0 ? 1 : 2;   // wall runs along Z (1) or X (2)
                         var side = new Vector2Int(dir.y, -dir.x);   // along the wall
@@ -125,7 +133,7 @@ namespace LuckyNumbers.Station
             {
                 if (axes != 3) continue;   // a straight run: the walls meet flush, no post
                 var p = new Vector3(vertex.x, 0, vertex.y);
-                Pieces.Add(new Piece(Post, Kit.Station, p, Quaternion.identity, CellOf(p)));
+                Pieces.Add(new Piece(Post, Kit.Starship, p, Quaternion.identity, CellOf(p)));
             }
         }
 
@@ -150,20 +158,13 @@ namespace LuckyNumbers.Station
         void Floor(Kind kind, Vector2Int cell, Vector3 centre)
         {
             var up = centre + Vector3.up * Height;
-            if (kind == Kind.Corridor)
-            {
-                Pieces.Add(new Piece(FloorCorridor, Kit.Starship, centre, Quaternion.identity, cell));
-                // The ceiling's light runs along the corridor: turn it with the way through.
-                var alongX = Walkable(At(cell + Dirs[1])) || Walkable(At(cell + Dirs[3]));
-                Pieces.Add(new Piece(CeilingCorridor, Kit.Starship, centre,
-                                     alongX ? Quaternion.identity : Quaternion.Euler(0, 90, 0), cell));
-            }
-            else
-            {
-                Pieces.Add(new Piece(FloorRoom, Kit.Station, centre, Quaternion.identity, cell));
-                // No ceiling piece in the free station kit: the deck plate, upside down at 3 m.
-                Pieces.Add(new Piece(FloorRoom, Kit.Station, up, Quaternion.Euler(180, 0, 0), cell));
-            }
+            Pieces.Add(new Piece(FloorDeck, Kit.Starship, centre, Quaternion.identity, cell));
+            // The ceiling's light strip runs along a corridor (turned with the way through); rooms keep one
+            // direction so their strips line up in rows.
+            var alongX = kind != Kind.Corridor || Walkable(At(cell + Dirs[1])) || Walkable(At(cell + Dirs[3]));
+            var unlit = kind != Kind.Corridor && cell.y % _ceilingEvery != 0;
+            Pieces.Add(new Piece(Ceiling, Kit.Starship, centre, alongX ? Quaternion.identity : Quaternion.Euler(0, 90, 0),
+                                 cell, unlit));
             Boxes.Add(new Box(centre - Vector3.up * 0.05f, new Vector3(Cell, 0.1f, Cell)));
             Boxes.Add(new Box(up + Vector3.up * 0.05f, new Vector3(Cell, 0.1f, Cell)));
         }
@@ -173,7 +174,7 @@ namespace LuckyNumbers.Station
         {
             var northSouth = Walkable(At(cell + Dirs[0])) || Walkable(At(cell + Dirs[2]));
             var facing = northSouth ? Vector3.forward : Vector3.right;
-            Pieces.Add(new Piece(DoorwayRoom, Kit.Station, centre, Quaternion.LookRotation(facing), cell));
+            Pieces.Add(new Piece(DoorwayShip, Kit.Starship, centre, Quaternion.LookRotation(facing), cell));
 
             // Jambs either side of the opening and a lintel over it.
             var across = northSouth ? Vector3.right : Vector3.forward;

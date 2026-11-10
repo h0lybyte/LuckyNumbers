@@ -52,6 +52,15 @@ namespace LuckyNumbers.Model
         public StationLightLook LightsOn { get; set; }
         public StationLightLook LightsOff { get; set; }
         public StationLightLook Emergency { get; set; }
+        /// <summary>
+        /// Rooms use the corridor walls with their lean (2.3 to 3 m, 0.6 m in) cut back to this fraction:
+        /// 0 = upright panels, 1 = the corridor's full lean.
+        /// </summary>
+        public float RoomLean { get; set; }
+        /// <summary>
+        /// Rooms light every nth row of ceiling tiles (the rest keep their strip dark); corridors light every tile.
+        /// </summary>
+        public int CeilingLightEvery { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public StationScene Clone() => (StationScene)MemberwiseClone();

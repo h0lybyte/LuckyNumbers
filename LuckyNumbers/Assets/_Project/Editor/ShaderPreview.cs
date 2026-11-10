@@ -256,6 +256,17 @@ namespace LuckyNumbers.Editor
             SaveGrid(new[] { corridor, hangar }, modes.Length, "preview-station-lights.png",
                      row => view.SetLights(modes[row]));
             view.SetLights(LuckyNumbers.Model.StationLightMode.On);
+
+            // Room lean: upright, the content value, the corridor's full lean (hangar and viewing room per row).
+            var leans = new[] { 0f, config.RoomLean, 1f };
+            var room = Eye(At(14f, 8.6f), At(17.5f, 8f, 1.7f));
+            SaveGrid(new[] { hangar, room }, leans.Length, "preview-station-lean.png", row =>
+            {
+                var c = config.Clone();
+                c.RoomLean = leans[row];
+                view.Build(c);
+            });
+            view.Build(config);
         }
 
         static Material KitMaterial(string kit)
