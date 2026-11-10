@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { LN, useLNEvent, useLNReady, useLNState } from "./ln";
 import { installFreeMouseKey, usePointerLocked } from "./pointer";
-import type { GameScene, WebEvents } from "./ln";
+import type { GameScene, InboundEvent, WebEvents } from "./ln";
 
 export function App({ dock }: { dock: HTMLElement | null }) {
   const [inspector, setInspector] = useState(() => new URLSearchParams(location.search).has("ln-debug"));
@@ -113,6 +113,36 @@ function Toasts() {
 
 // ---- inspector (dev) ------------------------------------------------------------------------------
 
+/** Any inbound event with a JSON payload, e.g. InputActionPerformed {"action":"Jump"}. */
+function SendForm() {
+  const [name, setName] = useState<InboundEvent>("InputActionPerformed");
+  const [payload, setPayload] = useState('{"action":"Jump"}');
+  const [error, setError] = useState("");
+  const send = (e: FormEvent) => {
+    e.preventDefault();
+    try {
+      LN.send(name, JSON.parse(payload));
+      setError("");
+    } catch (err) {
+      setError(String(err));
+    }
+  };
+  return (
+    <form className="send-form" onSubmit={send}>
+      <select value={name} onChange={(e) => setName(e.target.value as InboundEvent)}>
+        {INBOUND.map((n) => (
+          <option key={n}>{n}</option>
+        ))}
+      </select>
+      <input value={payload} onChange={(e) => setPayload(e.target.value)} spellCheck={false} aria-label="Payload JSON" />
+      <button type="submit">Send</button>
+      {error && <div className="error">{error}</div>}
+    </form>
+  );
+}
+
+const INBOUND: InboundEvent[] = ["SceneChangeRequested", "InputActionPerformed", "MenuItemSelected"];
+
 type LoggedEvent = { at: number; name: keyof WebEvents; payload: unknown };
 
 function Inspector() {
@@ -145,6 +175,7 @@ function Inspector() {
             Map
           </button>
         </div>
+        <SendForm />
       </section>
 
       <section>

@@ -3,7 +3,11 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+import { installKeyboardGuard } from "./keyboard";
 import css from "./overlay.css?inline";
+
+// Before anything else listens: text fields keep their keys (see keyboard.ts).
+installKeyboardGuard();
 
 const style = document.createElement("style");
 style.textContent = css;
