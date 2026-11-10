@@ -23,10 +23,19 @@ namespace LuckyNumbers.Planet
     /// natural 1 is always row 1, a natural 20 the last), whose effects happen: health back (HP first, the rest to
     /// Stamina), slowed, a beam over the nearest relic or all of them. Rolls are seeded by the lucky number, so a universe always rolls the same.
     /// Inventory and rolls go to the page (RelicInventory, RelicRolled): its strip and the d20.
+    /// It's also where the pack drops things (IDropTarget): a dropped item lies at your feet as a placeholder block
+    /// (PLACEHOLDER_&lt;item id&gt;, sized from its grid shape, until it has a model) and E picks it back up.
     /// </summary>
     [Presenter]
-    public sealed class RelicsPresenter : IStartable, ITickable, IDisposable
+    public sealed class RelicsPresenter : IDropTarget, IStartable, ITickable, IDisposable
     {
+        sealed class Dropped
+        {
+            public DroppedItem Item;
+            public Transform Shape;
+            public Vector3 Rest;
+        }
+
         sealed class Lying
         {
             public Relic Relic;
@@ -55,6 +64,7 @@ namespace LuckyNumbers.Planet
         readonly List<IDisposable> _subscriptions = new();
         readonly List<Lying> _lying = new();
         readonly List<Relic> _held = new();
+        readonly List<Dropped> _dropped = new();
         readonly CancellationTokenSource _cts = new();
         static readonly int ColorA = Shader.PropertyToID("_ColorA");
         static readonly int ColorB = Shader.PropertyToID("_ColorB");
@@ -110,6 +120,7 @@ namespace LuckyNumbers.Planet
             // Pack consumables (ping beacon, flare) reveal relics the same way relic rolls do.
             _subscriptions.Add(_itemEffects.Subscribe(e => Apply(e.Effect, new RelicRoll { Amount = e.Amount, Seconds = e.Seconds })));
             _pack.ClearRelics();   // a fresh crash site: the last one's relics aren't in the pack any more
+            _pack.DropTarget = this;
         }
 
         public void Tick()
@@ -129,9 +140,14 @@ namespace LuckyNumbers.Planet
                 l.Shape.rotation = Quaternion.Euler(0f, Time.time * 40f + l.Relic.Seed % 360, 0f);
             }
 
+            foreach (var d in _dropped)
+                d.Shape.SetPositionAndRotation(d.Rest + Vector3.up * (0.05f * math.sin(Time.time * 2f + d.Item.Def.Id.Length)),
+                                               Quaternion.Euler(0f, Time.time * 30f, 0f));
+
             var onFoot = _firstPerson.Active;
             var me = _player.Body.transform.position;
             Lying near = null;
+            Dropped nearDrop = null;
             if (onFoot)
             {
                 var best = Config.PickupDistance > 0f ? Config.PickupDistance : 2.2f;
@@ -141,8 +157,14 @@ namespace LuckyNumbers.Planet
                     var d = Vector2.Distance(new Vector2(l.Rest.x, l.Rest.z), new Vector2(me.x, me.z));
                     if (d < best) { best = d; near = l; }
                 }
+                foreach (var dr in _dropped)
+                {
+                    var d = Vector2.Distance(new Vector2(dr.Rest.x, dr.Rest.z), new Vector2(me.x, me.z));
+                    if (d < best) { best = d; nearDrop = dr; near = null; }
+                }
             }
             if (_pickup && near != null) Take(near);
+            if (_pickup && nearDrop != null) PickUp(nearDrop);
             _pickup = false;
 
             if (_useRequest >= 0 && _useRequest < _held.Count) { _inventory.Selected.Value = _useRequest; _use = true; }
@@ -157,7 +179,8 @@ namespace LuckyNumbers.Planet
 
             var selected = Selected();
             _inventory.Cooldown.Value = math.max(0f, _cooldownUntil - Time.time);
-            var prompt = near != null ? Fill(Config.PickupPrompt, near.Relic.Name)
+            var prompt = nearDrop != null ? Fill(Config.PickupPrompt, Label(nearDrop.Item))
+                       : near != null ? Fill(Config.PickupPrompt, near.Relic.Name)
                        : selected?.Artifact != null && onFoot && _inventory.Cooldown.Value <= 0f ? Fill(Config.UsePrompt, selected.Name) : "";
             if (prompt != _prompt)
             {
@@ -391,8 +414,57 @@ namespace LuckyNumbers.Planet
 
         static string Fill(string text, string name) => (text ?? "").Replace("{name}", name);
 
+        // ---- dropped items --------------------------------------------------------------------------------------
+
+        static string Label(DroppedItem item) => item.Count > 1 ? $"{item.Name} x{item.Count}" : item.Name;
+
+        public bool CanDrop => _firstPerson.Active;
+
+        /// <summary>IDropTarget: a placeholder block at your feet, a step ahead, on the ground.</summary>
+        public void Drop(DroppedItem item)
+        {
+            var body = _player.Body.transform;
+            var ahead = Vector3.ProjectOnPlane(body.forward, Vector3.up);
+            if (ahead.sqrMagnitude < 0.01f) ahead = Vector3.forward;
+            var at = body.position + ahead.normalized * 1.3f + Quaternion.Euler(0f, _dropped.Count * 47f, 0f) * Vector3.right * 0.3f;
+            // Its footprint: the grid shape's size, a quarter metre a cell.
+            var rows = string.IsNullOrEmpty(item.Def.Shape) ? new[] { "#" } : item.Def.Shape.Split('/');
+            var w = 1;
+            foreach (var r in rows) w = Math.Max(w, r.Length);
+            var size = new Vector3(w * 0.25f, 0.18f, rows.Length * 0.25f);
+            at.y = _ground.SurfaceAt(at) + size.y * 0.5f + 0.05f;
+
+            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = $"PLACEHOLDER_{item.Def.Id}";   // no model yet: replace with the item's own (docs/items.md)
+            UnityEngine.Object.Destroy(cube.GetComponent<Collider>());   // nothing to trip on
+            cube.transform.localScale = size;
+            cube.transform.position = at;
+            var c = item.Def.Color;
+            var block = new MaterialPropertyBlock();
+            block.SetColor("_BaseColor", new Color(c.R, c.G, c.B, 1f));
+            block.SetColor("_Color", new Color(c.R, c.G, c.B, 1f));
+            cube.GetComponent<Renderer>().SetPropertyBlock(block);
+            _dropped.Add(new Dropped { Item = item, Shape = cube.transform, Rest = at });
+            Debug.Log($"[Relics] dropped {Label(item)} ({cube.name})");
+        }
+
+        void PickUp(Dropped d)
+        {
+            if (!_pack.TryAdd(d.Item))
+            {
+                var full = (GameContent.Items.FullPrompt ?? "No room for {name}").Replace("{name}", d.Item.Name);
+                DialogueLine.Play(new Dialogue { Speaker = "Pack", Text = full, DurationSeconds = 2.5f, CharsPerSecond = 60f },
+                                  _view.Dialogue, _cts.Token).Forget();
+                return;
+            }
+            _dropped.Remove(d);
+            UnityEngine.Object.Destroy(d.Shape.gameObject);
+            Debug.Log($"[Relics] picked up {Label(d.Item)}");
+        }
+
         public void Dispose()
         {
+            if (_pack.DropTarget == this) _pack.DropTarget = null;
             _firstPerson.SpeedScale = 1f;
             _cts.Cancel();
             _cts.Dispose();
