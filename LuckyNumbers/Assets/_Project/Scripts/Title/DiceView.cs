@@ -111,7 +111,15 @@ namespace LuckyNumbers.Title
                 {
                     number = new Label { pickingMode = PickingMode.Ignore };
                     number.AddToClassList("ln-die-number");
-                    number.style.color = ink;
+                    if (die.Sides == 20)
+                    {
+                        // Lit in the die's colour on the dark face.
+                        number.style.color = Color.Lerp(color, Color.white, 0.45f);
+                        var glowColor = color;
+                        glowColor.a = 0.9f;
+                        number.style.textShadow = new TextShadow { color = glowColor, blurRadius = 6f };
+                    }
+                    else number.style.color = ink;
                     body.Add(number);
                 }
                 _dice.Add(body);
@@ -210,53 +218,68 @@ namespace LuckyNumbers.Title
         static readonly Color Neon = new(0f, 0.9f, 1f, 1f);
 
         /// <summary>
-        /// A d20 seen face-on: hexagon outline, an upward centre face (where the number sits), and the facets from
-        /// its corners to the outline. Outer facets darker, centre face lighter; a neon outline when active.
+        /// A d20 seen face-on, as a hologram: dark glass tinted in the die's colour (outer facets darkest, the upward
+        /// centre face where the number sits brightest), neon facet lines and a glowing outline in that colour.
+        /// Active (hovered): the glow turns bright cyan.
         /// </summary>
         static void DrawD20(MeshGenerationContext ctx, VisualElement el, Color c, bool active)
         {
             var r = el.contentRect;
             var center = r.center;
-            var radius = Mathf.Min(r.width, r.height) * 0.5f - 1.5f;
+            var radius = Mathf.Min(r.width, r.height) * 0.5f - 4f;   // room for the glow
             if (radius <= 2f) return;
             Vector2 At(float degrees, float distance) =>
                 center + new Vector2(Mathf.Cos(degrees * Mathf.Deg2Rad), Mathf.Sin(degrees * Mathf.Deg2Rad)) * distance;
             // Hexagon from the top, clockwise; centre face: top, lower right, lower left.
             var hex = new Vector2[6];
             for (var i = 0; i < 6; i++) hex[i] = At(-90f + 60f * i, radius);
-            var tri = new[] { At(-90f, radius * 0.62f), At(30f, radius * 0.62f), At(150f, radius * 0.62f) };
+            var tri = new[] { At(-90f, radius * 0.7f), At(30f, radius * 0.7f), At(150f, radius * 0.7f) };
+
+            Color Tint(float k, float a) { var t = Color.Lerp(Color.black, c, k); t.a = a; return t; }
+            Color Line(float a) { var t = Color.Lerp(c, Color.white, 0.2f); t.a = a; return t; }
+            var glow = active ? Neon : c;
 
             var p = ctx.painter2D;
             p.lineJoin = LineJoin.Round;
-            p.fillColor = Color.Lerp(c, Color.black, 0.3f);
+            // Glow: wide faint strokes under the body.
+            for (var i = 0; i < 2; i++)
+            {
+                var g = glow;
+                g.a = active ? (i == 0 ? 0.18f : 0.35f) : (i == 0 ? 0.1f : 0.2f);
+                p.strokeColor = g;
+                p.lineWidth = i == 0 ? 7f : 4f;
+                Polygon(p, hex);
+                p.Stroke();
+            }
+
+            p.fillColor = Tint(0.16f, 0.94f);
             Polygon(p, hex);
             p.Fill();
-            // The three faces around the centre one, a shade between.
-            p.fillColor = Color.Lerp(c, Color.black, 0.12f);
+            p.fillColor = Tint(0.26f, 0.95f);
             Polygon(p, tri[0], hex[1], tri[1]);
             p.Fill();
             Polygon(p, tri[1], hex[3], tri[2]);
             p.Fill();
             Polygon(p, tri[2], hex[5], tri[0]);
             p.Fill();
-            p.fillColor = Color.Lerp(c, Color.white, 0.14f);
+            p.fillColor = Tint(0.4f, 0.96f);
             Polygon(p, tri);
             p.Fill();
 
-            var edge = Color.Lerp(c, Color.black, 0.55f);
-            edge.a = 0.85f;
-            p.strokeColor = edge;
-            p.lineWidth = 1.1f;
+            p.strokeColor = Line(0.55f);
+            p.lineWidth = 1f;
             p.BeginPath();
-            Line(p, tri[0], hex[0]); Line(p, tri[0], hex[1]); Line(p, tri[0], hex[5]);
-            Line(p, tri[1], hex[1]); Line(p, tri[1], hex[2]); Line(p, tri[1], hex[3]);
-            Line(p, tri[2], hex[3]); Line(p, tri[2], hex[4]); Line(p, tri[2], hex[5]);
+            Segment(p, tri[0], hex[0]); Segment(p, tri[0], hex[1]); Segment(p, tri[0], hex[5]);
+            Segment(p, tri[1], hex[1]); Segment(p, tri[1], hex[2]); Segment(p, tri[1], hex[3]);
+            Segment(p, tri[2], hex[3]); Segment(p, tri[2], hex[4]); Segment(p, tri[2], hex[5]);
             p.Stroke();
+            p.strokeColor = Line(0.9f);
+            p.lineWidth = 1.3f;
             Polygon(p, tri);
             p.Stroke();
 
-            p.strokeColor = active ? Neon : Color.Lerp(c, Color.black, 0.6f);
-            p.lineWidth = active ? 2.4f : 1.6f;
+            p.strokeColor = active ? Neon : Line(1f);
+            p.lineWidth = active ? 2.2f : 1.6f;
             Polygon(p, hex);
             p.Stroke();
         }
@@ -269,7 +292,7 @@ namespace LuckyNumbers.Title
             p.ClosePath();
         }
 
-        static void Line(Painter2D p, Vector2 a, Vector2 b)
+        static void Segment(Painter2D p, Vector2 a, Vector2 b)
         {
             p.MoveTo(a);
             p.LineTo(b);

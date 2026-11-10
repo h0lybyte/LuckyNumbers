@@ -287,9 +287,10 @@
 }
 
 .ln-die--d20 .ln-die-number {
-    padding-top: 7%;
-    font-size: 20px;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    /* Down a little: the centre face is widest below its middle. */
+    padding-top: 9%;
+    font-size: 17px;
+    letter-spacing: -0.5px;
 }
 
 .ln-die--active {
@@ -405,7 +406,7 @@
 }
 
 .ln-intro-dice .ln-die--d20 .ln-die-number {
-    font-size: 28px;
+    font-size: 23px;
 }
 
 .ln-intro-dice .ln-pip {
