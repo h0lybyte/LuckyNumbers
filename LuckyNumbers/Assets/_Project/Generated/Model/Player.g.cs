@@ -190,12 +190,17 @@ namespace LuckyNumbers.Model
         public readonly ReactiveProperty<bool> Returning = new ReactiveProperty<bool>();
         public readonly ReactiveProperty<int> Credits = new ReactiveProperty<int>();
         public readonly ReactiveProperty<int> LastPayout = new ReactiveProperty<int>();
+        /// <summary>
+        /// Trips down to a planet so far: the first one plays the intro cutscene, later ones fly straight down.
+        /// </summary>
+        public readonly ReactiveProperty<int> Trips = new ReactiveProperty<int>();
 
         public void Dispose()
         {
             Returning.Dispose();
             Credits.Dispose();
             LastPayout.Dispose();
+            Trips.Dispose();
         }
     }
 }

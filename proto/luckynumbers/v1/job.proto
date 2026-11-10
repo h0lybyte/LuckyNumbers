@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+import "luckynumbers/v1/station.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// What a job asks of you on the planet.
+enum JobKind {
+  JOB_KIND_UNSPECIFIED = 0;
+  // Bring back relics from a wreck (any count; each still sells to the museum).
+  JOB_KIND_SALVAGE = 1;
+  // Kill `target` monsters (needs the combat update; offered only when its type is enabled).
+  JOB_KIND_CLEAR = 2;
+  // Bring back one named relic from the wreck's cargo.
+  JOB_KIND_RETRIEVE = 3;
+}
+
+// Work from Dispatch (content/jobs.txtpb). Your first job is the museum freighter's mayday (the station's own call
+// and the intro cutscene); after that, every time you're back Dispatch rings again with a board of `offers` jobs,
+// each on a seeded planet with its own danger and pay. Strings fill {client}, {planet}, {target}, {count}, {pay}.
+message JobConfig {
+  option (ln.config) = true;
+  repeated JobType types = 1;
+  // Offers on the board.
+  int32 offers = 2;
+  // Who's paying (picked per offer).
+  repeated string clients = 3;
+  // The first job (the mayday), as a board offer would show it.
+  string first_title = 4;
+  string first_objective = 5;
+  int32 first_pay = 6;
+  // Dispatch again, once you're back: rings after the homecoming call; its lines; then the board opens.
+  string ring_prompt = 7;
+  repeated StationCallLine board_lines = 8;
+  float chars_per_second = 9;
+  // Shown while the board is up, and once a job is taken (until you board).
+  string board_objective = 10;
+  string taken_objective = 11;
+  // Said after the homecoming call: the job done (paid), or not.
+  repeated StationCallLine done_lines = 12;
+  repeated StationCallLine failed_lines = 13;
+  // Boarding with no job: the prompt at the ship instead.
+  string no_job_prompt = 14;
+}
+
+message JobType {
+  JobKind kind = 1;
+  bool disabled = 2;
+  // Board title and brief ("Salvage for {client} on {planet}").
+  string title = 3;
+  string brief = 4;
+  // Shown on the planet (the HUD's job line).
+  string objective = 5;
+  // Pay in credits: base, plus per danger level (danger 1..5, rolled between min and max).
+  int32 pay = 6;
+  int32 pay_per_danger = 7;
+  int32 danger_min = 8;
+  int32 danger_max = 9;
+  // Clear: monsters to kill, base plus per danger.
+  int32 target = 10;
+  int32 target_per_danger = 11;
+}
+
+// The board, while Dispatch has offers up (mirrored to the page). Each offer is
+// "kind|title|brief|planet|danger|pay" (kind: the JobKind name, e.g. "Salvage").
+message JobBoard {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  bool open = 1;
+  repeated string offers = 2;
+}
+
+// The page (or a number key) takes offer `index` off the board.
+message JobAcceptRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  int32 index = 1;
+}
+
+// The job you're on (app-wide, mirrored to the page). `body` is the planet's id in the universe, `planet` its name;
+// `seed` varies the site (terrain, wreck, cargo). `target` names the relic to retrieve, or `count` / `goal` the
+// kills so far for Clear. `done` once its goal is met (paid when you get back to the station).
+message PlayerJob {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  bool active = 1;
+  JobKind kind = 2;
+  string title = 3;
+  string objective = 4;
+  string client = 5;
+  string body = 6;
+  string planet = 7;
+  int32 danger = 8;
+  int32 pay = 9;
+  uint32 seed = 10;
+  string target = 11;
+  int32 count = 12;
+  int32 goal = 13;
+  bool done = 14;
+  // Jobs finished (and paid) so far.
+  int32 completed = 15;
+}

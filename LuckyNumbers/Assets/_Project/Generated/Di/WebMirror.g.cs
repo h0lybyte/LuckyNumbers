@@ -33,6 +33,9 @@ namespace LuckyNumbers.Model
             "FlowState",
             "LoadingState",
             "PlayerInventory",
+            "StationState",
+            "JobBoard",
+            "PlayerJob",
             "FlightState",
             "MapState",
             "LandingSite",
@@ -40,7 +43,6 @@ namespace LuckyNumbers.Model
             "PlayerHealth",
             "ShipPicker",
             "PlayerVoyage",
-            "StationState",
             "DiceState",
         };
 
@@ -141,115 +143,143 @@ namespace LuckyNumbers.Model
                 sink.MarkState(4);
             }
             {
-                var s = c.Resolve<FlightState>();
-                d.Add(s.Flying.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.Crashed.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.Landed.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.Altitude.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.Climb.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.Speed.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.SetSpeed.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.Hovering.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.Boost.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.PadDistance.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.PadBearing.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.Descent.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.Drift.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.Tilt.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.MaxDescent.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.MaxDrift.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.MaxTilt.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.CrashReason.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.Assisted.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.HoverShip.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.Roaming.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.OrbitAltitude.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.CanLeave.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.FuelMax.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.FuelLow.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.FuelEmpty.Subscribe(_ => sink.MarkState(5)));
-                d.Add(s.Shots.Subscribe(_ => sink.MarkState(5)));
+                var s = c.Resolve<StationState>();
+                d.Add(s.Lights.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.Room.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.Call.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.Caller.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.Objective.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.Prompt.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.Psx.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.Plan.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.MapOpen.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.PlayerCol.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.PlayerRow.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.PlayerYaw.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.DockCol.Subscribe(_ => sink.MarkState(5)));
+                d.Add(s.DockRow.Subscribe(_ => sink.MarkState(5)));
+                NotifyCollectionChangedEventHandler<string> hRooms = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(5);
+                s.Rooms.CollectionChanged += hRooms;
+                d.Add(Disposable.Create(() => s.Rooms.CollectionChanged -= hRooms));
                 sink.MarkState(5);
             }
             {
-                var s = c.Resolve<MapState>();
+                var s = c.Resolve<JobBoard>();
                 d.Add(s.Open.Subscribe(_ => sink.MarkState(6)));
+                NotifyCollectionChangedEventHandler<string> hOffers = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(6);
+                s.Offers.CollectionChanged += hOffers;
+                d.Add(Disposable.Create(() => s.Offers.CollectionChanged -= hOffers));
                 sink.MarkState(6);
             }
             {
-                var s = c.Resolve<LandingSite>();
-                d.Add(s.Valid.Subscribe(_ => sink.MarkState(7)));
+                var s = c.Resolve<PlayerJob>();
+                d.Add(s.Active.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Kind.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Title.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Objective.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Client.Subscribe(_ => sink.MarkState(7)));
                 d.Add(s.Body.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Planet.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Danger.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Pay.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Seed.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Target.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Count.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Goal.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Done.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Completed.Subscribe(_ => sink.MarkState(7)));
                 sink.MarkState(7);
             }
             {
-                var s = c.Resolve<PlayerShip>();
-                d.Add(s.Skin.Subscribe(_ => sink.MarkState(8)));
+                var s = c.Resolve<FlightState>();
+                d.Add(s.Flying.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.Crashed.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.Landed.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.Altitude.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.Climb.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.Speed.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.SetSpeed.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.Hovering.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.Boost.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.PadDistance.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.PadBearing.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.Descent.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.Drift.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.Tilt.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.MaxDescent.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.MaxDrift.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.MaxTilt.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.CrashReason.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.Assisted.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.HoverShip.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.Roaming.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.OrbitAltitude.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.CanLeave.Subscribe(_ => sink.MarkState(8)));
                 d.Add(s.Fuel.Subscribe(_ => sink.MarkState(8)));
                 d.Add(s.FuelMax.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.FuelLow.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.FuelEmpty.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.Shots.Subscribe(_ => sink.MarkState(8)));
                 sink.MarkState(8);
             }
             {
-                var s = c.Resolve<PlayerHealth>();
-                d.Add(s.Current.Subscribe(_ => sink.MarkState(9)));
-                d.Add(s.Max.Subscribe(_ => sink.MarkState(9)));
+                var s = c.Resolve<MapState>();
+                d.Add(s.Open.Subscribe(_ => sink.MarkState(9)));
                 sink.MarkState(9);
             }
             {
-                var s = c.Resolve<ShipPicker>();
-                d.Add(s.Open.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Skin.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Index.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Count.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Name.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Role.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Description.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Speed.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Agility.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Efficiency.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Toughness.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Firepower.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Guns.Subscribe(_ => sink.MarkState(10)));
+                var s = c.Resolve<LandingSite>();
+                d.Add(s.Valid.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Body.Subscribe(_ => sink.MarkState(10)));
                 sink.MarkState(10);
             }
             {
-                var s = c.Resolve<PlayerVoyage>();
-                d.Add(s.Returning.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Credits.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.LastPayout.Subscribe(_ => sink.MarkState(11)));
+                var s = c.Resolve<PlayerShip>();
+                d.Add(s.Skin.Subscribe(_ => sink.MarkState(11)));
+                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(11)));
+                d.Add(s.FuelMax.Subscribe(_ => sink.MarkState(11)));
                 sink.MarkState(11);
             }
             {
-                var s = c.Resolve<StationState>();
-                d.Add(s.Lights.Subscribe(_ => sink.MarkState(12)));
-                d.Add(s.Room.Subscribe(_ => sink.MarkState(12)));
-                d.Add(s.Call.Subscribe(_ => sink.MarkState(12)));
-                d.Add(s.Caller.Subscribe(_ => sink.MarkState(12)));
-                d.Add(s.Objective.Subscribe(_ => sink.MarkState(12)));
-                d.Add(s.Prompt.Subscribe(_ => sink.MarkState(12)));
-                d.Add(s.Psx.Subscribe(_ => sink.MarkState(12)));
-                d.Add(s.Plan.Subscribe(_ => sink.MarkState(12)));
-                d.Add(s.MapOpen.Subscribe(_ => sink.MarkState(12)));
-                d.Add(s.PlayerCol.Subscribe(_ => sink.MarkState(12)));
-                d.Add(s.PlayerRow.Subscribe(_ => sink.MarkState(12)));
-                d.Add(s.PlayerYaw.Subscribe(_ => sink.MarkState(12)));
-                d.Add(s.DockCol.Subscribe(_ => sink.MarkState(12)));
-                d.Add(s.DockRow.Subscribe(_ => sink.MarkState(12)));
-                NotifyCollectionChangedEventHandler<string> hRooms = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(12);
-                s.Rooms.CollectionChanged += hRooms;
-                d.Add(Disposable.Create(() => s.Rooms.CollectionChanged -= hRooms));
+                var s = c.Resolve<PlayerHealth>();
+                d.Add(s.Current.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Max.Subscribe(_ => sink.MarkState(12)));
                 sink.MarkState(12);
             }
             {
+                var s = c.Resolve<ShipPicker>();
+                d.Add(s.Open.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Skin.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Index.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Count.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Name.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Role.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Description.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Speed.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Agility.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Efficiency.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Toughness.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Firepower.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Guns.Subscribe(_ => sink.MarkState(13)));
+                sink.MarkState(13);
+            }
+            {
+                var s = c.Resolve<PlayerVoyage>();
+                d.Add(s.Returning.Subscribe(_ => sink.MarkState(14)));
+                d.Add(s.Credits.Subscribe(_ => sink.MarkState(14)));
+                d.Add(s.LastPayout.Subscribe(_ => sink.MarkState(14)));
+                d.Add(s.Trips.Subscribe(_ => sink.MarkState(14)));
+                sink.MarkState(14);
+            }
+            {
                 var s = c.Resolve<DiceState>();
-                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(13);
+                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(15);
                 s.Faces.CollectionChanged += hFaces;
                 d.Add(Disposable.Create(() => s.Faces.CollectionChanged -= hFaces));
-                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(13)));
-                d.Add(s.Seed.Subscribe(_ => sink.MarkState(13)));
-                sink.MarkState(13);
+                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(15)));
+                d.Add(s.Seed.Subscribe(_ => sink.MarkState(15)));
+                sink.MarkState(15);
             }
             d.Add(c.Resolve<ISubscriber<RelicRolled>>().Subscribe(e =>
             {
@@ -356,6 +386,31 @@ namespace LuckyNumbers.Model
                 Write(sink.BeginEvent("InventoryDropRequested"), e);
                 sink.EndEvent();
             }));
+            d.Add(c.Resolve<ISubscriber<StationCallAnswered>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("StationCallAnswered"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<StationPlanRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("StationPlanRequested"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<PsxModeRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("PsxModeRequested"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<StationLightsRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("StationLightsRequested"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<JobAcceptRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("JobAcceptRequested"), e);
+                sink.EndEvent();
+            }));
             d.Add(c.Resolve<ISubscriber<FlightHudReady>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("FlightHudReady"), e);
@@ -396,26 +451,6 @@ namespace LuckyNumbers.Model
                 Write(sink.BeginEvent("ShipPickDone"), e);
                 sink.EndEvent();
             }));
-            d.Add(c.Resolve<ISubscriber<StationCallAnswered>>().Subscribe(e =>
-            {
-                Write(sink.BeginEvent("StationCallAnswered"), e);
-                sink.EndEvent();
-            }));
-            d.Add(c.Resolve<ISubscriber<StationPlanRequested>>().Subscribe(e =>
-            {
-                Write(sink.BeginEvent("StationPlanRequested"), e);
-                sink.EndEvent();
-            }));
-            d.Add(c.Resolve<ISubscriber<PsxModeRequested>>().Subscribe(e =>
-            {
-                Write(sink.BeginEvent("PsxModeRequested"), e);
-                sink.EndEvent();
-            }));
-            d.Add(c.Resolve<ISubscriber<StationLightsRequested>>().Subscribe(e =>
-            {
-                Write(sink.BeginEvent("StationLightsRequested"), e);
-                sink.EndEvent();
-            }));
             d.Add(c.Resolve<ISubscriber<MenuItemSelected>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("MenuItemSelected"), e);
@@ -434,15 +469,17 @@ namespace LuckyNumbers.Model
                 case 2: Write(b, c.Resolve<FlowState>()); break;
                 case 3: Write(b, c.Resolve<LoadingState>()); break;
                 case 4: Write(b, c.Resolve<PlayerInventory>()); break;
-                case 5: Write(b, c.Resolve<FlightState>()); break;
-                case 6: Write(b, c.Resolve<MapState>()); break;
-                case 7: Write(b, c.Resolve<LandingSite>()); break;
-                case 8: Write(b, c.Resolve<PlayerShip>()); break;
-                case 9: Write(b, c.Resolve<PlayerHealth>()); break;
-                case 10: Write(b, c.Resolve<ShipPicker>()); break;
-                case 11: Write(b, c.Resolve<PlayerVoyage>()); break;
-                case 12: Write(b, c.Resolve<StationState>()); break;
-                case 13: Write(b, c.Resolve<DiceState>()); break;
+                case 5: Write(b, c.Resolve<StationState>()); break;
+                case 6: Write(b, c.Resolve<JobBoard>()); break;
+                case 7: Write(b, c.Resolve<PlayerJob>()); break;
+                case 8: Write(b, c.Resolve<FlightState>()); break;
+                case 9: Write(b, c.Resolve<MapState>()); break;
+                case 10: Write(b, c.Resolve<LandingSite>()); break;
+                case 11: Write(b, c.Resolve<PlayerShip>()); break;
+                case 12: Write(b, c.Resolve<PlayerHealth>()); break;
+                case 13: Write(b, c.Resolve<ShipPicker>()); break;
+                case 14: Write(b, c.Resolve<PlayerVoyage>()); break;
+                case 15: Write(b, c.Resolve<DiceState>()); break;
             }
         }
 
@@ -496,18 +533,6 @@ namespace LuckyNumbers.Model
                 case "InventoryDropRequested":
                     c.Resolve<IPublisher<InventoryDropRequested>>().Publish(new InventoryDropRequested((int)Json.Number(Json.Get(o, "uid"))));
                     return true;
-                case "FlightHudReady":
-                    c.Resolve<IPublisher<FlightHudReady>>().Publish(new FlightHudReady(Json.Get(o, "on") is bool flightHudReadyOn && flightHudReadyOn));
-                    return true;
-                case "ShipPickerReady":
-                    c.Resolve<IPublisher<ShipPickerReady>>().Publish(new ShipPickerReady(Json.Get(o, "on") is bool shipPickerReadyOn && shipPickerReadyOn));
-                    return true;
-                case "ShipSkinStepRequested":
-                    c.Resolve<IPublisher<ShipSkinStepRequested>>().Publish(new ShipSkinStepRequested((int)Json.Number(Json.Get(o, "step"))));
-                    return true;
-                case "ShipPickDone":
-                    c.Resolve<IPublisher<ShipPickDone>>().Publish(new ShipPickDone());
-                    return true;
                 case "StationCallAnswered":
                     c.Resolve<IPublisher<StationCallAnswered>>().Publish(new StationCallAnswered());
                     return true;
@@ -519,6 +544,21 @@ namespace LuckyNumbers.Model
                     return true;
                 case "StationLightsRequested":
                     c.Resolve<IPublisher<StationLightsRequested>>().Publish(new StationLightsRequested(StationLightModeParse(Json.Get(o, "mode"))));
+                    return true;
+                case "JobAcceptRequested":
+                    c.Resolve<IPublisher<JobAcceptRequested>>().Publish(new JobAcceptRequested((int)Json.Number(Json.Get(o, "index"))));
+                    return true;
+                case "FlightHudReady":
+                    c.Resolve<IPublisher<FlightHudReady>>().Publish(new FlightHudReady(Json.Get(o, "on") is bool flightHudReadyOn && flightHudReadyOn));
+                    return true;
+                case "ShipPickerReady":
+                    c.Resolve<IPublisher<ShipPickerReady>>().Publish(new ShipPickerReady(Json.Get(o, "on") is bool shipPickerReadyOn && shipPickerReadyOn));
+                    return true;
+                case "ShipSkinStepRequested":
+                    c.Resolve<IPublisher<ShipSkinStepRequested>>().Publish(new ShipSkinStepRequested((int)Json.Number(Json.Get(o, "step"))));
+                    return true;
+                case "ShipPickDone":
+                    c.Resolve<IPublisher<ShipPickDone>>().Publish(new ShipPickDone());
                     return true;
                 case "MenuItemSelected":
                     c.Resolve<IPublisher<MenuItemSelected>>().Publish(new MenuItemSelected(MenuActionParse(Json.Get(o, "action"))));
@@ -780,6 +820,108 @@ namespace LuckyNumbers.Model
             b.Append('}');
         }
 
+        static void Write(StringBuilder b, StationState s)
+        {
+            b.Append('{');
+            b.Append("\"lights\":");
+            Json.Str(b, StationLightModeName(s.Lights.Value));
+            b.Append(",\"room\":");
+            Json.Str(b, s.Room.Value);
+            b.Append(",\"call\":");
+            Json.Str(b, CallPhaseName(s.Call.Value));
+            b.Append(",\"caller\":");
+            Json.Str(b, s.Caller.Value);
+            b.Append(",\"objective\":");
+            Json.Str(b, s.Objective.Value);
+            b.Append(",\"prompt\":");
+            Json.Str(b, s.Prompt.Value);
+            b.Append(",\"psx\":");
+            b.Append(s.Psx.Value ? "true" : "false");
+            b.Append(",\"plan\":");
+            Json.Str(b, s.Plan.Value);
+            b.Append(",\"mapOpen\":");
+            b.Append(s.MapOpen.Value ? "true" : "false");
+            b.Append(",\"playerCol\":");
+            Json.Num(b, s.PlayerCol.Value);
+            b.Append(",\"playerRow\":");
+            Json.Num(b, s.PlayerRow.Value);
+            b.Append(",\"playerYaw\":");
+            Json.Num(b, s.PlayerYaw.Value);
+            b.Append(",\"dockCol\":");
+            Json.Num(b, s.DockCol.Value);
+            b.Append(",\"dockRow\":");
+            Json.Num(b, s.DockRow.Value);
+            b.Append(",\"rooms\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Rooms)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Str(b, x);
+                }
+            }
+            b.Append(']');
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, JobBoard s)
+        {
+            b.Append('{');
+            b.Append("\"open\":");
+            b.Append(s.Open.Value ? "true" : "false");
+            b.Append(",\"offers\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Offers)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Str(b, x);
+                }
+            }
+            b.Append(']');
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, PlayerJob s)
+        {
+            b.Append('{');
+            b.Append("\"active\":");
+            b.Append(s.Active.Value ? "true" : "false");
+            b.Append(",\"kind\":");
+            Json.Str(b, JobKindName(s.Kind.Value));
+            b.Append(",\"title\":");
+            Json.Str(b, s.Title.Value);
+            b.Append(",\"objective\":");
+            Json.Str(b, s.Objective.Value);
+            b.Append(",\"client\":");
+            Json.Str(b, s.Client.Value);
+            b.Append(",\"body\":");
+            Json.Str(b, s.Body.Value);
+            b.Append(",\"planet\":");
+            Json.Str(b, s.Planet.Value);
+            b.Append(",\"danger\":");
+            Json.Num(b, s.Danger.Value);
+            b.Append(",\"pay\":");
+            Json.Num(b, s.Pay.Value);
+            b.Append(",\"seed\":");
+            Json.Num(b, s.Seed.Value);
+            b.Append(",\"target\":");
+            Json.Str(b, s.Target.Value);
+            b.Append(",\"count\":");
+            Json.Num(b, s.Count.Value);
+            b.Append(",\"goal\":");
+            Json.Num(b, s.Goal.Value);
+            b.Append(",\"done\":");
+            b.Append(s.Done.Value ? "true" : "false");
+            b.Append(",\"completed\":");
+            Json.Num(b, s.Completed.Value);
+            b.Append('}');
+        }
+
         static void Write(StringBuilder b, FlightState s)
         {
             b.Append('{');
@@ -925,52 +1067,8 @@ namespace LuckyNumbers.Model
             Json.Num(b, s.Credits.Value);
             b.Append(",\"lastPayout\":");
             Json.Num(b, s.LastPayout.Value);
-            b.Append('}');
-        }
-
-        static void Write(StringBuilder b, StationState s)
-        {
-            b.Append('{');
-            b.Append("\"lights\":");
-            Json.Str(b, StationLightModeName(s.Lights.Value));
-            b.Append(",\"room\":");
-            Json.Str(b, s.Room.Value);
-            b.Append(",\"call\":");
-            Json.Str(b, CallPhaseName(s.Call.Value));
-            b.Append(",\"caller\":");
-            Json.Str(b, s.Caller.Value);
-            b.Append(",\"objective\":");
-            Json.Str(b, s.Objective.Value);
-            b.Append(",\"prompt\":");
-            Json.Str(b, s.Prompt.Value);
-            b.Append(",\"psx\":");
-            b.Append(s.Psx.Value ? "true" : "false");
-            b.Append(",\"plan\":");
-            Json.Str(b, s.Plan.Value);
-            b.Append(",\"mapOpen\":");
-            b.Append(s.MapOpen.Value ? "true" : "false");
-            b.Append(",\"playerCol\":");
-            Json.Num(b, s.PlayerCol.Value);
-            b.Append(",\"playerRow\":");
-            Json.Num(b, s.PlayerRow.Value);
-            b.Append(",\"playerYaw\":");
-            Json.Num(b, s.PlayerYaw.Value);
-            b.Append(",\"dockCol\":");
-            Json.Num(b, s.DockCol.Value);
-            b.Append(",\"dockRow\":");
-            Json.Num(b, s.DockRow.Value);
-            b.Append(",\"rooms\":");
-            b.Append('[');
-            {
-                var first = true;
-                foreach (var x in s.Rooms)
-                {
-                    if (!first) b.Append(',');
-                    first = false;
-                    Json.Str(b, x);
-                }
-            }
-            b.Append(']');
+            b.Append(",\"trips\":");
+            Json.Num(b, s.Trips.Value);
             b.Append('}');
         }
 
@@ -1190,6 +1288,44 @@ namespace LuckyNumbers.Model
             b.Append('}');
         }
 
+        static void Write(StringBuilder b, StationCallAnswered e)
+        {
+            b.Append('{');
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, StationPlanRequested e)
+        {
+            b.Append('{');
+            b.Append("\"plan\":");
+            Json.Str(b, e.Plan);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, PsxModeRequested e)
+        {
+            b.Append('{');
+            b.Append("\"on\":");
+            b.Append(e.On ? "true" : "false");
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, StationLightsRequested e)
+        {
+            b.Append('{');
+            b.Append("\"mode\":");
+            Json.Str(b, StationLightModeName(e.Mode));
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, JobAcceptRequested e)
+        {
+            b.Append('{');
+            b.Append("\"index\":");
+            Json.Num(b, e.Index);
+            b.Append('}');
+        }
+
         static void Write(StringBuilder b, FlightHudReady e)
         {
             b.Append('{');
@@ -1255,36 +1391,6 @@ namespace LuckyNumbers.Model
         static void Write(StringBuilder b, ShipPickDone e)
         {
             b.Append('{');
-            b.Append('}');
-        }
-
-        static void Write(StringBuilder b, StationCallAnswered e)
-        {
-            b.Append('{');
-            b.Append('}');
-        }
-
-        static void Write(StringBuilder b, StationPlanRequested e)
-        {
-            b.Append('{');
-            b.Append("\"plan\":");
-            Json.Str(b, e.Plan);
-            b.Append('}');
-        }
-
-        static void Write(StringBuilder b, PsxModeRequested e)
-        {
-            b.Append('{');
-            b.Append("\"on\":");
-            b.Append(e.On ? "true" : "false");
-            b.Append('}');
-        }
-
-        static void Write(StringBuilder b, StationLightsRequested e)
-        {
-            b.Append('{');
-            b.Append("\"mode\":");
-            Json.Str(b, StationLightModeName(e.Mode));
             b.Append('}');
         }
 
@@ -1410,6 +1516,31 @@ namespace LuckyNumbers.Model
                 case "On": return StationLightMode.On;
                 case "Off": return StationLightMode.Off;
                 case "Emergency": return StationLightMode.Emergency;
+                default: return default;
+            }
+        }
+
+        static string JobKindName(JobKind v)
+        {
+            switch (v)
+            {
+                case JobKind.Unspecified: return "Unspecified";
+                case JobKind.Salvage: return "Salvage";
+                case JobKind.Clear: return "Clear";
+                case JobKind.Retrieve: return "Retrieve";
+                default: return ((int)v).ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
+        static JobKind JobKindParse(object v)
+        {
+            if (v is double n) return (JobKind)(int)n;
+            switch (v as string)
+            {
+                case "Unspecified": return JobKind.Unspecified;
+                case "Salvage": return JobKind.Salvage;
+                case "Clear": return JobKind.Clear;
+                case "Retrieve": return JobKind.Retrieve;
                 default: return default;
             }
         }

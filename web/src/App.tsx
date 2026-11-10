@@ -5,6 +5,7 @@ import { installFreeMouseKey, usePointerLocked } from "./pointer";
 import { StationHud, StationTools } from "./station";
 import { RelicHud } from "./relics";
 import { FlightHud } from "./flight";
+import { JobBoardPanel, JobLine } from "./jobs";
 import { CharacterSheetGate } from "./sheet";
 import { HangarGate } from "./hangar";
 import type { GameScene, InboundEvent, WebEvents } from "./ln";
@@ -47,12 +48,19 @@ export function App({ dock }: { dock: HTMLElement | null }) {
 
 function StationHudGate() {
   const flow = useLNState("FlowState");
-  if (flow?.scene === "Station") return <StationHud />;
+  if (flow?.scene === "Station")
+    return (
+      <>
+        <StationHud />
+        <JobBoardPanel />
+      </>
+    );
   if (flow?.scene === "Planet")
     return (
       <>
         <FlightHud />
         <RelicHud />
+        <JobLine />
       </>
     );
   return null;

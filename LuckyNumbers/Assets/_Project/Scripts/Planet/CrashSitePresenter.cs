@@ -59,6 +59,7 @@ namespace LuckyNumbers.Planet
         readonly IFirstPerson _firstPerson;
         readonly LandingSite _landing;
         readonly PlayerShip _playerShip;
+        readonly PlayerJob _job;   // the job you're here for: its seed varies the site
         readonly IBufferedSubscriber<UniverseSeedChanged> _seeds;
         readonly CancellationTokenSource _cts = new();
         IDisposable _subscription;
@@ -77,8 +78,9 @@ namespace LuckyNumbers.Planet
         [Inject]
         public CrashSitePresenter(PlanetScene config, GroundView ground, PlanetView view, PlayerView player, IArrival arrival,
                                   IFirstPerson firstPerson, LandingSite landing, IBufferedSubscriber<UniverseSeedChanged> seeds,
-                                  PlayerShip playerShip)
+                                  PlayerShip playerShip, PlayerJob job)
         {
+            _job = job;
             _playerShip = playerShip;
             _config = config;
             _ground = ground;
@@ -117,11 +119,11 @@ namespace LuckyNumbers.Planet
                 if (b.Star != null && star == null) star = b;
             }
             Debug.Log($"[Planet] crash site on {bodyId} (lucky number {roll.Seed})");
-            Seed = roll.Seed;
+            Seed = JobSite.Seed(roll.Seed, _job.Seed.Value);
             Body = bodyId;
             Look = planet?.Planet;
             Bodies = bodies;
-            var rng = new Random(roll.Seed | 1u);
+            var rng = new Random(Seed | 1u);
 
             // Ground: the planet's colours and noise, at walking scale.
             var look = planet?.Planet;

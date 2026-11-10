@@ -35,6 +35,11 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<InventoryUseRequested>(options);
             builder.RegisterMessageBroker<InventoryDropRequested>(options);
             builder.RegisterMessageBroker<ItemEffectRequested>(options);
+            builder.RegisterMessageBroker<StationCallAnswered>(options);
+            builder.RegisterMessageBroker<StationPlanRequested>(options);
+            builder.RegisterMessageBroker<PsxModeRequested>(options);
+            builder.RegisterMessageBroker<StationLightsRequested>(options);
+            builder.RegisterMessageBroker<JobAcceptRequested>(options);
             builder.RegisterMessageBroker<FlightHudReady>(options);
             builder.RegisterMessageBroker<PlayerDamaged>(options);
             builder.RegisterMessageBroker<PlayerHealed>(options);
@@ -43,10 +48,6 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<ShipPickerReady>(options);
             builder.RegisterMessageBroker<ShipSkinStepRequested>(options);
             builder.RegisterMessageBroker<ShipPickDone>(options);
-            builder.RegisterMessageBroker<StationCallAnswered>(options);
-            builder.RegisterMessageBroker<StationPlanRequested>(options);
-            builder.RegisterMessageBroker<PsxModeRequested>(options);
-            builder.RegisterMessageBroker<StationLightsRequested>(options);
             builder.RegisterMessageBroker<MenuItemSelected>(options);
         }
 
@@ -60,6 +61,9 @@ namespace LuckyNumbers.Model
             builder.Register<CameraHandoff>(Lifetime.Singleton);
             builder.Register<PlayerInput>(Lifetime.Singleton);
             builder.Register<PlayerInventory>(Lifetime.Singleton);
+            builder.Register<StationState>(Lifetime.Singleton);
+            builder.Register<JobBoard>(Lifetime.Singleton);
+            builder.Register<PlayerJob>(Lifetime.Singleton);
             builder.Register<FlightState>(Lifetime.Singleton);
             builder.Register<MapState>(Lifetime.Singleton);
             builder.Register<LandingSite>(Lifetime.Singleton);
@@ -67,7 +71,6 @@ namespace LuckyNumbers.Model
             builder.Register<PlayerHealth>(Lifetime.Singleton);
             builder.Register<ShipPicker>(Lifetime.Singleton);
             builder.Register<PlayerVoyage>(Lifetime.Singleton);
-            builder.Register<StationState>(Lifetime.Singleton);
             builder.Register<DiceState>(Lifetime.Singleton);
         }
     }
