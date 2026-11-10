@@ -11,6 +11,17 @@ menu { label: "Play" action: MENU_ACTION_PLAY }
 menu { label: "Settings" action: MENU_ACTION_SETTINGS }
 menu { label: "Credits" action: MENU_ACTION_CREDITS }
 
+# After character creation: pick your fighter's skin (A/D or the arrows), then Launch. Placeholder numbers;
+# tune with a look at the title (space units, the title camera's scale).
+hangar {
+  ship_length: 1
+  distance: 2.4
+  drop: 0.12
+  spin_degrees_per_second: 24
+  tilt_degrees: 18
+  enter_seconds: 0.6
+}
+
 settings {
   title: "Settings"
   body: "Coming soon."

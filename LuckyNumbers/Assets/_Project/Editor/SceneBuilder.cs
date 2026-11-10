@@ -62,6 +62,7 @@ namespace LuckyNumbers.Editor
             Assign(view, ("document", ui));
             var dice = new GameObject("DiceView").AddComponent<DiceView>();
             Assign(dice, ("document", ui));
+            ShipRig();   // your fighter, for the hangar after character creation (ShipPickerPresenter)
 
             Scopes<TitleScope>();
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Title.unity");

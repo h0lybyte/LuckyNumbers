@@ -12,8 +12,8 @@ namespace LuckyNumbers.Planet
     {
         [SerializeField] UIDocument document;
         [SerializeField] MeshRenderer sun;   // star sphere far away in the sky
-        [SerializeField] LuckyNumbers.Intro.ShipView wreck;    // the museum freighter
-        [SerializeField] LuckyNumbers.Intro.ShipView fighter;  // your ship
+        [SerializeField] LuckyNumbers.Core.ShipView wreck;    // the museum freighter
+        [SerializeField] LuckyNumbers.Core.ShipView fighter;  // your ship
         [SerializeField] Camera flightCamera;                 // chase camera while you fly (off otherwise)
         [SerializeField] Transform wreckBeacon;               // unlit beam marking the wreck while you fly in (off otherwise)
         [SerializeField] Transform amuletTemplate;            // relic shapes (off): copied per relic at the crash site
@@ -34,8 +34,8 @@ namespace LuckyNumbers.Planet
         [Ui("flight-message")] Label _flightMessage;
 
         public MeshRenderer Sun => sun;
-        public LuckyNumbers.Intro.ShipView Wreck => wreck;
-        public LuckyNumbers.Intro.ShipView Fighter => fighter;
+        public LuckyNumbers.Core.ShipView Wreck => wreck;
+        public LuckyNumbers.Core.ShipView Fighter => fighter;
         public Camera FlightCamera => flightCamera;
         public Transform WreckBeacon => wreckBeacon;
         public Transform AmuletTemplate => amuletTemplate;

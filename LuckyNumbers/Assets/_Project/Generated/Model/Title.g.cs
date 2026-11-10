@@ -73,9 +73,38 @@ namespace LuckyNumbers.Model
         /// Share of the distance to the home planet the camera closes during that push (0..1).
         /// </summary>
         public float PlayPushIn { get; set; }
+        /// <summary>
+        /// After character creation: the hangar where you pick your fighter's skin.
+        /// </summary>
+        public ShipHangar Hangar { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public TitleScreen Clone() => (TitleScreen)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// The hangar's fighter, posed in front of the title camera (space units: the camera's own scale).
+    /// </summary>
+    public sealed class ShipHangar
+    {
+        /// <summary>
+        /// Ship length, and how far ahead of the camera it floats; how far below the view's centre (x its length).
+        /// </summary>
+        public float ShipLength { get; set; }
+        public float Distance { get; set; }
+        public float Drop { get; set; }
+        /// <summary>
+        /// How fast it turns (degrees a second), and its nose-down tilt (degrees) so you see the top of the hull.
+        /// </summary>
+        public float SpinDegreesPerSecond { get; set; }
+        public float TiltDegrees { get; set; }
+        /// <summary>
+        /// Seconds it takes to slide into view.
+        /// </summary>
+        public float EnterSeconds { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public ShipHangar Clone() => (ShipHangar)MemberwiseClone();
     }
 
     /// <summary>

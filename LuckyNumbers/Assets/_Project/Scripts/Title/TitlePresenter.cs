@@ -16,7 +16,8 @@ namespace LuckyNumbers.Title
     /// Title + preloader. Text, menu and settings come from GameContent.Title (content/title.txtpb);
     /// the universe behind it is SpacePresenter's. Preloads `next`; Play fades the UI, pushes the camera
     /// toward home and hands its pose to the next scene (CameraHandoff) so the switch has no visible cut. Before that,
-    /// Play runs character creation (ICharacterSetup: the page's sheet, until Ready).
+    /// Play runs character creation (ICharacterSetup: the page's sheet, until Ready), then the hangar (IShipPicker:
+    /// your fighter's skin, until Launch).
     /// </summary>
     [Presenter]
     public sealed class TitlePresenter : IStartable, IDisposable
@@ -31,17 +32,21 @@ namespace LuckyNumbers.Title
         readonly ISpaceDirector _space;
         readonly CameraHandoff _handoff;
         readonly ICharacterSetup _character;
+        readonly IShipPicker _hangar;
         readonly CompositeDisposable _disposables = new();
         readonly System.Threading.CancellationTokenSource _cts = new();
         bool _settingsOpen, _leaving;
+        float _uiAlpha = 1f;   // the title UI's fade (the hangar hides it; the launch fades whatever's left)
 
         [Inject]
         public TitlePresenter(TitleView view, LoadingState loading, ISceneFlow flow,
                               ISubscriber<InputActionPerformed> input,
                               IPublisher<MenuItemSelected> menuPublisher, ISubscriber<MenuItemSelected> menu,
                               IPublisher<SceneChangeRequested> sceneRequests,
-                              ISpaceDirector space, CameraHandoff handoff, ICharacterSetup character)
+                              ISpaceDirector space, CameraHandoff handoff, ICharacterSetup character,
+                              IShipPicker hangar)
         {
+            _hangar = hangar;
             _character = character;
             _space = space;
             _handoff = handoff;
@@ -110,6 +115,9 @@ namespace LuckyNumbers.Title
         {
             var ct = _cts.Token;
             await _character.RunAsync(ct);                                          // character creation
+            var hangar = _hangar.RunAsync(ct);                                      // then your fighter's skin,
+            if (hangar.Status == UniTaskStatus.Pending) await FadeUiAsync(0f, 0.3f, ct);   // the title UI out of its way
+            await hangar;
             await _loading.Ready.Where(ready => ready).FirstAsync(ct);              // waits for the preload if early
             LeaveAsync(next).Forget();
         }
@@ -131,7 +139,7 @@ namespace LuckyNumbers.Title
                 var pos = (Vector3)home + offset * (1f - content.PlayPushIn * e);
                 var look = Quaternion.LookRotation((Vector3)home - pos, startRot * Vector3.up);
                 cam.SetPositionAndRotation(pos, Quaternion.Slerp(startRot, look, e * 0.35f));
-                _view.SetUiAlpha(1f - math.smoothstep(0f, 0.6f, t / duration));
+                _view.SetUiAlpha(_uiAlpha * (1f - math.smoothstep(0f, 0.6f, t / duration)));
                 await UniTask.Yield(PlayerLoopTiming.LastPostLateUpdate);
             }
             _view.SetUiAlpha(0f);
@@ -142,6 +150,19 @@ namespace LuckyNumbers.Title
             _handoff.Up.Value = new Vec3(u.x, u.y, u.z);
             _handoff.Valid.Value = true;
             _sceneRequests.Publish(new SceneChangeRequested(next));
+        }
+
+        async UniTask FadeUiAsync(float to, float seconds, System.Threading.CancellationToken ct)
+        {
+            var from = _uiAlpha;
+            for (var t = 0f; t < seconds && !ct.IsCancellationRequested; t += Time.deltaTime)
+            {
+                _uiAlpha = math.lerp(from, to, math.smoothstep(0f, 1f, t / seconds));
+                _view.SetUiAlpha(_uiAlpha);
+                await UniTask.Yield();
+            }
+            _uiAlpha = to;
+            _view.SetUiAlpha(to);
         }
 
         /// <summary>Close whichever panel is open (Settings or Credits).</summary>

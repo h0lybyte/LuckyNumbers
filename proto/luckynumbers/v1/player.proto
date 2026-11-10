@@ -45,3 +45,36 @@ message PlayerDied {
   option (ln.web) = true;
   string cause = 1;
 }
+
+// The hangar, after character creation on the title (Title/ShipPickerPresenter): your fighter turns in front of
+// the camera while the page cycles its skins, then launches. `skin` is the file name (Art/Models/Fighter/Skins),
+// `index` of `count`. The choice goes to PlayerShip.
+message ShipPicker {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  bool open = 1;
+  string skin = 2;
+  int32 index = 3;
+  int32 count = 4;
+}
+
+// The page has a ship picker (sent when it mounts): Play then opens the hangar after character creation.
+// Without it (no page, e.g. the editor) Play goes straight on with the default skin.
+message ShipPickerReady {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  bool on = 1;
+}
+
+// The page's picker: the next (+1) or previous (-1) skin.
+message ShipSkinStepRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  int32 step = 1;
+}
+
+// The page's picker: Launch pressed.
+message ShipPickDone {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+}

@@ -188,6 +188,18 @@ export interface PlayerHealth {
   max: number;
 }
 
+/**
+ * The hangar, after character creation on the title (Title/ShipPickerPresenter): your fighter turns in front of
+ * the camera while the page cycles its skins, then launches. `skin` is the file name (Art/Models/Fighter/Skins),
+ * `index` of `count`. The choice goes to PlayerShip.
+ */
+export interface ShipPicker {
+  open: boolean;
+  skin: string;
+  index: number;
+  count: number;
+}
+
 /** Live station state (mirrored to the web page). */
 export interface StationState {
   lights: StationLightMode;
@@ -359,6 +371,23 @@ export interface PlayerDied {
   cause: string;
 }
 
+/**
+ * The page has a ship picker (sent when it mounts): Play then opens the hangar after character creation.
+ * Without it (no page, e.g. the editor) Play goes straight on with the default skin.
+ */
+export interface ShipPickerReady {
+  on: boolean;
+}
+
+/** The page's picker: the next (+1) or previous (-1) skin. */
+export interface ShipSkinStepRequested {
+  step: number;
+}
+
+/** The page's picker: Launch pressed. */
+export interface ShipPickDone {
+}
+
 /** The page (or a console) answers the ringing call. */
 export interface StationCallAnswered {
 }
@@ -394,6 +423,7 @@ export interface WebStates {
   LandingSite: LandingSite;
   PlayerShip: PlayerShip;
   PlayerHealth: PlayerHealth;
+  ShipPicker: ShipPicker;
   StationState: StationState;
   DiceState: DiceState;
 }
@@ -425,6 +455,9 @@ export interface WebEvents {
   PlayerDamaged: PlayerDamaged;
   PlayerHealed: PlayerHealed;
   PlayerDied: PlayerDied;
+  ShipPickerReady: ShipPickerReady;
+  ShipSkinStepRequested: ShipSkinStepRequested;
+  ShipPickDone: ShipPickDone;
   StationCallAnswered: StationCallAnswered;
   StationPlanRequested: StationPlanRequested;
   PsxModeRequested: PsxModeRequested;
@@ -433,6 +466,6 @@ export interface WebEvents {
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "DevWarpRequested" | "RelicUseRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "FlightHudReady" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
+export type InboundEvent = "DevWarpRequested" | "RelicUseRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "MenuItemSelected";
 
-export const STATE_NAMES = ["RelicInventory", "CharacterSheet", "FlowState", "LoadingState", "PlayerInventory", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "StationState", "DiceState"] as const;
+export const STATE_NAMES = ["RelicInventory", "CharacterSheet", "FlowState", "LoadingState", "PlayerInventory", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "ShipPicker", "StationState", "DiceState"] as const;

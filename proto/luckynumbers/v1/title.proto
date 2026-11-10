@@ -31,6 +31,21 @@ message TitleScreen {
   float play_transition_seconds = 11;
   // Share of the distance to the home planet the camera closes during that push (0..1).
   float play_push_in = 12;
+  // After character creation: the hangar where you pick your fighter's skin.
+  ShipHangar hangar = 13;
+}
+
+// The hangar's fighter, posed in front of the title camera (space units: the camera's own scale).
+message ShipHangar {
+  // Ship length, and how far ahead of the camera it floats; how far below the view's centre (x its length).
+  float ship_length = 1;
+  float distance = 2;
+  float drop = 3;
+  // How fast it turns (degrees a second), and its nose-down tilt (degrees) so you see the top of the hull.
+  float spin_degrees_per_second = 4;
+  float tilt_degrees = 5;
+  // Seconds it takes to slide into view.
+  float enter_seconds = 6;
 }
 
 // The dice that create the universe: their faces become the seed ("lucky number").

@@ -1,13 +1,12 @@
 using UnityEngine;
 
-namespace LuckyNumbers.Intro
+namespace LuckyNumbers.Core
 {
     /// <summary>
     /// A ship: a pivot (+Z forward, +Y up) around its model. With skins (the player's fighter) one shared material
     /// swaps textures; without (the museum freighter) every part keeps its own material. Heat and engine glow
-    /// apply to all of them.
+    /// apply to all of them. Shared by every scene that shows a ship, so each scope registers it itself (no [View]).
     /// </summary>
-    [View]
     public sealed class ShipView : MonoBehaviour
     {
         static readonly int Heat = Shader.PropertyToID("_Heat");
@@ -22,6 +21,7 @@ namespace LuckyNumbers.Intro
 
         public Transform Pivot => pivot;
         public int SkinCount => skins.Length;
+        public string SkinAt(int index) => skins[index].name;
         public string SkinName => _material != null && _material.mainTexture != null ? _material.mainTexture.name : "";
 
         /// <summary>Show the ship at a world length; `skin` (file name) picks a skin if it has any (unknown: the first).</summary>
