@@ -38,7 +38,7 @@ namespace LuckyNumbers.Planet
         Vector3 _restPosition;
         Quaternion _restRotation;
 
-        float _breath, _swing, _fidget, _stride, _moving, _sprint, _air, _airRaise, _pump = 1f, _tremor;
+        float _breathPhase, _breath, _swing, _fidget, _stride, _moving, _sprint, _air, _airRaise, _pump = 1f, _tremor;
         readonly Vector3[] _target = new Vector3[2], _palmFacing = new Vector3[2], _fingersAlong = new Vector3[2];
         readonly float[] _weight = new float[2];
         public readonly float[] LastError = new float[2];
@@ -228,7 +228,9 @@ namespace LuckyNumbers.Planet
             if (_arms.Length == 0) return;
             var t = Time.time;
             var dt = Time.deltaTime;
-            var breathe = Mathf.Sin(t * 2f * Mathf.PI * (0.22f + 0.2f * _sprint));   // breathe faster when running
+            // Breathe faster when running. Accumulate the phase: sin(t * freq) jumps when freq eases (sprint -> idle).
+            _breathPhase = (_breathPhase + dt * 2f * Mathf.PI * (0.22f + 0.2f * _sprint)) % (2f * Mathf.PI);
+            var breathe = Mathf.Sin(_breathPhase);
             for (var s = 0; s < _arms.Length && s < 2; s++)
             {
                 var arm = _arms[s];
