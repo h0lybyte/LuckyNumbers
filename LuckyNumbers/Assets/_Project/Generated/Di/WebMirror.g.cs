@@ -38,6 +38,7 @@ namespace LuckyNumbers.Model
             "LandingSite",
             "PlayerShip",
             "PlayerHealth",
+            "ShipPicker",
             "StationState",
             "DiceState",
         };
@@ -184,34 +185,42 @@ namespace LuckyNumbers.Model
                 sink.MarkState(9);
             }
             {
-                var s = c.Resolve<StationState>();
-                d.Add(s.Lights.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Room.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Call.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Caller.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Objective.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Prompt.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Psx.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Plan.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.MapOpen.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.PlayerCol.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.PlayerRow.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.PlayerYaw.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.DockCol.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.DockRow.Subscribe(_ => sink.MarkState(10)));
-                NotifyCollectionChangedEventHandler<string> hRooms = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(10);
-                s.Rooms.CollectionChanged += hRooms;
-                d.Add(Disposable.Create(() => s.Rooms.CollectionChanged -= hRooms));
+                var s = c.Resolve<ShipPicker>();
+                d.Add(s.Open.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Skin.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Index.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Count.Subscribe(_ => sink.MarkState(10)));
                 sink.MarkState(10);
             }
             {
+                var s = c.Resolve<StationState>();
+                d.Add(s.Lights.Subscribe(_ => sink.MarkState(11)));
+                d.Add(s.Room.Subscribe(_ => sink.MarkState(11)));
+                d.Add(s.Call.Subscribe(_ => sink.MarkState(11)));
+                d.Add(s.Caller.Subscribe(_ => sink.MarkState(11)));
+                d.Add(s.Objective.Subscribe(_ => sink.MarkState(11)));
+                d.Add(s.Prompt.Subscribe(_ => sink.MarkState(11)));
+                d.Add(s.Psx.Subscribe(_ => sink.MarkState(11)));
+                d.Add(s.Plan.Subscribe(_ => sink.MarkState(11)));
+                d.Add(s.MapOpen.Subscribe(_ => sink.MarkState(11)));
+                d.Add(s.PlayerCol.Subscribe(_ => sink.MarkState(11)));
+                d.Add(s.PlayerRow.Subscribe(_ => sink.MarkState(11)));
+                d.Add(s.PlayerYaw.Subscribe(_ => sink.MarkState(11)));
+                d.Add(s.DockCol.Subscribe(_ => sink.MarkState(11)));
+                d.Add(s.DockRow.Subscribe(_ => sink.MarkState(11)));
+                NotifyCollectionChangedEventHandler<string> hRooms = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(11);
+                s.Rooms.CollectionChanged += hRooms;
+                d.Add(Disposable.Create(() => s.Rooms.CollectionChanged -= hRooms));
+                sink.MarkState(11);
+            }
+            {
                 var s = c.Resolve<DiceState>();
-                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(11);
+                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(12);
                 s.Faces.CollectionChanged += hFaces;
                 d.Add(Disposable.Create(() => s.Faces.CollectionChanged -= hFaces));
-                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Seed.Subscribe(_ => sink.MarkState(11)));
-                sink.MarkState(11);
+                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Seed.Subscribe(_ => sink.MarkState(12)));
+                sink.MarkState(12);
             }
             d.Add(c.Resolve<ISubscriber<RelicRolled>>().Subscribe(e =>
             {
@@ -343,6 +352,21 @@ namespace LuckyNumbers.Model
                 Write(sink.BeginEvent("ItemHandled"), e);
                 sink.EndEvent();
             }));
+            d.Add(c.Resolve<ISubscriber<ShipPickerReady>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("ShipPickerReady"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<ShipSkinStepRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("ShipSkinStepRequested"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<ShipPickDone>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("ShipPickDone"), e);
+                sink.EndEvent();
+            }));
             d.Add(c.Resolve<ISubscriber<StationCallAnswered>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("StationCallAnswered"), e);
@@ -386,8 +410,9 @@ namespace LuckyNumbers.Model
                 case 7: Write(b, c.Resolve<LandingSite>()); break;
                 case 8: Write(b, c.Resolve<PlayerShip>()); break;
                 case 9: Write(b, c.Resolve<PlayerHealth>()); break;
-                case 10: Write(b, c.Resolve<StationState>()); break;
-                case 11: Write(b, c.Resolve<DiceState>()); break;
+                case 10: Write(b, c.Resolve<ShipPicker>()); break;
+                case 11: Write(b, c.Resolve<StationState>()); break;
+                case 12: Write(b, c.Resolve<DiceState>()); break;
             }
         }
 
@@ -443,6 +468,15 @@ namespace LuckyNumbers.Model
                     return true;
                 case "FlightHudReady":
                     c.Resolve<IPublisher<FlightHudReady>>().Publish(new FlightHudReady(Json.Get(o, "on") is bool flightHudReadyOn && flightHudReadyOn));
+                    return true;
+                case "ShipPickerReady":
+                    c.Resolve<IPublisher<ShipPickerReady>>().Publish(new ShipPickerReady(Json.Get(o, "on") is bool shipPickerReadyOn && shipPickerReadyOn));
+                    return true;
+                case "ShipSkinStepRequested":
+                    c.Resolve<IPublisher<ShipSkinStepRequested>>().Publish(new ShipSkinStepRequested((int)Json.Number(Json.Get(o, "step"))));
+                    return true;
+                case "ShipPickDone":
+                    c.Resolve<IPublisher<ShipPickDone>>().Publish(new ShipPickDone());
                     return true;
                 case "StationCallAnswered":
                     c.Resolve<IPublisher<StationCallAnswered>>().Publish(new StationCallAnswered());
@@ -796,6 +830,20 @@ namespace LuckyNumbers.Model
             b.Append('}');
         }
 
+        static void Write(StringBuilder b, ShipPicker s)
+        {
+            b.Append('{');
+            b.Append("\"open\":");
+            b.Append(s.Open.Value ? "true" : "false");
+            b.Append(",\"skin\":");
+            Json.Str(b, s.Skin.Value);
+            b.Append(",\"index\":");
+            Json.Num(b, s.Index.Value);
+            b.Append(",\"count\":");
+            Json.Num(b, s.Count.Value);
+            b.Append('}');
+        }
+
         static void Write(StringBuilder b, StationState s)
         {
             b.Append('{');
@@ -1101,6 +1149,28 @@ namespace LuckyNumbers.Model
             Json.Str(b, e.Action);
             b.Append(",\"detail\":");
             Json.Str(b, e.Detail);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, ShipPickerReady e)
+        {
+            b.Append('{');
+            b.Append("\"on\":");
+            b.Append(e.On ? "true" : "false");
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, ShipSkinStepRequested e)
+        {
+            b.Append('{');
+            b.Append("\"step\":");
+            Json.Num(b, e.Step);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, ShipPickDone e)
+        {
+            b.Append('{');
             b.Append('}');
         }
 

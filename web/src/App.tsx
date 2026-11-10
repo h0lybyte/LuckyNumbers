@@ -6,6 +6,7 @@ import { StationHud, StationTools } from "./station";
 import { RelicHud } from "./relics";
 import { FlightHud } from "./flight";
 import { CharacterSheetGate } from "./sheet";
+import { HangarGate } from "./hangar";
 import type { GameScene, InboundEvent, WebEvents } from "./ln";
 
 export function App({ dock }: { dock: HTMLElement | null }) {
@@ -36,6 +37,7 @@ export function App({ dock }: { dock: HTMLElement | null }) {
       <Hud />
       <StationHudGate />
       <CharacterSheetGate />
+      <HangarGate />
       <Toasts />
       <ItemToasts />
       {inspector && dock && createPortal(<Inspector />, dock)}

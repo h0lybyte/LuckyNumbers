@@ -1,6 +1,8 @@
 // Textured ship lit by the universe's star (globals _LnSunPosition / _LnSunColor, like Planet3D):
 // wrapped diffuse + ambient floor + a soft fill from the camera side (dark skins and the night side stay
 // readable), bright saturated texels (lights, engines) glow regardless of light, thin rim against space.
+// On a planet, the globals _LnSkyColor / _LnGroundColor (w = 1 when set) tint the ambient: sky light from above,
+// ground bounce from below, so the shadow side picks up the world it's in. Metal gets a soft sun highlight (_Spec).
 // Ships set _Lift 0 (true albedo, no lifted floor) and a high _GlowMin (painted gold/orange isn't a lamp).
 // Optional: double-sided (_Cull Off; back faces lit from their side) and alpha cutout (_Cutoff > 0) for decals.
 Shader "LuckyNumbers/Ship"
@@ -17,6 +19,8 @@ Shader "LuckyNumbers/Ship"
         _Heat ("Entry Heat (0..1, set at runtime)", Range(0, 1)) = 0
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 2
         _Cutoff ("Alpha Cutoff (0 = opaque)", Range(0, 1)) = 0
+        _Spec ("Sun Highlight", Range(0, 2)) = 0
+        _SpecPower ("Highlight Tightness", Range(2, 128)) = 24
     }
 
     SubShader
@@ -31,12 +35,13 @@ Shader "LuckyNumbers/Ship"
             #pragma fragment frag
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            float4 _LnSunPosition, _LnSunColor; // globals set by SpacePresenter
+            float4 _LnSunPosition, _LnSunColor; // globals set by SpacePresenter / CrashSitePresenter
+            float4 _LnSkyColor, _LnGroundColor; // globals set by CrashSitePresenter (w = 1), else neutral
             TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
-                float _Ambient, _Fill, _Glow, _Rim, _Heat, _Cutoff, _Lift, _GlowMin;
+                float _Ambient, _Fill, _Glow, _Rim, _Heat, _Cutoff, _Lift, _GlowMin, _Spec, _SpecPower;
             CBUFFER_END
 
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; float2 uv : TEXCOORD0; };
@@ -70,7 +75,12 @@ Shader "LuckyNumbers/Ship"
                 float fill = saturate(dot(n, v)) * _Fill;                                  // soft key from the viewer
                 // Dark skins: lift the albedo floor a little so panel detail survives.
                 float3 base = lerp(albedo, max(albedo, 0.06 + albedo * 0.4), _Lift);
-                float3 color = base * (sun * diffuse + _Ambient + fill) + albedo * glow * _Glow + sun * rim * 0.5;
+                // Ambient: sky from above, ground bounce from below (white when the scene sets neither).
+                float3 hemi = _LnSkyColor.w > 0.5 ? lerp(_LnGroundColor.rgb, _LnSkyColor.rgb, n.y * 0.5 + 0.5) : float3(1, 1, 1);
+                // Sun highlight on the lit side: painted metal catching the light (brighter panels shine more).
+                float3 h = normalize(l + v);
+                float spec = pow(saturate(dot(n, h)), _SpecPower) * _Spec * saturate(dot(n, l) * 4.0) * (0.4 + maxc);
+                float3 color = base * (sun * diffuse + hemi * _Ambient + fill) + albedo * glow * _Glow + sun * (rim * 0.5 + spec);
                 // Atmospheric entry: hot orange-white fresnel that swallows the hull as heat rises.
                 float hot = pow(1.0 - saturate(dot(n, v)), 1.5);
                 color = lerp(color, float3(1.0, 0.45, 0.12) * 3.0, saturate(_Heat * (0.35 + 0.9 * hot)));

@@ -94,4 +94,59 @@ namespace LuckyNumbers.Model
             Detail = detail;
         }
     }
+
+    /// <summary>
+    /// The hangar, after character creation on the title (Title/ShipPickerPresenter): your fighter turns in front of
+    /// the camera while the page cycles its skins, then launches. `skin` is the file name (Art/Models/Fighter/Skins),
+    /// `index` of `count`. The choice goes to PlayerShip.
+    /// </summary>
+    public sealed class ShipPicker : IDisposable
+    {
+        public readonly ReactiveProperty<bool> Open = new ReactiveProperty<bool>();
+        public readonly ReactiveProperty<string> Skin = new ReactiveProperty<string>();
+        public readonly ReactiveProperty<int> Index = new ReactiveProperty<int>();
+        public readonly ReactiveProperty<int> Count = new ReactiveProperty<int>();
+
+        public void Dispose()
+        {
+            Open.Dispose();
+            Skin.Dispose();
+            Index.Dispose();
+            Count.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// The page has a ship picker (sent when it mounts): Play then opens the hangar after character creation.
+    /// Without it (no page, e.g. the editor) Play goes straight on with the default skin.
+    /// </summary>
+    public readonly struct ShipPickerReady
+    {
+        public readonly bool On;
+
+        public ShipPickerReady(bool on)
+        {
+            On = on;
+        }
+    }
+
+    /// <summary>
+    /// The page's picker: the next (+1) or previous (-1) skin.
+    /// </summary>
+    public readonly struct ShipSkinStepRequested
+    {
+        public readonly int Step;
+
+        public ShipSkinStepRequested(int step)
+        {
+            Step = step;
+        }
+    }
+
+    /// <summary>
+    /// The page's picker: Launch pressed.
+    /// </summary>
+    public readonly struct ShipPickDone
+    {
+    }
 }

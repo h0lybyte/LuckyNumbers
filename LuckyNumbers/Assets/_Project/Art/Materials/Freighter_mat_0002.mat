@@ -29,15 +29,17 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _Ambient: 0.25
+    - _Ambient: 0.45
     - _Cull: 0
     - _Cutoff: 0
-    - _Fill: 0.15
+    - _Fill: 0.3
     - _Glow: 1.5
     - _GlowMin: 0.85
     - _Heat: 0
     - _Lift: 0
     - _Rim: 0.35
+    - _Spec: 0.6
+    - _SpecPower: 28
     m_Colors: []
   m_BuildTextureStacks: []
   m_AllowLocking: 1

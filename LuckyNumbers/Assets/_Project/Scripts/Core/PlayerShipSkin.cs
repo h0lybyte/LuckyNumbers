@@ -1,6 +1,6 @@
 using LuckyNumbers.Model;
 
-namespace LuckyNumbers.Intro
+namespace LuckyNumbers.Core
 {
     /// <summary>The player's ship skin: their choice (PlayerShip) if set, else the default from content/player.txtpb.</summary>
     public static class PlayerShipSkin

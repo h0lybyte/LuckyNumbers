@@ -66,11 +66,17 @@ namespace LuckyNumbers.Editor
             Shader.SetGlobalVector("_LnSunColor", new Color(1f, 0.95f, 0.85f));
             var model = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Art/Models/Fighter/fighter1.fbx")
                         ?? throw new System.Exception("fighter1.fbx not imported");
+            // LN_SHIP_SKIN: one skin, or several comma-separated (one preview-ship-<skin>.png each). In-game look
+            // (SceneBuilder.ShipLook) under a planet's sky / ground ambient (LN_SHIP_PLANET=1: warm sky, rust ground).
+            var skins = (System.Environment.GetEnvironmentVariable("LN_SHIP_SKIN") ?? "idolknight").Split(',');
             var mat = new Material(Find("LuckyNumbers/Ship"))
             {
-                mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(
-                    $"Assets/_Project/Art/Models/Fighter/Skins/{System.Environment.GetEnvironmentVariable("LN_SHIP_SKIN") ?? "idolknight"}.jpg"),
+                mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/_Project/Art/Models/Fighter/Skins/{skins[0]}.jpg"),
             };
+            SceneBuilder.ShipLook(mat);
+            var planet = System.Environment.GetEnvironmentVariable("LN_SHIP_PLANET") == "1";
+            Shader.SetGlobalVector("_LnSkyColor", planet ? new Vector4(1.15f, 0.8f, 0.6f, 1f) : Vector4.zero);
+            Shader.SetGlobalVector("_LnGroundColor", planet ? new Vector4(0.55f, 0.35f, 0.3f, 1f) : Vector4.zero);
             var bounds = new Bounds();
             for (var k = 0; k < 3; k++)
             {
@@ -109,6 +115,12 @@ namespace LuckyNumbers.Editor
             cam.clearFlags = CameraClearFlags.Skybox;
             cam.transform.SetPositionAndRotation(new Vector3(0, 0.3f, -4.5f), Quaternion.Euler(3, 0, 0));
             Save(cam, "preview-ship.png");
+            if (skins.Length > 1)
+                foreach (var skin in skins)
+                {
+                    mat.mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>($"Assets/_Project/Art/Models/Fighter/Skins/{skin}.jpg");
+                    Save(cam, $"preview-ship-{skin}.png");
+                }
         }
 
         /// <summary>First-person arms: lists clips, renders 4 poses from the rig's own camera to Logs/preview-arms.png.</summary>

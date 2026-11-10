@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using LuckyNumbers.Core;
 using LuckyNumbers.Intro;
 using LuckyNumbers.Model;
 using LuckyNumbers.Space;
@@ -46,6 +47,8 @@ namespace LuckyNumbers.Planet
     {
         static readonly int SunPosition = Shader.PropertyToID("_LnSunPosition");
         static readonly int SunColor = Shader.PropertyToID("_LnSunColor");
+        static readonly int SkyColor = Shader.PropertyToID("_LnSkyColor");
+        static readonly int GroundColor = Shader.PropertyToID("_LnGroundColor");
 
         readonly PlanetScene _config;
         readonly GroundView _ground;
@@ -131,6 +134,10 @@ namespace LuckyNumbers.Planet
                 m.SetVector("_NoiseOffset", new Vector4(o.X, o.Y, o.Z, 0f));
                 m.SetFloat("_NoiseRemap", look.NoiseRemap);
             }
+            // Ship ambient (Ship shader): the sky's tint from above, the ground's bounce from below. Hue only, brightness
+            // kept near white so a vivid atmosphere tints the hull without dyeing it.
+            Shader.SetGlobalVector(SkyColor, AmbientTint(look?.AtmosphereColor.ToColor() ?? Color.gray, 0.45f, 1.15f));
+            Shader.SetGlobalVector(GroundColor, AmbientTint(look?.PlanetColor.ToColor() ?? Color.gray, 0.55f, 0.55f));
             m.SetFloat("_SurfaceScale", _config.SurfaceNoiseScale);
             m.SetFloat("_Haze", _config.Haze);
             m.SetFloat("_HazeDistance", _config.ChunkSize * math.max(1, _config.ViewChunks) * 1.1f);   // thick before the last chunks
@@ -292,8 +299,18 @@ namespace LuckyNumbers.Planet
             Shader.SetGlobalVector(SunPosition, new Vector4(sun.x, sun.y, sun.z, 1f));
         }
 
+        /// <summary>`c`'s hue at `brightness`, `amount` of the way from white; w = 1 (set).</summary>
+        static Vector4 AmbientTint(Color c, float amount, float brightness)
+        {
+            var peak = Mathf.Max(c.r, Mathf.Max(c.g, Mathf.Max(c.b, 1e-3f)));
+            var t = Color.Lerp(Color.white, c / peak, amount) * brightness;
+            return new Vector4(t.r, t.g, t.b, 1f);
+        }
+
         public void Dispose()
         {
+            Shader.SetGlobalVector(SkyColor, Vector4.zero);   // other scenes: neutral ship ambient
+            Shader.SetGlobalVector(GroundColor, Vector4.zero);
             _subscription?.Dispose();
             _cts.Cancel();
             _cts.Dispose();
