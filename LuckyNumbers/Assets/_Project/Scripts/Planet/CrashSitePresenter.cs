@@ -204,7 +204,7 @@ namespace LuckyNumbers.Planet
             var at = new Vector3(0f, 0f, _config.WreckDistance);
             at.y = _ground.HeightAt(at) + _config.WreckLength * 0.04f;            // nose dug in, hull above ground
             _wreck.Pose(at, Quaternion.Euler(14f, rng.NextFloat(-160f, -110f), rng.NextFloat(-18f, 18f)));
-            _wreck.SetHeat(0.04f, 0.4f);                                            // hull cooled, lights flickering on
+            _wreck.SetHeat(0f, 0.4f);                                               // hull cooled (any heat tints the dark hull orange), lights on
         }
 
         /// <summary>Lying on your back, eyes open (fade in), sit up, stand, turn to the wreck; then you're in control.</summary>

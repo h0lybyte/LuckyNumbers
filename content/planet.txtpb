@@ -134,8 +134,8 @@ landing {
     max_pitch: 35
     bank_per_turn: 0.45
     max_bank: 35
-    pad_min_distance: 40
-    pad_max_distance: 55
+    pad_min_distance: 60   # clear of the 80 m hull (40 m each way from its centre) and your wings
+    pad_max_distance: 80
     speed_fov: 14
     camera_bank: 0.3
     cushion_height: 5
