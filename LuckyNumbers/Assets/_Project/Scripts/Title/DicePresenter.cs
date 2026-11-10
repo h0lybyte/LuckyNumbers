@@ -39,7 +39,10 @@ namespace LuckyNumbers.Title
         {
             _config = GameContent.Title.Dice;
             if (_config == null || _config.Dice.Count == 0) return;
-            _rng = new Random((uint)Environment.TickCount | 1u);
+            // A fresh source per launch. Environment.TickCount alone counts from page load on the web, so it
+            // repeats; mix in the wall clock and a GUID.
+            var entropy = (ulong)DateTime.UtcNow.Ticks ^ (ulong)(uint)Guid.NewGuid().GetHashCode() << 17 ^ (uint)Environment.TickCount;
+            _rng = new Random((uint)(entropy ^ entropy >> 32) | 1u);
 
             _view.Bind();
             _view.Build(_config.Dice, _config.RollLabel, Roll);
@@ -55,7 +58,11 @@ namespace LuckyNumbers.Title
                 _view.SetLuckyNumber(_config.SeedFormat.Replace("{0}", _state.Seed.Value.ToString()));
                 return;
             }
-            Land(previous: 0u); // the starting universe: from the initial faces (6 6 6)
+            // The starting universe: a fresh roll each launch (no animation), so no two runs open on the same
+            // lucky number. Set title.dice.fixed_start in content to always open on the initial faces instead.
+            if (_config.FixedStart) { Land(previous: 0u); return; }
+            for (var i = 0; i < _faces.Count; i++) _faces[i] = _rng.NextInt(1, _sides[i] + 1);
+            Land(previous: _rng.NextUInt());
         }
 
         void Roll()
