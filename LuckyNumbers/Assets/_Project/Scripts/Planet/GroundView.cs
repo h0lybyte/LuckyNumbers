@@ -101,10 +101,12 @@ namespace LuckyNumbers.Planet
             c.Mesh.normals = normals;
             c.Mesh.triangles = tris;
             c.Mesh.RecalculateBounds();
-            c.Collider.sharedMesh = null;      // re-bake
-            c.Collider.sharedMesh = c.Mesh;
             c.Go.name = $"Chunk {key.x},{key.y}";
             c.Go.SetActive(true);
+            // Re-bake once active: baked while a recycled chunk was still inactive, it ended up with no collision
+            // (you could land out there and step straight through the ground).
+            c.Collider.sharedMesh = null;
+            c.Collider.sharedMesh = c.Mesh;
             return c;
         }
 

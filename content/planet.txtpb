@@ -55,14 +55,15 @@ wake_seconds: 3.2
 # Said as you come to (the controls hint follows).
 wake_lines { speaker: "You" text: "Uhh... how did I live through that?!" duration_seconds: 3.5 chars_per_second: 28 }
 wake_lines_delay: 0.8
-wreck_distance: 26
-wreck_length: 30
+# The museum freighter: big next to you (you walk beside an 80 m hull).
+wreck_distance: 60
+wreck_length: 80
 
 haze: 0.6
 
 # Boulders (seeded, in the ground's colours); the first sits beside where you wake.
 boulders: 14
-boulder_spread: 45
+boulder_spread: 90
 boulder_size_min: 1.2
 boulder_size_max: 3.5
 sun_elevation_degrees: 38
@@ -93,7 +94,7 @@ map {
 # Arrival: you fly your own fighter in and land it near the wreck. Fully piloted: mouse pitches and yaws,
 # A/D roll, W/S throttle, Shift boost, Space lift thrusters. Touch down slow and level, or crash and retry.
 landing {
-  ship_length: 9
+  ship_length: 16      # your fighter, nose to tail (about 9 of you)
   start_altitude: 110
   start_distance: 260
   start_speed: 30
@@ -157,8 +158,8 @@ landing {
     max_pitch: 35
     bank_per_turn: 0.45
     max_bank: 35
-    pad_min_distance: 40
-    pad_max_distance: 55
+    pad_min_distance: 60   # clear of the 80 m hull (40 m each way from its centre) and your wings
+    pad_max_distance: 80
     speed_fov: 14
     camera_bank: 0.3
     cushion_height: 5

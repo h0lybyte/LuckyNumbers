@@ -451,12 +451,22 @@ namespace LuckyNumbers.Editor
 
         const string FighterDir = "Assets/_Project/Art/Models/Fighter";
 
+        /// <summary>Ships keep their painted colours: true albedo (no lifted floor), a little ambient, a faint camera fill.</summary>
+        static void ShipLook(Material m)
+        {
+            m.SetFloat("_Ambient", 0.25f);
+            m.SetFloat("_Fill", 0.15f);
+            m.SetFloat("_Lift", 0f);
+        }
+
         /// <summary>The fighter: pivot (+Z forward) around the model (nose is +X in the file), all skins listed.</summary>
         static ShipView ShipRig(bool collide = false, string name = "Ship")
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>($"{FighterDir}/fighter1.fbx")
                         ?? throw new System.Exception("fighter1.fbx missing");
             var material = MaterialAsset("Ship", "LuckyNumbers/Ship");
+            ShipLook(material);
+            EditorUtility.SetDirty(material);
             var view = new GameObject(name).AddComponent<ShipView>();
             var pivot = new GameObject("Pivot").transform;
             pivot.SetParent(view.transform, false);
@@ -522,6 +532,8 @@ namespace LuckyNumbers.Editor
                 if (texture == null) Debug.LogWarning($"[SceneBuilder] freighter part {r.gameObject.name}: no texture");
                 var mat = MaterialAsset($"Freighter_{part}", "LuckyNumbers/Ship");
                 mat.mainTexture = texture;
+                ShipLook(mat);
+                mat.SetFloat("_GlowMin", 0.85f);   // gold trim and orange pods are paint, not lamps
                 mat.SetFloat("_Cull", (float)UnityEngine.Rendering.CullMode.Off);
                 mat.SetFloat("_Cutoff", System.Array.IndexOf(FreighterDecals, part) >= 0 ? 0.5f : 0f);
                 EditorUtility.SetDirty(mat);

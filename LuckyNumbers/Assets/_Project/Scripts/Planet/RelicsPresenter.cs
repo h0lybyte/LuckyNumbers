@@ -157,7 +157,8 @@ namespace LuckyNumbers.Planet
             var manifest = Manifest.Generate(Config, _site.Seed);
             var rng = new Random((_site.Seed ^ 0x5E1C5u) | 1u);
             var wreck = _view.Wreck.Pivot.position;
-            var min = Config.ScatterMin > 0f ? Config.ScatterMin : 10f;
+            // Clear of the hull whatever the ship's size: at least the wreck's own footprint (from its renderers) + 4 m.
+            var min = math.max(Config.ScatterMin > 0f ? Config.ScatterMin : 10f, WreckReach(wreck) + 4f);
             var max = math.max(min + 1f, Config.ScatterMax);
             var root = new GameObject("Relics").transform;
             // The named artifacts lie on your way in: between the wreck and the landing pad (if there is one).
@@ -173,7 +174,7 @@ namespace LuckyNumbers.Planet
                 var distance = relic.Artifact != null ? min : rng.NextFloat(min, max);
                 var angle = relic.Artifact != null ? padAngle + 14f * named++ : rng.NextFloat(360f);
                 var at = wreck + Quaternion.Euler(0f, angle, 0f) * Vector3.forward * distance;
-                at.y = _ground.HeightAt(at) + 0.35f;
+                at.y = _ground.SurfaceAt(at) + 0.35f;   // on the mesh you walk on
                 var shape = UnityEngine.Object.Instantiate(template, root);
                 shape.gameObject.SetActive(true);
                 shape.position = at;
@@ -189,6 +190,23 @@ namespace LuckyNumbers.Planet
             }
             _inventory.Lying.Value = _lying.Count;
             Debug.Log($"[Relics] {_lying.Count} relics round the wreck ({manifest.Relics.FindAll(r => r.Artifact != null).Count} named)");
+        }
+
+        /// <summary>How far the wreck reaches out from its pivot on the ground plane (its renderers' bounds).</summary>
+        float WreckReach(Vector3 pivot)
+        {
+            var reach = 0f;
+            foreach (var r in _view.Wreck.Pivot.GetComponentsInChildren<Renderer>())
+            {
+                var b = r.bounds;
+                for (var x = -1; x <= 1; x += 2)
+                for (var z = -1; z <= 1; z += 2)
+                {
+                    var corner = new Vector2(b.center.x + x * b.extents.x - pivot.x, b.center.z + z * b.extents.z - pivot.z);
+                    reach = math.max(reach, corner.magnitude);
+                }
+            }
+            return reach;
         }
 
         static void Colour(Transform shape, Relic relic)

@@ -6,6 +6,7 @@ and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version
 
 ## 0.2.4 (2026-11-10)
 
+- Bigger, sharper, truer-coloured ships at the crash site (the wrecked freighter and your fighter)
 - The first named relic: Zhang Heng's Water Amulet (Eastern Han, 2nd century CE). Find it by the wreck on
   your way in from the landing pad, pick it up (E) and use it (R): it rolls a d20, plus up to 3 from your
   luck die. 1: Flood (slowed); 2-7: Trickle (a little health); 8-14: Spring (a good heal); 15-19: Dragon's

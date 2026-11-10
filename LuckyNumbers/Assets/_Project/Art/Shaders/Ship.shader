@@ -1,6 +1,7 @@
 // Textured ship lit by the universe's star (globals _LnSunPosition / _LnSunColor, like Planet3D):
 // wrapped diffuse + ambient floor + a soft fill from the camera side (dark skins and the night side stay
 // readable), bright saturated texels (lights, engines) glow regardless of light, thin rim against space.
+// Ships set _Lift 0 (true albedo, no lifted floor) and a high _GlowMin (painted gold/orange isn't a lamp).
 // Optional: double-sided (_Cull Off; back faces lit from their side) and alpha cutout (_Cutoff > 0) for decals.
 Shader "LuckyNumbers/Ship"
 {
@@ -11,6 +12,8 @@ Shader "LuckyNumbers/Ship"
         _Fill ("Camera Fill", Range(0, 1)) = 0.45
         _Glow ("Light Glow", Float) = 1.5
         _Rim ("Rim", Float) = 0.35
+        _Lift ("Dark Lift (0 = true albedo)", Range(0, 1)) = 1
+        _GlowMin ("Glow From Brightness", Range(0, 1)) = 0.5
         _Heat ("Entry Heat (0..1, set at runtime)", Range(0, 1)) = 0
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 2
         _Cutoff ("Alpha Cutoff (0 = opaque)", Range(0, 1)) = 0
@@ -33,7 +36,7 @@ Shader "LuckyNumbers/Ship"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
-                float _Ambient, _Fill, _Glow, _Rim, _Heat, _Cutoff;
+                float _Ambient, _Fill, _Glow, _Rim, _Heat, _Cutoff, _Lift, _GlowMin;
             CBUFFER_END
 
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; float2 uv : TEXCOORD0; };
@@ -63,10 +66,10 @@ Shader "LuckyNumbers/Ship"
                 float rim = pow(1.0 - saturate(dot(n, v)), 3.0) * _Rim;
 
                 float maxc = max(albedo.r, max(albedo.g, albedo.b)), minc = min(albedo.r, min(albedo.g, albedo.b));
-                float glow = smoothstep(0.35, 0.8, maxc - minc) * smoothstep(0.5, 0.9, maxc);   // lights & engines
+                float glow = smoothstep(0.35, 0.8, maxc - minc) * smoothstep(_GlowMin, min(_GlowMin + 0.4, 1.0), maxc);   // lights & engines
                 float fill = saturate(dot(n, v)) * _Fill;                                  // soft key from the viewer
                 // Dark skins: lift the albedo floor a little so panel detail survives.
-                float3 base = max(albedo, 0.06 + albedo * 0.4);
+                float3 base = lerp(albedo, max(albedo, 0.06 + albedo * 0.4), _Lift);
                 float3 color = base * (sun * diffuse + _Ambient + fill) + albedo * glow * _Glow + sun * rim * 0.5;
                 // Atmospheric entry: hot orange-white fresnel that swallows the hull as heat rises.
                 float hot = pow(1.0 - saturate(dot(n, v)), 1.5);
