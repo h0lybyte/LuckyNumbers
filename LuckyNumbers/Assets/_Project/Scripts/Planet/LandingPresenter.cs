@@ -405,7 +405,11 @@ namespace LuckyNumbers.Planet
             var safe = L.MaxTouchdownVertical * 0.8f;
             var flare = math.max(1f, H.FlareHeight);
             var cap = altitude < flare ? math.lerp(H.TouchdownSpeed, safe, altitude / flare) : safe + (altitude - flare) * 1.2f;
-            if (_velocity.y < -cap) _velocity.y = -cap;
+            // Closing on the ground, not just sinking: drifting over rising ground brings it up at you (slope x
+            // horizontal speed), so the floor on vertical speed is the ground's own rate minus the cap.
+            var n = _ground.NormalAt(_position);
+            var groundRate = n.y > 0.2f ? -(_velocity.x * n.x + _velocity.z * n.z) / n.y : 0f;
+            if (_velocity.y - groundRate < -cap) _velocity.y = groundRate - cap;
             _position += _velocity * dt;
             Ship.SetHeat(0f, 0.6f + 0.9f * (_velocity.magnitude / math.max(1f, H.MaxSpeed)) * boost + (pushing ? 0.5f : 0.2f));
         }
