@@ -115,6 +115,7 @@ namespace LuckyNumbers.Station
             var spawn = StationPlan.Centre(_station.Plan.Spawn);
             Teleport(spawn, _config.SpawnYaw);
             _firstPerson.Active = true;
+            PlaceWeapon(spawn, _config.SpawnYaw);
 
             _ui.Bind();
             _ui.Fade(1f);
@@ -159,6 +160,17 @@ namespace LuckyNumbers.Station
             if (volume == null || volume.sharedProfile == null || !volume.sharedProfile.TryGet<Bloom>(out var bloom)) return;
             bloom.active = intensity > 0f;
             bloom.intensity.Override(intensity);
+        }
+
+        /// <summary>The test gun (if the scene has one): dropped on the deck just ahead of where you start.</summary>
+        static void PlaceWeapon(Vector3 spawn, float yaw)
+        {
+            var gun = UnityEngine.Object.FindAnyObjectByType<WeaponView>(FindObjectsInactive.Include);
+            if (gun == null) return;
+            var facing = Quaternion.Euler(0f, yaw, 0f);
+            if (gun.TryGetComponent<Rigidbody>(out var body)) { body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
+            gun.transform.SetPositionAndRotation(spawn + facing * new Vector3(0.25f, 0.35f, 1.0f), facing * Quaternion.Euler(0f, 80f, 0f));
+            gun.gameObject.SetActive(true);
         }
 
         void Teleport(Vector3 position, float yaw)
@@ -208,6 +220,7 @@ namespace LuckyNumbers.Station
                 Build(LayoutGenerator.Generate(_config, _space.Seed));
                 SetLights(_state.Lights.Value);
                 Teleport(StationPlan.Centre(_station.Plan.Spawn), _config.SpawnYaw);
+                PlaceWeapon(StationPlan.Centre(_station.Plan.Spawn), _config.SpawnYaw);   // the new spawn's
                 DockShip();
             }
             var manifest = LuckyNumbers.Cargo.Manifest.Generate(GameContent.Cargo, _space.Seed);

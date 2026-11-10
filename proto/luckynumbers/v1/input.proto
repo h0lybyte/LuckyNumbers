@@ -22,6 +22,8 @@ enum InputAction {
   INPUT_ACTION_MAP = 8;
   // Use the relic you're holding (R).
   INPUT_ACTION_USE_RELIC = 9;
+  // Dev (shooting range): cycle the side view of the hands and what they hold (V).
+  INPUT_ACTION_SIDE_VIEW = 10;
 }
 
 // Continuous axes, sampled every frame.

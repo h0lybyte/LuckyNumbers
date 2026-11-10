@@ -338,6 +338,11 @@ namespace LuckyNumbers.Model
                 Write(sink.BeginEvent("PlayerDied"), e);
                 sink.EndEvent();
             }));
+            d.Add(c.Resolve<ISubscriber<ItemHandled>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("ItemHandled"), e);
+                sink.EndEvent();
+            }));
             d.Add(c.Resolve<ISubscriber<StationCallAnswered>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("StationCallAnswered"), e);
@@ -1087,6 +1092,18 @@ namespace LuckyNumbers.Model
             b.Append('}');
         }
 
+        static void Write(StringBuilder b, ItemHandled e)
+        {
+            b.Append('{');
+            b.Append("\"item\":");
+            Json.Str(b, e.Item);
+            b.Append(",\"action\":");
+            Json.Str(b, e.Action);
+            b.Append(",\"detail\":");
+            Json.Str(b, e.Detail);
+            b.Append('}');
+        }
+
         static void Write(StringBuilder b, StationCallAnswered e)
         {
             b.Append('{');
@@ -1134,6 +1151,7 @@ namespace LuckyNumbers.Model
                 case GameScene.Intro: return "Intro";
                 case GameScene.Planet: return "Planet";
                 case GameScene.Station: return "Station";
+                case GameScene.Range: return "Range";
                 default: return ((int)v).ToString(CultureInfo.InvariantCulture);
             }
         }
@@ -1148,6 +1166,7 @@ namespace LuckyNumbers.Model
                 case "Intro": return GameScene.Intro;
                 case "Planet": return GameScene.Planet;
                 case "Station": return GameScene.Station;
+                case "Range": return GameScene.Range;
                 default: return default;
             }
         }
@@ -1166,6 +1185,7 @@ namespace LuckyNumbers.Model
                 case InputAction.AnyButton: return "AnyButton";
                 case InputAction.Map: return "Map";
                 case InputAction.UseRelic: return "UseRelic";
+                case InputAction.SideView: return "SideView";
                 default: return ((int)v).ToString(CultureInfo.InvariantCulture);
             }
         }
@@ -1185,6 +1205,7 @@ namespace LuckyNumbers.Model
                 case "AnyButton": return InputAction.AnyButton;
                 case "Map": return InputAction.Map;
                 case "UseRelic": return InputAction.UseRelic;
+                case "SideView": return InputAction.SideView;
                 default: return default;
             }
         }

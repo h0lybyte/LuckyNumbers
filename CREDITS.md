@@ -28,6 +28,10 @@ Lucky Numbers is made with the work of these people. Thank you.
   (`LuckyNumbers/Assets/_Project/Art/Models/StationKit/LICENSE.txt`)
 - **First-person arms (rig, 13 animations, skin and glove textures)**: "PSX First Person Arms" by **DrillImpact** (CC0, public domain)
   https://drillimpact.itch.io/psx-first-person-arms-free
+- **Futuristic weapons: 9 guns (rifles, snipers, carbine, heavy cannon), 2 melee weapons (hammer, knife) and gun mods (scope, sight, grip, box)**: "Free Futuristic Weapon Assets" by **Niko-3d-models** (Free with credit)
+  https://niko-3d-models.itch.io/free-futuristic-weapon-assets
+  Changes: split into one FBX per weapon, modifiers baked, centred and scaled to metres (tools/blender/export_weapons.py).
+  (`LuckyNumbers/Assets/_Project/Art/Models/Weapons/LICENSE.txt`)
 
 ## Shaders
 
@@ -57,6 +61,9 @@ Lucky Numbers is made with the work of these people. Thank you.
 
 - **Async/await**: "UniTask" by **Cysharp** (MIT)
   https://github.com/Cysharp/UniTask
+- **Finger joint-limit math (hinge and ball-and-socket clamps), ported**: "OpenIK" by **Wouter Apts** (MIT)
+  https://github.com/WouterApts/openik-unity
+  (`LuckyNumbers/Assets/_Project/Scripts/Hands/OpenIK-LICENSE.md`)
 - **Reactive state**: "R3" by **Cysharp** (MIT)
   https://github.com/Cysharp/R3
 - **Observable collections**: "ObservableCollections" by **Cysharp** (MIT)

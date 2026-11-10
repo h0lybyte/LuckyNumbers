@@ -1,0 +1,8 @@
+{
+  "_doc": "Hand sockets placed by hand, for guns the shape analysis in weapon_holds.py gets wrong. Unity model space (+Z barrel, +Y up), metres. point: where the palm closes (the middle of what it holds: the palm's surface ends up about 1.5 cm past it, toward the palm, so put it 1.5 cm inside the surface the palm rests on); palm: the way the palm faces; along: the way the fingers point before they curl. The solver still fits where the gun sits, its scale and the arms around them.",
+  "heavy_cannon": {
+    "_why": "No pistol grip underneath: a boxy body with handles on top (a carry handle bar ahead of the middle, a handle block at the back). Both hands overhand, palms down, fingers forward to curl over the front.",
+    "grip": {"point": [0.0, 0.142, -0.42], "palm": [0, -1, 0], "along": [0, 0, 1]},
+    "foregrip": {"point": [0.0, 0.226, 0.06], "palm": [0, -1, 0], "along": [0, 0, 1]}
+  }
+}

@@ -77,4 +77,21 @@ namespace LuckyNumbers.Model
             Cause = cause;
         }
     }
+
+    /// <summary>
+    /// Something the player's hands picked up, dropped or threw (web: a toast, top right, for checking holds).
+    /// </summary>
+    public readonly struct ItemHandled
+    {
+        public readonly string Item;
+        public readonly string Action;
+        public readonly string Detail;
+
+        public ItemHandled(string item, string action, string detail)
+        {
+            Item = item;
+            Action = action;
+            Detail = detail;
+        }
+    }
 }

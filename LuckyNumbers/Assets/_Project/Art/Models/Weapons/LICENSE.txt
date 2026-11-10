@@ -1,0 +1,7 @@
+"Free Futuristic Weapon Assets" by Niko-3d-models
+https://niko-3d-models.itch.io/free-futuristic-weapon-assets
+
+License (per the author): free to use with credit to Niko-3d-models and a link to the page above.
+
+Exported from the source .blend by tools/blender/export_weapons.py: split into one FBX per weapon (one mesh each), modifiers baked,
+centred, scaled to metres. Geometry otherwise unchanged.

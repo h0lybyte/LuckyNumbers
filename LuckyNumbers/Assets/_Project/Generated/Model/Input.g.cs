@@ -33,6 +33,10 @@ namespace LuckyNumbers.Model
         /// Use the relic you're holding (R).
         /// </summary>
         UseRelic = 9,
+        /// <summary>
+        /// Dev (shooting range): cycle the side view of the hands and what they hold (V).
+        /// </summary>
+        SideView = 10,
     }
 
     /// <summary>
