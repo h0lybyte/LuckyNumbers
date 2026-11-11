@@ -35,7 +35,10 @@ namespace LuckyNumbers.Planet
         readonly ISubscriber<InputActionPerformed> _actions;
         readonly MapState _state;
         IDisposable _subscription;
-        bool _toggle, _close;
+        /// <summary>Key presses since the last Tick (kept while there's no map config); Tick takes and clears them.</summary>
+        [Flags] enum Press : byte { None = 0, Toggle = 1 << 0, Close = 1 << 1 }
+
+        Press _press;
         Phase _phase;
         float _t, _distance, _fromDistance, _haze;
         Quaternion _rotation, _fromRotation;
@@ -63,8 +66,8 @@ namespace LuckyNumbers.Planet
         {
             _subscription = _actions.Subscribe(e =>
             {
-                if (e.Action == InputAction.Map) _toggle = true;
-                if (e.Action == InputAction.Cancel) _close = true;
+                if (e.Action == InputAction.Map) _press |= Press.Toggle;
+                if (e.Action == InputAction.Cancel) _press |= Press.Close;
             });
             _map.Show(false);
             _state.Open.Value = false;   // app-wide state: don't carry a map left open in an earlier visit
@@ -75,9 +78,10 @@ namespace LuckyNumbers.Planet
             var config = _config.Map;
             if (config == null) return;
             var dt = Time.deltaTime;
-            if (_toggle && _phase == Phase.Closed && _firstPerson.Active && _site.Built) Open(config);
-            else if ((_toggle || _close) && _phase == Phase.Open) BeginClose();
-            _toggle = _close = false;
+            var press = _press;
+            _press = Press.None;
+            if ((press & Press.Toggle) != 0 && _phase == Phase.Closed && _firstPerson.Active && _site.Built) Open(config);
+            else if (press != Press.None && _phase == Phase.Open) BeginClose();
 
             switch (_phase)
             {

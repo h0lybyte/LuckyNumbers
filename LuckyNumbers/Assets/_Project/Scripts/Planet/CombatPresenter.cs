@@ -32,6 +32,9 @@ namespace LuckyNumbers.Planet
     [Presenter]
     public sealed partial class CombatPresenter : IStartable, ITickable, IDisposable
     {
+        /// <summary>A monster's state of mind, packed in a byte so related bits set/clear together (shot at: Aggro on, Ignored + Standoff off).</summary>
+        [Flags] enum Mind : byte { None = 0, Aggro = 1 << 0, Standoff = 1 << 1, Ignored = 1 << 2, Surprise = 1 << 3 }
+
         sealed class Monster
         {
             public MonsterType Type;
@@ -41,10 +44,10 @@ namespace LuckyNumbers.Planet
             // A model's death: its fall + a beat lying there (seconds), then it sinks into the ground.
             public float DeathFor;
             public int Hp;
-            public bool Aggro;
-            // Encounters (CombatPresenter.Encounters): a standoff waiting for you; let you pass; running off; calm
-            // until; your first shot gets the surprise bonus.
-            public bool Standoff, Ignored, Surprise;
+            // After you (Aggro). Encounters (CombatPresenter.Encounters): a standoff waiting for you; let you pass;
+            // your first shot gets the surprise bonus. Running off / calm until: Fleeing, CalmUntil.
+            public Mind Mind;
+            public bool Is(Mind m) => (Mind & m) != 0;
             public float Fleeing = -1f, CalmUntil;
             // Your shots in flight at it, rolled when you fired (Marksman): their damage lands with the bolt.
             public readonly Queue<int> Incoming = new();
@@ -216,7 +219,7 @@ namespace LuckyNumbers.Planet
             var view = model != null
                 ? MonsterView.CreateModel(type.Id, model, size, type.Clips)
                 : MonsterView.Create(type.Id, size, new Color(type.Color.R, type.Color.G, type.Color.B, 1f), _bodyMaterial);
-            var m = new Monster { Type = type, View = view, Position = at, Home = at, Hp = math.max(1, type.Hp), Aggro = aggro,
+            var m = new Monster { Type = type, View = view, Position = at, Home = at, Hp = math.max(1, type.Hp), Mind = aggro ? Mind.Aggro : Mind.None,
                                   Heading = _rng.NextFloat(360f), Wander = _rng.NextFloat(3f) };
             view.Damaged += (v, source, point) => Hurt(m, source);
             Place(m, 0f);
@@ -263,13 +266,13 @@ namespace LuckyNumbers.Planet
                 if (m.Fleeing > 3.5f) m.Dying = 0f;
                 return;
             }
-            if (m.Standoff && !m.Aggro && onFoot && _onFootFor > 1f && distance < StandoffDistance) { OpenStandoff(m); return; }
-            var calm = m.Ignored || m.Standoff || Time.time < m.CalmUntil;
-            if (onFoot && _onFootFor > 4f && distance < m.Type.Sight && !calm) m.Aggro = true;
-            if (m.Aggro && Time.time < m.CalmUntil) m.Aggro = false;
+            if ((m.Mind & (Mind.Standoff | Mind.Aggro)) == Mind.Standoff && onFoot && _onFootFor > 1f && distance < StandoffDistance) { OpenStandoff(m); return; }
+            var calm = m.Is(Mind.Ignored | Mind.Standoff) || Time.time < m.CalmUntil;
+            if (onFoot && _onFootFor > 4f && distance < m.Type.Sight && !calm) m.Mind |= Mind.Aggro;
+            if (Time.time < m.CalmUntil) m.Mind &= ~Mind.Aggro;
             var reach = math.max(0.8f, m.Type.Reach) + Size(m).z * 0.5f;
             var walked = 0f;
-            if (m.Aggro && onFoot)
+            if (m.Is(Mind.Aggro) && onFoot)
             {
                 m.Heading = Mathf.MoveTowardsAngle(m.Heading, Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg, 360f * dt);
                 if (m.View.Busy) { }   // staggered by a hit: holds still a moment
@@ -279,7 +282,7 @@ namespace LuckyNumbers.Planet
                     walked = m.Type.Speed;
                 }
                 else if (m.Cooldown <= 0f) Bite(m);
-                if (distance > m.Type.Sight * 3f) m.Aggro = false;   // lost you
+                if (distance > m.Type.Sight * 3f) m.Mind &= ~Mind.Aggro;   // lost you
             }
             else
             {
@@ -291,7 +294,7 @@ namespace LuckyNumbers.Planet
                 m.Position += Quaternion.Euler(0f, m.Heading, 0f) * Vector3.forward * (m.Type.Speed * 0.25f * dt);
                 walked = m.Type.Speed * 0.25f;
             }
-            m.View.Move(walked, m.Aggro);
+            m.View.Move(walked, m.Is(Mind.Aggro));
             Place(m, dt);
         }
 
@@ -301,7 +304,7 @@ namespace LuckyNumbers.Planet
         {
             var size = Size(m);
             m.Position.y = _ground.SurfaceAt(m.Position) + size.y * 0.5f;
-            var hop = m.Aggro && !m.View.Modelled ? math.abs(math.sin(Time.time * 9f + m.Home.x)) * size.y * 0.12f : 0f;   // scuttles when it's after you
+            var hop = m.Is(Mind.Aggro) && !m.View.Modelled ? math.abs(math.sin(Time.time * 9f + m.Home.x)) * size.y * 0.12f : 0f;   // scuttles when it's after you
             m.View.transform.SetPositionAndRotation(m.Position + Vector3.up * hop, Quaternion.Euler(0f, m.Heading, 0f));
         }
 
@@ -405,7 +408,7 @@ namespace LuckyNumbers.Planet
             EnsureBolts();   // seeds the fight's dice
             var w = Weapon(source);
             var surprise = 0;
-            if (m.Surprise) { surprise = SurpriseBonus; m.Surprise = false; }   // you chose the fight: the first shot's yours
+            if (m.Is(Mind.Surprise)) { surprise = SurpriseBonus; m.Mind &= ~Mind.Surprise; }   // you chose the fight: the first shot's yours
             var parts = new[] { ((w.Ability ?? "").ToUpperInvariant(), Mod(w.Ability)),
                                 ("level", (int)math.floor(C.AttackPerLevel * math.max(1, _sheet.Level.Value))), ("surprise", surprise) };
             Engaged(m);
@@ -421,9 +424,8 @@ namespace LuckyNumbers.Planet
         /// <summary>Shot at, it knows you're there.</summary>
         static void Engaged(Monster m)
         {
-            m.Ignored = m.Standoff = false;
+            m.Mind = (m.Mind & ~(Mind.Ignored | Mind.Standoff)) | Mind.Aggro;
             m.CalmUntil = 0f;
-            m.Aggro = true;
         }
 
         /// <summary>
@@ -441,8 +443,8 @@ namespace LuckyNumbers.Planet
             }
             var w = Weapon(source);
             var bonus = Mod(w.Ability) + (int)math.floor(C.AttackPerLevel * math.max(1, _sheet.Level.Value));
-            if (m.Surprise) { bonus += SurpriseBonus; m.Surprise = false; }   // you chose the fight: the first shot's yours
-            m.Ignored = m.Standoff = false;                                     // shot at, it knows you're there
+            if (m.Is(Mind.Surprise)) { bonus += SurpriseBonus; m.Mind &= ~Mind.Surprise; }   // you chose the fight: the first shot's yours
+            m.Mind &= ~(Mind.Ignored | Mind.Standoff);                          // shot at, it knows you're there
             m.CalmUntil = 0f;
             var armor = math.max(1, m.Type.Armor);
             var (d20, total, hit, crit, fumble) = Dice.Attack(bonus, armor, ref _rng);
@@ -451,7 +453,7 @@ namespace LuckyNumbers.Planet
                                           false, false, ""));
             Debug.Log($"[Combat] you {(source == "ship" ? "strafe" : "shoot at")} {m.Type.Name} ({w.Name}): d20 {d20} + {bonus} = {total} vs {armor}: " +
                       $"{(hit ? $"{(crit ? "CRIT " : "")}{damage}" : "miss")}");
-            m.Aggro = true;
+            m.Mind |= Mind.Aggro;
             if (hit) Damage(m, damage);
         }
 
