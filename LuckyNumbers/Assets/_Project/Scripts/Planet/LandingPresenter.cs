@@ -165,10 +165,9 @@ namespace LuckyNumbers.Planet
             _stats = PlayerShipStats.Of(_playerShip);
             PlayerShipStats.EnsureFuel(_playerShip);
             _arrivalFuel = _playerShip.Fuel.Value;
-            // Lasers: unlit, like the wreck's beacon (its material is in the build; tinted per gun).
-            var beam = _view.WreckBeacon != null ? _view.WreckBeacon.GetComponent<Renderer>() : null;
+            // Lasers: instanced, unlit, tinted per gun (BoltField).
             _guns?.Dispose();
-            _guns = new ShipGuns(Ship, beam != null ? new Material(beam.sharedMaterial) : null);
+            _guns = new ShipGuns(Ship);
             _guns.Arm(_stats);
             Debug.Log($"[Landing] {_stats.Name} ({_stats.Role}): fuel {_playerShip.Fuel.Value:0}/{_playerShip.FuelMax.Value:0}, " +
                       $"speed x{_stats.Speed:0.00}, agility x{_stats.Agility:0.00}, toughness x{_stats.Toughness:0.00}");

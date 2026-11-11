@@ -8,27 +8,24 @@ namespace LuckyNumbers.Planet
     /// <summary>
     /// Energy bolts fired from your hands (CombatPresenter): fly from a point toward where you aim, skip your own
     /// body, and on a hit tell an IDamageable (with the shot's source) and flash. Unlit, tinted per shot. A
-    /// <see cref="BoltField"/> flies them.
+    /// <see cref="BoltField"/> flies and draws them.
     /// </summary>
     public sealed class Bolts : IDisposable, IBoltSink
     {
-        static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
-        static readonly int ColorId = Shader.PropertyToID("_Color");
-
         readonly Transform _ignore;
         readonly BoltField _field;
         int _logged;
 
-        public Bolts(Material material, Transform ignore)
+        public Bolts(Transform ignore)
         {
             _ignore = ignore;
-            // Pooled, warmed up front: the first shot of a fight shouldn't be the one that builds GameObjects.
+            // Room up front: the first shot of a fight shouldn't be the one that allocates.
             // As many as the busiest hand gun asks for (content/combat.txtpb weapons' bolt prewarm), 8 if none says.
             var prewarm = 0;
             var weapons = GameContent.Combat?.Weapons;
             if (weapons != null) foreach (var w in weapons) if (w.Bolt != null) prewarm = Mathf.Max(prewarm, w.Bolt.PrewarmOr(0));
             if (prewarm <= 0) prewarm = 8;
-            _field = new BoltField(material, "Bolt", BaseColor, ColorId, prewarm);
+            _field = new BoltField("Bolt", prewarm);
         }
 
         /// <summary>Shoot `p` (a hand gun's bolt) from `from` toward `target`; hits tell IDamageables `source` shot them.</summary>
