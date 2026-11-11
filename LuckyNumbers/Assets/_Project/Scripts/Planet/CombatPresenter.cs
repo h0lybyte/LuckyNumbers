@@ -351,11 +351,12 @@ namespace LuckyNumbers.Planet
             return aimed.point + side * (aimed.collider.bounds.extents.magnitude + 0.35f);
         }
 
-        /// <summary>IFirstPerson.ShotCheck: a held gun (WeaponView, "default") fired at a monster rolls now.</summary>
+        /// <summary>IFirstPerson.ShotCheck: a held gun (WeaponView, as its model's combat.txtpb entry) fired at a monster rolls now.</summary>
         bool HeldShot(RaycastHit aimed)
         {
             var m = MonsterAt(aimed.collider);
-            return m == null || _down || ShootAt(m, "default", aimed);
+            var gun = _firstPerson.Held != null ? _firstPerson.Held.GetComponent<WeaponView>() : null;
+            return m == null || _down || ShootAt(m, CombatWeapons.Held(gun).Source, aimed);
         }
 
         /// <summary>
@@ -447,16 +448,7 @@ namespace LuckyNumbers.Planet
             Debug.Log($"[Combat] {m.Type.Name} killed ({_state.Killed.Value} so far, {_state.Alive.Value} left)");
         }
 
-        CombatWeapon Weapon(string source)
-        {
-            CombatWeapon fallback = null;
-            foreach (var w in C.Weapons)
-            {
-                if (w.Source == source) return w;
-                if (w.Source == "default") fallback = w;
-            }
-            return fallback ?? new CombatWeapon { Source = source, Name = source, Ability = "dex", Damage = "1d6", Cooldown = 0.5f, Speed = 80f, Range = 60f };
-        }
+        static CombatWeapon Weapon(string source) => CombatWeapons.For(source);
 
         int Mod(string ability)
         {

@@ -12,11 +12,20 @@ defense_ability: "dex"
 attack_per_level: 1   # +1 at level 1, +2 at level 2...
 
 weapons { source: "carbine" name: "Carbine" ability: "dex" damage: "1d8"
-          cooldown: 0.35 speed: 90 range: 90 length: 1.2 width: 0.08 color { r: 0.4 g: 1.6 b: 2.6 a: 1 } }
+          cooldown: 0.35 speed: 90 range: 90 length: 1.2 width: 0.08 color { r: 0.4 g: 1.6 b: 2.6 a: 1 }
+          models: ["carbine"] }
 weapons { source: "sidearm" name: "Sidearm" ability: "dex" damage: "1d6+1"
           cooldown: 0.45 speed: 80 range: 70 length: 0.9 width: 0.07 color { r: 2.4 g: 1.4 b: 0.3 a: 1 } }
 weapons { source: "rifle" name: "Salvage rifle" ability: "dex" damage: "1d10"
-          cooldown: 0.6 speed: 110 range: 120 length: 1.5 width: 0.1 color { r: 2.6 g: 0.6 b: 0.3 a: 1 } }
+          cooldown: 0.6 speed: 110 range: 120 length: 1.5 width: 0.1 color { r: 2.6 g: 0.6 b: 0.3 a: 1 }
+          models: ["rifle_block", "rifle_grip", "rifle_sleek", "rifle_vent"] }
+# Held-only guns (the range): slow and hard-hitting; the cannon leans on strength.
+weapons { source: "sniper" name: "Long rifle" ability: "dex" damage: "1d12+1"
+          cooldown: 1.1 speed: 140 range: 150 length: 1.6 width: 0.08 color { r: 0.6 g: 2.2 b: 1.2 a: 1 }
+          models: ["sniper", "sniper_barrel", "sniper_long"] }
+weapons { source: "heavy_cannon" name: "Heavy cannon" ability: "str" damage: "2d8"
+          cooldown: 1.4 speed: 70 range: 80 length: 1.2 width: 0.16 color { r: 2.6 g: 1.0 b: 0.3 a: 1 }
+          models: ["heavy_cannon"] }
 weapons { source: "default" name: "Gun" ability: "dex" damage: "1d6"
           cooldown: 0.5 speed: 80 range: 70 length: 0.9 width: 0.07 color { r: 0.4 g: 1.6 b: 2.6 a: 1 } }
 weapons { source: "ship" name: "Laser rifle" ability: "dex" damage: "2d8" }

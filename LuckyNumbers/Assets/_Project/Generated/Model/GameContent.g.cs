@@ -440,6 +440,10 @@ namespace LuckyNumbers.Model
                     Length = 1.2f,
                     Width = 0.08f,
                     Color = new Rgba(0.4f, 1.6f, 2.6f, 1.0f),
+                    Models =
+                    {
+                        "carbine",
+                    },
                 },
                 new CombatWeapon
                 {
@@ -466,6 +470,49 @@ namespace LuckyNumbers.Model
                     Length = 1.5f,
                     Width = 0.1f,
                     Color = new Rgba(2.6f, 0.6f, 0.3f, 1.0f),
+                    Models =
+                    {
+                        "rifle_block",
+                        "rifle_grip",
+                        "rifle_sleek",
+                        "rifle_vent",
+                    },
+                },
+                new CombatWeapon
+                {
+                    Source = "sniper",
+                    Name = "Long rifle",
+                    Ability = "dex",
+                    Damage = "1d12+1",
+                    Cooldown = 1.1f,
+                    Speed = 140.0f,
+                    Range = 150.0f,
+                    Length = 1.6f,
+                    Width = 0.08f,
+                    Color = new Rgba(0.6f, 2.2f, 1.2f, 1.0f),
+                    Models =
+                    {
+                        "sniper",
+                        "sniper_barrel",
+                        "sniper_long",
+                    },
+                },
+                new CombatWeapon
+                {
+                    Source = "heavy_cannon",
+                    Name = "Heavy cannon",
+                    Ability = "str",
+                    Damage = "2d8",
+                    Cooldown = 1.4f,
+                    Speed = 70.0f,
+                    Range = 80.0f,
+                    Length = 1.2f,
+                    Width = 0.16f,
+                    Color = new Rgba(2.6f, 1.0f, 0.3f, 1.0f),
+                    Models =
+                    {
+                        "heavy_cannon",
+                    },
                 },
                 new CombatWeapon
                 {

@@ -100,6 +100,11 @@ namespace LuckyNumbers.Model
         public float Length { get; set; }
         public float Width { get; set; }
         public Rgba Color { get; set; }
+        /// <summary>
+        /// Gun models (Art/Models/Weapons names, e.g. "rifle_block") that shoot as this when held (the station range, a gun
+        /// picked up): their seconds between shots, damage dice and ability come from here. Unlisted models: "default".
+        /// </summary>
+        public List<string> Models { get; } = new List<string>();
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public CombatWeapon Clone() => (CombatWeapon)MemberwiseClone();

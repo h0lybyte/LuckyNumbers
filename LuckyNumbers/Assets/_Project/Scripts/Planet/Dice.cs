@@ -32,17 +32,32 @@ namespace LuckyNumbers.Planet
         }
 
         /// <summary>
-        /// Damage for a shot's grade: a crit doubles the dice, a strong hit adds one more die, a graze halves the total
-        /// (at least 1). The modifier isn't doubled.
+        /// Damage for a shot's grade, each tier above the last: a graze halves a normal roll (at least 1); a hit rolls the
+        /// dice; a strong hit rolls one more die but never less than the dice's best (1d6: 6..12); a crit is the dice's
+        /// best plus another roll of them (1d6: 7..12, 1d6+1: 8..13).
         /// </summary>
         public static int Damage(string dice, ref Random rng, bool crit, bool strong, bool graze)
         {
             Parse(dice, out var count, out var sides, out var add);
-            var n = crit ? count * 2 : strong ? count + 1 : count;
-            var total = add;
-            for (var i = 0; i < n; i++) total += rng.NextInt(1, sides + 1);
-            total = math.max(1, total);
+            var best = math.max(1, count * sides + add);
+            if (crit) return best + RollN(math.max(1, count), sides, ref rng);
+            if (strong) return math.max(best, add + RollN(count + 1, sides, ref rng));
+            var total = math.max(1, add + RollN(count, sides, ref rng));
             return graze ? math.max(1, total / 2) : total;
+        }
+
+        static int RollN(int n, int sides, ref Random rng)
+        {
+            var t = 0;
+            for (var i = 0; i < n; i++) t += rng.NextInt(1, sides + 1);
+            return t;
+        }
+
+        /// <summary>The dice's best roll (1d6+1: 7).</summary>
+        public static int Max(string dice)
+        {
+            Parse(dice, out var count, out var sides, out var add);
+            return math.max(1, count * sides + add);
         }
 
         /// <summary>A d20 attack: hit on total &gt;= armour; natural 20 always hits (crit), natural 1 always misses.</summary>
