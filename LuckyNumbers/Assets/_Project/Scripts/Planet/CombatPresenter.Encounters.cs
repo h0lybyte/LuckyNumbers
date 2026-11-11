@@ -53,7 +53,7 @@ namespace LuckyNumbers.Planet
             if (E == null) return;
             // Standoffs: the first few monsters wait for you instead of hunting.
             var standoffs = math.min(_monsters.Count, E.Standoffs + (int)math.floor(E.StandoffsPerDanger * danger));
-            for (var i = 0; i < standoffs; i++) _monsters[i].Standoff = true;
+            for (var i = 0; i < standoffs; i++) _monsters[i].Mind |= Mind.Standoff;
             // Finds: placeholder blocks in a ring round the wreck.
             for (var i = 0; i < E.Finds && E.FindTypes.Count > 0; i++)
             {
@@ -200,11 +200,11 @@ namespace LuckyNumbers.Planet
 
         void Resolve(Monster m, EncounterOutcome outcome, EncounterOption option, bool success)
         {
-            m.Standoff = false;
+            m.Mind &= ~Mind.Standoff;
             switch (outcome)
             {
                 case EncounterOutcome.Ignored:
-                    m.Ignored = true;
+                    m.Mind |= Mind.Ignored;
                     break;
                 case EncounterOutcome.Flees:
                     m.Fleeing = 0f;
@@ -214,13 +214,12 @@ namespace LuckyNumbers.Planet
                     m.CalmUntil = Time.time + math.max(1f, option.CalmSeconds);
                     break;
                 case EncounterOutcome.Ambushed:
-                    m.Aggro = true;
+                    m.Mind |= Mind.Aggro;
                     m.Cooldown = 0f;
                     Bite(m);
                     break;
                 default:   // Fight
-                    m.Aggro = true;
-                    m.Surprise = success;
+                    m.Mind = (m.Mind & ~Mind.Surprise) | Mind.Aggro | (success ? Mind.Surprise : Mind.None);
                     m.Cooldown = math.max(m.Cooldown, 0.8f);   // a moment to raise your weapon
                     break;
             }
@@ -263,7 +262,7 @@ namespace LuckyNumbers.Planet
             if (what == "standoff" && C.Monsters.Count > 0)
             {
                 Spawn(Pick(_danger), body.position + ahead * 8f, false);
-                _monsters[^1].Standoff = true;
+                _monsters[^1].Mind |= Mind.Standoff;
             }
             else if (what == "find" && E.FindTypes.Count > 0)
             {

@@ -97,7 +97,11 @@ namespace LuckyNumbers.Station
 
         StationLayout _layout;   // as built: content's, seeded (generator), or the page's editor
         readonly Dictionary<Vector2Int, string> _roomOf = new();
-        bool _inSpace, _interact, _toggleMap, _closeMap;
+        /// <summary>Key presses since the last PostLateTick, latched by the input subscription; taken and cleared in one go.</summary>
+        [Flags] enum Press : byte { None = 0, Interact = 1 << 0, ToggleMap = 1 << 1, CloseMap = 1 << 2 }
+
+        Press _press;
+        bool _inSpace;
         bool Leaving => (_firstPerson.Locks & ControlLock.Leaving) != 0;   // fading out to the next scene
         Vector3 _orbitPosition, _dockPosition;
         Bounds _hull;   // the docked ship's world bounds (boarding is measured from it)
@@ -166,10 +170,10 @@ namespace LuckyNumbers.Station
             _subscriptions.Add(_lightRequests.Subscribe(e => SetLights(e.Mode)));
             _subscriptions.Add(_actions.Subscribe(e =>
             {
-                if (e.Action == InputAction.Interact) _interact = true;
-                if (e.Action == InputAction.Map) _toggleMap = true;      // M: the station map (overlay)
+                if (e.Action == InputAction.Interact) _press |= Press.Interact;
+                if (e.Action == InputAction.Map) _press |= Press.ToggleMap;      // M: the station map (overlay)
                 if (e.Action == InputAction.SideView) _range.CycleSideView();   // V: in the range, the hands side view
-                if (e.Action == InputAction.Cancel) _closeMap = true;
+                if (e.Action == InputAction.Cancel) _press |= Press.CloseMap;
             }));
             _state.MapOpen.Value = false;
             _subscriptions.Add(_answers.Subscribe(_ => Answer()));
@@ -374,10 +378,11 @@ namespace LuckyNumbers.Station
             var position = _player.Body.transform.position;
 
             // The map: M toggles it, Esc closes it; it follows you (plan coordinates, compass heading).
-            if (_closeMap && _board.Open.Value) { CloseBoard(); _closeMap = false; }   // Esc: the board first
-            if (_toggleMap) _state.MapOpen.Value = !_state.MapOpen.Value;
-            else if (_closeMap && _state.MapOpen.Value) _state.MapOpen.Value = false;
-            _toggleMap = _closeMap = false;
+            var press = _press;
+            _press = Press.None;
+            if ((press & Press.CloseMap) != 0 && _board.Open.Value) { CloseBoard(); press &= ~Press.CloseMap; }   // Esc: the board first
+            if ((press & Press.ToggleMap) != 0) _state.MapOpen.Value = !_state.MapOpen.Value;
+            else if ((press & Press.CloseMap) != 0 && _state.MapOpen.Value) _state.MapOpen.Value = false;
             var plan = _station.Plan;
             var col = position.x / StationPlan.Cell - 0.5f;
             var row = plan.Depth - 1 - (position.z / StationPlan.Cell - 0.5f);
@@ -425,14 +430,13 @@ namespace LuckyNumbers.Station
             if (_state.Prompt.Value != prompt) _state.Prompt.Value = prompt;
             _firstPerson.InteractElsewhere = prompt != "";   // E answers / uses / boards: the gun stays put
 
-            if (_interact && !Leaving)
+            if ((press & Press.Interact) != 0 && !Leaving)
             {
                 if (_state.Call.Value == CallPhase.Ringing) Answer();
                 else if (console != null) Use(console.Action);
                 else if (NearShip(position) && NeedsJob && !_board.Open.Value) OpenBoard();   // pick the job here
                 else if (NearShip(position) && !NeedsJob) Board();
             }
-            _interact = false;
 
             // Hint line: the E prompt, else the objective, else the controls (fading out).
             _hintAlpha = Mathf.MoveTowards(_hintAlpha, 0f, dt / 8f);

@@ -36,7 +36,11 @@ namespace LuckyNumbers.Planet
         readonly List<IDisposable> _subscriptions = new();
 
         ShipView _ship;
-        bool _freighter, _leaving, _cycleView, _swapShip, _nextSkin, _exit;
+        /// <summary>Key presses since the last Tick, latched by the input subscription; Tick takes and clears them in one go.</summary>
+        [Flags] enum Press : byte { None = 0, CycleView = 1 << 0, SwapShip = 1 << 1, NextSkin = 1 << 2, Exit = 1 << 3 }
+
+        Press _press;
+        bool _freighter, _leaving;
         int _skin;
         View _camera;
         readonly HoverFlight _flight = new();
@@ -75,10 +79,10 @@ namespace LuckyNumbers.Planet
             {
                 switch (e.Action)
                 {
-                    case InputAction.SideView: _cycleView = true; break;   // V
-                    case InputAction.Map: _swapShip = true; break;         // M
-                    case InputAction.UseRelic: _nextSkin = true; break;    // R
-                    case InputAction.Cancel: _exit = true; break;          // Esc
+                    case InputAction.SideView: _press |= Press.CycleView; break;   // V
+                    case InputAction.Map: _press |= Press.SwapShip; break;         // M
+                    case InputAction.UseRelic: _press |= Press.NextSkin; break;    // R
+                    case InputAction.Cancel: _press |= Press.Exit; break;          // Esc
                 }
             }));
 
@@ -125,15 +129,16 @@ namespace LuckyNumbers.Planet
         {
             var dt = Time.deltaTime;
             if (dt <= 0f) return;
-            if (_cycleView) _camera = (View)(((int)_camera + 1) % ViewNames.Length);
-            if (_swapShip) ShowShip(!_freighter);
-            if (_nextSkin && !_freighter && _view.Fighter.SkinCount > 0)
+            var press = _press;
+            _press = Press.None;
+            if ((press & Press.CycleView) != 0) _camera = (View)(((int)_camera + 1) % ViewNames.Length);
+            if ((press & Press.SwapShip) != 0) ShowShip(!_freighter);
+            if ((press & Press.NextSkin) != 0 && !_freighter && _view.Fighter.SkinCount > 0)
             {
                 _skin = (_skin + 1) % _view.Fighter.SkinCount;
                 ShowShip(false);
             }
-            if (_exit && !_leaving) Leave().Forget();
-            _cycleView = _swapShip = _nextSkin = _exit = false;
+            if ((press & Press.Exit) != 0 && !_leaving) Leave().Forget();
 
             _fade = Mathf.MoveTowards(_fade, _leaving ? 1f : 0f, dt / (_leaving ? 0.5f : 0.8f));
             _view.Fade(_fade);
