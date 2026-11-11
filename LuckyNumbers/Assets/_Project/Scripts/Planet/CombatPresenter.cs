@@ -44,6 +44,8 @@ namespace LuckyNumbers.Planet
             // until; your first shot gets the surprise bonus.
             public bool Standoff, Ignored, Surprise;
             public float Fleeing = -1f, CalmUntil;
+            // Your shots in flight at it, rolled when you fired (Marksman): their damage lands with the bolt.
+            public readonly Queue<int> Incoming = new();
         }
 
         readonly ICrashSite _site;
@@ -74,6 +76,7 @@ namespace LuckyNumbers.Planet
         Monster _devAim;          // dev "monster": your view follows it a moment, so a test can just hold fire
         float _devAimUntil;
         Random _rng;
+        readonly Marksman _marksman = new();
         bool _spawned, _down, _lockSeen;
         float _nextShot;
 
@@ -116,6 +119,7 @@ namespace LuckyNumbers.Planet
             _state.Target.Value = "";
             _state.Downed.Value = false;
             _state.Armor.Value = PlayerArmor();
+            _firstPerson.ShotCheck = HeldShot;   // a held gun's shots at a monster roll as they're fired
             StartEncounters();
             // Dev (the page's inspector): "monster" drops one a few metres ahead of you.
             _subscriptions.Add(_warps.Subscribe(e =>
@@ -282,7 +286,8 @@ namespace LuckyNumbers.Planet
             var armor = PlayerArmor();
             var (d20, total, hit, crit, fumble) = Dice.Attack(m.Type.Attack, armor, ref _rng);
             var damage = hit ? Dice.Roll(m.Type.Damage, ref _rng, crit) : 0;
-            _rolls.Publish(new CombatRoll(m.Type.Name, "You", d20, m.Type.Attack, total, armor, hit, crit, fumble, damage, m.Type.Damage, false, "bite"));
+            _rolls.Publish(new CombatRoll(m.Type.Name, "You", d20, m.Type.Attack, total, armor, hit, crit, fumble, damage, m.Type.Damage, false, "bite",
+                                          false, false, ""));
             Debug.Log($"[Combat] {m.Type.Name} bites: d20 {d20} + {m.Type.Attack} = {total} vs {armor}: {(hit ? $"hit, {damage}" : "miss")}");
             if (hit) TakeDamage(damage, m.Type.Name);
         }
@@ -314,21 +319,89 @@ namespace LuckyNumbers.Planet
             var target = eye.position + eye.forward * math.max(5f, w.Range);
             var hits = Physics.RaycastAll(eye.position, eye.forward, math.max(5f, w.Range), ~0, QueryTriggerInteraction.Ignore);
             var best = float.MaxValue;
+            RaycastHit aimed = default;
             foreach (var h in hits)
             {
                 if (h.collider.transform.IsChildOf(_player.Body.transform)) continue;
-                if (h.distance < best) { best = h.distance; target = h.point; }
+                if (h.distance < best) { best = h.distance; target = h.point; aimed = h; }
             }
+            // At a monster: roll now (the d20 shows as you fire); a miss goes wide, a hit's damage rides the bolt.
+            var m = MonsterAt(aimed.collider);
+            if (m != null && !ShootAt(m, item.Id, aimed))
+                target = eye.position + (Wide(aimed, eye) - eye.position).normalized * math.max(5f, w.Range);
             if (!_firedOnce) { _firedOnce = true; Debug.Log($"[Combat] firing {w.Name} ({item.Id}): d20 + {Mod(w.Ability)} {w.Ability}, {w.Damage}"); }
             var c = w.Color;
             _bolts.Fire(from, target, w.Speed, math.max(5f, w.Range), math.max(0.2f, w.Length), math.max(0.02f, w.Width),
                         c.R + c.G + c.B > 0f ? new Color(c.R, c.G, c.B) : new Color(0.4f, 1.6f, 2.6f), item.Id);
         }
 
-        /// <summary>A hit on a monster: d20 + your bonus against its armour, then the weapon's damage dice.</summary>
+        Monster MonsterAt(Collider c)
+        {
+            if (c == null) return null;
+            var view = c.GetComponentInParent<MonsterView>();
+            if (view == null) return null;
+            foreach (var m in _monsters) if (m.View == view && m.Dying < 0f) return m;
+            return null;
+        }
+
+        /// <summary>Past the edge of what's aimed at (a random side, across the line of sight): where a miss goes.</summary>
+        static Vector3 Wide(RaycastHit aimed, Transform eye)
+        {
+            var side = Quaternion.AngleAxis(UnityEngine.Random.Range(0f, 360f), eye.forward) * eye.up;
+            return aimed.point + side * (aimed.collider.bounds.extents.magnitude + 0.35f);
+        }
+
+        /// <summary>IFirstPerson.ShotCheck: a held gun (WeaponView, "default") fired at a monster rolls now.</summary>
+        bool HeldShot(RaycastHit aimed)
+        {
+            var m = MonsterAt(aimed.collider);
+            return m == null || _down || ShootAt(m, "default", aimed);
+        }
+
+        /// <summary>
+        /// A shot at a monster as you fire it: d20 + your weapon ability + level (+ the surprise bonus on your first) +
+        /// aim, stance and recoil (Marksman) against its armour. A hit queues its damage for the bolt to bring.
+        /// </summary>
+        bool ShootAt(Monster m, string source, RaycastHit aimed)
+        {
+            if (_down) return false;
+            EnsureBolts();   // seeds the fight's dice
+            var w = Weapon(source);
+            var surprise = 0;
+            if (m.Surprise) { surprise = SurpriseBonus; m.Surprise = false; }   // you chose the fight: the first shot's yours
+            var parts = new[] { ((w.Ability ?? "").ToUpperInvariant(), Mod(w.Ability)),
+                                ("level", (int)math.floor(C.AttackPerLevel * math.max(1, _sheet.Level.Value))), ("surprise", surprise) };
+            Engaged(m);
+            var s = _marksman.Roll(parts, math.max(1, m.Type.Armor), w.Damage, aimed, _player.Camera.transform, _player.Body, ref _rng);
+            _rolls.Publish(new CombatRoll("You", m.Type.Name, s.D20, s.Bonus, s.Total, s.Armor, s.Hit, s.Crit, s.Fumble, s.Damage, w.Damage, true,
+                                          w.Name ?? source, s.Graze, s.Strong, s.Mods));
+            Debug.Log($"[Combat] you shoot at {m.Type.Name} ({w.Name}): d20 {s.D20} + {s.Bonus} ({s.Mods}) = {s.Total} vs {s.Armor}: " +
+                      $"{(s.Crit ? "CRIT " : s.Strong ? "strong " : s.Graze ? "graze " : "")}{(s.Hit ? s.Damage.ToString() : s.Fumble ? "fumble" : "miss")}");
+            if (s.Hit) m.Incoming.Enqueue(s.Damage);
+            return s.Hit;
+        }
+
+        /// <summary>Shot at, it knows you're there.</summary>
+        static void Engaged(Monster m)
+        {
+            m.Ignored = m.Standoff = false;
+            m.CalmUntil = 0f;
+            m.Aggro = true;
+        }
+
+        /// <summary>
+        /// Something hit a monster. Your hand shots were rolled when fired: the bolt brings that damage (a stray bolt
+        /// with nothing rolled at this one does nothing). The ship's lasers and blades roll here, on contact.
+        /// </summary>
         void Hurt(Monster m, string source)
         {
             if (m.Dying >= 0f || _down) return;
+            if (source != "ship" && source != "melee")
+            {
+                if (m.Incoming.Count == 0) return;
+                Damage(m, m.Incoming.Dequeue());
+                return;
+            }
             var w = Weapon(source);
             var bonus = Mod(w.Ability) + (int)math.floor(C.AttackPerLevel * math.max(1, _sheet.Level.Value));
             if (m.Surprise) { bonus += SurpriseBonus; m.Surprise = false; }   // you chose the fight: the first shot's yours
@@ -337,11 +410,17 @@ namespace LuckyNumbers.Planet
             var armor = math.max(1, m.Type.Armor);
             var (d20, total, hit, crit, fumble) = Dice.Attack(bonus, armor, ref _rng);
             var damage = hit ? Dice.Roll(w.Damage, ref _rng, crit) : 0;
-            _rolls.Publish(new CombatRoll("You", m.Type.Name, d20, bonus, total, armor, hit, crit, fumble, damage, w.Damage, true, w.Name ?? source));
+            _rolls.Publish(new CombatRoll("You", m.Type.Name, d20, bonus, total, armor, hit, crit, fumble, damage, w.Damage, true, w.Name ?? source,
+                                          false, false, ""));
             Debug.Log($"[Combat] you {(source == "ship" ? "strafe" : "shoot at")} {m.Type.Name} ({w.Name}): d20 {d20} + {bonus} = {total} vs {armor}: " +
                       $"{(hit ? $"{(crit ? "CRIT " : "")}{damage}" : "miss")}");
             m.Aggro = true;
-            if (!hit) return;
+            if (hit) Damage(m, damage);
+        }
+
+        void Damage(Monster m, int damage)
+        {
+            if (m.Dying >= 0f) return;
             m.View.Flash();
             m.Hp -= damage;
             _state.Target.Value = m.Hp > 0 ? $"{m.Type.Name}|{m.Hp}|{math.max(1, m.Type.Hp)}" : "";
@@ -421,6 +500,7 @@ namespace LuckyNumbers.Planet
         {
             _cts.Cancel();
             _cts.Dispose();
+            if (_firstPerson.ShotCheck == HeldShot) _firstPerson.ShotCheck = null;
             foreach (var s in _subscriptions) s.Dispose();
             _bolts?.Dispose();
             foreach (var m in _monsters) if (m.View != null) UnityEngine.Object.Destroy(m.View.gameObject);

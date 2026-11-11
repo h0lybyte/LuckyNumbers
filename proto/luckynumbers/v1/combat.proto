@@ -98,6 +98,12 @@ message CombatRoll {
   // You rolled it (else a monster attacked you).
   bool player = 12;
   string weapon = 13;
+  // Your shots (Planet/Marksman): how far over the armour decides the damage. Missed by 1-2: a graze (half the dice);
+  // beat it by 5+: a strong hit (one more die); a natural 20 doubles the dice.
+  bool graze = 14;
+  bool strong = 15;
+  // What made up the bonus, e.g. "DEX +1 · aim +2 · steady +1 · recoil -3".
+  string mods = 16;
 }
 
 // The fight on this site (mirrored to the page): monsters still alive and killed, the one you hit last

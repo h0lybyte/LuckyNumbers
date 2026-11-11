@@ -31,6 +31,20 @@ namespace LuckyNumbers.Planet
             if (sign >= 0 && int.TryParse(rest.Substring(sign), out var k)) add = k;
         }
 
+        /// <summary>
+        /// Damage for a shot's grade: a crit doubles the dice, a strong hit adds one more die, a graze halves the total
+        /// (at least 1). The modifier isn't doubled.
+        /// </summary>
+        public static int Damage(string dice, ref Random rng, bool crit, bool strong, bool graze)
+        {
+            Parse(dice, out var count, out var sides, out var add);
+            var n = crit ? count * 2 : strong ? count + 1 : count;
+            var total = add;
+            for (var i = 0; i < n; i++) total += rng.NextInt(1, sides + 1);
+            total = math.max(1, total);
+            return graze ? math.max(1, total / 2) : total;
+        }
+
         /// <summary>A d20 attack: hit on total &gt;= armour; natural 20 always hits (crit), natural 1 always misses.</summary>
         public static (int d20, int total, bool hit, bool crit, bool fumble) Attack(int bonus, int armor, ref Random rng)
         {

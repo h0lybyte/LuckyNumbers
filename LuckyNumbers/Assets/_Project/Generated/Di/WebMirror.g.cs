@@ -1378,6 +1378,12 @@ namespace LuckyNumbers.Model
             b.Append(e.Player ? "true" : "false");
             b.Append(",\"weapon\":");
             Json.Str(b, e.Weapon);
+            b.Append(",\"graze\":");
+            b.Append(e.Graze ? "true" : "false");
+            b.Append(",\"strong\":");
+            b.Append(e.Strong ? "true" : "false");
+            b.Append(",\"mods\":");
+            Json.Str(b, e.Mods);
             b.Append('}');
         }
 

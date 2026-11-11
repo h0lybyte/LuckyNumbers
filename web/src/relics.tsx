@@ -54,7 +54,7 @@ function D20() {
 
 /**
  * The latest `name` event (that `keep` lets through) as a roll: the face tumbles for `spinMs`, then lands on
- * `face(e)`; gone after `holdMs`. A new event restarts it, so rapid fire keeps it rolling.
+ * `face(e)`; gone after `holdMs`. `spinFor(e, sinceLastMs)` can shorten the spin (0: land at once), e.g. in a burst.
  */
 export function useDiceRoll<E>(
   name: "RelicRolled" | "CombatRoll",
@@ -62,7 +62,9 @@ export function useDiceRoll<E>(
   spinMs: number,
   holdMs: number,
   keep: (e: E) => boolean = () => true,
+  spinFor: (e: E, sinceLastMs: number) => number = () => spinMs,
 ) {
+  const lastAt = useRef(0);
   const [event, setEvent] = useState<E | null>(null);
   const [shown, setShown] = useState(20);
   const [settled, setSettled] = useState(false);
@@ -79,6 +81,15 @@ export function useDiceRoll<E>(
     if (!keep(e)) return;
     clear();
     setEvent(e);
+    const now = Date.now();
+    const spin = spinFor(e, now - lastAt.current);
+    lastAt.current = now;
+    if (spin <= 0) {
+      setShown(face(e));
+      setSettled(true);
+      timers.current = { hide: window.setTimeout(() => setEvent(null), holdMs) };
+      return;
+    }
     setSettled(false);
     timers.current = {
       spin: window.setInterval(() => setShown(1 + Math.floor(Math.random() * 20)), 70),
@@ -86,7 +97,7 @@ export function useDiceRoll<E>(
         clearInterval(timers.current.spin);
         setShown(face(e));
         setSettled(true);
-      }, spinMs),
+      }, spin),
       hide: window.setTimeout(() => setEvent(null), holdMs),
     };
   });
@@ -118,24 +129,37 @@ export function D20Panel({ face, settled, tone, heading, children }: {
   );
 }
 
+/** A shot's grade, best to worst: what the margin over the armour bought (Planet/Marksman). */
+export function grade(e: CombatRoll): { tone: string; title: string; dice: string } {
+  if (e.fumble) return { tone: "fumble", title: "Fumble", dice: "" };
+  if (e.crit) return { tone: "crit", title: "Critical hit", dice: `${e.dice} x2` };
+  if (e.strong) return { tone: "strong", title: "Strong hit", dice: `${e.dice} +1 die` };
+  if (e.graze) return { tone: "graze", title: "Graze", dice: `${e.dice} \u00bd` };
+  if (e.hit) return { tone: "good", title: "Hit", dice: e.dice };
+  return { tone: "miss", title: "Miss", dice: "" };
+}
+
 /**
- * Your attack rolls (CombatRoll you rolled) on the d20: quick, to keep up with the trigger. d20 + bonus = total
- * against the armour, then hit (and the damage dice), miss, crit or fumble.
+ * Your attack rolls (CombatRoll you rolled) on the d20. The first shot after a pause tumbles; in a burst each
+ * lands at once (crits and fumbles always tumble). d20 + bonus = total vs AC, what made up the bonus, then the
+ * grade and its damage.
  */
 export function AttackD20() {
-  const { event: e, face, settled } = useDiceRoll<CombatRoll>("CombatRoll", (r) => r.d20, 380, 2600, (r) => r.player);
+  const { event: e, face, settled } = useDiceRoll<CombatRoll>(
+    "CombatRoll", (r) => r.d20, 380, 2600, (r) => r.player,
+    (r, since) => (r.crit || r.fumble ? 380 : since < 700 ? 0 : 380),
+  );
   if (!e) return null;
-  const tone = e.fumble ? "fumble" : e.crit ? "crit" : e.hit ? "good" : "miss";
-  const title = e.fumble ? "Fumble" : e.crit ? "Critical hit" : e.hit ? "Hit" : "Miss";
-  const line = e.hit
-    ? `${e.damage} damage (${e.dice}${e.crit ? " x2" : ""})`
-    : e.fumble ? "Nowhere near it." : e.total >= e.armor - 2 ? "Grazed past." : "Wide.";
+  const g = grade(e);
+  const { tone, title } = g;
+  const line = e.hit ? `${e.damage} damage (${g.dice})` : e.fumble ? "Nowhere near it." : "Wide.";
   return (
     <D20Panel face={face} settled={settled} tone={tone} heading={`${e.weapon} \u2192 ${e.target}`}>
       <div className="d20-sum">
         d20 <b>{e.d20}</b>
         {e.bonus !== 0 && <> {e.bonus > 0 ? "+" : "\u2212"} <b>{Math.abs(e.bonus)}</b></>} = <b>{e.total}</b> vs AC <b>{e.armor}</b>
       </div>
+      {e.mods && <div className="d20-mods">{e.mods}</div>}
       <div className="d20-title">{title}</div>
       <div className="d20-line">{line}</div>
     </D20Panel>
