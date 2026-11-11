@@ -16,6 +16,8 @@ enum GameScene {
   GAME_SCENE_STATION = 4;
   // Dev: a shooting range (every weapon on a bench, targets downrange) for testing holds and firing.
   GAME_SCENE_RANGE = 5;
+  // The Flight School: a training deck in space to test-fly your ship (the station's Docking Bay console).
+  GAME_SCENE_FLIGHT_SCHOOL = 6;
 }
 
 message FlowState {

@@ -198,6 +198,10 @@ namespace LuckyNumbers.Model
         /// Brought back by the rescue drone (you went down on the planet): the station's call says so.
         /// </summary>
         public readonly ReactiveProperty<bool> Rescued = new ReactiveProperty<bool>();
+        /// <summary>
+        /// At the Flight School: back at the station you step out beside its console (not by your ship, no homecoming).
+        /// </summary>
+        public readonly ReactiveProperty<bool> Training = new ReactiveProperty<bool>();
 
         public void Dispose()
         {
@@ -206,6 +210,7 @@ namespace LuckyNumbers.Model
             LastPayout.Dispose();
             Trips.Dispose();
             Rescued.Dispose();
+            Training.Dispose();
         }
     }
 }

@@ -56,7 +56,7 @@ export function FlightHud() {
   const low = f.altitude < 40 && (!roaming || f.climb < -0.8);
   const warnings = [...(low ? warn(f) : []), ...fuelWarn(f)];
   const keys = f.hoverShip
-    ? [["Mouse", "aim"], ["Click", "lasers"], ["W S", "thrust"], ["A D", "strafe"], ["Q E", "roll"], ["Space C", "up / down"], ["Shift", "boost"], ["X", "brake"]]
+    ? [["Mouse", "aim"], ["Click", "lasers"], ["W S", "thrust"], ["A D", "strafe"], ["Q E", "roll"], ["Shift+Q Shift+E", "barrel roll"], ["Space C", "up / down"], ["Shift", "boost"], ["X", "brake"]]
     : [["Mouse", "steer"], ["W S", "speed"], ["A D", "roll"], ["Shift", "boost"], ["Space", "hover down"]];
   return (
     <div className="flight-hud">

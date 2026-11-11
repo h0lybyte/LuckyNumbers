@@ -26,6 +26,10 @@ namespace LuckyNumbers.Model
         /// Dev: a shooting range (every weapon on a bench, targets downrange) for testing holds and firing.
         /// </summary>
         Range = 5,
+        /// <summary>
+        /// The Flight School: a training deck in space to test-fly your ship (the station's Docking Bay console).
+        /// </summary>
+        FlightSchool = 6,
     }
 
     public sealed class FlowState : IDisposable

@@ -744,6 +744,142 @@ namespace LuckyNumbers.Model
             },
         };
 
+        /// <summary>From <c>content/encounters.txtpb</c>.</summary>
+        public static readonly EncounterConfig Encounters = new EncounterConfig
+        {
+            Standoffs = 1,
+            StandoffsPerDanger = 0.5f,
+            StandoffDistance = 13.0f,
+            StandoffTitle = "{monster}",
+            StandoffText = "A {monster} stands between you and the wreck. It hasn't seen you yet.",
+            Options =
+            {
+                new EncounterOption
+                {
+                    Id = "fight",
+                    Label = "Fight",
+                    Success = EncounterOutcome.Fight,
+                    Failure = EncounterOutcome.Fight,
+                    SuccessText = "You raise your weapon. It hasn't seen you: your first shot gets +5.",
+                },
+                new EncounterOption
+                {
+                    Id = "sneak",
+                    Label = "Sneak past",
+                    Skill = "stealth",
+                    Dc = 10,
+                    DcPerDanger = 1.0f,
+                    Success = EncounterOutcome.Ignored,
+                    Failure = EncounterOutcome.Ambushed,
+                    SuccessText = "You keep low and slip by. It never knows you were there.",
+                    FailureText = "A stone shifts under your boot. It turns, and lunges.",
+                },
+                new EncounterOption
+                {
+                    Id = "bluff",
+                    Label = "Bluff it off",
+                    Skill = "bluff",
+                    Dc = 12,
+                    DcPerDanger = 1.0f,
+                    Success = EncounterOutcome.Flees,
+                    Failure = EncounterOutcome.Fight,
+                    SuccessText = "You mimic its warning call. It backs off and bolts.",
+                    FailureText = "It isn't fooled.",
+                },
+                new EncounterOption
+                {
+                    Id = "intimidate",
+                    Label = "Scare it",
+                    Skill = "intimidate",
+                    Dc = 13,
+                    DcPerDanger = 1.0f,
+                    Success = EncounterOutcome.Flees,
+                    Failure = EncounterOutcome.Ambushed,
+                    SuccessText = "You stand tall and roar. It scrambles away.",
+                    FailureText = "It doesn't scare. It charges.",
+                },
+                new EncounterOption
+                {
+                    Id = "back",
+                    Label = "Back off",
+                    Skill = "athletics",
+                    Dc = 8,
+                    DcPerDanger = 1.0f,
+                    Success = EncounterOutcome.Calm,
+                    Failure = EncounterOutcome.Fight,
+                    SuccessText = "You back away slowly. It loses interest, for now.",
+                    FailureText = "You stumble. It's seen you.",
+                    CalmSeconds = 12.0f,
+                },
+            },
+            Finds = 2,
+            FindDistance = 2.5f,
+            FindMin = 14.0f,
+            FindMax = 45.0f,
+            FindTypes =
+            {
+                new EncounterFind
+                {
+                    Id = "cache",
+                    Name = "Sealed supply cache",
+                    Text = "A crate thrown clear of the wreck, its lock still blinking.",
+                    Skill = "engineering",
+                    Dc = 11,
+                    OpenLabel = "Bypass the lock",
+                    Items =
+                    {
+                        "medpatch",
+                        "rations",
+                    },
+                    Xp = 40,
+                    SuccessText = "The lock clicks open: a med-patch and a ration bar.",
+                    FailureDamage = "1d4",
+                    FailureText = "The lock sparks and bites your fingers.",
+                    Size = new Vec3(0.8f, 0.5f, 0.6f),
+                    Color = new Rgba(0.25f, 0.55f, 0.85f, 1.0f),
+                    Weight = 3.0f,
+                },
+                new EncounterFind
+                {
+                    Id = "terminal",
+                    Name = "Flight recorder",
+                    Text = "The freighter's black box, half buried. Its data is worth something to someone.",
+                    Skill = "computers",
+                    Dc = 12,
+                    OpenLabel = "Pull the data",
+                    Credits = 150,
+                    Xp = 60,
+                    SuccessText = "You copy the logs. Dispatch will pay 150 credits for them.",
+                    FailureText = "The drive is corrupted. Nothing worth keeping.",
+                    Size = new Vec3(0.5f, 0.35f, 0.5f),
+                    Color = new Rgba(0.95f, 0.55f, 0.15f, 1.0f),
+                    Weight = 2.0f,
+                },
+                new EncounterFind
+                {
+                    Id = "body",
+                    Name = "Spacer's remains",
+                    Text = "Someone else got here first, and didn't leave. Their kit is still on them.",
+                    Skill = "medicine",
+                    Dc = 10,
+                    OpenLabel = "Check them carefully",
+                    Items =
+                    {
+                        "medpatch",
+                        "ping",
+                    },
+                    Xp = 30,
+                    SuccessText = "Spores, but you're careful: a med-patch and a ping beacon.",
+                    FailureDamage = "1d6",
+                    FailureText = "Spores burst in your face.",
+                    Size = new Vec3(1.6f, 0.3f, 0.6f),
+                    Color = new Rgba(0.55f, 0.5f, 0.45f, 1.0f),
+                    Weight = 1.0f,
+                },
+            },
+            SurpriseBonus = 5,
+        };
+
         /// <summary>From <c>content/engines.txtpb</c>.</summary>
         public static readonly EngineConfig Engines = new EngineConfig
         {
@@ -3094,7 +3230,7 @@ namespace LuckyNumbers.Model
                 MaxTouchdownTilt = 18.0f,
                 ChaseDistance = 1.45f,
                 ChaseHeight = 0.42f,
-                Hint = "Mouse aim - W/S thrust - A/D strafe - Q/E roll - Space/C up/down - Shift boost - X brake. Stop over the green pad, hold C to land.",
+                Hint = "Mouse aim - W/S thrust - A/D strafe - Q/E roll (Shift: barrel roll) - Space/C up/down - Shift boost - X brake. Stop over the green pad, hold C to land.",
                 LandedText = "Landed.",
                 CrashedText = "Too hard. Try again.",
                 LandedLines =
@@ -3154,6 +3290,10 @@ namespace LuckyNumbers.Model
                     HardBrake = 28.0f,
                     LevelHeight = 14.0f,
                     LevelRate = 40.0f,
+                    BarrelRollSeconds = 0.6f,
+                    BarrelRollDodge = 14.0f,
+                    BarrelRollCooldown = 0.8f,
+                    BarrelRollFuel = 1.5f,
                 },
                 OrbitAltitude = 260.0f,
                 BoardPrompt = "E: board your ship",
@@ -3169,6 +3309,26 @@ namespace LuckyNumbers.Model
         {
             MaxHealth = 100,
             ShipSkin = "idolknight",
+        };
+
+        /// <summary>From <c>content/school.txtpb</c>.</summary>
+        public static readonly FlightSchoolScene School = new FlightSchoolScene
+        {
+            Title = "FLIGHT SCHOOL",
+            Hint = "W/S thrust - A/D strafe - Space/C up, down - Q/E roll - Shift boost - X brake - click, then mouse to aim\nV camera - M fighter or freighter - R next skin - Esc back to the station",
+            FighterLength = 24.0f,
+            FreighterLength = 140.0f,
+            FreighterSpeed = 0.45f,
+            FreighterAgility = 0.3f,
+            StartHeight = 30.0f,
+            DeckSize = 1200.0f,
+            FloorClearance = 0.3f,
+            ChaseDistance = 1.45f,
+            ChaseHeight = 0.42f,
+            SideDistance = 2.2f,
+            OrbitDistance = 2.6f,
+            OrbitDegreesPerSecond = 18.0f,
+            ReadoutSeconds = 0.15f,
         };
 
         /// <summary>From <c>content/ships.txtpb</c>.</summary>
@@ -4150,6 +4310,15 @@ namespace LuckyNumbers.Model
                                 V = 1.0f,
                                 Yaw = 12.0f,
                                 Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "lab_bench",
+                                U = 0.5f,
+                                V = -0.3f,
+                                Yaw = 180.0f,
+                                Action = StationAction.FlightSchool,
+                                Prompt = "E: Flight School - test-fly your ship",
                             },
                         },
                     },

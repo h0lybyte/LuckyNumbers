@@ -9,7 +9,8 @@ export type GameScene =
   | "Intro"
   | "Planet"
   | "Station"
-  | "Range";
+  | "Range"
+  | "FlightSchool";
 
 export type CallPhase =
   | "None"
@@ -153,6 +154,26 @@ export interface CombatState {
   target: string;
   downed: boolean;
   armor: number;
+}
+
+/**
+ * The open card (mirrored to the page): its title and text, the choices as "id|label|skill name|bonus|dc" (no
+ * skill: bonus and dc 0), and after a roll the result (rolled; d20, bonus, total, dc, success; the outcome text).
+ */
+export interface EncounterState {
+  open: boolean;
+  kind: string;
+  title: string;
+  text: string;
+  options: string[];
+  rolled: boolean;
+  skill: string;
+  d20: number;
+  bonus: number;
+  total: number;
+  dc: number;
+  success: boolean;
+  result: string;
 }
 
 /**
@@ -328,6 +349,8 @@ export interface PlayerVoyage {
   trips: number;
   /** Brought back by the rescue drone (you went down on the planet): the station's call says so. */
   rescued: boolean;
+  /** At the Flight School: back at the station you step out beside its console (not by your ship, no homecoming). */
+  training: boolean;
 }
 
 export interface DiceState {
@@ -459,6 +482,11 @@ export interface CutsceneFinished {
   cutsceneId: string;
 }
 
+/** The page picks a choice on the card (an option id), or "continue" to close it after the roll. */
+export interface EncounterChoice {
+  option: string;
+}
+
 export interface InputActionPerformed {
   action: InputAction;
 }
@@ -551,6 +579,7 @@ export interface WebStates {
   LoadingState: LoadingState;
   StationState: StationState;
   CombatState: CombatState;
+  EncounterState: EncounterState;
   PlayerInventory: PlayerInventory;
   JobBoard: JobBoard;
   PlayerJob: PlayerJob;
@@ -585,6 +614,7 @@ export interface WebEvents {
   UniverseSeedChanged: UniverseSeedChanged;
   CutsceneStepStarted: CutsceneStepStarted;
   CutsceneFinished: CutsceneFinished;
+  EncounterChoice: EncounterChoice;
   InputActionPerformed: InputActionPerformed;
   InventoryEquipRequested: InventoryEquipRequested;
   InventoryUnequipRequested: InventoryUnequipRequested;
@@ -604,6 +634,6 @@ export interface WebEvents {
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "MenuItemSelected";
+export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "MenuItemSelected";
 
-export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "StationState", "CombatState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "ShipPicker", "PlayerVoyage", "DiceState"] as const;
+export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "StationState", "CombatState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "ShipPicker", "PlayerVoyage", "DiceState"] as const;

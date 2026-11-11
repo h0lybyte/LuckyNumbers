@@ -1,0 +1,24 @@
+# proto-file: luckynumbers/v1/school.proto
+# proto-message: luckynumbers.v1.FlightSchoolScene
+# The Flight School: the Docking Bay console's training deck. Flies like the planet's hover ship (planet.txtpb's
+# landing.hover and the skin's stats), with no gravity, fuel or crashes.
+
+title: "FLIGHT SCHOOL"
+hint: "W/S thrust - A/D strafe - Space/C up, down - Q/E roll - Shift boost - X brake - click, then mouse to aim\nV camera - M fighter or freighter - R next skin - Esc back to the station"
+
+fighter_length: 24       # as on the planet
+freighter_length: 140
+freighter_speed: 0.45
+freighter_agility: 0.3
+
+start_height: 30
+deck_size: 1200
+floor_clearance: 0.3
+
+chase_distance: 1.45     # the planet's chase camera
+chase_height: 0.42
+side_distance: 2.2
+orbit_distance: 2.6
+orbit_degrees_per_second: 18
+
+readout_seconds: 0.15

@@ -30,7 +30,7 @@ namespace LuckyNumbers.Planet
     /// and count for a Clear job.
     /// </summary>
     [Presenter]
-    public sealed class CombatPresenter : IStartable, ITickable, IDisposable
+    public sealed partial class CombatPresenter : IStartable, ITickable, IDisposable
     {
         sealed class Monster
         {
@@ -40,6 +40,10 @@ namespace LuckyNumbers.Planet
             public float Heading, Cooldown, Dying = -1f, Wander;
             public int Hp;
             public bool Aggro;
+            // Encounters (CombatPresenter.Encounters): a standoff waiting for you; let you pass; running off; calm
+            // until; your first shot gets the surprise bonus.
+            public bool Standoff, Ignored, Surprise;
+            public float Fleeing = -1f, CalmUntil;
         }
 
         readonly ICrashSite _site;
@@ -80,8 +84,11 @@ namespace LuckyNumbers.Planet
                                PlayerInput input, PlayerHealth health, CharacterSheet sheet, IInventory pack, PlayerJob job,
                                PlayerVoyage voyage, CombatState state, IPublisher<CombatRoll> rolls,
                                IPublisher<PlayerDamaged> damaged, IPublisher<PlayerDied> died, IPublisher<CharacterXpGained> xp,
-                               IPublisher<SceneChangeRequested> scenes, ISubscriber<DevWarpRequested> warps)
+                               IPublisher<SceneChangeRequested> scenes, ISubscriber<DevWarpRequested> warps,
+                               EncounterState encounter, ISubscriber<EncounterChoice> choices)
         {
+            _encounter = encounter;
+            _choices = choices;
             _site = site;
             _view = view;
             _player = player;
@@ -109,9 +116,11 @@ namespace LuckyNumbers.Planet
             _state.Target.Value = "";
             _state.Downed.Value = false;
             _state.Armor.Value = PlayerArmor();
+            StartEncounters();
             // Dev (the page's inspector): "monster" drops one a few metres ahead of you.
             _subscriptions.Add(_warps.Subscribe(e =>
             {
+                if (e.To == "standoff" || e.To == "find") { DevEncounter(e.To); return; }
                 if (e.To != "monster" || C == null || C.Monsters.Count == 0) return;
                 // 10 m ahead of you, and your view turned onto it (so a test can just hold fire).
                 var eye = _player.Camera.transform;
@@ -132,6 +141,7 @@ namespace LuckyNumbers.Planet
             if (!_spawned && _site.Built && _firstPerson.Active) SpawnSite();
             _bolts?.Tick(dt);
             if (_down) return;
+            if (TickEncounters()) return;   // a card is open: time stands still
             var me = _player.Body.transform.position;
             var onFoot = _firstPerson.Active;
             _onFootFor = onFoot ? _onFootFor + dt : 0f;
@@ -161,6 +171,7 @@ namespace LuckyNumbers.Planet
                 Spawn(Pick(danger), at, false);
             }
             Debug.Log($"[Combat] {count} monster(s) round the wreck (danger {danger}); your armour {PlayerArmor()}");
+            SpawnEncounters(danger, wreck);
         }
 
         void EnsureBolts()
@@ -219,7 +230,20 @@ namespace LuckyNumbers.Planet
             m.Cooldown -= dt;
             var to = new Vector3(me.x - m.Position.x, 0f, me.z - m.Position.z);
             var distance = to.magnitude;
-            if (onFoot && _onFootFor > 4f && distance < m.Type.Sight) m.Aggro = true;
+            if (m.Fleeing >= 0f)
+            {
+                // Scared off: runs from you and is gone.
+                m.Fleeing += dt;
+                m.Heading = Mathf.MoveTowardsAngle(m.Heading, Mathf.Atan2(-to.x, -to.z) * Mathf.Rad2Deg, 540f * dt);
+                m.Position += Quaternion.Euler(0f, m.Heading, 0f) * Vector3.forward * (m.Type.Speed * 1.6f * dt);
+                Place(m, dt);
+                if (m.Fleeing > 3.5f) m.Dying = 0f;
+                return;
+            }
+            if (m.Standoff && !m.Aggro && onFoot && _onFootFor > 1f && distance < StandoffDistance) { OpenStandoff(m); return; }
+            var calm = m.Ignored || m.Standoff || Time.time < m.CalmUntil;
+            if (onFoot && _onFootFor > 4f && distance < m.Type.Sight && !calm) m.Aggro = true;
+            if (m.Aggro && Time.time < m.CalmUntil) m.Aggro = false;
             var reach = math.max(0.8f, m.Type.Reach) + Size(m).z * 0.5f;
             if (m.Aggro && onFoot)
             {
@@ -307,6 +331,9 @@ namespace LuckyNumbers.Planet
             if (m.Dying >= 0f || _down) return;
             var w = Weapon(source);
             var bonus = Mod(w.Ability) + (int)math.floor(C.AttackPerLevel * math.max(1, _sheet.Level.Value));
+            if (m.Surprise) { bonus += SurpriseBonus; m.Surprise = false; }   // you chose the fight: the first shot's yours
+            m.Ignored = m.Standoff = false;                                     // shot at, it knows you're there
+            m.CalmUntil = 0f;
             var armor = math.max(1, m.Type.Armor);
             var (d20, total, hit, crit, fumble) = Dice.Attack(bonus, armor, ref _rng);
             var damage = hit ? Dice.Roll(w.Damage, ref _rng, crit) : 0;
