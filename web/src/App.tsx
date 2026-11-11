@@ -11,6 +11,7 @@ import { EncounterCard } from "./encounter";
 import { CharacterSheetGate } from "./sheet";
 import { HangarGate } from "./hangar";
 import { SaveSlotsGate } from "./saves";
+import { TouchControls, touchDevice } from "./touch";
 import type { GameScene, InboundEvent, WebEvents } from "./ln";
 
 export function App({ dock }: { dock: HTMLElement | null }) {
@@ -54,6 +55,7 @@ export function App({ dock }: { dock: HTMLElement | null }) {
       <SaveSlotsGate />
       <Toasts />
       <ItemToasts />
+      <TouchControls />
       {inspector && dock && createPortal(<Inspector />, dock)}
     </>
   );
@@ -90,14 +92,14 @@ function Hud() {
   const mapOpen = useLNState("MapState")?.open ?? false;
   const locked = usePointerLocked();
   useEffect(installFreeMouseKey, []);
-  if (flow?.scene === "Station") return <PointerHint locked={locked} />;
+  if (flow?.scene === "Station") return touchDevice ? null : <PointerHint locked={locked} />;
   if (flow?.scene !== "Planet") return null;
 
   return (
     <>
-      {!mapOpen && <PointerHint locked={locked} />}
+      {!mapOpen && !touchDevice && <PointerHint locked={locked} />}
       {/* While the pointer is locked, HTML can't be clicked: dim the buttons so they read as unavailable. */}
-      <div className={`hud${locked ? " locked" : ""}`}>
+      <div className={`hud${locked && !touchDevice ? " locked" : ""}`}>
         {health && health.max > 0 && (
           <div className="vitals">
             {sheet && sheet.staminaMax > 0 && (

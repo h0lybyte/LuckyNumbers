@@ -194,8 +194,12 @@
       };
 
       // Unity keeps the render target matched to the canvas's CSS size x devicePixelRatio,
-      // so the canvas resizes with the window. Cap the ratio so 3x phones don't render 9x the pixels.
-      config.devicePixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      // so the canvas resizes with the window. Cap the ratio so 3x phones don't render 9x the pixels; on a touch
+      // screen (a phone's small, hot GPU) cap it harder: 1.25x of the CSS size still looks sharp at arm's length.
+      // ?ln-dpr=<n> overrides (e.g. 1 for speed, 2 for screenshots).
+      var dprQuery = parseFloat(new URLSearchParams(location.search).get("ln-dpr"));
+      var dprCap = matchMedia("(pointer: coarse)").matches ? 1.25 : 2;
+      config.devicePixelRatio = dprQuery > 0 ? dprQuery : Math.min(window.devicePixelRatio || 1, dprCap);
 
       // If you would like all file writes inside Unity Application.persistentDataPath
       // to persist across visits, uncomment:
