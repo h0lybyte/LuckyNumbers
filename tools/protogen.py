@@ -11,6 +11,9 @@ Message options (proto/ln/options.proto) decide the C# shape:
   (ln.web)    on a state/event: mirrored to the web page (Di/WebMirror.g.cs + web/src/generated/ln.g.ts)
   (ln.web_in) on an event: the page may publish it too
   (none)      sealed data class (oneofs get a <Name>Case enum + property)
+
+Enum options:
+  (ln.flags)  a bit set: [System.Flags] (values 0 or single bits); the page gets the set members' names
 """
 from __future__ import annotations
 
@@ -67,6 +70,7 @@ SCALARS = {1: "double", 2: "float", 3: "long", 5: "int", 8: "bool", 9: "string",
 T_MESSAGE, T_ENUM, LABEL_REPEATED = 11, 14, 3
 OPT_EVENT, OPT_STATE, OPT_CONFIG, OPT_VALUE, OPT_MATERIAL, OPT_WEB, OPT_WEB_IN = 50001, 50002, 50003, 50004, 50005, 50006, 50007
 FIELD_OPT_REF = 50101
+ENUM_OPT_FLAGS = 50201
 
 
 @dataclass
@@ -101,6 +105,7 @@ class Enum:
     values: list[tuple[str, int, str]]  # (proto name, number, doc)
     file: str
     doc: str = ""
+    flags: bool = False  # (ln.flags): a bit set
 
 
 @dataclass
@@ -161,10 +166,12 @@ def load_descriptors(data: bytes, skip_prefixes=("google/", "ln/")) -> Model:
 
 
 def _load_enum(model, b, scope, fname, docs, path):
-    name, values = "", []
+    name, values, flags = "", [], False
     for n, _, v in _fields(b):
         if n == 1:
             name = _str(v)
+        elif n == 3:  # EnumOptions
+            flags = any(on == ENUM_OPT_FLAGS and ov for on, _, ov in _fields(v))
         elif n == 2:
             vname = vnum = None
             for vn, _, vv in _fields(v):
@@ -174,7 +181,11 @@ def _load_enum(model, b, scope, fname, docs, path):
                     vnum = vv if vv < 2**31 else vv - 2**64
             values.append((vname, vnum, docs.get(path + (2, len(values)), "")))
     full = f".{scope}.{name}" if not scope.startswith(".") else f"{scope}.{name}"
-    model.enums[full] = Enum(full, name, values, fname, docs.get(path, ""))
+    if flags:
+        bad = [vname for vname, vnum, _ in values if vnum < 0 or vnum & (vnum - 1)]
+        if bad or not any(vnum == 0 for _, vnum, _ in values):
+            raise ValueError(f"{full}: (ln.flags) values must be 0 or single bits (1, 2, 4, ...); bad: {bad}")
+    model.enums[full] = Enum(full, name, values, fname, docs.get(path, ""), flags)
     model.order.append((fname, full))
 
 
@@ -290,7 +301,7 @@ class Emitter:
         return "\n".join(out).rstrip() + "\n"
 
     def enum(self, e: Enum) -> list[str]:
-        lines = _doc(e.doc, "    ") + [f"    public enum {e.name}", "    {"]
+        lines = _doc(e.doc, "    ") + (["    [System.Flags]"] if e.flags else []) + [f"    public enum {e.name}", "    {"]
         for name, num, doc in e.values:
             lines += _doc(doc, "        ") + [f"        {enum_member(e, name)} = {num},"]
         return lines + ["    }"]

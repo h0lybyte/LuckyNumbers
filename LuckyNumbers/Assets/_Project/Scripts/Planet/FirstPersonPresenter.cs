@@ -12,7 +12,14 @@ namespace LuckyNumbers.Planet
     /// <summary>Lets the crash-site sequence hand control to the player (and set where they look).</summary>
     public interface IFirstPerson
     {
-        bool Active { get; set; }
+        /// <summary>The player walks and looks: no ControlLock is held.</summary>
+        bool Active { get; }
+        /// <summary>Every lock held right now (None: the player has control).</summary>
+        ControlLock Locks { get; }
+        /// <summary>Take control away for <paramref name="why"/> (its bit only; others' locks stay).</summary>
+        void Lock(ControlLock why);
+        /// <summary>Give back what <paramref name="why"/> took; control returns once no other lock is held.</summary>
+        void Unlock(ControlLock why);
         /// <summary>Multiplies walking and running speed (1 = normal; relics can slow you).</summary>
         float SpeedScale { get; set; }
         /// <summary>Head yaw/pitch (degrees) the player takes over from.</summary>
@@ -88,7 +95,19 @@ namespace LuckyNumbers.Planet
         Vector3 _viewBob;
         Quaternion _viewTilt = Quaternion.identity;
 
-        public bool Active { get; set; }
+        // Locks that hand the mouse to the page or a menu: taking one frees the pointer (a click locks it again).
+        const ControlLock FreesPointer = ControlLock.Map | ControlLock.Encounter;
+        readonly PlayerControl _control;   // the lock mask itself (app-wide state: the page shows who holds you)
+        public ControlLock Locks => _control.Locks.Value;
+        public bool Active => Locks == ControlLock.None;
+
+        public void Lock(ControlLock why)
+        {
+            _control.Locks.Value |= why;
+            if ((why & FreesPointer) != 0) PointerLock.Release();
+        }
+
+        public void Unlock(ControlLock why) => _control.Locks.Value &= ~why;
         public float SpeedScale { get; set; } = 1f;
         public Func<RaycastHit, bool> ShotCheck { get; set; }
 
@@ -129,8 +148,11 @@ namespace LuckyNumbers.Planet
 
         [Inject]
         public FirstPersonPresenter(PlanetScene config, PlayerView player, ArmsView arms, PlayerInput input,
-                                    ISubscriber<InputActionPerformed> actions, IPublisher<ItemHandled> handled, IInventory pack)
+                                    ISubscriber<InputActionPerformed> actions, IPublisher<ItemHandled> handled, IInventory pack,
+                                    PlayerControl control)
         {
+            _control = control;
+            _control.Locks.Value = ControlLock.Spawn;   // a new scene: nobody's handed you control yet
             _pack = pack;
             _handled = handled;
             _config = config;
@@ -160,13 +182,12 @@ namespace LuckyNumbers.Planet
             if (_awakeAt < 0f) _awakeAt = Time.time;
 
             // Pointer lock: browsers need a click; Esc releases it. A click while locked throws.
-            var locked = Cursor.lockState == CursorLockMode.Locked;
+            var locked = PointerLock.Locked;
             _lockSeen |= locked;
             var pressed = _input.PointerPressed.Value;
             var click = pressed && !_wasPressed && (locked || !_lockSeen);   // no pointer lock (headless): any click
             _wasPressed = pressed;
-            if (pressed && !locked) Cursor.lockState = CursorLockMode.Locked;
-            var looking = locked || pressed;
+            var looking = PointerLock.Steer(pressed);
             var look = _input.Look.Value;
             var lookDelta = looking ? new Vector2(look.X, look.Y) : Vector2.zero;
             _yaw += lookDelta.x * _config.LookDegreesPerPixel;

@@ -153,7 +153,8 @@ namespace LuckyNumbers.Planet
         public async UniTask ArriveAsync(ICrashSite site, CancellationToken ct)
         {
             _site = site;
-            _firstPerson.Active = false;
+            _firstPerson.Lock(ControlLock.Vehicle);
+            _firstPerson.Unlock(ControlLock.Spawn);                // in the seat now, not waiting on the scene
             _player.Camera.enabled = false;                        // the chase camera instead (and no arms)
             _view.FlightCamera.gameObject.SetActive(true);
             Ship.Show(PlayerShipSkin.Current(_playerShip), L.ShipLength);
@@ -239,14 +240,13 @@ namespace LuckyNumbers.Planet
         {
             // Pointer lock like on foot: a click locks it; while locked (or dragging) the mouse steers.
             var pressed = _input.PointerPressed.Value;
-            var locked = Cursor.lockState == CursorLockMode.Locked;
-            if (pressed && !locked) Cursor.lockState = CursorLockMode.Locked;
+            var locked = PointerLock.Locked;
             // The click that first locks the pointer doesn't also fire; after that any press does (even where the
             // browser refuses the lock and you steer by dragging).
             if (!pressed && _lockClick) { _lockClick = false; _canFire = true; }
             if (pressed && !locked && !_canFire) _lockClick = true;
             if (locked && !pressed) _canFire = true;
-            var steering = Cursor.lockState == CursorLockMode.Locked || pressed;
+            var steering = PointerLock.Steer(pressed);
             var look = steering ? new Vector2(_input.Look.Value.X, _input.Look.Value.Y) : Vector2.zero;
             var move = _input.Move.Value;
             // Guns: hold the button and the barrels fire in turn (carried along at the ship's forward speed).
@@ -652,7 +652,7 @@ namespace LuckyNumbers.Planet
             _player.Camera.enabled = true;
             _site.Follow(null, null);
             _firstPerson.Look(body.transform.eulerAngles.y, 6f);
-            _firstPerson.Active = true;
+            _firstPerson.Unlock(ControlLock.Vehicle);
             for (var t = 0f; t < 0.6f; t += Time.deltaTime) { _view.Fade(1f - t / 0.6f); await UniTask.Yield(); }
             _view.Fade(0f);
             _view.Hint(_config.Hint, 1f);
@@ -686,7 +686,7 @@ namespace LuckyNumbers.Planet
         async UniTaskVoid BoardAsync()
         {
             _boarding = true;
-            _firstPerson.Active = false;
+            _firstPerson.Lock(ControlLock.Vehicle);
             _view.Hint("", 0f);
             for (var t = 0f; t < 0.4f; t += Time.deltaTime) { _view.Fade(t / 0.4f); await UniTask.Yield(); }
             _view.Fade(1f);
@@ -719,7 +719,7 @@ namespace LuckyNumbers.Planet
             Debug.Log($"[Landing] breaking orbit at {_altitude:0} m: back to the station");
             for (var t = 0f; t < 1.2f; t += Time.deltaTime) { _view.Fade(t / 1.2f); await UniTask.Yield(); }
             _view.Fade(1f);
-            _voyage.Returning.Value = true;
+            _voyage.Arrival.Value = StationArrival.Planet;
             _state.Flying.Value = false;
             _state.Roaming.Value = false;
             _state.CanLeave.Value = false;

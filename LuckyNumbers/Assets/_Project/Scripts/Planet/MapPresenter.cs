@@ -134,9 +134,8 @@ namespace LuckyNumbers.Planet
             _phase = Phase.Opening;
             _state.Open.Value = true;
             _t = 0f;
-            _firstPerson.Active = false;
+            _firstPerson.Lock(ControlLock.Map);           // frees the pointer: drag the globe
             _player.Camera.enabled = false;               // the map camera draws instead (and the arms with it)
-            Cursor.lockState = CursorLockMode.None;       // drag the globe
             if (RenderSettings.skybox != null)            // the same sky, seen from space: no atmosphere haze
             {
                 _haze = RenderSettings.skybox.GetFloat(Haze);
@@ -166,7 +165,7 @@ namespace LuckyNumbers.Planet
             _map.Show(false);
             if (RenderSettings.skybox != null) RenderSettings.skybox.SetFloat(Haze, _haze);
             _player.Camera.enabled = true;
-            _firstPerson.Active = true;
+            _firstPerson.Unlock(ControlLock.Map);
             Debug.Log("[Map] closed");
         }
 

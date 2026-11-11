@@ -238,7 +238,7 @@ namespace LuckyNumbers.Planet
         /// <summary>Lying on your back, eyes open (fade in), sit up, stand, turn to the wreck; then you're in control.</summary>
         async UniTaskVoid WakeAsync(CancellationToken ct)
         {
-            _firstPerson.Active = false;
+            _firstPerson.Lock(ControlLock.Spawn);
             var body = _player.Body.transform;
             body.position = new Vector3(0f, _ground.HeightAt(Vector3.zero) + 0.05f, -1.5f);
             var toWreck = Quaternion.LookRotation(new Vector3(0f, 0f, _config.WreckDistance) - body.position).eulerAngles.y;
@@ -268,7 +268,7 @@ namespace LuckyNumbers.Planet
                 Debug.Log($"[Planet] debug spawn at ({dbg.X}, {dbg.Z}) facing {dbg.Y}");
             }
             _firstPerson.Look(body.eulerAngles.y, 8f);
-            _firstPerson.Active = true;
+            _firstPerson.Unlock(ControlLock.Spawn);
             Debug.Log("[Planet] awake");
             await talking;   // the hint waits for the lines
             for (var t = 0f; t < 7f; t += Time.deltaTime)

@@ -28,7 +28,6 @@ namespace LuckyNumbers.Planet
             public Find Find;
             public List<(string id, string label, string skill, int bonus, int dc, EncounterOption option)> Options = new();
             public (string id, bool success, EncounterOption option)? Rolled;
-            public bool WasOnFoot;
         }
 
         readonly EncounterState _encounter;
@@ -134,8 +133,7 @@ namespace LuckyNumbers.Planet
         void Open(Card card, string kind, string title, string text)
         {
             _card = card;
-            card.WasOnFoot = _firstPerson.Active;
-            _firstPerson.Active = false;   // time stands still: no walking about behind the card
+            _firstPerson.Lock(ControlLock.Encounter);   // time stands still: no walking about behind the card
             _encounter.Kind.Value = kind;
             _encounter.Title.Value = title;
             _encounter.Text.Value = text;
@@ -193,7 +191,7 @@ namespace LuckyNumbers.Planet
             var card = _card;
             _card = null;
             _encounter.Open.Value = false;
-            _firstPerson.Active = card.WasOnFoot;
+            _firstPerson.Unlock(ControlLock.Encounter);
             if (card.Find != null) card.Find.Away = false;   // walk off before it asks again
             if (card.Rolled is not { } r) return;
             if (card.Monster != null) Resolve(card.Monster, r.success ? r.option.Success : r.option.Failure, r.option, r.success);

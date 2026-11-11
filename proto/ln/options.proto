@@ -33,3 +33,9 @@ extend google.protobuf.FieldOptions {
   // On a repeated string field: each path is appended to the named repeated field.
   string ref = 50101;
 }
+
+extend google.protobuf.EnumOptions {
+  // A bit set: values are 0 (none) or single bits (1, 2, 4, ...) and a field holds any combination of them.
+  // C# gets [Flags]; the web gets the set members' names as an array (["Map", "Encounter"]). Not for (ln.web_in).
+  bool flags = 50201;
+}

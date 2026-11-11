@@ -31,6 +31,34 @@ message PlayerHealth {
   int32 max = 2;
 }
 
+// Why the player can't walk and look right now, one bit per owner. Each system sets and clears only its own bit
+// (IFirstPerson.Lock / Unlock); the player has control when none is set. Overlaps resolve themselves: closing the
+// map while an encounter card is up clears MAP only, and the card still holds you.
+enum ControlLock {
+  option (ln.flags) = true;
+  CONTROL_LOCK_NONE = 0;
+  // The scene hasn't handed you control yet (set from the start; the wake-up, the station spawn clear it).
+  CONTROL_LOCK_SPAWN = 1;
+  // In the ship's seat: flying down, or boarded to fly back out.
+  CONTROL_LOCK_VEHICLE = 2;
+  // The planet map is open (or opening / closing). Frees the pointer.
+  CONTROL_LOCK_MAP = 4;
+  // An encounter card is up: time stands still. Frees the pointer.
+  CONTROL_LOCK_ENCOUNTER = 8;
+  // Knocked down: the rescue drone takes it from here.
+  CONTROL_LOCK_DOWNED = 16;
+  // Fading out to another scene.
+  CONTROL_LOCK_LEAVING = 32;
+}
+
+// Who holds the player right now (FirstPersonPresenter writes it; each on-foot scene starts at SPAWN, and it
+// keeps the last one's outside them).
+message PlayerControl {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  ControlLock locks = 1;
+}
+
 message PlayerDamaged {
   option (ln.event) = true;
   option (ln.web) = true;
@@ -103,20 +131,31 @@ message ShipPickDone {
   option (ln.web_in) = true;
 }
 
+// Where you're coming back to the station from: one at a time; the station reads it as it loads, then clears it.
+enum StationArrival {
+  // Not coming back from anywhere: the station's spawn.
+  STATION_ARRIVAL_NONE = 0;
+  // Out of the planet's atmosphere (or rescued): beside your ship, and the museum calls (the homecoming).
+  STATION_ARRIVAL_PLANET = 1;
+  // From the Flight School: beside its console (not by your ship, no homecoming).
+  STATION_ARRIVAL_FLIGHT_SCHOOL = 2;
+  // Docked again after flying round outside (GameScene.Orbit): beside your ship (no homecoming).
+  STATION_ARRIVAL_ORBIT = 3;
+}
+
 // The trip so far (app-wide): set when you fly out of the planet's atmosphere, so the station knows you're back;
 // and your credits (the museum pays for relics you bring back), with the last payout for the page's toast.
 message PlayerVoyage {
   option (ln.state) = true;
   option (ln.web) = true;
-  bool returning = 1;
+  // 1, 6, 7: the returning / training / docked bools, now `arrival` (only one could ever be meant).
+  reserved 1, 6, 7;
+  reserved "returning", "training", "docked";
+  StationArrival arrival = 8;
   int32 credits = 2;
   int32 last_payout = 3;
   // Trips down to a planet so far: the first one plays the intro cutscene, later ones fly straight down.
   int32 trips = 4;
   // Brought back by the rescue drone (you went down on the planet): the station's call says so.
   bool rescued = 5;
-  // At the Flight School: back at the station you step out beside its console (not by your ship, no homecoming).
-  bool training = 6;
-  // Docked again after flying round outside (GameScene.Orbit): you step off beside your ship (no homecoming).
-  bool docked = 7;
 }

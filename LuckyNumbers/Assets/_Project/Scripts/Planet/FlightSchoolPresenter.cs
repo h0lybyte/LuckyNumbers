@@ -219,10 +219,10 @@ namespace LuckyNumbers.Planet
         {
             _leaving = true;
             _ship.EnginesOff();
-            Cursor.lockState = CursorLockMode.None;
+            PointerLock.Release();
             _view.Hint("", 0f);
             await UniTask.Delay(TimeSpan.FromSeconds(0.6));
-            _voyage.Training.Value = true;   // the station puts you back beside the console
+            _voyage.Arrival.Value = StationArrival.FlightSchool;   // the station puts you back beside the console
             Debug.Log("[School] back to the station");
             _scenes.Publish(new SceneChangeRequested(GameScene.Station));
         }
