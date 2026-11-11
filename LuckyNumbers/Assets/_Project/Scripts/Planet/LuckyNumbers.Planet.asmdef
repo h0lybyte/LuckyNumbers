@@ -13,6 +13,8 @@
         "UniTask",
         "LuckyNumbers.Title",
         "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections",
         "LuckyNumbers.Intro",
         "LuckyNumbers.Hands",
         "LuckyNumbers.Cargo"

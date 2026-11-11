@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -8,7 +10,9 @@ namespace LuckyNumbers.Planet
     /// Endless ground: square chunks (mesh + collider) streamed around a focus point. Heights and normals
     /// come from one pure function of world position, so chunks always meet without seams; chunks that fall
     /// behind are reused ahead. Building is spread over frames. Beyond them a far ring of big, coarse chunks (no
-    /// collider) runs out to the horizon, sunk in the shader where it lies under the detailed ones.
+    /// collider) runs out to the horizon, sunk in the shader where it lies under the detailed ones. Each frame's new chunks
+    /// are built together: vertices and normals in Burst jobs across the worker threads (Web threads on a Web build),
+    /// then the colliders cooked in a job too.
     /// </summary>
     [View]
     public sealed class GroundView : MonoBehaviour
@@ -20,8 +24,8 @@ namespace LuckyNumbers.Planet
 
         readonly Layer _near = new(), _far = new();
         Material _material, _farMaterial;
-        float _height, _scale, _flatRadius, _siteRelief = 0.35f, _swellHeight, _swellScale = 0.25f;
-        float2 _offset;
+        GroundShape _shape = new() { SiteRelief = 0.35f, SwellScale = 0.25f };
+        readonly List<int2> _pending = new();
 
         sealed class Layer
         {
@@ -31,6 +35,7 @@ namespace LuckyNumbers.Planet
             public float Size;
             public int Resolution, Radius;
             public bool Collide;
+            public int[] Triangles;   // the same for every chunk in the layer
         }
 
         sealed class Chunk
@@ -48,10 +53,10 @@ namespace LuckyNumbers.Planet
             _near.Resolution = math.clamp(resolution, 4, 128);
             _near.Radius = math.clamp(viewChunks, 1, 6);
             _near.Collide = true;
-            _height = height;
-            _scale = noiseScale;
-            _offset = offset;
-            _flatRadius = flatRadius;
+            _shape.Height = height;
+            _shape.Scale = noiseScale;
+            _shape.Offset = offset;
+            _shape.FlatRadius = flatRadius;
         }
 
         /// <summary>The horizon ring (scale x the near chunk size; radius 0 = none) and the terrain's shape.</summary>
@@ -61,9 +66,9 @@ namespace LuckyNumbers.Planet
             _far.Resolution = math.clamp(resolution, 4, 64);
             _far.Radius = math.clamp(viewChunks, 0, 8);
             _far.Collide = false;
-            _siteRelief = math.saturate(siteRelief);
-            _swellHeight = swellHeight;
-            _swellScale = swellScale > 0f ? swellScale : 0.25f;
+            _shape.SiteRelief = math.saturate(siteRelief);
+            _shape.SwellHeight = swellHeight;
+            _shape.SwellScale = swellScale > 0f ? swellScale : 0.25f;
             if (_far.Radius > 0 && _farMaterial == null)
             {
                 _farMaterial = new Material(Material);
@@ -110,52 +115,91 @@ namespace LuckyNumbers.Planet
                 layer.Chunks.Remove(key);
             }
 
+            _pending.Clear();
             foreach (var key in layer.Wanted)
             {
                 if (budget <= 0) break;
                 if (layer.Chunks.ContainsKey(key)) continue;
-                layer.Chunks[key] = Build(layer, key);
+                _pending.Add(key);
                 budget--;
             }
+            if (_pending.Count > 0) Build(layer, _pending);
             return centre;
         }
 
-        Chunk Build(Layer layer, int2 key)
+        /// <summary>Build `keys` at once: one vertex job per chunk, all running together, then one collider bake job.</summary>
+        void Build(Layer layer, List<int2> keys)
         {
-            var c = layer.Pool.Count > 0 ? layer.Pool.Pop() : Create(layer);
             var n = layer.Resolution + 1;
-            var origin = new float2(key.x - 0.5f, key.y - 0.5f) * layer.Size;
+            var count = n * n;
             var step = layer.Size / layer.Resolution;
-            var verts = new Vector3[n * n];
-            var normals = new Vector3[n * n];
-            for (var z = 0; z < n; z++)
-            for (var x = 0; x < n; x++)
+            var triangles = Triangles(layer);
+            var k = keys.Count;
+            var vertices = new NativeArray<float3>[k];
+            var normals = new NativeArray<float3>[k];
+            var handles = new NativeArray<JobHandle>(k, Allocator.Temp);
+            for (var i = 0; i < k; i++)
             {
-                var p = origin + new float2(x, z) * step;
-                verts[z * n + x] = new Vector3(p.x, Height(p), p.y);
-                normals[z * n + x] = Normal(p, step);   // from the function, so borders match exactly
+                vertices[i] = new NativeArray<float3>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                normals[i] = new NativeArray<float3>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                handles[i] = new GroundChunkJob
+                {
+                    Shape = _shape,
+                    Origin = new float2(keys[i].x - 0.5f, keys[i].y - 0.5f) * layer.Size,
+                    Step = step,
+                    N = n,
+                    Vertices = vertices[i],
+                    Normals = normals[i],
+                }.Schedule(count, 64);
             }
-            var tris = new int[layer.Resolution * layer.Resolution * 6];
-            for (int z = 0, t = 0; z < layer.Resolution; z++)
-            for (var x = 0; x < layer.Resolution; x++, t += 6)
+            JobHandle.ScheduleBatchedJobs();
+            JobHandle.CombineDependencies(handles).Complete();
+            handles.Dispose();
+
+            var built = new Chunk[k];
+            for (var i = 0; i < k; i++)
+            {
+                var c = built[i] = layer.Pool.Count > 0 ? layer.Pool.Pop() : Create(layer);
+                c.Mesh.Clear();
+                c.Mesh.SetVertices(vertices[i]);
+                c.Mesh.SetNormals(normals[i]);
+                c.Mesh.SetTriangles(triangles, 0, false);
+                c.Mesh.RecalculateBounds();
+                vertices[i].Dispose();
+                normals[i].Dispose();
+                c.Go.name = $"{(layer.Collide ? "Chunk" : "Far")} {keys[i].x},{keys[i].y}";
+                c.Go.SetActive(true);
+                layer.Chunks[keys[i]] = c;
+            }
+            if (!layer.Collide) return;
+
+            var ids = new NativeArray<EntityId>(k, Allocator.TempJob);
+            for (var i = 0; i < k; i++) ids[i] = built[i].Mesh.GetEntityId();
+            new GroundBakeJob { MeshIds = ids, Options = built[0].Collider.cookingOptions }.Schedule(k, 1).Complete();
+            ids.Dispose();
+            // Re-bake once active: baked while a recycled chunk was still inactive, it ended up with no collision
+            // (you could land out there and step straight through the ground). With the bake above this reuses it.
+            foreach (var c in built)
+            {
+                c.Collider.sharedMesh = null;
+                c.Collider.sharedMesh = c.Mesh;
+            }
+        }
+
+        static int[] Triangles(Layer layer)
+        {
+            var r = layer.Resolution;
+            if (layer.Triangles != null && layer.Triangles.Length == r * r * 6) return layer.Triangles;
+            var n = r + 1;
+            var tris = new int[r * r * 6];
+            for (int z = 0, t = 0; z < r; z++)
+            for (var x = 0; x < r; x++, t += 6)
             {
                 var i = z * n + x;
                 tris[t] = i; tris[t + 1] = i + n; tris[t + 2] = i + 1;
                 tris[t + 3] = i + 1; tris[t + 4] = i + n; tris[t + 5] = i + n + 1;
             }
-            c.Mesh.Clear();
-            c.Mesh.vertices = verts;
-            c.Mesh.normals = normals;
-            c.Mesh.triangles = tris;
-            c.Mesh.RecalculateBounds();
-            c.Go.name = $"{(layer.Collide ? "Chunk" : "Far")} {key.x},{key.y}";
-            c.Go.SetActive(true);
-            if (c.Collider == null) return c;
-            // Re-bake once active: baked while a recycled chunk was still inactive, it ended up with no collision
-            // (you could land out there and step straight through the ground).
-            c.Collider.sharedMesh = null;
-            c.Collider.sharedMesh = c.Mesh;
-            return c;
+            return layer.Triangles = tris;
         }
 
         Chunk Create(Layer layer)
@@ -176,15 +220,7 @@ namespace LuckyNumbers.Planet
         /// Ground height anywhere (no collider needed): big slow swells plus two octaves of hills. Round the crash
         /// site the hills ease down to site_relief of their height (gentle dunes, not a dead-flat disc).
         /// </summary>
-        public float Height(float2 p)
-        {
-            var q = p * _scale + _offset;
-            var hills = noise.snoise(q) * 0.7f + noise.snoise(q * 2.7f + 13.1f) * 0.3f;
-            var swell = noise.snoise(q * _swellScale - 7.7f);
-            var site = math.lerp(_siteRelief, 1f, math.smoothstep(_flatRadius * 0.6f, _flatRadius * 2f, math.length(p)));
-            var far = math.smoothstep(_flatRadius, _flatRadius * 4f, math.length(p));   // swells only away from the site
-            return hills * _height * site + swell * _swellHeight * far;
-        }
+        public float Height(float2 p) => _shape.HeightAt(p);
 
         public float HeightAt(Vector3 world) => Height(new float2(world.x, world.z));
 
@@ -208,11 +244,6 @@ namespace LuckyNumbers.Planet
         /// <summary>Ground normal under a world point (from the height function, like the chunk normals).</summary>
         public Vector3 NormalAt(Vector3 world) => Normal(new float2(world.x, world.z), 0.5f);
 
-        Vector3 Normal(float2 p, float e)
-        {
-            var dx = Height(p + new float2(e, 0f)) - Height(p - new float2(e, 0f));
-            var dz = Height(p + new float2(0f, e)) - Height(p - new float2(0f, e));
-            return math.normalize(new float3(-dx, 2f * e, -dz));
-        }
+        Vector3 Normal(float2 p, float e) => _shape.NormalAt(p, e);
     }
 }
