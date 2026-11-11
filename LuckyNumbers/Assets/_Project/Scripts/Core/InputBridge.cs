@@ -33,7 +33,10 @@ namespace LuckyNumbers.Core
         readonly IPublisher<InputActionPerformed> _publisher;
         readonly ModelPlayerInput _input;
         readonly List<IDisposable> _subscriptions = new();
-        UnityEngine.InputSystem.InputAction _move, _look, _sprint, _jump, _crouch, _roll, _brake;
+        UnityEngine.InputSystem.InputAction _move, _look, _sprint, _jump, _crouch, _roll, _brake, _attack;
+
+        /// <summary>A right stick pushed all the way turns like the mouse moving this many pixels a second.</summary>
+        const float StickLookPixelsPerSecond = 900f;
 
         [Inject]
         public InputBridge(IPublisher<InputActionPerformed> publisher, ModelPlayerInput input)
@@ -69,6 +72,8 @@ namespace LuckyNumbers.Core
             _brake = actions?.FindAction("Player/Brake");
             _brake?.Enable();
             _look = actions?.FindAction("Player/Look");
+            _attack = actions?.FindAction("Player/Attack");   // a gamepad's (or the touch pad's) fire: counts as a press
+            _attack?.Enable();
             _move?.Enable();
             _look?.Enable();
         }
@@ -81,7 +86,19 @@ namespace LuckyNumbers.Core
             _input.Descending.Value = _crouch != null && _crouch.IsPressed();
             _input.Roll.Value = _roll != null ? _roll.ReadValue<float>() : 0f;
             _input.Braking.Value = _brake != null && _brake.IsPressed();
-            if (_look != null) { var v = _look.ReadValue<UnityEngine.Vector2>(); _input.Look.Value = new Vec2(v.x, v.y); }
+            // Look: the mouse's pixels (the action), plus any right stick as pixels a second (the action leaves the
+            // sticks out: their units differ). A pushed stick steers without a press (PointerLock.StickLook).
+            var look = _look != null ? _look.ReadValue<UnityEngine.Vector2>() : UnityEngine.Vector2.zero;
+            var stick = UnityEngine.Vector2.zero;
+            foreach (var pad in Gamepad.all)
+            {
+                var s = pad.rightStick.ReadValue();
+                if (s.sqrMagnitude > stick.sqrMagnitude) stick = s;
+            }
+            if (stick.sqrMagnitude < 0.01f) stick = UnityEngine.Vector2.zero;   // dead zone
+            PointerLock.StickLook = stick != UnityEngine.Vector2.zero;
+            look += stick * (StickLookPixelsPerSecond * UnityEngine.Time.unscaledDeltaTime);
+            _input.Look.Value = new Vec2(look.x, look.y);
 
             var pointer = Pointer.current; // mouse, pen or touch
             if (pointer != null)
@@ -90,8 +107,11 @@ namespace LuckyNumbers.Core
                 var delta = pointer.delta.ReadValue();
                 _input.PointerPosition.Value = new Vec2(pos.x, pos.y);
                 _input.PointerDelta.Value = new Vec2(delta.x, delta.y);
-                _input.PointerPressed.Value = pointer.press.isPressed;
+                // On touch the screen itself doesn't fire (the on-screen button does, as a trigger): a press there is
+                // the sticks' or the page's, not an aim.
+                _input.PointerPressed.Value = (!PointerLock.Touch && pointer.press.isPressed) || (_attack != null && _attack.IsPressed());
             }
+            else _input.PointerPressed.Value = _attack != null && _attack.IsPressed();
             _input.PointerScroll.Value = Mouse.current != null ? Mouse.current.scroll.ReadValue().y : 0f;
         }
 

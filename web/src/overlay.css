@@ -1577,3 +1577,79 @@ kbd {
   text-transform: uppercase;
 }
 .sheet-callsign:focus { outline: none; border-color: var(--neon); }
+
+/* ---- Touch controls (touch.tsx): floating sticks in each half, buttons by the right thumb. -------------- */
+.touch { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+.touch-zone {
+  position: absolute;
+  bottom: 0;
+  width: 50%;
+  height: 70%;
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.touch-zone.left { left: 0; }
+.touch-zone.right { right: 0; }
+.touch-base {
+  position: absolute;
+  left: -56px;
+  top: -56px;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  border: 1px solid var(--edge);
+  background: color-mix(in srgb, var(--panel) 55%, transparent);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.touch-zone.held .touch-base { opacity: 0.9; }
+.touch-knob {
+  position: absolute;
+  left: 32px;
+  top: 32px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--neon) 45%, transparent);
+  border: 1px solid var(--neon);
+}
+.touch-pad {
+  position: absolute;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: repeat(2, 64px);
+  gap: 8px;
+  justify-items: center;
+  pointer-events: none;
+}
+.touch-top {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  pointer-events: none;
+}
+.touch-btn {
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  min-width: 64px;
+  height: 48px;
+  padding: 0 8px;
+  border: 1px solid var(--edge);
+  background: color-mix(in srgb, var(--panel) 70%, transparent);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.touch-btn.big { grid-column: span 2; width: 136px; height: 64px; font-size: 14px; border-color: var(--neon); }
+.touch-btn.held { background: color-mix(in srgb, var(--neon) 35%, var(--panel)); }
