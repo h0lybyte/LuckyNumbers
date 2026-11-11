@@ -8,4 +8,5 @@
 - [releasing.md](releasing.md): CHANGELOG-driven CI/CD, secrets, itch.io
 - [proto.md](proto.md): proto schema, content files, C# code generation
 - [items.md](items.md): items, relics, weapons, equipment (design)
+- [flight-school.md](flight-school.md): test-flying the ships (station console, `?ln-flight`)
 - Decisions: [0001 WebGPU + WebGL 2 fallback](decisions/0001-webgpu-with-webgl2-fallback.md), [0002 CHANGELOG releases](decisions/0002-changelog-driven-releases.md)

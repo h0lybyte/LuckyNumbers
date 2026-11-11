@@ -38,6 +38,7 @@ namespace LuckyNumbers.Editor
             BuildIntro(rig);
             BuildPlanet(rig);
             BuildStation(rig);
+            BuildFlightSchool(rig);
 
             EditorBuildSettings.scenes = new[]
             {
@@ -45,6 +46,7 @@ namespace LuckyNumbers.Editor
                 new EditorBuildSettingsScene($"{ScenesDir}/Intro.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/Planet.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/Station.unity", true),
+                new EditorBuildSettingsScene($"{ScenesDir}/FlightSchool.unity", true),
             };
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>($"{ScenesDir}/SampleScene.unity") != null)
                 AssetDatabase.DeleteAsset($"{ScenesDir}/SampleScene.unity"); // URP template scene
@@ -52,7 +54,7 @@ namespace LuckyNumbers.Editor
             // The dev Range scene is gone: the range is a room in the station now (RangeRoom).
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>($"{ScenesDir}/Range.unity") != null)
                 AssetDatabase.DeleteAsset($"{ScenesDir}/Range.unity");
-            Debug.Log("[SceneBuilder] built Title, Intro, Planet, Station; build settings = [Title, Intro, Planet, Station]");
+            Debug.Log("[SceneBuilder] built Title, Intro, Planet, Station, FlightSchool; build settings = [Title, Intro, Planet, Station, FlightSchool]");
         }
 
         static void BuildTitle(Rig rig)
@@ -505,6 +507,71 @@ namespace LuckyNumbers.Editor
             System.Array.Find(Weapons(), w => w.name == name) ?? throw new System.Exception($"{name} not in {WeaponsDir}/weapons.json");
 
 
+        /// <summary>
+        /// The Flight School (Planet/FlightSchoolPresenter): a training deck in space (LuckyNumbers/TrainingGrid) with
+        /// glowing pylons round it for reference, your fighter and the museum freighter (one shown at a time), the
+        /// chase camera with bloom (so the flames glow) and the crash site's overlay for the HUD.
+        /// </summary>
+        static void BuildFlightSchool(Rig rig)
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var school = LuckyNumbers.Model.GameContent.School;
+            RenderSettings.skybox = rig.Starfield;
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.25f, 0.27f, 0.32f);
+            var ui = Document("UI", rig.Panel, "Planet");   // hint, flight HUD, fade
+            var view = new GameObject("PlanetView").AddComponent<PlanetView>();
+
+            var camGo = new GameObject("FlightCamera");
+            camGo.tag = "MainCamera";
+            var cam = camGo.AddComponent<Camera>();
+            cam.clearFlags = CameraClearFlags.Skybox;
+            cam.fieldOfView = 65f;
+            cam.nearClipPlane = 0.3f;
+            cam.farClipPlane = 6000f;
+            cam.GetUniversalAdditionalCameraData().renderPostProcessing = true;
+            var volume = new GameObject("Glow").AddComponent<UnityEngine.Rendering.Volume>();
+            volume.isGlobal = true;
+            volume.sharedProfile = GlowProfile();
+
+            // The deck: one big plate (a Plane primitive is 10 m across), no collider (the presenter keeps you above it).
+            var grid = MaterialAsset("TrainingGrid", "LuckyNumbers/TrainingGrid");
+            grid.SetFloat("_Fade", school.DeckSize * 0.48f);
+            EditorUtility.SetDirty(grid);
+            var deck = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            deck.name = "Deck";
+            Object.DestroyImmediate(deck.GetComponent<Collider>());
+            deck.transform.localScale = new Vector3(school.DeckSize / 10f, 1f, school.DeckSize / 10f);
+            var deckRenderer = deck.GetComponent<MeshRenderer>();
+            deckRenderer.sharedMaterial = grid;
+            deckRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+            // Pylons in a ring (tall glowing posts): something to fly round and judge distance by.
+            var pylon = Tint("SchoolPylon", new Color(0.1f, 0.35f, 0.6f), new Color(0.4f, 0.9f, 1f), 1.2f, 0.3f);
+            var pylons = new GameObject("Pylons").transform;
+            for (var i = 0; i < 12; i++)
+            {
+                var a = i / 12f * Mathf.PI * 2f;
+                var post = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                post.name = $"Pylon {i}";
+                Object.DestroyImmediate(post.GetComponent<Collider>());
+                post.transform.SetParent(pylons, false);
+                var h = i % 3 == 0 ? 120f : 60f;
+                post.transform.localPosition = new Vector3(Mathf.Cos(a) * 260f, h / 2f, Mathf.Sin(a) * 260f);
+                post.transform.localScale = new Vector3(4f, h, 4f);
+                var r = post.GetComponent<MeshRenderer>();
+                r.sharedMaterial = pylon;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+
+            var fighter = ShipRig(name: "Fighter");
+            var freighter = FreighterRig();
+            Assign(view, ("document", ui), ("fighter", fighter), ("wreck", freighter), ("flightCamera", cam));
+
+            Scopes<FlightSchoolScope>();
+            EditorSceneManager.SaveScene(scene, $"{ScenesDir}/FlightSchool.unity");
+        }
+
         const string WeaponsDir = "Assets/_Project/Art/Models/Weapons";
         /// <summary>Which of Art/Models/Weapons lies in the station (any of the guns: their hold points are measured).</summary>
         const string StationWeapon = "rifle_block";
@@ -674,7 +741,7 @@ namespace LuckyNumbers.Editor
         }
 
         /// <summary>The fighter: pivot (+Z forward) around the model (nose is +X in the file), all skins listed.</summary>
-        static ShipView ShipRig(bool collide = false, string name = "Ship")
+        internal static ShipView ShipRig(bool collide = false, string name = "Ship")
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>($"{FighterDir}/fighter1.fbx")
                         ?? throw new System.Exception("fighter1.fbx missing");
@@ -712,9 +779,29 @@ namespace LuckyNumbers.Editor
             var sk = so.FindProperty("skins");
             sk.arraySize = skins.Count;
             for (var i = 0; i < skins.Count; i++) sk.GetArrayElementAtIndex(i).objectReferenceValue = skins[i];
+            // Engine flames: the fighter's jet layout (content/engines.txtpb), built by ShipView at runtime.
+            so.FindProperty("engines").stringValue = "fighter";
+            so.FindProperty("exhaust").objectReferenceValue = ExhaustMaterial();
+            so.FindProperty("coldGas").objectReferenceValue = ColdGasMaterial();
             so.ApplyModifiedPropertiesWithoutUndo();
             pivot.gameObject.SetActive(false);
             return view;
+        }
+
+        /// <summary>The engine flames' base material (ShipView copies it per look: mains, manoeuvring jets).</summary>
+        static Material ExhaustMaterial()
+        {
+            var m = MaterialAsset("Exhaust", "LuckyNumbers/Exhaust");
+            EditorUtility.SetDirty(m);
+            return m;
+        }
+
+        /// <summary>The cold-gas puffs' base material (ShipView copies it and applies engines.txtpb's gas look).</summary>
+        static Material ColdGasMaterial()
+        {
+            var m = MaterialAsset("ColdGas", "LuckyNumbers/ColdGas");
+            EditorUtility.SetDirty(m);
+            return m;
         }
 
         const string FreighterDir = "Assets/_Project/Art/Models/CargoShip";
@@ -726,7 +813,7 @@ namespace LuckyNumbers.Editor
         /// Textures/tex_0005), its own look kept (no skins). Pivot +Z forward; length measured from the model.
         /// With `collide`: the convex pieces of cargo_ship_collision.obj (tools/collision/decompose.py).
         /// </summary>
-        static ShipView FreighterRig(bool collide = false)
+        internal static ShipView FreighterRig(bool collide = false)
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>($"{FreighterDir}/cargo_ship.fbx")
                         ?? throw new System.Exception("cargo_ship.fbx missing");
@@ -787,6 +874,9 @@ namespace LuckyNumbers.Editor
             rs.arraySize = renderers.Length;
             for (var i = 0; i < renderers.Length; i++) rs.GetArrayElementAtIndex(i).objectReferenceValue = renderers[i];
             so.FindProperty("skins").arraySize = 0;
+            so.FindProperty("engines").stringValue = "freighter";   // content/engines.txtpb
+            so.FindProperty("exhaust").objectReferenceValue = ExhaustMaterial();
+            so.FindProperty("coldGas").objectReferenceValue = ColdGasMaterial();
             so.ApplyModifiedPropertiesWithoutUndo();
             Debug.Log($"[SceneBuilder] freighter: {renderers.Length} parts, {bounds.size.x:0.#} x {bounds.size.y:0.#} x {bounds.size.z:0.#} m");
             pivot.gameObject.SetActive(false);

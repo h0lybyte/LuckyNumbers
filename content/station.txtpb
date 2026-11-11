@@ -187,6 +187,8 @@ generator {
     items { piece: "barrel" u: 0.0 v: 1.25 yaw: 40 solid: true }
     items { piece: "crate_case" u: 1.25 v: 1.25 solid: true }
     items { piece: "crate_case" u: 1.25 v: 1.0 yaw: 12 solid: true }
+    # The Flight School: test-fly your ship on the training deck (you come back here).
+    items { piece: "lab_bench" u: 0.5 v: -0.3 yaw: 180 action: STATION_ACTION_FLIGHT_SCHOOL prompt: "E: Flight School - test-fly your ship" }
   }
   rooms {
     role: STATION_ROOM_ROLE_COMMS name: "Comms" min_width: 6 max_width: 8 min_depth: 4 max_depth: 6 windows: true

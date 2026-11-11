@@ -72,6 +72,9 @@ namespace LuckyNumbers.Planet
         bool _dry;                                 // no fuel: engines out, the reserve cells let you down
         bool _lockClick, _canFire;                 // the pointer-locking click is pressed; presses fire the guns
         int _landings;
+        // Barrel roll (Shift+Q/E): time into it (-1: not rolling), which way, how far round so far, the next allowed.
+        float _barrelT = -1f, _barrelDir, _barrelDone, _barrelReady;
+        bool _rollWasHeld;
         readonly ISubscriber<DevWarpRequested> _warps;
         IDisposable _warpSubscription;
         IDisposable _hudSubscription;
@@ -80,6 +83,7 @@ namespace LuckyNumbers.Planet
 
         Phase _phase;
         Vector3 _velocity, _spin;      // m/s; degrees/s around the ship's right (pitch), up (yaw), forward (roll)
+        Vector3 _jetSpin;              // the spin the jets last saw (they fire to change it)
         Quaternion _rotation;
         Vector3 _position;
         float _throttle, _phaseTime;
@@ -186,7 +190,7 @@ namespace LuckyNumbers.Planet
                 if (F != null) _playerShip.Fuel.Value = math.max(_playerShip.Fuel.Value, _playerShip.FuelMax.Value * F.RechargeTo);
                 _position = _parked + Vector3.up * 40f;
                 _velocity = Vector3.zero;
-                _spin = Vector3.zero;
+                _spin = _jetSpin = Vector3.zero;
                 _rotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(_rotation * Vector3.forward, Vector3.up).normalized, Vector3.up);
                 _heading = _rotation.eulerAngles.y;
                 _pitch = _bank = _yawRate = _pitchRate = 0f;
@@ -206,7 +210,7 @@ namespace LuckyNumbers.Planet
             _position = start;
             _rotation = Quaternion.LookRotation(toWreck.normalized, Vector3.up);
             _velocity = _rotation * Vector3.forward * L.StartSpeed;
-            _spin = Vector3.zero;
+            _spin = _jetSpin = Vector3.zero;
             _heading = _rotation.eulerAngles.y;
             _pitch = _bank = _yawRate = _pitchRate = 0f;
             // Assisted, the throttle is a speed: start at the speed you arrive with.
@@ -321,6 +325,9 @@ namespace LuckyNumbers.Planet
                 _velocity -= right * (Vector3.Dot(_velocity, right) * (1f - math.exp(-L.Grip * math.saturate(airspeed / 25f) * dt)));
                 _position += _velocity * dt;
                 Ship.SetHeat(0f, 0.6f + 1.4f * _throttle * boost + (_input.Lifting.Value ? 0.6f : 0f));   // engines glow with thrust
+                // Jets: the mains with the throttle, the belly with the lift thrusters, the small ones to turn.
+                if (_dry) Ship.EnginesOff();
+                else Ship.SetThrust(new Vector3(0f, _input.Lifting.Value ? 1f : 0f, _throttle), JetTurn(dt, math.max(90f, L.RollDegreesPerSecond)), boost);
             }
 
             // Touchdown: the lowest of three gear points reaches the ground.
@@ -500,6 +507,23 @@ namespace LuckyNumbers.Planet
             descending = _input.Descending.Value || _dry;
             var roll = _input.Roll.Value;
 
+            // Barrel roll: Shift+Q / Shift+E (fresh press) spins the ship once round that way and kicks it sideways.
+            var rollHeld = math.abs(roll) > 0.5f;
+            var kick = false;
+            if (rollHeld && !_rollWasHeld && _input.Sprinting.Value && _barrelT < 0f && Time.time >= _barrelReady &&
+                !_dry && H.BarrelRollSeconds > 0f)
+            {
+                _barrelT = 0f;
+                _barrelDone = 0f;
+                _barrelDir = math.sign(roll);
+                kick = true;
+                if (F != null) _playerShip.Fuel.Value = math.max(0f, _playerShip.Fuel.Value - H.BarrelRollFuel / math.max(0.1f, _stats.Efficiency));
+                Debug.Log($"[Landing] barrel roll {(_barrelDir < 0f ? "left" : "right")}");
+            }
+            _rollWasHeld = rollHeld;
+            var barreling = _barrelT >= 0f;
+            if (barreling) roll = 0f;   // the roll is the manoeuvre's, not the keys'
+
             // Aim.
             var settle = 1f - math.exp(-math.max(0.5f, H.TurnSmoothing) * dt);
             var turn = H.TurnRate * ag;
@@ -508,8 +532,21 @@ namespace LuckyNumbers.Planet
                                    -roll * H.RollRate * ag);
             _spin = Vector3.Lerp(_spin, want, settle);
             _rotation = _rotation * Quaternion.Euler(_spin * dt);
+            if (barreling)
+            {
+                // Eased in and out: smoothstep of the time, a full turn by the end (the same way Q/E would roll).
+                _barrelT += dt;
+                var p = math.smoothstep(0f, 1f, math.saturate(_barrelT / H.BarrelRollSeconds));
+                _rotation = _rotation * Quaternion.Euler(0f, 0f, -_barrelDir * (p - _barrelDone) * 360f);
+                _barrelDone = p;
+                if (p >= 1f)
+                {
+                    _barrelT = -1f;
+                    _barrelReady = Time.time + math.max(0f, H.BarrelRollCooldown);
+                }
+            }
             var altitude = _position.y - _ground.HeightAt(_position);
-            var steering = math.abs(look.x) + math.abs(look.y) > 0.5f || math.abs(roll) > 0.1f;
+            var steering = math.abs(look.x) + math.abs(look.y) > 0.5f || math.abs(roll) > 0.1f || barreling;
             if (!steering && altitude < H.LevelHeight)
             {
                 var normal = _ground.NormalAt(_position);
@@ -521,7 +558,6 @@ namespace LuckyNumbers.Planet
             // Travel: the velocity the keys ask for, in the ship's frame; the assist eases towards it.
             var forward = move.Y > 0.1f ? H.MaxSpeed * sp * boost * move.Y : move.Y < -0.1f ? H.ReverseSpeed * sp * move.Y : 0f;
             var side = math.abs(move.X) > 0.1f ? H.StrafeSpeed * sp * move.X : 0f;
-            // Flying out, Shift boosts the climb too (orbit is a long way up).
             // Flying about, Shift boosts the climb too (orbit is a long way up).
             var vertical = _input.Lifting.Value ? H.ClimbSpeed * sp * (_roaming ? boost : 1f) : descending ? -H.DescendSpeed : 0f;
             var target = _input.Braking.Value ? Vector3.zero : _rotation * new Vector3(side, vertical, forward);
@@ -534,6 +570,13 @@ namespace LuckyNumbers.Planet
             if (!_dry) _demand = target.magnitude / math.max(1f, H.MaxSpeed) * (pushing ? 1f : 0.5f);
             if (change.magnitude > rate) change = change.normalized * rate;
             _velocity += change;
+            // The roll's dodge: a kick sideways (level with the ground, so it doesn't push you up or down), easing out
+            // as the assist brings you back to what the keys ask for.
+            if (kick)
+            {
+                var side2 = Vector3.ProjectOnPlane(_rotation * Vector3.right, Vector3.up);
+                if (side2.sqrMagnitude > 1e-4f) _velocity += side2.normalized * (_barrelDir * H.BarrelRollDodge);
+            }
 
             // Near the ground, however you're heading down, the descent eases to a safe touchdown: inside 80% of the
             // touchdown limit all the way through the flare (so the gauge stays green), and down to touchdown_speed.
@@ -547,6 +590,26 @@ namespace LuckyNumbers.Planet
             if (_velocity.y - groundRate < -cap) _velocity.y = groundRate - cap;
             _position += _velocity * dt;
             Ship.SetHeat(0f, _dry ? 0.1f : 0.6f + 0.9f * (_velocity.magnitude / math.max(1f, H.MaxSpeed * sp)) * boost + (pushing ? 0.5f : 0.2f));
+            // Jets, in the ship's frame: this frame's change of velocity (its share of what the assist can do in a
+            // frame, so a hard push or brake burns full), plus holding the ship up and its speed against the air.
+            var toShip = Quaternion.Inverse(_rotation);
+            var ask = toShip * (change / math.max(rate, 1e-4f));
+            var hold = toShip * (Vector3.up * 0.3f + _velocity / math.max(1f, H.MaxSpeed * sp) * 0.5f);
+            if (_dry) Ship.EnginesOff();   // out of fuel: the flames die, the reserve cells let you down
+            else Ship.SetThrust(ask + hold, JetTurn(dt, H.TurnRate), boost);
+        }
+
+        /// <summary>
+        /// What the jets do to turn (ShipView.SetThrust): they kick to start and stop a turn (the spin's change,
+        /// against `rate` degrees/s reached in a quarter second) and keep a little burn while it turns.
+        /// </summary>
+        Vector3 JetTurn(float dt, float rate)
+        {
+            rate = math.max(1f, rate);
+            var change = (_spin - _jetSpin) / math.max(dt, 1e-4f);
+            _jetSpin = _spin;
+            var turn = change / (rate * 4f) + _spin / rate * 0.4f;
+            return new Vector3(math.clamp(turn.x, -1f, 1f), math.clamp(turn.y, -1f, 1f), math.clamp(turn.z, -1f, 1f));
         }
 
         static string Gauge(string label, float value, float limit, string unit)
@@ -563,8 +626,9 @@ namespace LuckyNumbers.Planet
             _phase = Phase.Crashed;
             _phaseTime = 0f;
             _velocity = Vector3.zero;
-            _spin = Vector3.zero;
+            _spin = _jetSpin = Vector3.zero;
             Ship.SetHeat(0.9f, 0.2f);                                          // scorched
+            Ship.EnginesOff(instant: true);
             _view.Flight("", _pageHud ? null : L.CrashedText);
             Debug.Log($"[Landing] crashed: {why}");
             FlashAsync().Forget();
@@ -590,6 +654,7 @@ namespace LuckyNumbers.Planet
             _position.y = _ground.SurfaceAt(_position) + L.ShipLength * 0.5f * 0.18f;   // resting on the mesh
             Ship.Pose(_position, _rotation);
             Ship.SetHeat(0f, 0.3f);
+            Ship.EnginesOff();                                                 // parked: the flames die down
             SetSolid(true);
             _parked = _position;
             if (_beacon != null) _beacon.gameObject.SetActive(false);
@@ -632,13 +697,7 @@ namespace LuckyNumbers.Planet
         {
             if (_phase != Phase.Landed || _boarding || !_firstPerson.Active || L.OrbitAltitude <= 0f) return "";
             // From the hull (its bounds), not the middle: a 24 m ship can be boarded from any side.
-            var hull = new Bounds(_position, Vector3.zero);
-            var first = true;
-            foreach (var r in Ship.Pivot.GetComponentsInChildren<Renderer>())
-            {
-                if (first) { hull = r.bounds; first = false; }
-                else hull.Encapsulate(r.bounds);
-            }
+            var hull = Ship.Hull;
             var flat = new Vector3(feet.x, hull.center.y, feet.z);
             var reach = L.BoardDistance > 0f ? L.BoardDistance : 4f;
             return Vector3.Distance(hull.ClosestPoint(flat), flat) <= reach ? L.BoardPrompt ?? "E: board your ship" : "";
@@ -666,7 +725,7 @@ namespace LuckyNumbers.Planet
             _site.Follow(Ship.Pivot, _view.FlightCamera.transform);
             SetSolid(false);
             _velocity = Vector3.zero;
-            _spin = Vector3.zero;
+            _spin = _jetSpin = Vector3.zero;
             _heading = _rotation.eulerAngles.y;
             _pitch = _bank = _yawRate = _pitchRate = 0f;
             var flatForward = Vector3.ProjectOnPlane(_rotation * Vector3.forward, Vector3.up).normalized;

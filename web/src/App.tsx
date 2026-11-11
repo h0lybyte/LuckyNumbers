@@ -6,6 +6,8 @@ import { StationHud, StationTools } from "./station";
 import { RelicHud } from "./relics";
 import { FlightHud } from "./flight";
 import { JobBoardPanel, JobLine } from "./jobs";
+import { CombatHud } from "./combat";
+import { EncounterCard } from "./encounter";
 import { CharacterSheetGate } from "./sheet";
 import { HangarGate } from "./hangar";
 import type { GameScene, InboundEvent, WebEvents } from "./ln";
@@ -15,9 +17,13 @@ export function App({ dock }: { dock: HTMLElement | null }) {
   const ready = useLNReady();
 
   // ?ln-range: straight to the station's shooting range once Unity is up (the station puts you at its firing line;
-  // ?ln-range=knife faces that weapon, &ln-bake bakes every weapon's grips: tools/ln.py bake-grasps).
+  // ?ln-range=knife faces that weapon, &ln-bake bakes every weapon's grips: tools/ln.py bake-grasps);
+  // ?ln-flight: straight to the Flight School (test-flying the ships, their jets).
   useEffect(() => {
-    if (ready && new URLSearchParams(location.search).has("ln-range")) LN.send("SceneChangeRequested", { target: "Station" });
+    if (!ready) return;
+    const q = new URLSearchParams(location.search);
+    if (q.has("ln-range")) LN.send("SceneChangeRequested", { target: "Station" });
+    else if (q.has("ln-flight")) LN.send("SceneChangeRequested", { target: "FlightSchool" });
   }, [ready]);
 
   // ` toggles the bridge inspector (capture phase: runs before Unity's keyboard handling).
@@ -62,6 +68,8 @@ function StationHudGate() {
         <FlightHud />
         <RelicHud />
         <JobLine />
+        <CombatHud />
+        <EncounterCard />
       </>
     );
   return null;
@@ -234,7 +242,7 @@ function Inspector() {
       <section>
         <h3>Send</h3>
         <div className="row">
-          {(["Title", "Intro", "Planet", "Station"] as const).map((scene) => (
+          {(["Title", "Intro", "Planet", "Station", "FlightSchool"] as const).map((scene) => (
             <button key={scene} type="button" onClick={() => LN.send("SceneChangeRequested", { target: scene })}>
               {scene}
             </button>

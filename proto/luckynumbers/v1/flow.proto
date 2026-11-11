@@ -16,6 +16,8 @@ enum GameScene {
   GAME_SCENE_STATION = 4;
   // 5: the dev Range scene, gone: the shooting range is a room in the station (?ln-range goes there).
   reserved 5;
+  // The Flight School: a training deck in space to test-fly your ship (the station's Docking Bay console).
+  GAME_SCENE_FLIGHT_SCHOOL = 6;
 }
 
 message FlowState {

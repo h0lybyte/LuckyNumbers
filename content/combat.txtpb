@@ -1,0 +1,46 @@
+# proto-file: luckynumbers/v1/combat.proto
+# proto-message: luckynumbers.v1.CombatConfig
+# Fighting on a planet: every hit is d20 + bonus vs armour (nat 20 hits and doubles the dice, nat 1 misses).
+# Monsters are placeholder blocks until they have models. Placeholder values; tune with gameplay.
+
+count: 1
+count_per_danger: 1
+spawn_min: 28
+spawn_max: 52
+player_armor: 11
+defense_ability: "dex"
+attack_per_level: 1   # +1 at level 1, +2 at level 2...
+
+weapons { source: "carbine" name: "Carbine" ability: "dex" damage: "1d8"
+          cooldown: 0.35 speed: 90 range: 90 length: 1.2 width: 0.08 color { r: 0.4 g: 1.6 b: 2.6 a: 1 } }
+weapons { source: "sidearm" name: "Sidearm" ability: "dex" damage: "1d6+1"
+          cooldown: 0.45 speed: 80 range: 70 length: 0.9 width: 0.07 color { r: 2.4 g: 1.4 b: 0.3 a: 1 } }
+weapons { source: "rifle" name: "Salvage rifle" ability: "dex" damage: "1d10"
+          cooldown: 0.6 speed: 110 range: 120 length: 1.5 width: 0.1 color { r: 2.6 g: 0.6 b: 0.3 a: 1 } }
+weapons { source: "default" name: "Gun" ability: "dex" damage: "1d6"
+          cooldown: 0.5 speed: 80 range: 70 length: 0.9 width: 0.07 color { r: 0.4 g: 1.6 b: 2.6 a: 1 } }
+weapons { source: "ship" name: "Laser rifle" ability: "dex" damage: "2d8" }
+weapons { source: "melee" name: "Blade" ability: "str" damage: "1d8+1" }
+
+monsters {
+  id: "skitter" name: "Skitter" hp: 6 armor: 9 attack: 1 damage: "1d3"
+  speed: 5.5 size { x: 0.7 y: 0.45 z: 0.9 } color { r: 0.75 g: 0.85 b: 0.2 a: 1 }
+  reach: 1.4 sight: 16 cooldown: 1.5 xp: 40 danger_min: 1 weight: 3
+}
+monsters {
+  id: "lurker" name: "Lurker" hp: 14 armor: 11 attack: 3 damage: "1d6"
+  speed: 3.8 size { x: 1.1 y: 1.4 z: 1.1 } color { r: 0.55 g: 0.2 b: 0.65 a: 1 }
+  reach: 1.8 sight: 16 cooldown: 1.9 xp: 90 danger_min: 2 weight: 2
+}
+monsters {
+  id: "brute" name: "Rock Brute" hp: 28 armor: 13 attack: 4 damage: "1d10"
+  speed: 2.8 size { x: 1.8 y: 2.2 z: 1.6 } color { r: 0.6 g: 0.35 b: 0.25 a: 1 }
+  reach: 2.4 sight: 14 cooldown: 2.4 xp: 200 danger_min: 4 weight: 1
+}
+
+rescue {
+  fee: 250
+  downed_text: "You're down. A rescue drone is on its way..."
+  lines { speaker: "Dispatch" text: "Rescue drone has you. You're back aboard, patched up." seconds: 3.5 }
+  lines { speaker: "Dispatch" text: "Whatever you were carrying is still down on {planet}. The drone's fee comes out of your account." seconds: 5 }
+}

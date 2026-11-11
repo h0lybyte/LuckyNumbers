@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// The Flight School (content/school.txtpb, Planet/FlightSchoolPresenter): a console in the station's Docking Bay
+// takes you to an open training deck in space to test-fly your ship and watch its jets work. It flies exactly like
+// the planet's hover ship (PlanetScene.landing.hover, the skin's stats) with no gravity, no fuel and no crashing;
+// the deck is a floor you can't go through. V changes the camera, M swaps the fighter for the museum freighter,
+// R the next skin, Esc goes back to the station (you step out by the console).
+message FlightSchoolScene {
+  option (ln.config) = true;
+  // Shown at the top: the name, and the controls under it.
+  string title = 1;
+  string hint = 2;
+  // Ship lengths (m): your fighter (the planet's, so it handles the same) and the freighter.
+  float fighter_length = 3;
+  float freighter_length = 4;
+  // The freighter is slow and heavy: its speeds and its turn rate, x the fighter's.
+  float freighter_speed = 5;
+  float freighter_agility = 6;
+  // Where you start: height over the deck (m); the deck's size (m, square) and how close the ship's middle can
+  // come to it (x its length).
+  float start_height = 7;
+  float deck_size = 8;
+  float floor_clearance = 9;
+  // Cameras, cycled with V (ship lengths): chase (behind, above), side, below, front, orbit (degrees per second).
+  float chase_distance = 10;
+  float chase_height = 11;
+  float side_distance = 12;
+  float orbit_distance = 13;
+  float orbit_degrees_per_second = 14;
+  // How often the jets readout refreshes (seconds).
+  float readout_seconds = 15;
+}

@@ -122,6 +122,7 @@ namespace LuckyNumbers.Planet
                     var sweep = tipNow - _lastTip;
                     if (c.attachedRigidbody != null && !c.attachedRigidbody.isKinematic && sweep.sqrMagnitude > 1e-8f)
                         c.attachedRigidbody.AddForceAtPosition(sweep.normalized * impulse, c.ClosestPoint(tipNow), ForceMode.Impulse);
+                    c.GetComponentInParent<IDamageable>()?.Hit("melee", c.ClosestPoint(tipNow), sweep);
                     Debug.Log($"[Melee] {name} hit {c.name}");
                 }
             }

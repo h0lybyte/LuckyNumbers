@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Exhaust
+  m_Shader: {fileID: 4800000, guid: 11cc3aac299cf426885cdf049928461d, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _DiamondStrength: 0.5
+    - _Diamonds: 5
+    - _Falloff: 1.4
+    - _Flicker: 0.12
+    - _FlowSpeed: 8
+    - _HaloIntensity: 1.2
+    - _HaloSize: 2.5
+    - _Intensity: 2
+    - _NoiseScale: 6
+    - _Seed: 0
+    - _Softness: 1.5
+    - _Taper: 0.3
+    - _Thrust: 1
+    - _Turbulence: 0.45
+    m_Colors:
+    - _CoreColor: {r: 0.75, g: 0.9, b: 1, a: 1}
+    - _EdgeColor: {r: 0.14999998, g: 0.34999996, b: 1, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

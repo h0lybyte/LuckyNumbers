@@ -113,4 +113,8 @@ message PlayerVoyage {
   int32 last_payout = 3;
   // Trips down to a planet so far: the first one plays the intro cutscene, later ones fly straight down.
   int32 trips = 4;
+  // Brought back by the rescue drone (you went down on the planet): the station's call says so.
+  bool rescued = 5;
+  // At the Flight School: back at the station you step out beside its console (not by your ship, no homecoming).
+  bool training = 6;
 }

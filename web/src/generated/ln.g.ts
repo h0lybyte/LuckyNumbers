@@ -8,7 +8,20 @@ export type GameScene =
   | "Title"
   | "Intro"
   | "Planet"
-  | "Station";
+  | "Station"
+  | "FlightSchool";
+
+export type CallPhase =
+  | "None"
+  | "Ringing"
+  | "Active"
+  | "Ended";
+
+export type StationLightMode =
+  | "Unspecified"
+  | "On"
+  | "Off"
+  | "Emergency";
 
 /** Discrete actions (button presses). Bound to devices in the Input System asset. */
 export type InputAction =
@@ -23,18 +36,6 @@ export type InputAction =
   | "Map"
   | "UseRelic"
   | "SideView";
-
-export type CallPhase =
-  | "None"
-  | "Ringing"
-  | "Active"
-  | "Ended";
-
-export type StationLightMode =
-  | "Unspecified"
-  | "On"
-  | "Off"
-  | "Emergency";
 
 /** What a job asks of you on the planet. */
 export type JobKind =
@@ -115,36 +116,6 @@ export interface LoadingState {
   ready: boolean;
 }
 
-/**
- * What's in the pack (Core/InventoryPresenter; the page's Inventory and Equipment tabs). Each item
- * "uid|id|name|kind|x|y|rot|shape|bulk|value|color|description|actions|slot|equipped|bonuses|count": shape already
- * rotated (rows "/"), color "#rrggbb", actions bits 1 = use, 2 = drop, 4 = equip; slot = its EquipSlot, equipped =
- * the slot it's in now (0: in the grid; x, y unused then); bonuses as text ("Engineering +2, STR +1"); count = copies
- * in the stack (bulk and value are per copy).
- */
-export interface PlayerInventory {
-  width: number;
-  height: number;
-  items: string[];
-  bulk: number;
-  bulkLimit: number;
-  bulkMax: number;
-  /** 0 light, 1 encumbered, 2 overloaded; and the walking speed that gives. */
-  load: number;
-  speed: number;
-  value: number;
-  /** The last thing that didn't fit, or that happened ("No room for ..."). */
-  message: string;
-  /** Everything equipped adds up to (for the Equipment tab): each "label|value", e.g. "Engineering|+2". */
-  gearBonuses: string[];
-  /** There's a world to drop things into (the crash site): Drop and a full-pack unequip put the item at your feet. */
-  canDrop: boolean;
-  /** The relic R uses (the one you picked up or used last; 0: none), its name, and seconds until it's ready. */
-  ready: number;
-  readyName: string;
-  cooldown: number;
-}
-
 /** You in the range: whether you're in the room, and your shots and hits (on its targets) since you walked in or reset. */
 export interface RangeState {
   inside: boolean;
@@ -178,6 +149,68 @@ export interface StationState {
   dockCol: number;
   dockRow: number;
   rooms: string[];
+}
+
+/**
+ * The fight on this site (mirrored to the page): monsters still alive and killed, the one you hit last
+ * ("name|hp|max", or "" once it's dead), and you're down (being rescued).
+ */
+export interface CombatState {
+  alive: number;
+  killed: number;
+  target: string;
+  downed: boolean;
+  armor: number;
+}
+
+/**
+ * The open card (mirrored to the page): its title and text, the choices as "id|label|skill name|bonus|dc" (no
+ * skill: bonus and dc 0), and after a roll the result (rolled; d20, bonus, total, dc, success; the outcome text).
+ */
+export interface EncounterState {
+  open: boolean;
+  kind: string;
+  title: string;
+  text: string;
+  options: string[];
+  rolled: boolean;
+  skill: string;
+  d20: number;
+  bonus: number;
+  total: number;
+  dc: number;
+  success: boolean;
+  result: string;
+}
+
+/**
+ * What's in the pack (Core/InventoryPresenter; the page's Inventory and Equipment tabs). Each item
+ * "uid|id|name|kind|x|y|rot|shape|bulk|value|color|description|actions|slot|equipped|bonuses|count": shape already
+ * rotated (rows "/"), color "#rrggbb", actions bits 1 = use, 2 = drop, 4 = equip; slot = its EquipSlot, equipped =
+ * the slot it's in now (0: in the grid; x, y unused then); bonuses as text ("Engineering +2, STR +1"); count = copies
+ * in the stack (bulk and value are per copy).
+ */
+export interface PlayerInventory {
+  width: number;
+  height: number;
+  items: string[];
+  bulk: number;
+  bulkLimit: number;
+  bulkMax: number;
+  /** 0 light, 1 encumbered, 2 overloaded; and the walking speed that gives. */
+  load: number;
+  speed: number;
+  value: number;
+  /** The last thing that didn't fit, or that happened ("No room for ..."). */
+  message: string;
+  /** Everything equipped adds up to (for the Equipment tab): each "label|value", e.g. "Engineering|+2". */
+  gearBonuses: string[];
+  /** There's a world to drop things into (the crash site): Drop and a full-pack unequip put the item at your feet. */
+  canDrop: boolean;
+  /** The relic R uses (the one you picked up or used last; 0: none), its name, and seconds until it's ready. */
+  ready: number;
+  readyName: string;
+  cooldown: number;
 }
 
 /**
@@ -321,6 +354,10 @@ export interface PlayerVoyage {
   lastPayout: number;
   /** Trips down to a planet so far: the first one plays the intro cutscene, later ones fly straight down. */
   trips: number;
+  /** Brought back by the rescue drone (you went down on the planet): the station's call says so. */
+  rescued: boolean;
+  /** At the Flight School: back at the station you step out beside its console (not by your ship, no homecoming). */
+  training: boolean;
 }
 
 export interface DiceState {
@@ -393,6 +430,50 @@ export interface SceneEntered {
   scene: GameScene;
 }
 
+/** The page: start the count again. */
+export interface RangeResetRequested {
+}
+
+/** The page (or a console) answers the ringing call. */
+export interface StationCallAnswered {
+}
+
+/** The page's layout editor: rebuild the station from this plan (rows joined with \n). */
+export interface StationPlanRequested {
+  plan: string;
+}
+
+/** Toggle the PS1 look (the page or a console). */
+export interface PsxModeRequested {
+  on: boolean;
+}
+
+/** Switch the station's lights (the page may send it too: e.g. trip the emergency lighting). */
+export interface StationLightsRequested {
+  mode: StationLightMode;
+}
+
+/**
+ * One attack roll, for the page's roll feed: who at whom, the d20, the bonus, the total against the armour, hit or
+ * not (crit on a natural 20, fumble on a 1), and the damage rolled (dice as text, e.g. "1d8+2").
+ */
+export interface CombatRoll {
+  attacker: string;
+  target: string;
+  d20: number;
+  bonus: number;
+  total: number;
+  armor: number;
+  hit: boolean;
+  crit: boolean;
+  fumble: boolean;
+  damage: number;
+  dice: string;
+  /** You rolled it (else a monster attacked you). */
+  player: boolean;
+  weapon: string;
+}
+
 /** The dice roll's lucky number: Space regenerates the universe from it. */
 export interface UniverseSeedChanged {
   seed: number;
@@ -410,6 +491,11 @@ export interface CutsceneStepStarted {
 
 export interface CutsceneFinished {
   cutsceneId: string;
+}
+
+/** The page picks a choice on the card (an option id), or "continue" to close it after the roll. */
+export interface EncounterChoice {
+  option: string;
 }
 
 export interface InputActionPerformed {
@@ -443,29 +529,6 @@ export interface InventoryUseRequested {
 
 export interface InventoryDropRequested {
   uid: number;
-}
-
-/** The page: start the count again. */
-export interface RangeResetRequested {
-}
-
-/** The page (or a console) answers the ringing call. */
-export interface StationCallAnswered {
-}
-
-/** The page's layout editor: rebuild the station from this plan (rows joined with \n). */
-export interface StationPlanRequested {
-  plan: string;
-}
-
-/** Toggle the PS1 look (the page or a console). */
-export interface PsxModeRequested {
-  on: boolean;
-}
-
-/** Switch the station's lights (the page may send it too: e.g. trip the emergency lighting). */
-export interface StationLightsRequested {
-  mode: StationLightMode;
 }
 
 /** The page (or a number key) takes offer `index` off the board. */
@@ -525,9 +588,11 @@ export interface WebStates {
   CharacterSheet: CharacterSheet;
   FlowState: FlowState;
   LoadingState: LoadingState;
-  PlayerInventory: PlayerInventory;
   RangeState: RangeState;
   StationState: StationState;
+  CombatState: CombatState;
+  EncounterState: EncounterState;
+  PlayerInventory: PlayerInventory;
   JobBoard: JobBoard;
   PlayerJob: PlayerJob;
   FlightState: FlightState;
@@ -553,20 +618,22 @@ export interface WebEvents {
   CharacterXpGained: CharacterXpGained;
   SceneChangeRequested: SceneChangeRequested;
   SceneEntered: SceneEntered;
+  RangeResetRequested: RangeResetRequested;
+  StationCallAnswered: StationCallAnswered;
+  StationPlanRequested: StationPlanRequested;
+  PsxModeRequested: PsxModeRequested;
+  StationLightsRequested: StationLightsRequested;
+  CombatRoll: CombatRoll;
   UniverseSeedChanged: UniverseSeedChanged;
   CutsceneStepStarted: CutsceneStepStarted;
   CutsceneFinished: CutsceneFinished;
+  EncounterChoice: EncounterChoice;
   InputActionPerformed: InputActionPerformed;
   InventoryEquipRequested: InventoryEquipRequested;
   InventoryUnequipRequested: InventoryUnequipRequested;
   InventoryMoveRequested: InventoryMoveRequested;
   InventoryUseRequested: InventoryUseRequested;
   InventoryDropRequested: InventoryDropRequested;
-  RangeResetRequested: RangeResetRequested;
-  StationCallAnswered: StationCallAnswered;
-  StationPlanRequested: StationPlanRequested;
-  PsxModeRequested: PsxModeRequested;
-  StationLightsRequested: StationLightsRequested;
   JobAcceptRequested: JobAcceptRequested;
   FlightHudReady: FlightHudReady;
   PlayerDamaged: PlayerDamaged;
@@ -580,6 +647,6 @@ export interface WebEvents {
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "MenuItemSelected";
+export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "MenuItemSelected";
 
-export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "PlayerInventory", "RangeState", "StationState", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "ShipPicker", "PlayerVoyage", "DiceState"] as const;
+export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "CombatState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "ShipPicker", "PlayerVoyage", "DiceState"] as const;

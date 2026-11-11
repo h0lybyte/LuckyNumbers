@@ -224,12 +224,13 @@ namespace LuckyNumbers.Planet
             Debug.Log($"[Relics] {_lying.Count} relics round the wreck ({manifest.Relics.Count} aboard)");
         }
 
-        /// <summary>How far the wreck reaches out from its pivot on the ground plane (its renderers' bounds).</summary>
+        /// <summary>How far the wreck reaches out from its pivot on the ground plane (its hull renderers' bounds).</summary>
         float WreckReach(Vector3 pivot)
         {
             var reach = 0f;
-            foreach (var r in _view.Wreck.Pivot.GetComponentsInChildren<Renderer>())
+            foreach (var r in _view.Wreck.HullRenderers)
             {
+                if (r == null) continue;
                 var b = r.bounds;
                 for (var x = -1; x <= 1; x += 2)
                 for (var z = -1; z <= 1; z += 2)
@@ -381,10 +382,21 @@ namespace LuckyNumbers.Planet
             var size = new Vector3(w * 0.25f, 0.18f, rows.Length * 0.25f);
             at.y = _ground.SurfaceAt(at) + size.y * 0.5f + 0.05f;
 
-            // No model yet: a placeholder block, replace with the item's own (docs/items.md). Nothing to trip on.
-            var c = item.Def.Color;
-            var cube = Placeholders.Block($"PLACEHOLDER_{item.Def.Id}", size, new Color(c.R, c.G, c.B, 1f), collider: false);
+            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = $"PLACEHOLDER_{item.Def.Id}";   // no model yet: replace with the item's own (docs/items.md)
+            UnityEngine.Object.Destroy(cube.GetComponent<Collider>());   // nothing to trip on
+            cube.transform.localScale = size;
             cube.transform.position = at;
+            // The relics' own lit material (a primitive's default isn't in the build: it renders magenta).
+            var relic = _view.VaseTemplate != null ? _view.VaseTemplate.GetComponentInChildren<Renderer>(true) : null;
+            if (relic != null) cube.GetComponent<Renderer>().sharedMaterial = relic.sharedMaterial;
+            var c = item.Def.Color;
+            var block = new MaterialPropertyBlock();
+            block.SetColor("_BaseColor", new Color(c.R, c.G, c.B, 1f));
+            block.SetColor("_Color", new Color(c.R, c.G, c.B, 1f));
+            block.SetColor(ColorA, new Color(c.R, c.G, c.B, 1f));
+            block.SetColor(ColorB, new Color(c.R * 0.7f, c.G * 0.7f, c.B * 0.7f, 1f));
+            cube.GetComponent<Renderer>().SetPropertyBlock(block);
             _dropped.Add(new Dropped { Item = item, Shape = cube.transform, Rest = at });
             Debug.Log($"[Relics] dropped {Label(item)} ({cube.name})");
         }

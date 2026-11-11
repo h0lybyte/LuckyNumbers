@@ -188,6 +188,7 @@ namespace LuckyNumbers.Intro
                 var heading = Quaternion.LookRotation(((Vector3)pathPos - start).normalized, pathRot * Vector3.up);
                 _ship.Pose(pos, Quaternion.Slerp(heading, pathRot, math.smoothstep(0.5f, 1f, fly)));
                 _ship.SetHeat(0f, math.lerp(2.6f, 1f, fly));                             // boosting in, then cruise
+                _ship.SetThrust(Vector3.forward * math.lerp(1f, 0.45f, fly), Vector3.zero, math.lerp(2f, 1f, fly));
 
                 ChasePose(pathPos, pathRot, 1.15f, out var chasePos, out var chaseRot);
                 var blend = math.smoothstep(0.15f, 1f, x);
@@ -247,6 +248,11 @@ namespace LuckyNumbers.Intro
                 var u = t / duration;
                 PoseShip(u, t, out var pos, out var rot);
                 _ship.SetHeat(math.smoothstep(0.6f, 1f, u), 1f + 1.5f * math.smoothstep(0f, 0.3f, u));
+                // Fighting the pull: mains flat out, and the small jets stutter against the tumble as it hits air.
+                var fight = math.smoothstep(0.35f, 1f, u);
+                var kick = new Vector3(Mathf.PerlinNoise(t * 5.3f, 1.7f) - 0.5f, Mathf.PerlinNoise(2.9f, t * 4.1f) - 0.5f,
+                                       Mathf.PerlinNoise(t * 3.7f, 4.3f) - 0.5f) * (4f * fight);
+                _ship.SetThrust(new Vector3(0f, 0.4f * fight, 1f), kick, 1f + math.smoothstep(0f, 0.3f, u));
                 _shake = math.smoothstep(0.55f, 1f, u) * 0.25f;                    // turbulence as it hits air
                 if (u < release) Chase(pos, rot, math.lerp(1f, 0.6f, u / release));
                 else WatchFall(pos);
@@ -373,6 +379,7 @@ namespace LuckyNumbers.Intro
         {
             PoseShip(0f, t, out var pos, out var rot);
             _ship.SetHeat(0f, 1f + 0.15f * math.sin(t * 6f));
+            _ship.SetThrust(Vector3.forward * 0.3f, Vector3.zero);
             Chase(pos, rot, 1.15f);
         }
 

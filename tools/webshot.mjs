@@ -6,9 +6,10 @@
 //
 // --steps: JSON list run after --wait, coordinates are fractions of the game canvas (0..1, top-left):
 //   [{"drag":[x1,y1,x2,y2]}, {"scroll":[x,y,notches]}, {"sleep":1}, {"shot":"a.png"}, {"click":[x,y]}, {"wait":"text"},
-//    {"fps":5}, {"key":["KeyW",2]}, {"key":["ShiftLeft+KeyW",2]}, {"hold":[x,y,2]}, {"js":"LN.send(...)"}]
-//   (fps: measure 5 s; key: hold for 2 s; hold: the left button down for 2 s; sleep is in seconds;
-//    js: run in the page, prints the result)
+//    {"fps":5}, {"key":["KeyW",2]}, {"key":["ShiftLeft+KeyW",2]}, {"down":"KeyW"}, {"up":"KeyW"}, {"hold":[x,y,2]},
+//    {"js":"LN.send(...)"}]
+//   (fps: measure 5 s; key: hold for 2 s; down / up: press / release and go on; hold: the left button down for 2 s;
+//    sleep is in seconds; js: run in the page, prints the result)
 // Prints the page's console lines (cut at 400 characters; --full keeps them whole). Without --steps it takes one
 // screenshot to <out.png>.
 import { spawn } from "node:child_process";
@@ -117,14 +118,16 @@ for (const step of steps) {
     for (let i = 1; i <= n; i++) { await mouse("mouseMoved", px([x1 + (x2 - x1) * i / n, y1 + (y2 - y1) * i / n]), 1); await sleep(25); }
     await mouse("mouseReleased", px([x2, y2])); await sleep(200);
   }
-  if (step.key) { // ["KeyW", seconds] or ["ShiftLeft+KeyW", seconds]: hold key(s) (code + key name for the Input System)
-    const [combo, seconds] = step.key, codes = combo.split("+");
-    const vk = { KeyW: 87, KeyA: 65, KeyS: 83, KeyD: 68, KeyE: 69, KeyM: 77, KeyC: 67, KeyQ: 81, KeyX: 88, Space: 32, ShiftLeft: 16 };
+  if (step.key || step.down || step.up) { // key: ["KeyW", seconds] or ["ShiftLeft+KeyW", seconds] holds key(s) then
+    // lets go (code + key name for the Input System); down / up: "ShiftLeft+KeyW" pressed or released, so other
+    // steps (shots) run while it's held.
+    const combo = step.key ? step.key[0] : step.down ?? step.up, codes = combo.split("+");
+    const vk = { KeyW: 87, KeyA: 65, KeyS: 83, KeyD: 68, KeyE: 69, KeyM: 77, KeyQ: 81, KeyC: 67, KeyX: 88, Space: 32, ShiftLeft: 16 };
     const ev = (type, code) => send("Input.dispatchKeyEvent",
       { type, code, key: code.startsWith("Key") ? code.slice(3).toLowerCase() : code, windowsVirtualKeyCode: vk[code] ?? 0 });
-    for (const c of codes) await ev("keyDown", c);
-    await sleep((seconds ?? 0.1) * 1000);
-    for (const c of codes.reverse()) await ev("keyUp", c);
+    if (!step.up) for (const c of codes) await ev("keyDown", c);
+    if (step.key) await sleep((step.key[1] ?? 0.1) * 1000);
+    if (!step.down) for (const c of [...codes].reverse()) await ev("keyUp", c);
   }
   if (step.fps) { // seconds: browser frame rate (Unity renders once per animation frame) + min/max frame time
     const r = await send("Runtime.evaluate", { awaitPromise: true, returnByValue: true, expression: `new Promise((done) => {

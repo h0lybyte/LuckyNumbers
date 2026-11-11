@@ -359,6 +359,164 @@ namespace LuckyNumbers.Model
             XpPerArtifact = 150,
         };
 
+        /// <summary>From <c>content/combat.txtpb</c>.</summary>
+        public static readonly CombatConfig Combat = new CombatConfig
+        {
+            Monsters =
+            {
+                new MonsterType
+                {
+                    Id = "skitter",
+                    Name = "Skitter",
+                    Hp = 6,
+                    Armor = 9,
+                    Attack = 1,
+                    Damage = "1d3",
+                    Speed = 5.5f,
+                    Size = new Vec3(0.7f, 0.45f, 0.9f),
+                    Color = new Rgba(0.75f, 0.85f, 0.2f, 1.0f),
+                    Reach = 1.4f,
+                    Sight = 16.0f,
+                    Cooldown = 1.5f,
+                    Xp = 40,
+                    DangerMin = 1,
+                    Weight = 3.0f,
+                },
+                new MonsterType
+                {
+                    Id = "lurker",
+                    Name = "Lurker",
+                    Hp = 14,
+                    Armor = 11,
+                    Attack = 3,
+                    Damage = "1d6",
+                    Speed = 3.8f,
+                    Size = new Vec3(1.1f, 1.4f, 1.1f),
+                    Color = new Rgba(0.55f, 0.2f, 0.65f, 1.0f),
+                    Reach = 1.8f,
+                    Sight = 16.0f,
+                    Cooldown = 1.9f,
+                    Xp = 90,
+                    DangerMin = 2,
+                    Weight = 2.0f,
+                },
+                new MonsterType
+                {
+                    Id = "brute",
+                    Name = "Rock Brute",
+                    Hp = 28,
+                    Armor = 13,
+                    Attack = 4,
+                    Damage = "1d10",
+                    Speed = 2.8f,
+                    Size = new Vec3(1.8f, 2.2f, 1.6f),
+                    Color = new Rgba(0.6f, 0.35f, 0.25f, 1.0f),
+                    Reach = 2.4f,
+                    Sight = 14.0f,
+                    Cooldown = 2.4f,
+                    Xp = 200,
+                    DangerMin = 4,
+                    Weight = 1.0f,
+                },
+            },
+            Count = 1,
+            CountPerDanger = 1,
+            SpawnMin = 28.0f,
+            SpawnMax = 52.0f,
+            PlayerArmor = 11,
+            DefenseAbility = "dex",
+            AttackPerLevel = 1.0f,
+            Weapons =
+            {
+                new CombatWeapon
+                {
+                    Source = "carbine",
+                    Name = "Carbine",
+                    Ability = "dex",
+                    Damage = "1d8",
+                    Cooldown = 0.35f,
+                    Speed = 90.0f,
+                    Range = 90.0f,
+                    Length = 1.2f,
+                    Width = 0.08f,
+                    Color = new Rgba(0.4f, 1.6f, 2.6f, 1.0f),
+                },
+                new CombatWeapon
+                {
+                    Source = "sidearm",
+                    Name = "Sidearm",
+                    Ability = "dex",
+                    Damage = "1d6+1",
+                    Cooldown = 0.45f,
+                    Speed = 80.0f,
+                    Range = 70.0f,
+                    Length = 0.9f,
+                    Width = 0.07f,
+                    Color = new Rgba(2.4f, 1.4f, 0.3f, 1.0f),
+                },
+                new CombatWeapon
+                {
+                    Source = "rifle",
+                    Name = "Salvage rifle",
+                    Ability = "dex",
+                    Damage = "1d10",
+                    Cooldown = 0.6f,
+                    Speed = 110.0f,
+                    Range = 120.0f,
+                    Length = 1.5f,
+                    Width = 0.1f,
+                    Color = new Rgba(2.6f, 0.6f, 0.3f, 1.0f),
+                },
+                new CombatWeapon
+                {
+                    Source = "default",
+                    Name = "Gun",
+                    Ability = "dex",
+                    Damage = "1d6",
+                    Cooldown = 0.5f,
+                    Speed = 80.0f,
+                    Range = 70.0f,
+                    Length = 0.9f,
+                    Width = 0.07f,
+                    Color = new Rgba(0.4f, 1.6f, 2.6f, 1.0f),
+                },
+                new CombatWeapon
+                {
+                    Source = "ship",
+                    Name = "Laser rifle",
+                    Ability = "dex",
+                    Damage = "2d8",
+                },
+                new CombatWeapon
+                {
+                    Source = "melee",
+                    Name = "Blade",
+                    Ability = "str",
+                    Damage = "1d8+1",
+                },
+            },
+            Rescue = new CombatRescue
+            {
+                Fee = 250,
+                DownedText = "You're down. A rescue drone is on its way...",
+                Lines =
+                {
+                    new StationCallLine
+                    {
+                        Speaker = "Dispatch",
+                        Text = "Rescue drone has you. You're back aboard, patched up.",
+                        Seconds = 3.5f,
+                    },
+                    new StationCallLine
+                    {
+                        Speaker = "Dispatch",
+                        Text = "Whatever you were carrying is still down on {planet}. The drone's fee comes out of your account.",
+                        Seconds = 5.0f,
+                    },
+                },
+            },
+        };
+
         /// <summary>From <c>content/credits.txtpb</c>.</summary>
         public static readonly CreditsConfig Credits = new CreditsConfig
         {
@@ -584,6 +742,492 @@ namespace LuckyNumbers.Model
                     Compact = true,
                 },
             },
+        };
+
+        /// <summary>From <c>content/encounters.txtpb</c>.</summary>
+        public static readonly EncounterConfig Encounters = new EncounterConfig
+        {
+            Standoffs = 1,
+            StandoffsPerDanger = 0.5f,
+            StandoffDistance = 13.0f,
+            StandoffTitle = "{monster}",
+            StandoffText = "A {monster} stands between you and the wreck. It hasn't seen you yet.",
+            Options =
+            {
+                new EncounterOption
+                {
+                    Id = "fight",
+                    Label = "Fight",
+                    Success = EncounterOutcome.Fight,
+                    Failure = EncounterOutcome.Fight,
+                    SuccessText = "You raise your weapon. It hasn't seen you: your first shot gets +5.",
+                },
+                new EncounterOption
+                {
+                    Id = "sneak",
+                    Label = "Sneak past",
+                    Skill = "stealth",
+                    Dc = 10,
+                    DcPerDanger = 1.0f,
+                    Success = EncounterOutcome.Ignored,
+                    Failure = EncounterOutcome.Ambushed,
+                    SuccessText = "You keep low and slip by. It never knows you were there.",
+                    FailureText = "A stone shifts under your boot. It turns, and lunges.",
+                },
+                new EncounterOption
+                {
+                    Id = "bluff",
+                    Label = "Bluff it off",
+                    Skill = "bluff",
+                    Dc = 12,
+                    DcPerDanger = 1.0f,
+                    Success = EncounterOutcome.Flees,
+                    Failure = EncounterOutcome.Fight,
+                    SuccessText = "You mimic its warning call. It backs off and bolts.",
+                    FailureText = "It isn't fooled.",
+                },
+                new EncounterOption
+                {
+                    Id = "intimidate",
+                    Label = "Scare it",
+                    Skill = "intimidate",
+                    Dc = 13,
+                    DcPerDanger = 1.0f,
+                    Success = EncounterOutcome.Flees,
+                    Failure = EncounterOutcome.Ambushed,
+                    SuccessText = "You stand tall and roar. It scrambles away.",
+                    FailureText = "It doesn't scare. It charges.",
+                },
+                new EncounterOption
+                {
+                    Id = "back",
+                    Label = "Back off",
+                    Skill = "athletics",
+                    Dc = 8,
+                    DcPerDanger = 1.0f,
+                    Success = EncounterOutcome.Calm,
+                    Failure = EncounterOutcome.Fight,
+                    SuccessText = "You back away slowly. It loses interest, for now.",
+                    FailureText = "You stumble. It's seen you.",
+                    CalmSeconds = 12.0f,
+                },
+            },
+            Finds = 2,
+            FindDistance = 2.5f,
+            FindMin = 14.0f,
+            FindMax = 45.0f,
+            FindTypes =
+            {
+                new EncounterFind
+                {
+                    Id = "cache",
+                    Name = "Sealed supply cache",
+                    Text = "A crate thrown clear of the wreck, its lock still blinking.",
+                    Skill = "engineering",
+                    Dc = 11,
+                    OpenLabel = "Bypass the lock",
+                    Items =
+                    {
+                        "medpatch",
+                        "rations",
+                    },
+                    Xp = 40,
+                    SuccessText = "The lock clicks open: a med-patch and a ration bar.",
+                    FailureDamage = "1d4",
+                    FailureText = "The lock sparks and bites your fingers.",
+                    Size = new Vec3(0.8f, 0.5f, 0.6f),
+                    Color = new Rgba(0.25f, 0.55f, 0.85f, 1.0f),
+                    Weight = 3.0f,
+                },
+                new EncounterFind
+                {
+                    Id = "terminal",
+                    Name = "Flight recorder",
+                    Text = "The freighter's black box, half buried. Its data is worth something to someone.",
+                    Skill = "computers",
+                    Dc = 12,
+                    OpenLabel = "Pull the data",
+                    Credits = 150,
+                    Xp = 60,
+                    SuccessText = "You copy the logs. Dispatch will pay 150 credits for them.",
+                    FailureText = "The drive is corrupted. Nothing worth keeping.",
+                    Size = new Vec3(0.5f, 0.35f, 0.5f),
+                    Color = new Rgba(0.95f, 0.55f, 0.15f, 1.0f),
+                    Weight = 2.0f,
+                },
+                new EncounterFind
+                {
+                    Id = "body",
+                    Name = "Spacer's remains",
+                    Text = "Someone else got here first, and didn't leave. Their kit is still on them.",
+                    Skill = "medicine",
+                    Dc = 10,
+                    OpenLabel = "Check them carefully",
+                    Items =
+                    {
+                        "medpatch",
+                        "ping",
+                    },
+                    Xp = 30,
+                    SuccessText = "Spores, but you're careful: a med-patch and a ping beacon.",
+                    FailureDamage = "1d6",
+                    FailureText = "Spores burst in your face.",
+                    Size = new Vec3(1.6f, 0.3f, 0.6f),
+                    Color = new Rgba(0.55f, 0.5f, 0.45f, 1.0f),
+                    Weight = 1.0f,
+                },
+            },
+            SurpriseBonus = 5,
+        };
+
+        /// <summary>From <c>content/engines.txtpb</c>.</summary>
+        public static readonly EngineConfig Engines = new EngineConfig
+        {
+            Ships =
+            {
+                new ShipEngines
+                {
+                    Ship = "fighter",
+                    Thrusters =
+                    {
+                        new Thruster
+                        {
+                            Name = "main_l",
+                            Position = new Vec3(-0.077f, -0.007f, -0.171f),
+                            Direction = new Vec3(default(float), default(float), -1.0f),
+                            Radius = 0.022f,
+                            Length = 0.3f,
+                            Main = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "main_r",
+                            Position = new Vec3(0.077f, -0.007f, -0.171f),
+                            Direction = new Vec3(default(float), default(float), -1.0f),
+                            Radius = 0.022f,
+                            Length = 0.3f,
+                            Main = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "retro_l",
+                            Position = new Vec3(-0.077f, -0.034f, -0.08f),
+                            Direction = new Vec3(default(float), default(float), 1.0f),
+                            Radius = 0.007f,
+                            Length = 0.084f,
+                        },
+                        new Thruster
+                        {
+                            Name = "retro_r",
+                            Position = new Vec3(0.077f, -0.034f, -0.08f),
+                            Direction = new Vec3(default(float), default(float), 1.0f),
+                            Radius = 0.007f,
+                            Length = 0.084f,
+                        },
+                        new Thruster
+                        {
+                            Name = "lift_belly",
+                            Position = new Vec3(default(float), -0.029f, 0.07f),
+                            Direction = new Vec3(default(float), -1.0f, default(float)),
+                            Radius = 0.013f,
+                            Length = 0.098f,
+                        },
+                        new Thruster
+                        {
+                            Name = "lift_l",
+                            Position = new Vec3(-0.077f, -0.035f, -0.14f),
+                            Direction = new Vec3(default(float), -1.0f, default(float)),
+                            Radius = 0.011f,
+                            Length = 0.091f,
+                        },
+                        new Thruster
+                        {
+                            Name = "lift_r",
+                            Position = new Vec3(0.077f, -0.035f, -0.14f),
+                            Direction = new Vec3(default(float), -1.0f, default(float)),
+                            Radius = 0.011f,
+                            Length = 0.091f,
+                        },
+                        new Thruster
+                        {
+                            Name = "down_l",
+                            Position = new Vec3(-0.077f, 0.02f, -0.14f),
+                            Direction = new Vec3(default(float), 1.0f, default(float)),
+                            Radius = 0.0064f,
+                            Length = 0.126f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "down_r",
+                            Position = new Vec3(0.077f, 0.02f, -0.14f),
+                            Direction = new Vec3(default(float), 1.0f, default(float)),
+                            Radius = 0.0064f,
+                            Length = 0.126f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "down_nose_l",
+                            Position = new Vec3(-0.035f, -0.002f, 0.2f),
+                            Direction = new Vec3(default(float), 1.0f, default(float)),
+                            Radius = 0.004f,
+                            Length = 0.101f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "down_nose_r",
+                            Position = new Vec3(0.035f, -0.002f, 0.2f),
+                            Direction = new Vec3(default(float), 1.0f, default(float)),
+                            Radius = 0.004f,
+                            Length = 0.101f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "under_nose_l",
+                            Position = new Vec3(-0.035f, -0.012f, 0.2f),
+                            Direction = new Vec3(default(float), -1.0f, default(float)),
+                            Radius = 0.004f,
+                            Length = 0.1f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "under_nose_r",
+                            Position = new Vec3(0.035f, -0.012f, 0.2f),
+                            Direction = new Vec3(default(float), -1.0f, default(float)),
+                            Radius = 0.004f,
+                            Length = 0.1f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "under_tail_l",
+                            Position = new Vec3(-0.1f, -0.03f, -0.165f),
+                            Direction = new Vec3(default(float), -1.0f, default(float)),
+                            Radius = 0.005f,
+                            Length = 0.11f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "under_tail_r",
+                            Position = new Vec3(0.1f, -0.03f, -0.165f),
+                            Direction = new Vec3(default(float), -1.0f, default(float)),
+                            Radius = 0.005f,
+                            Length = 0.11f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "side_l",
+                            Position = new Vec3(-0.104f, -0.007f, -0.13f),
+                            Direction = new Vec3(-1.0f, default(float), default(float)),
+                            Radius = 0.0064f,
+                            Length = 0.126f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "side_r",
+                            Position = new Vec3(0.104f, -0.007f, -0.13f),
+                            Direction = new Vec3(1.0f, default(float), default(float)),
+                            Radius = 0.0064f,
+                            Length = 0.126f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "side_nose_l",
+                            Position = new Vec3(-0.05f, -0.007f, 0.2f),
+                            Direction = new Vec3(-1.0f, default(float), default(float)),
+                            Radius = 0.004f,
+                            Length = 0.101f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "side_nose_r",
+                            Position = new Vec3(0.05f, -0.007f, 0.2f),
+                            Direction = new Vec3(1.0f, default(float), default(float)),
+                            Radius = 0.004f,
+                            Length = 0.101f,
+                            Gas = true,
+                        },
+                    },
+                    Centre = new Vec3(default(float), -0.005f, default(float)),
+                },
+                new ShipEngines
+                {
+                    Ship = "freighter",
+                    Thrusters =
+                    {
+                        new Thruster
+                        {
+                            Name = "main_ul",
+                            Position = new Vec3(-2.75f, 2.4f, -18.4f),
+                            Direction = new Vec3(default(float), default(float), -1.0f),
+                            Radius = 1.5f,
+                            Length = 22.0f,
+                            Main = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "main_ur",
+                            Position = new Vec3(2.75f, 2.4f, -18.4f),
+                            Direction = new Vec3(default(float), default(float), -1.0f),
+                            Radius = 1.5f,
+                            Length = 22.0f,
+                            Main = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "main_ll",
+                            Position = new Vec3(-2.75f, -2.6f, -18.4f),
+                            Direction = new Vec3(default(float), default(float), -1.0f),
+                            Radius = 1.5f,
+                            Length = 22.0f,
+                            Main = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "main_lr",
+                            Position = new Vec3(2.75f, -2.6f, -18.4f),
+                            Direction = new Vec3(default(float), default(float), -1.0f),
+                            Radius = 1.5f,
+                            Length = 22.0f,
+                            Main = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "pod_ul_up",
+                            Position = new Vec3(-5.9f, 4.9f, -4.4f),
+                            Direction = new Vec3(default(float), 1.0f, default(float)),
+                            Radius = 0.7f,
+                            Length = 7.0f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "pod_ur_up",
+                            Position = new Vec3(5.9f, 4.9f, -4.4f),
+                            Direction = new Vec3(default(float), 1.0f, default(float)),
+                            Radius = 0.7f,
+                            Length = 7.0f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "pod_ll_down",
+                            Position = new Vec3(-5.9f, -4.9f, -4.4f),
+                            Direction = new Vec3(default(float), -1.0f, default(float)),
+                            Radius = 0.7f,
+                            Length = 7.0f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "pod_lr_down",
+                            Position = new Vec3(5.9f, -4.9f, -4.4f),
+                            Direction = new Vec3(default(float), -1.0f, default(float)),
+                            Radius = 0.7f,
+                            Length = 7.0f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "pod_ul_out",
+                            Position = new Vec3(-6.5f, 4.3f, -4.4f),
+                            Direction = new Vec3(-1.0f, default(float), default(float)),
+                            Radius = 0.7f,
+                            Length = 7.0f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "pod_ur_out",
+                            Position = new Vec3(6.5f, 4.3f, -4.4f),
+                            Direction = new Vec3(1.0f, default(float), default(float)),
+                            Radius = 0.7f,
+                            Length = 7.0f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "pod_ll_out",
+                            Position = new Vec3(-6.5f, -4.3f, -4.4f),
+                            Direction = new Vec3(-1.0f, default(float), default(float)),
+                            Radius = 0.7f,
+                            Length = 7.0f,
+                            Gas = true,
+                        },
+                        new Thruster
+                        {
+                            Name = "pod_lr_out",
+                            Position = new Vec3(6.5f, -4.3f, -4.4f),
+                            Direction = new Vec3(1.0f, default(float), default(float)),
+                            Radius = 0.7f,
+                            Length = 7.0f,
+                            Gas = true,
+                        },
+                    },
+                    Centre = new Vec3(default(float), default(float), default(float)),
+                },
+            },
+            MainLook = new ExhaustLook
+            {
+                CoreColor = new Rgba(0.75f, 0.9f, 1.0f, 1.0f),
+                EdgeColor = new Rgba(0.15f, 0.35f, 1.0f, 1.0f),
+                Intensity = 2.4f,
+                Softness = 1.6f,
+                Falloff = 1.4f,
+                Taper = 0.25f,
+                NoiseScale = 6.0f,
+                FlowSpeed = 9.0f,
+                Turbulence = 0.45f,
+                Diamonds = 5.0f,
+                DiamondStrength = 0.55f,
+                HaloSize = 2.6f,
+                HaloIntensity = 1.4f,
+                Flicker = 0.12f,
+            },
+            RcsLook = new ExhaustLook
+            {
+                CoreColor = new Rgba(0.9f, 0.95f, 1.0f, 1.0f),
+                EdgeColor = new Rgba(0.35f, 0.55f, 1.0f, 1.0f),
+                Intensity = 1.6f,
+                Softness = 2.2f,
+                Falloff = 2.2f,
+                Taper = 0.55f,
+                NoiseScale = 4.0f,
+                FlowSpeed = 6.0f,
+                Turbulence = 0.7f,
+                Diamonds = 0.0f,
+                DiamondStrength = 0.0f,
+                HaloSize = 2.4f,
+                HaloIntensity = 0.9f,
+                Flicker = 0.25f,
+            },
+            SpoolUpSeconds = 0.12f,
+            SpoolDownSeconds = 0.35f,
+            Idle = 0.15f,
+            RcsThreshold = 0.12f,
+            BoostStretch = 1.6f,
+            GasLook = new GasLook
+            {
+                Color = new Rgba(0.93f, 0.95f, 0.98f, 1.0f),
+                Opacity = 0.9f,
+                Softness = 1.4f,
+                Expand = 7.0f,
+                CloudSize = 9.0f,
+                WispScale = 3.0f,
+                WispSpeed = 2.0f,
+            },
+            GasThreshold = 0.04f,
+            GasLifeSeconds = 0.55f,
+            GasRepeat = 0.4f,
         };
 
         /// <summary>From <c>content/intro.txtpb</c>.</summary>
@@ -1603,7 +2247,6 @@ namespace LuckyNumbers.Model
                 new JobType
                 {
                     Kind = JobKind.Clear,
-                    Disabled = true,
                     Title = "Clear the nest on {planet}",
                     Brief = "Something's nesting by the wreck on {planet}. {client} wants it gone: {count} of them.",
                     Objective = "Kill {count} creatures on {planet}, then fly back to the station",
@@ -2587,7 +3230,7 @@ namespace LuckyNumbers.Model
                 MaxTouchdownTilt = 18.0f,
                 ChaseDistance = 1.45f,
                 ChaseHeight = 0.42f,
-                Hint = "Mouse aim - W/S thrust - A/D strafe - Q/E roll - Space/C up/down - Shift boost - X brake. Stop over the green pad, hold C to land.",
+                Hint = "Mouse aim - W/S thrust - A/D strafe - Q/E roll (Shift: barrel roll) - Space/C up/down - Shift boost - X brake. Stop over the green pad, hold C to land.",
                 LandedText = "Landed.",
                 CrashedText = "Too hard. Try again.",
                 LandedLines =
@@ -2647,6 +3290,10 @@ namespace LuckyNumbers.Model
                     HardBrake = 28.0f,
                     LevelHeight = 14.0f,
                     LevelRate = 40.0f,
+                    BarrelRollSeconds = 0.6f,
+                    BarrelRollDodge = 14.0f,
+                    BarrelRollCooldown = 0.8f,
+                    BarrelRollFuel = 1.5f,
                 },
                 OrbitAltitude = 260.0f,
                 BoardPrompt = "E: board your ship",
@@ -2662,6 +3309,26 @@ namespace LuckyNumbers.Model
         {
             MaxHealth = 100,
             ShipSkin = "idolknight",
+        };
+
+        /// <summary>From <c>content/school.txtpb</c>.</summary>
+        public static readonly FlightSchoolScene School = new FlightSchoolScene
+        {
+            Title = "FLIGHT SCHOOL",
+            Hint = "W/S thrust - A/D strafe - Space/C up, down - Q/E roll - Shift boost - X brake - click, then mouse to aim\nV camera - M fighter or freighter - R next skin - Esc back to the station",
+            FighterLength = 24.0f,
+            FreighterLength = 140.0f,
+            FreighterSpeed = 0.45f,
+            FreighterAgility = 0.3f,
+            StartHeight = 30.0f,
+            DeckSize = 1200.0f,
+            FloorClearance = 0.3f,
+            ChaseDistance = 1.45f,
+            ChaseHeight = 0.42f,
+            SideDistance = 2.2f,
+            OrbitDistance = 2.6f,
+            OrbitDegreesPerSecond = 18.0f,
+            ReadoutSeconds = 0.15f,
         };
 
         /// <summary>From <c>content/ships.txtpb</c>.</summary>
@@ -3643,6 +4310,15 @@ namespace LuckyNumbers.Model
                                 V = 1.0f,
                                 Yaw = 12.0f,
                                 Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "lab_bench",
+                                U = 0.5f,
+                                V = -0.3f,
+                                Yaw = 180.0f,
+                                Action = StationAction.FlightSchool,
+                                Prompt = "E: Flight School - test-fly your ship",
                             },
                         },
                     },
