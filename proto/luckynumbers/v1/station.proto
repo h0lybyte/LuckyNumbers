@@ -73,6 +73,37 @@ message StationScene {
   // Coming back from the planet (PlayerVoyage.returning): you step off beside your ship and the museum calls to pay
   // for the relics you carried back.
   StationReturn homecoming = 27;
+  // The shooting range room (generator role RANGE): weapons on its bench, crates and targets downrange.
+  StationRange range = 28;
+}
+
+// A practice range inside the station (the start of a mini-game): the room the generator lays out for role RANGE,
+// every weapon on its bench to pick up and try, loose crates to knock about, and targets at the far end that count
+// your hits (RangeState).
+message StationRange {
+  // The room's name in the layout (StationRoomRule.name for role RANGE).
+  string room = 1;
+  // Targets across the far end, and loose crates midway.
+  int32 targets = 2;
+  int32 crates = 3;
+  // Shown on the page while you're in it.
+  string hint = 4;
+}
+
+// You in the range: whether you're in the room, and your shots and hits (on its targets) since you walked in or reset.
+message RangeState {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  bool inside = 1;
+  int32 shots = 2;
+  int32 hits = 3;
+  string hint = 4;
+}
+
+// The page: start the count again.
+message RangeResetRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
 }
 
 // The museum's call when you dock: it buys every relic in your pack (its value in credits) and you earn XP for each.
@@ -113,6 +144,9 @@ enum StationRoomRole {
   STATION_ROOM_ROLE_STORAGE = 6;
   // At the east end of the south corridor.
   STATION_ROOM_ROLE_ENGINEERING = 7;
+  // North of comms through a corridor: the shooting range, long north-south (door and bench at the south end,
+  // targets at the north). StationScene.range sets it up.
+  STATION_ROOM_ROLE_RANGE = 8;
 }
 
 message StationRoomRule {

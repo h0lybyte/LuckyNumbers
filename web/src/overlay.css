@@ -1137,6 +1137,30 @@ kbd {
   .pack--equipment .pack-side { grid-column: 1 / -1; }
 }
 
+/* ---- station range (in the Range room) ---- */
+
+.range-hud {
+  position: absolute;
+  bottom: calc(max(var(--gap), env(safe-area-inset-bottom)) + 44px);   /* above the pointer hint, clear of the hands readout */
+  right: max(var(--gap), env(safe-area-inset-right));
+  width: min(280px, 60vw);
+  padding: 10px 14px;
+  border: 1px solid var(--edge);
+  border-left: 3px solid var(--warn);
+  clip-path: var(--chamfer);
+  background: var(--scan), var(--panel);
+  backdrop-filter: blur(6px);
+  animation: glitch-in 260ms steps(4, end);
+}
+.range-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.range-title { font: 11px var(--font-mono); letter-spacing: 0.24em; text-transform: uppercase; color: var(--warn); }
+.range-head .sheet-btn { height: 22px; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; }
+.range-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.range-stats div { display: grid; justify-items: center; }
+.range-stats b { font: 700 22px/1.1 var(--font-mono); color: var(--fg); text-shadow: 0 0 8px rgba(255, 176, 32, 0.4); }
+.range-stats span { font: 9px var(--font-mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+.range-hint { margin-top: 8px; font: 10px/1.4 var(--font-mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+
 /* ---- short windows (laptop browser tabs, itch embeds): the panel compacts instead of scrolling ---- */
 
 @media (max-height: 820px) {
@@ -1178,7 +1202,7 @@ kbd {
 
 @media (prefers-reduced-motion: reduce) {
   .toast, .call-panel, .objective, .station-map, .room-banner.visible, #loading-title,
-  .relic-reveal, .d20-panel, .flight-warn, .flight-crash, .sheet { animation: none; }
+  .relic-reveal, .d20-panel, .flight-warn, .flight-crash, .sheet, .range-hud { animation: none; }
 }
 
 /* Hangar (hangar.tsx): under the fighter turning on the title, pick its skin. */

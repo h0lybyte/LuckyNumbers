@@ -15,7 +15,8 @@
         "LuckyNumbers.Intro",
         "LuckyNumbers.Cargo",
         "Unity.RenderPipelines.Core.Runtime",
-        "Unity.RenderPipelines.Universal.Runtime"
+        "Unity.RenderPipelines.Universal.Runtime",
+        "LuckyNumbers.Hands"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

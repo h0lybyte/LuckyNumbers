@@ -40,6 +40,11 @@ namespace LuckyNumbers.Model
         /// At the east end of the south corridor.
         /// </summary>
         Engineering = 7,
+        /// <summary>
+        /// North of comms through a corridor: the shooting range, long north-south (door and bench at the south end,
+        /// targets at the north). StationScene.range sets it up.
+        /// </summary>
+        Range = 8,
     }
 
     public enum StationAction
@@ -192,9 +197,64 @@ namespace LuckyNumbers.Model
         /// for the relics you carried back.
         /// </summary>
         public StationReturn Homecoming { get; set; }
+        /// <summary>
+        /// The shooting range room (generator role RANGE): weapons on its bench, crates and targets downrange.
+        /// </summary>
+        public StationRange Range { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public StationScene Clone() => (StationScene)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// A practice range inside the station (the start of a mini-game): the room the generator lays out for role RANGE,
+    /// every weapon on its bench to pick up and try, loose crates to knock about, and targets at the far end that count
+    /// your hits (RangeState).
+    /// </summary>
+    public sealed class StationRange
+    {
+        /// <summary>
+        /// The room's name in the layout (StationRoomRule.name for role RANGE).
+        /// </summary>
+        public string Room { get; set; }
+        /// <summary>
+        /// Targets across the far end, and loose crates midway.
+        /// </summary>
+        public int Targets { get; set; }
+        public int Crates { get; set; }
+        /// <summary>
+        /// Shown on the page while you're in it.
+        /// </summary>
+        public string Hint { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public StationRange Clone() => (StationRange)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// You in the range: whether you're in the room, and your shots and hits (on its targets) since you walked in or reset.
+    /// </summary>
+    public sealed class RangeState : IDisposable
+    {
+        public readonly ReactiveProperty<bool> Inside = new ReactiveProperty<bool>();
+        public readonly ReactiveProperty<int> Shots = new ReactiveProperty<int>();
+        public readonly ReactiveProperty<int> Hits = new ReactiveProperty<int>();
+        public readonly ReactiveProperty<string> Hint = new ReactiveProperty<string>();
+
+        public void Dispose()
+        {
+            Inside.Dispose();
+            Shots.Dispose();
+            Hits.Dispose();
+            Hint.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// The page: start the count again.
+    /// </summary>
+    public readonly struct RangeResetRequested
+    {
     }
 
     /// <summary>

@@ -69,6 +69,8 @@ namespace LuckyNumbers.Station
         readonly JobBoard _board;
         readonly LandingSite _landing;
         readonly ISubscriber<JobAcceptRequested> _accepts;
+        readonly RangeRoom _range;                              // the shooting range room (StationScene.range)
+        readonly ISubscriber<RangeResetRequested> _rangeResets;
         List<Jobs.Offer> _offers = new();
         string _orbitBody = "";
         static JobConfig J => GameContent.Jobs;
@@ -108,8 +110,11 @@ namespace LuckyNumbers.Station
                                 ISubscriber<StationCallAnswered> answers, ISubscriber<StationPlanRequested> plans,
                                 ISubscriber<PsxModeRequested> psxRequests, PlayerVoyage voyage, IInventory pack,
                                 IPublisher<CharacterXpGained> xp, PlayerJob job, JobBoard board, LandingSite landing,
-                                ISubscriber<JobAcceptRequested> accepts, ISubscriber<DevWarpRequested> warps)
+                                ISubscriber<JobAcceptRequested> accepts, ISubscriber<DevWarpRequested> warps, ArmsView arms,
+                                RangeState rangeState, ISubscriber<RangeResetRequested> rangeResets)
         {
+            _range = new RangeRoom(station, player, arms, rangeState, warps, (at, yaw, pitch) => Teleport(at, yaw, pitch), firstPerson);
+            _rangeResets = rangeResets;
             _job = job;
             _board = board;
             _landing = landing;
@@ -156,6 +161,7 @@ namespace LuckyNumbers.Station
             {
                 if (e.Action == InputAction.Interact) _interact = true;
                 if (e.Action == InputAction.Map) _toggleMap = true;      // M: the station map (overlay)
+                if (e.Action == InputAction.SideView) _range.CycleSideView();   // V: in the range, the hands side view
                 if (e.Action == InputAction.Cancel) _closeMap = true;
             }));
             _state.MapOpen.Value = false;
@@ -164,6 +170,7 @@ namespace LuckyNumbers.Station
             _subscriptions.Add(_warps.Subscribe(e => WarpTo(e.To)));
             _subscriptions.Add(_psxRequests.Subscribe(e => SetPsx(e.On)));
             _subscriptions.Add(_accepts.Subscribe(e => Accept(e.Index)));
+            _subscriptions.Add(_rangeResets.Subscribe(_ => _range.Reset()));
             _board.Open.Value = false;
 
             var spawn = StationPlan.Centre(_station.Plan.Spawn);
@@ -188,6 +195,7 @@ namespace LuckyNumbers.Station
         {
             _layout = layout;
             _station.Build(_config, layout);
+            _range.Build(_config.Range, layout);
             _roomOf.Clear();
             var plan = _station.Plan;
             foreach (var cells in plan.Rooms())
@@ -221,7 +229,10 @@ namespace LuckyNumbers.Station
         /// <summary>The test gun (if the scene has one): dropped on the deck just ahead of where you start.</summary>
         static void PlaceWeapon(Vector3 spawn, float yaw)
         {
-            var gun = UnityEngine.Object.FindAnyObjectByType<WeaponView>(FindObjectsInactive.Include);
+            // The test rifle, not one of the range's (those lie on its bench, RangeRoom).
+            WeaponView gun = null;
+            foreach (var w in UnityEngine.Object.FindObjectsByType<WeaponView>(FindObjectsInactive.Include))
+                if (w.transform.parent == null || w.transform.parent.name != "Range weapons") { gun = w; break; }
             if (gun == null) return;
             var facing = Quaternion.Euler(0f, yaw, 0f);
             var at = spawn + facing * new Vector3(0.25f, 0.35f, 1.0f);
@@ -245,7 +256,7 @@ namespace LuckyNumbers.Station
         /// </summary>
         void WarpTo(string piece)
         {
-            if (_layout == null || string.IsNullOrEmpty(piece)) return;
+            if (_layout == null || string.IsNullOrEmpty(piece) || piece.StartsWith("range")) return;   // range: RangeRoom
             var prop = _layout.Props.Find(p => p.Piece == piece);
             if (prop == null) { Debug.Log($"[Station] dev warp: no prop '{piece}'"); return; }
             var at = _station.Plan.PlanToWorld(prop.Col, prop.Row);
@@ -267,13 +278,13 @@ namespace LuckyNumbers.Station
             Debug.Log($"[Station] dev warp to {piece}");
         }
 
-        void Teleport(Vector3 position, float yaw)
+        void Teleport(Vector3 position, float yaw, float pitch = 0f)
         {
             var body = _player.Body;
             body.enabled = false;   // a CharacterController ignores transform moves while enabled
             body.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
             body.enabled = true;
-            _firstPerson.Look(yaw, 0f);
+            _firstPerson.Look(yaw, pitch);
         }
 
         void DockShip()
@@ -335,6 +346,7 @@ namespace LuckyNumbers.Station
 
         public void PostLateTick()
         {
+            _range.Tick();
             var dt = Time.deltaTime;
             var eyes = _player.Camera;
             if (_inSpace)
@@ -729,6 +741,7 @@ namespace LuckyNumbers.Station
 
         public void Dispose()
         {
+            _range.Dispose();
             Shader.SetGlobalFloat(Psx, 0f);
             _cts.Cancel();
             _cts.Dispose();

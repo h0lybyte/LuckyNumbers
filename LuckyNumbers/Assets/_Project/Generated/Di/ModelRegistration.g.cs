@@ -23,6 +23,7 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<CharacterXpGained>(options);
             builder.RegisterMessageBroker<SceneChangeRequested>(options);
             builder.RegisterMessageBroker<SceneEntered>(options);
+            builder.RegisterMessageBroker<RangeResetRequested>(options);
             builder.RegisterMessageBroker<StationCallAnswered>(options);
             builder.RegisterMessageBroker<StationPlanRequested>(options);
             builder.RegisterMessageBroker<PsxModeRequested>(options);
@@ -59,6 +60,7 @@ namespace LuckyNumbers.Model
             builder.Register<CharacterSheet>(Lifetime.Singleton);
             builder.Register<FlowState>(Lifetime.Singleton);
             builder.Register<LoadingState>(Lifetime.Singleton);
+            builder.Register<RangeState>(Lifetime.Singleton);
             builder.Register<StationState>(Lifetime.Singleton);
             builder.Register<CombatState>(Lifetime.Singleton);
             builder.Register<CameraHandoff>(Lifetime.Singleton);
