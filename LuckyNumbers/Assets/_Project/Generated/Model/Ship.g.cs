@@ -112,23 +112,13 @@ namespace LuckyNumbers.Model
         /// </summary>
         public float Cooldown { get; set; }
         /// <summary>
-        /// m/s, metres.
-        /// </summary>
-        public float Speed { get; set; }
-        public float Range { get; set; }
-        /// <summary>
         /// Push on what it hits (N s).
         /// </summary>
         public float Impulse { get; set; }
         /// <summary>
-        /// The bolt's size (metres).
+        /// What it shoots.
         /// </summary>
-        public float Length { get; set; }
-        public float Width { get; set; }
-        /// <summary>
-        /// HDR: blooms.
-        /// </summary>
-        public Rgba Color { get; set; }
+        public Projectile Bolt { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public ShipGun Clone() => (ShipGun)MemberwiseClone();

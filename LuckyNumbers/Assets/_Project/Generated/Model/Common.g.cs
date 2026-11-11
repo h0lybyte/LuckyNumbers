@@ -71,4 +71,56 @@ namespace LuckyNumbers.Model
         public static bool operator ==(Rgba a, Rgba b) => a.Equals(b);
         public static bool operator !=(Rgba a, Rgba b) => !a.Equals(b);
     }
+
+    /// <summary>
+    /// A bolt's flight and look, shared by every gun that shoots one (ShipGun, CombatWeapon). Pooled (Core/ShapePool):
+    /// nothing is built per shot.
+    /// </summary>
+    public sealed class Projectile
+    {
+        /// <summary>
+        /// m/s, metres.
+        /// </summary>
+        public float Speed { get; set; }
+        public float Range { get; set; }
+        /// <summary>
+        /// The capsule's size (metres).
+        /// </summary>
+        public float Length { get; set; }
+        public float Width { get; set; }
+        /// <summary>
+        /// HDR: blooms.
+        /// </summary>
+        public Rgba Color { get; set; }
+        /// <summary>
+        /// At the muzzle and where it hits; unset: the gun's own defaults.
+        /// </summary>
+        public ProjectileFlash Muzzle { get; set; }
+        public ProjectileFlash Impact { get; set; }
+        /// <summary>
+        /// Bolts of this kind alive at once, built up front so a fight's first shot builds nothing. 0: the gun's default.
+        /// </summary>
+        public int Prewarm { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public Projectile Clone() => (Projectile)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// A flash that grows from 40% to full size over its life.
+    /// </summary>
+    public sealed class ProjectileFlash
+    {
+        /// <summary>
+        /// Diameter in bolt widths.
+        /// </summary>
+        public float Size { get; set; }
+        /// <summary>
+        /// Seconds.
+        /// </summary>
+        public float Life { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public ProjectileFlash Clone() => (ProjectileFlash)MemberwiseClone();
+    }
 }

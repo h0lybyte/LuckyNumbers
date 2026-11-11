@@ -8,8 +8,12 @@ namespace LuckyNumbers.Planet
     {
         static readonly CombatWeapon Fallback = new()
         {
-            Source = "default", Name = "Gun", Ability = "dex", Damage = "1d6", Cooldown = 0.5f, Speed = 80f, Range = 60f,
+            Source = "default", Name = "Gun", Ability = "dex", Damage = "1d6", Cooldown = 0.5f,
+            Bolt = new Projectile { Speed = 80f, Range = 60f },
         };
+
+        /// <summary>What `w` shoots: its `bolt`, else the fallback's (ship and melee entries have none).</summary>
+        public static Projectile Bolt(CombatWeapon w) => w?.Bolt ?? Fallback.Bolt;
 
         /// <summary>The entry for `source`, else "default".</summary>
         public static CombatWeapon For(string source)

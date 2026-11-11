@@ -27,3 +27,29 @@ message Rgba {
   float b = 3;
   float a = 4;
 }
+
+// A bolt's flight and look, shared by every gun that shoots one (ShipGun, CombatWeapon). Pooled (Core/ShapePool):
+// nothing is built per shot.
+message Projectile {
+  // m/s, metres.
+  float speed = 1;
+  float range = 2;
+  // The capsule's size (metres).
+  float length = 3;
+  float width = 4;
+  // HDR: blooms.
+  Rgba color = 5;
+  // At the muzzle and where it hits; unset: the gun's own defaults.
+  ProjectileFlash muzzle = 6;
+  ProjectileFlash impact = 7;
+  // Bolts of this kind alive at once, built up front so a fight's first shot builds nothing. 0: the gun's default.
+  int32 prewarm = 8;
+}
+
+// A flash that grows from 40% to full size over its life.
+message ProjectileFlash {
+  // Diameter in bolt widths.
+  float size = 1;
+  // Seconds.
+  float life = 2;
+}

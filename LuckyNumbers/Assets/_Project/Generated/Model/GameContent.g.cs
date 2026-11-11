@@ -463,11 +463,14 @@ namespace LuckyNumbers.Model
                     Ability = "dex",
                     Damage = "1d8",
                     Cooldown = 0.35f,
-                    Speed = 90.0f,
-                    Range = 90.0f,
-                    Length = 1.2f,
-                    Width = 0.08f,
-                    Color = new Rgba(0.4f, 1.6f, 2.6f, 1.0f),
+                    Bolt = new Projectile
+                    {
+                        Speed = 90.0f,
+                        Range = 90.0f,
+                        Length = 1.2f,
+                        Width = 0.08f,
+                        Color = new Rgba(0.4f, 1.6f, 2.6f, 1.0f),
+                    },
                     Models =
                     {
                         "carbine",
@@ -480,11 +483,14 @@ namespace LuckyNumbers.Model
                     Ability = "dex",
                     Damage = "1d6+1",
                     Cooldown = 0.45f,
-                    Speed = 80.0f,
-                    Range = 70.0f,
-                    Length = 0.9f,
-                    Width = 0.07f,
-                    Color = new Rgba(2.4f, 1.4f, 0.3f, 1.0f),
+                    Bolt = new Projectile
+                    {
+                        Speed = 80.0f,
+                        Range = 70.0f,
+                        Length = 0.9f,
+                        Width = 0.07f,
+                        Color = new Rgba(2.4f, 1.4f, 0.3f, 1.0f),
+                    },
                 },
                 new CombatWeapon
                 {
@@ -493,11 +499,14 @@ namespace LuckyNumbers.Model
                     Ability = "dex",
                     Damage = "1d10",
                     Cooldown = 0.6f,
-                    Speed = 110.0f,
-                    Range = 120.0f,
-                    Length = 1.5f,
-                    Width = 0.1f,
-                    Color = new Rgba(2.6f, 0.6f, 0.3f, 1.0f),
+                    Bolt = new Projectile
+                    {
+                        Speed = 110.0f,
+                        Range = 120.0f,
+                        Length = 1.5f,
+                        Width = 0.1f,
+                        Color = new Rgba(2.6f, 0.6f, 0.3f, 1.0f),
+                    },
                     Models =
                     {
                         "rifle_block",
@@ -513,11 +522,14 @@ namespace LuckyNumbers.Model
                     Ability = "dex",
                     Damage = "1d12+1",
                     Cooldown = 1.1f,
-                    Speed = 140.0f,
-                    Range = 150.0f,
-                    Length = 1.6f,
-                    Width = 0.08f,
-                    Color = new Rgba(0.6f, 2.2f, 1.2f, 1.0f),
+                    Bolt = new Projectile
+                    {
+                        Speed = 140.0f,
+                        Range = 150.0f,
+                        Length = 1.6f,
+                        Width = 0.08f,
+                        Color = new Rgba(0.6f, 2.2f, 1.2f, 1.0f),
+                    },
                     Models =
                     {
                         "sniper",
@@ -532,11 +544,14 @@ namespace LuckyNumbers.Model
                     Ability = "str",
                     Damage = "2d8",
                     Cooldown = 1.4f,
-                    Speed = 70.0f,
-                    Range = 80.0f,
-                    Length = 1.2f,
-                    Width = 0.16f,
-                    Color = new Rgba(2.6f, 1.0f, 0.3f, 1.0f),
+                    Bolt = new Projectile
+                    {
+                        Speed = 70.0f,
+                        Range = 80.0f,
+                        Length = 1.2f,
+                        Width = 0.16f,
+                        Color = new Rgba(2.6f, 1.0f, 0.3f, 1.0f),
+                    },
                     Models =
                     {
                         "heavy_cannon",
@@ -549,11 +564,14 @@ namespace LuckyNumbers.Model
                     Ability = "dex",
                     Damage = "1d6",
                     Cooldown = 0.5f,
-                    Speed = 80.0f,
-                    Range = 70.0f,
-                    Length = 0.9f,
-                    Width = 0.07f,
-                    Color = new Rgba(0.4f, 1.6f, 2.6f, 1.0f),
+                    Bolt = new Projectile
+                    {
+                        Speed = 80.0f,
+                        Range = 70.0f,
+                        Length = 0.9f,
+                        Width = 0.07f,
+                        Color = new Rgba(0.4f, 1.6f, 2.6f, 1.0f),
+                    },
                 },
                 new CombatWeapon
                 {
@@ -3787,12 +3805,26 @@ namespace LuckyNumbers.Model
                     Id = "basic_laser",
                     Name = "Basic laser rifle",
                     Cooldown = 0.28f,
-                    Speed = 150.0f,
-                    Range = 450.0f,
                     Impulse = 40.0f,
-                    Length = 9.0f,
-                    Width = 0.5f,
-                    Color = new Rgba(2.6f, 0.35f, 0.3f, 1.0f),
+                    Bolt = new Projectile
+                    {
+                        Speed = 150.0f,
+                        Range = 450.0f,
+                        Length = 9.0f,
+                        Width = 0.5f,
+                        Color = new Rgba(2.6f, 0.35f, 0.3f, 1.0f),
+                        Muzzle = new ProjectileFlash
+                        {
+                            Size = 4.0f,
+                            Life = 0.07f,
+                        },
+                        Impact = new ProjectileFlash
+                        {
+                            Size = 10.0f,
+                            Life = 0.25f,
+                        },
+                        Prewarm = 4,
+                    },
                 },
             },
         };
