@@ -65,6 +65,8 @@ namespace LuckyNumbers.Planet
         readonly LandingSite _landing;
         readonly PlayerShip _playerShip;
         readonly PlayerJob _job;   // the job you're here for: its seed varies the site
+        readonly ShipYard _yard;
+        readonly SceneCurtain _curtain;
         readonly IBufferedSubscriber<UniverseSeedChanged> _seeds;
         readonly CancellationTokenSource _cts = new();
         IDisposable _subscription;
@@ -84,8 +86,10 @@ namespace LuckyNumbers.Planet
         [Inject]
         public CrashSitePresenter(PlanetScene config, GroundView ground, PlanetView view, PlayerView player, IArrival arrival,
                                   IFirstPerson firstPerson, LandingSite landing, IBufferedSubscriber<UniverseSeedChanged> seeds,
-                                  PlayerShip playerShip, PlayerJob job)
+                                  PlayerShip playerShip, PlayerJob job, ShipYard yard, SceneCurtain curtain)
         {
+            _yard = yard;
+            _curtain = curtain;
             _job = job;
             _playerShip = playerShip;
             _config = config;
@@ -108,9 +112,18 @@ namespace LuckyNumbers.Planet
                 if (_built) return;
                 _built = true;
                 Build(roll.Seed == 0 ? new UniverseSeedChanged(1u, -1f, -1f, -1f, -1f) : roll);
-                if (_config.Landing != null) _arrival.ArriveAsync(this, _cts.Token).Forget();   // you fly in and land
-                else WakeAsync(_cts.Token).Forget();                                       // the old arrival
+                ArriveAsync(_cts.Token).Forget();
             });
+        }
+
+        /// <summary>Once the curtain opens (the wreck's hull is in): you fly in and land, or the old wake-up.</summary>
+        async UniTaskVoid ArriveAsync(CancellationToken ct)
+        {
+            try { await _curtain.Opened; }
+            catch (OperationCanceledException) { return; }
+            if (ct.IsCancellationRequested) return;
+            if (_config.Landing != null) _arrival.ArriveAsync(this, ct).Forget();
+            else WakeAsync(ct).Forget();
         }
 
         void Build(UniverseSeedChanged roll)
@@ -223,6 +236,7 @@ namespace LuckyNumbers.Planet
             // Wreck: nose-down in front of where you wake, half dug in, still smouldering. Not on a Clear job: its pivot
             // still marks the site's middle (the nest, the beacon, where you land), with nothing drawn there.
             HasWreck = !(_job.Active.Value && _job.Kind.Value == JobKind.Clear);
+            if (HasWreck) _curtain.Hold("wreck", _yard.Fit(_wreck, _cts.Token));   // its hull from Addressables
             _wreck.Show(null, _config.WreckLength);   // the museum freighter (its own look)
             var at = new Vector3(0f, 0f, _config.WreckDistance);
             at.y = _ground.HeightAt(at) + _config.WreckLength * 0.04f;            // nose dug in, hull above ground

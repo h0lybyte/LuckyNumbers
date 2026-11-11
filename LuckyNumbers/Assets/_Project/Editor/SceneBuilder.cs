@@ -27,6 +27,7 @@ namespace LuckyNumbers.Editor
         {
             FontSetup.Build();
             BakeWeapons();               // Prefabs/Weapons: addressable, loaded by WeaponRack (not baked into scenes)
+            BakeShips();                 // Prefabs/Ships: hulls, fitted by ShipYard into the scenes' shells
             AddressablesSetup.Apply();   // their addresses and AssetKeys, before any scene is built
             var starfield = MaterialAsset("Starfield", "LuckyNumbers/Starfield");
             var planet = MaterialAsset("Planet3D", "LuckyNumbers/Planet3D");
@@ -82,7 +83,7 @@ namespace LuckyNumbers.Editor
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var ui = Document("UI", rig.Panel, "Intro");
             SpaceRig(rig, ui);   // same universe as the title (IntroScope registers the intro backdrop)
-            FreighterRig();      // the museum freighter that goes down
+            FreighterShell(FreighterPrefab);   // the museum freighter that goes down (hull: ShipYard)
             var view = new GameObject("IntroView").AddComponent<IntroView>();
             Assign(view, ("document", ui));
             var dice = new GameObject("DiceView").AddComponent<DiceView>();
@@ -157,7 +158,7 @@ namespace LuckyNumbers.Editor
                    ("moonTemplate", moonTemplate));
             mapCamGo.SetActive(false);
 
-            var wreck = FreighterRig(collide: true);   // the wreck: the museum freighter, solid, so you walk around (and onto) it
+            var wreck = FreighterShell(FreighterSolidPrefab);   // the wreck: the museum freighter, solid, so you walk around (and onto) it
             var fighter = ShipRig(collide: true, name: "Fighter");   // your ship: you fly it in and land it (solid once parked)
             // Chase camera for flying in (off until then).
             var flightGo = new GameObject("FlightCamera");
@@ -719,7 +720,7 @@ namespace LuckyNumbers.Editor
             }
 
             var fighter = ShipRig(name: "Fighter");
-            var freighter = FreighterRig();
+            var freighter = FreighterShell(FreighterPrefab);   // M flies it (hull: ShipYard)
             Assign(view, ("document", ui), ("fighter", fighter), ("wreck", freighter), ("flightCamera", cam));
 
             Scopes<FlightSchoolScope>();
@@ -756,7 +757,7 @@ namespace LuckyNumbers.Editor
             volume.sharedProfile = GlowProfile();
 
             var fighter = ShipRig(name: "Fighter");
-            var freighter = FreighterRig();   // PlanetView wants one; hidden here
+            var freighter = FreighterShell(null);   // PlanetView wants one; never shown here, so no hull
             Assign(view, ("document", ui), ("fighter", fighter), ("wreck", freighter), ("flightCamera", cam));
 
             var orbit = new GameObject("StationOutside").AddComponent<LuckyNumbers.Station.OrbitView>();
@@ -1001,20 +1002,39 @@ namespace LuckyNumbers.Editor
         // Alpha BLEND in the source glTF (decals): alpha-tested here. Every part is double-sided.
         static readonly string[] FreighterDecals = { "mat_0001", "mat_0016" };
 
+        const string ShipPrefabsDir = "Assets/_Project/Prefabs/Ships";
+        const string FreighterPrefab = "Freighter", FreighterSolidPrefab = "FreighterSolid";
+
+        /// <summary>
+        /// The freighter's hull as prefabs in Prefabs/Ships (the Ships Addressables group): Freighter, and FreighterSolid
+        /// with its collision (the wreck you walk round). Scenes hold only a shell (FreighterShell); ShipYard fits these.
+        /// </summary>
+        public static void BakeShips()
+        {
+            if (!AssetDatabase.IsValidFolder("Assets/_Project/Prefabs")) AssetDatabase.CreateFolder("Assets/_Project", "Prefabs");
+            if (!AssetDatabase.IsValidFolder(ShipPrefabsDir)) AssetDatabase.CreateFolder("Assets/_Project/Prefabs", "Ships");
+            foreach (var (name, collide) in new[] { (FreighterPrefab, false), (FreighterSolidPrefab, true) })
+            {
+                var hull = FreighterHull(collide, out _);
+                hull.name = name;
+                PrefabUtility.SaveAsPrefabAsset(hull, $"{ShipPrefabsDir}/{name}.prefab");
+                Object.DestroyImmediate(hull);
+            }
+            AssetDatabase.SaveAssets();
+        }
+
         /// <summary>
         /// The museum freighter (CC BY, see CREDITS): one part per material, named after it (mat_0005 uses
-        /// Textures/tex_0005), its own look kept (no skins). Pivot +Z forward; length measured from the model.
+        /// Textures/tex_0005), its own look kept (no skins). +Z forward; `length` measured from the model.
         /// With `collide`: the convex pieces of cargo_ship_collision.obj (tools/collision/decompose.py).
         /// </summary>
-        internal static ShipView FreighterRig(bool collide = false)
+        static GameObject FreighterHull(bool collide, out float length)
         {
             var model = AssetDatabase.LoadAssetAtPath<GameObject>($"{FreighterDir}/cargo_ship.fbx")
                         ?? throw new System.Exception("cargo_ship.fbx missing");
-            var view = new GameObject("Freighter").AddComponent<ShipView>();
-            var pivot = new GameObject("Pivot").transform;
-            pivot.SetParent(view.transform, false);
+            var root = new GameObject("Freighter hull");
             var ship = (GameObject)PrefabUtility.InstantiatePrefab(model);
-            ship.transform.SetParent(pivot, false);
+            ship.transform.SetParent(root.transform, false);
             ship.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);   // bow (antennas) to +Z
             var renderers = ship.GetComponentsInChildren<Renderer>();
             var bounds = new Bounds();
@@ -1059,20 +1079,61 @@ namespace LuckyNumbers.Editor
                 Debug.Log($"[SceneBuilder] freighter collision: {pieces.Length} convex pieces, bounds {hullBounds.center} {hullBounds.size} " +
                           $"(model {bounds.center} {bounds.size})");
             }
+            Debug.Log($"[SceneBuilder] freighter: {renderers.Length} parts, {bounds.size.x:0.#} x {bounds.size.y:0.#} x {bounds.size.z:0.#} m");
+            length = bounds.size.z;
+            return root;
+        }
 
+        /// <summary>
+        /// The museum freighter in a scene: a ShipView shell (pivot, length, engines) whose hull ShipYard fits from
+        /// Prefabs/Ships at runtime (`prefab`: Freighter, or FreighterSolid for the wreck you walk round). Null: no
+        /// hull at all (a scene whose PlanetView needs a freighter it never shows).
+        /// </summary>
+        static ShipView FreighterShell(string prefab)
+        {
+            var view = new GameObject("Freighter").AddComponent<ShipView>();
+            var pivot = new GameObject("Pivot").transform;
+            pivot.SetParent(view.transform, false);
+            var length = 1f;
+            if (prefab != null)
+            {
+                var path = $"{ShipPrefabsDir}/{prefab}.prefab";
+                var hull = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(path)
+                                                                     ?? throw new System.Exception($"{path} missing (BakeShips)"));
+                var renderers = hull.GetComponentsInChildren<Renderer>();
+                var bounds = renderers[0].bounds;
+                foreach (var r in renderers) bounds.Encapsulate(r.bounds);
+                length = bounds.size.z;   // measured as FreighterHull measures it
+                Object.DestroyImmediate(hull);
+            }
             var so = new SerializedObject(view);
             so.FindProperty("pivot").objectReferenceValue = pivot;
-            so.FindProperty("modelLength").floatValue = bounds.size.z;
-            var rs = so.FindProperty("renderers");
-            rs.arraySize = renderers.Length;
-            for (var i = 0; i < renderers.Length; i++) rs.GetArrayElementAtIndex(i).objectReferenceValue = renderers[i];
+            so.FindProperty("modelLength").floatValue = length;
+            so.FindProperty("renderers").arraySize = 0;
             so.FindProperty("skins").arraySize = 0;
             so.FindProperty("engines").stringValue = "freighter";   // content/engines.txtpb
             so.FindProperty("exhaust").objectReferenceValue = ExhaustMaterial();
             so.FindProperty("coldGas").objectReferenceValue = ColdGasMaterial();
+            so.FindProperty("model").stringValue =
+                prefab == null ? "" : AddressablesSetup.AddressOf($"{ShipPrefabsDir}/{prefab}.prefab");
             so.ApplyModifiedPropertiesWithoutUndo();
-            Debug.Log($"[SceneBuilder] freighter: {renderers.Length} parts, {bounds.size.x:0.#} x {bounds.size.y:0.#} x {bounds.size.z:0.#} m");
             pivot.gameObject.SetActive(false);
+            return view;
+        }
+
+        /// <summary>The museum freighter whole, hull baked in (ShaderPreview's stand-alone look at it).</summary>
+        internal static ShipView FreighterRig(bool collide = false)
+        {
+            var view = FreighterShell(null);
+            var hull = FreighterHull(collide, out var length);
+            hull.transform.SetParent(view.Pivot, false);
+            var so = new SerializedObject(view);
+            so.FindProperty("modelLength").floatValue = length;
+            var renderers = hull.GetComponentsInChildren<Renderer>();
+            var rs = so.FindProperty("renderers");
+            rs.arraySize = renderers.Length;
+            for (var i = 0; i < renderers.Length; i++) rs.GetArrayElementAtIndex(i).objectReferenceValue = renderers[i];
+            so.ApplyModifiedPropertiesWithoutUndo();
             return view;
         }
 

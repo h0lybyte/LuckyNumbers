@@ -19,6 +19,12 @@ namespace LuckyNumbers.Core
     ///
     /// Landing legs (the layout's `legs`, LandingGear): tucked away unless whoever parks the ship calls GearDown with
     /// how high it sits (landed on the ground, docked in the bay); GearUp folds them as it lifts off.
+    ///
+    /// Hull from Addressables (`model` set, the museum freighter): the scene holds only this shell (pivot, length,
+    /// engines), so it can be posed, shown and read for its position at once; ShipYard.Fit loads the hull prefab
+    /// (Prefabs/Ships) and hands it to Fit, which puts it under the pivot and applies the heat already set. Until
+    /// then the ship draws nothing and HullRenderers is empty (Fitted says which). Hold the scene's SceneCurtain
+    /// with that load so nobody sees it pop in.
     /// </summary>
     public sealed class ShipView : MonoBehaviour
     {
@@ -35,11 +41,14 @@ namespace LuckyNumbers.Core
         [SerializeField] string engines;      // EngineConfig.ships[].ship ("fighter"); empty: no flames
         [SerializeField] Material exhaust;    // LuckyNumbers/Exhaust, set by the scene builder
         [SerializeField] Material coldGas;    // LuckyNumbers/ColdGas, set by the scene builder
+        [SerializeField] string model;        // the hull prefab's address (ShipYard fits it); empty: hull baked in
         [Tooltip("Gun muzzles (the pivot's space, model units: +Z the nose): the tips of the fighter's twin gun barrels " +
                  "(the rods beside the cockpit, fighter1.fbx), left then right.")]
         [SerializeField] Vector3[] muzzles = { new(-0.111f, -0.0074f, 0.116f), new(0.111f, -0.0074f, 0.116f) };
         Material _material;                                         // skinned ships: the one shared material
         readonly List<(Material material, float glow)> _parts = new();
+        bool _fitted, _shown;
+        float _heat, _throttle = 1f;   // the last SetHeat, for a hull fitted after it
 
         sealed class Jet
         {
@@ -67,8 +76,42 @@ namespace LuckyNumbers.Core
         public string SkinAt(int index) => skins[index].name;
         public string SkinName => _material != null && _material.mainTexture != null ? _material.mainTexture.name : "";
 
-        /// <summary>The hull's renderers (its model, not the flames).</summary>
+        /// <summary>The hull's renderers (its model, not the flames). Empty until Fitted.</summary>
         public IReadOnlyList<Renderer> HullRenderers => renderers;
+
+        /// <summary>The hull prefab's address, for ShipYard (empty: the hull is baked into the scene).</summary>
+        public string ModelAddress => model;
+
+        /// <summary>Is the hull here (baked in, or loaded and fitted)?</summary>
+        public bool Fitted => string.IsNullOrEmpty(model) || _fitted;
+
+        /// <summary>
+        /// The loaded hull (ShipYard): under the pivot, +Z forward like the rest. Its parts take the heat already set,
+        /// and show at once if the ship is already showing.
+        /// </summary>
+        public void Fit(GameObject hull)
+        {
+            if (_fitted) { Debug.LogWarning($"[Ship] {name}: hull already fitted"); return; }
+            _fitted = true;
+            hull.transform.SetParent(pivot, false);
+            renderers = hull.GetComponentsInChildren<Renderer>(true);
+            if (_shown) TakeParts();
+            SetHeat(_heat, _throttle);
+        }
+
+        /// <summary>The hull's materials, for heat and glow (once, when there are renderers to take them from).</summary>
+        void TakeParts()
+        {
+            if (_parts.Count > 0 || renderers.Length == 0) return;
+            if (skins.Length > 0)
+            {
+                _material = new Material(renderers[0].sharedMaterial);
+                foreach (var r in renderers) r.sharedMaterial = _material;
+                _parts.Add((_material, _material.GetFloat(Glow)));
+            }
+            else
+                foreach (var r in renderers) { var m = r.material; _parts.Add((m, m.GetFloat(Glow))); }   // own copies, for heat
+        }
 
         /// <summary>World bounds of the hull (its model only, not the flames).</summary>
         public Bounds Hull
@@ -90,17 +133,8 @@ namespace LuckyNumbers.Core
         /// <summary>Show the ship at a world length; `skin` (file name) picks a skin if it has any (unknown: the first).</summary>
         public void Show(string skin, float length)
         {
-            if (_parts.Count == 0)
-            {
-                if (skins.Length > 0)
-                {
-                    _material = new Material(renderers[0].sharedMaterial);
-                    foreach (var r in renderers) r.sharedMaterial = _material;
-                    _parts.Add((_material, _material.GetFloat(Glow)));
-                }
-                else
-                    foreach (var r in renderers) { var m = r.material; _parts.Add((m, m.GetFloat(Glow))); }   // own copies, for heat
-            }
+            _shown = true;
+            TakeParts();
             if (skins.Length > 0)
             {
                 var tex = skins[0];
@@ -148,6 +182,8 @@ namespace LuckyNumbers.Core
         /// <summary>Entry heat 0..1, engine throttle (glow multiplier).</summary>
         public void SetHeat(float heat, float throttle)
         {
+            _heat = heat;
+            _throttle = throttle;
             foreach (var (m, glow) in _parts)
             {
                 m.SetFloat(Heat, heat);

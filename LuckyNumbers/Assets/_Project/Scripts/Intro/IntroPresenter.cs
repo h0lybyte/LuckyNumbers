@@ -38,6 +38,8 @@ namespace LuckyNumbers.Intro
         readonly CameraHandoff _handoff;
         readonly LandingSite _landing;
         readonly PlayerShip _playerShip;
+        readonly ShipYard _yard;
+        readonly SceneCurtain _curtain;
         readonly CancellationTokenSource _cts = new();
 
         Cutscene _cut;
@@ -57,8 +59,10 @@ namespace LuckyNumbers.Intro
         public IntroPresenter(ISpaceDirector space, IntroView view, ShipView ship, DiceView dice, DiceState diceState,
                               IPublisher<SceneChangeRequested> scenes, IPublisher<CutsceneStepStarted> stepStarted,
                               IPublisher<CutsceneFinished> finished, CameraHandoff handoff, LandingSite landing,
-                              PlayerShip playerShip)
+                              PlayerShip playerShip, ShipYard yard, SceneCurtain curtain)
         {
+            _yard = yard;
+            _curtain = curtain;
             _playerShip = playerShip;
             _landing = landing;
             _handoff = handoff;
@@ -80,6 +84,7 @@ namespace LuckyNumbers.Intro
             _view.Bind();
             _view.Dialogue(null, null, 0);
             _ship.Hide();
+            _curtain.Hold("freighter", _yard.Fit(_ship, ct));   // its hull from Addressables, while the universe builds
             // Seamless from the title: the very first frame uses the pose the title ended on.
             _space.TakeCamera();
             _fromTitle = _handoff.Valid.Value;
@@ -102,6 +107,7 @@ namespace LuckyNumbers.Intro
             Debug.Log($"[Intro] {_manifest.Ship} ({_manifest.Museum}) goes down on {Target} \"{_targetName}\": " +
                       $"{_manifest.Relics.Count} relics worth {_manifest.TotalValue}");
             while (!_space.TryGetBody(Target, out _, out _)) await UniTask.Yield(ct);
+            await _curtain.Opened;   // the freighter's hull is in
             // Play pressed mid big bang: the title camera is out in its system overview, far from home. Continuing
             // from there would put the whole arrival out in empty space, so stand in for the title's settled view
             // (a little off home, half lit, looking at it) and fade in from black.

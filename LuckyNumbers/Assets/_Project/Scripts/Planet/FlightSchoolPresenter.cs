@@ -33,6 +33,8 @@ namespace LuckyNumbers.Planet
         readonly PlayerVoyage _voyage;
         readonly ISubscriber<InputActionPerformed> _actions;
         readonly IPublisher<SceneChangeRequested> _scenes;
+        readonly ShipYard _yard;
+        readonly SceneCurtain _curtain;
         readonly List<IDisposable> _subscriptions = new();
 
         ShipView _ship;
@@ -58,8 +60,11 @@ namespace LuckyNumbers.Planet
 
         [Inject]
         public FlightSchoolPresenter(PlanetView view, PlayerInput input, PlayerShip playerShip, PlayerVoyage voyage,
-                                     ISubscriber<InputActionPerformed> actions, IPublisher<SceneChangeRequested> scenes)
+                                     ISubscriber<InputActionPerformed> actions, IPublisher<SceneChangeRequested> scenes,
+                                     ShipYard yard, SceneCurtain curtain)
         {
+            _yard = yard;
+            _curtain = curtain;
             _view = view;
             _input = input;
             _playerShip = playerShip;
@@ -101,6 +106,7 @@ namespace LuckyNumbers.Planet
             var fighter = _view.Fighter;
             for (var i = 0; i < fighter.SkinCount; i++) if (fighter.SkinAt(i) == skin) _skin = i;
             _view.Wreck.Hide();
+            _curtain.Hold("freighter", _yard.Fit(_view.Wreck));   // its hull from Addressables (M swaps to it)
             ShowShip(false);
             _position = new Vector3(0f, S.StartHeight, 0f);
             _camPos = _position - Vector3.forward * (Length * S.ChaseDistance) + Vector3.up * (Length * S.ChaseHeight);
@@ -140,7 +146,8 @@ namespace LuckyNumbers.Planet
             }
             if ((press & Press.Exit) != 0 && !_leaving) Leave().Forget();
 
-            _fade = Mathf.MoveTowards(_fade, _leaving ? 1f : 0f, dt / (_leaving ? 0.5f : 0.8f));
+            if (_curtain.IsOpen || _leaving)   // black until the curtain opens (the freighter's hull is in)
+                _fade = Mathf.MoveTowards(_fade, _leaving ? 1f : 0f, dt / (_leaving ? 0.5f : 0.8f));
             _view.Fade(_fade);
             if (!_leaving) Fly(dt);
             _ship.Pose(_position, _rotation);

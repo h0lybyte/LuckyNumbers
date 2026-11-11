@@ -5,6 +5,8 @@ namespace LuckyNumbers.Core
     /// <summary>Every addressable asset, by address (see AssetScope).</summary>
     public static class AssetKeys
     {
+        public static readonly AssetKey<global::UnityEngine.GameObject> ShipFreighter = new("ship/freighter");
+        public static readonly AssetKey<global::UnityEngine.GameObject> ShipFreighterSolid = new("ship/freighter-solid");
         public static readonly AssetKey<global::UnityEngine.GameObject> SpikeSmokeCube = new("spike/smoke-cube");
         public static readonly AssetKey<global::UnityEngine.GameObject> WeaponCarbine = new("weapon/carbine");
         public static readonly AssetKey<global::UnityEngine.GameObject> WeaponHammer = new("weapon/hammer");
@@ -43,6 +45,14 @@ namespace LuckyNumbers.Core
                 ["sniper"] = WeaponSniper,
                 ["sniper_barrel"] = WeaponSniperBarrel,
                 ["sniper_long"] = WeaponSniperLong,
+            };
+
+        /// <summary>Ships, by file name.</summary>
+        public static readonly System.Collections.Generic.IReadOnlyDictionary<string, AssetKey<global::UnityEngine.GameObject>> Ship =
+            new System.Collections.Generic.Dictionary<string, AssetKey<global::UnityEngine.GameObject>>
+            {
+                ["Freighter"] = ShipFreighter,
+                ["FreighterSolid"] = ShipFreighterSolid,
             };
 
         /// <summary>Spikes, by file name.</summary>

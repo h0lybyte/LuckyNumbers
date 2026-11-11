@@ -41,6 +41,9 @@ namespace LuckyNumbers.Editor
         {
             // SceneBuilder.BakeWeapons; loaded by WeaponRack in the scenes with hands (fetched while the one before plays).
             new("Weapons", "Assets/_Project/Prefabs/Weapons", "t:Prefab", "weapon/", "Planet", "Station"),
+            // SceneBuilder.BakeShips: the freighter's hull (and its solid twin, the wreck); ShipYard fits them into the
+            // scenes' ShipView shells. Not Orbit: its freighter is never shown, so its shell has no hull.
+            new("Ships", "Assets/_Project/Prefabs/Ships", "t:Prefab", "ship/", "Intro", "Planet", "FlightSchool"),
             // SPIKE: delete with the AddressablesSmoke folder.
             // Labelled Station so Title's preload (its next scene) downloads it: the smoke test exercises prefetch.
             new("Spikes", "Assets/_Project/Spikes/AddressablesSmoke", "t:Prefab", "spike/", "Station"),
@@ -176,6 +179,18 @@ namespace LuckyNumbers.Editor
             File.WriteAllText(KeysPath, text);
             AssetDatabase.ImportAsset(KeysPath);
             return true;
+        }
+
+        /// <summary>
+        /// The address a rule gives the asset at `assetPath` (for a scene that stores one, like ShipView's hull), even
+        /// before Apply has made its entry.
+        /// </summary>
+        public static string AddressOf(string assetPath)
+        {
+            foreach (var rule in Rules)
+                if (assetPath.StartsWith(rule.Folder + "/"))
+                    return rule.Prefix + Kebab(Path.GetFileNameWithoutExtension(assetPath));
+            throw new ArgumentException($"[Addressables] no rule covers {assetPath}");
         }
 
         /// <summary>"SmokeCube" / "smoke_cube" -> "smoke-cube".</summary>

@@ -118,7 +118,7 @@ namespace LuckyNumbers.Planet
             var dt = Time.deltaTime;
             // Once the wreck is down and the landing pad placed (the named artifacts lie on its way); no pad: once on foot.
             var padReady = _view.LandingPad != null && _view.LandingPad.gameObject.activeSelf;
-            if (!_spawned && _site.Built && _view.Wreck != null && _view.Wreck.Pivot.gameObject.activeInHierarchy &&
+            if (!_spawned && _site.Built && _view.Wreck != null && _view.Wreck.Pivot.gameObject.activeInHierarchy && _view.Wreck.Fitted &&
                 (padReady || _firstPerson.Active)) Spawn();
             // No relics yet (or never: a Clear job's site has no wreck to scatter them from), but the rest still runs:
             // boarding your ship, picking up what you dropped and the use prompt mustn't wait on the relics.
