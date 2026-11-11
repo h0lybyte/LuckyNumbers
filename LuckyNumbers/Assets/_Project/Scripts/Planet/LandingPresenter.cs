@@ -72,6 +72,9 @@ namespace LuckyNumbers.Planet
         bool _dry;                                 // no fuel: engines out, the reserve cells let you down
         bool _lockClick, _canFire;                 // the pointer-locking click is pressed; presses fire the guns
         int _landings;
+        // Barrel roll (Shift+Q/E): time into it (-1: not rolling), which way, how far round so far, the next allowed.
+        float _barrelT = -1f, _barrelDir, _barrelDone, _barrelReady;
+        bool _rollWasHeld;
         readonly ISubscriber<DevWarpRequested> _warps;
         IDisposable _warpSubscription;
         IDisposable _hudSubscription;
@@ -504,6 +507,23 @@ namespace LuckyNumbers.Planet
             descending = _input.Descending.Value || _dry;
             var roll = _input.Roll.Value;
 
+            // Barrel roll: Shift+Q / Shift+E (fresh press) spins the ship once round that way and kicks it sideways.
+            var rollHeld = math.abs(roll) > 0.5f;
+            var kick = false;
+            if (rollHeld && !_rollWasHeld && _input.Sprinting.Value && _barrelT < 0f && Time.time >= _barrelReady &&
+                !_dry && H.BarrelRollSeconds > 0f)
+            {
+                _barrelT = 0f;
+                _barrelDone = 0f;
+                _barrelDir = math.sign(roll);
+                kick = true;
+                if (F != null) _playerShip.Fuel.Value = math.max(0f, _playerShip.Fuel.Value - H.BarrelRollFuel / math.max(0.1f, _stats.Efficiency));
+                Debug.Log($"[Landing] barrel roll {(_barrelDir < 0f ? "left" : "right")}");
+            }
+            _rollWasHeld = rollHeld;
+            var barreling = _barrelT >= 0f;
+            if (barreling) roll = 0f;   // the roll is the manoeuvre's, not the keys'
+
             // Aim.
             var settle = 1f - math.exp(-math.max(0.5f, H.TurnSmoothing) * dt);
             var turn = H.TurnRate * ag;
@@ -512,8 +532,21 @@ namespace LuckyNumbers.Planet
                                    -roll * H.RollRate * ag);
             _spin = Vector3.Lerp(_spin, want, settle);
             _rotation = _rotation * Quaternion.Euler(_spin * dt);
+            if (barreling)
+            {
+                // Eased in and out: smoothstep of the time, a full turn by the end (the same way Q/E would roll).
+                _barrelT += dt;
+                var p = math.smoothstep(0f, 1f, math.saturate(_barrelT / H.BarrelRollSeconds));
+                _rotation = _rotation * Quaternion.Euler(0f, 0f, -_barrelDir * (p - _barrelDone) * 360f);
+                _barrelDone = p;
+                if (p >= 1f)
+                {
+                    _barrelT = -1f;
+                    _barrelReady = Time.time + math.max(0f, H.BarrelRollCooldown);
+                }
+            }
             var altitude = _position.y - _ground.HeightAt(_position);
-            var steering = math.abs(look.x) + math.abs(look.y) > 0.5f || math.abs(roll) > 0.1f;
+            var steering = math.abs(look.x) + math.abs(look.y) > 0.5f || math.abs(roll) > 0.1f || barreling;
             if (!steering && altitude < H.LevelHeight)
             {
                 var normal = _ground.NormalAt(_position);
@@ -525,7 +558,6 @@ namespace LuckyNumbers.Planet
             // Travel: the velocity the keys ask for, in the ship's frame; the assist eases towards it.
             var forward = move.Y > 0.1f ? H.MaxSpeed * sp * boost * move.Y : move.Y < -0.1f ? H.ReverseSpeed * sp * move.Y : 0f;
             var side = math.abs(move.X) > 0.1f ? H.StrafeSpeed * sp * move.X : 0f;
-            // Flying out, Shift boosts the climb too (orbit is a long way up).
             // Flying about, Shift boosts the climb too (orbit is a long way up).
             var vertical = _input.Lifting.Value ? H.ClimbSpeed * sp * (_roaming ? boost : 1f) : descending ? -H.DescendSpeed : 0f;
             var target = _input.Braking.Value ? Vector3.zero : _rotation * new Vector3(side, vertical, forward);
@@ -538,6 +570,13 @@ namespace LuckyNumbers.Planet
             if (!_dry) _demand = target.magnitude / math.max(1f, H.MaxSpeed) * (pushing ? 1f : 0.5f);
             if (change.magnitude > rate) change = change.normalized * rate;
             _velocity += change;
+            // The roll's dodge: a kick sideways (level with the ground, so it doesn't push you up or down), easing out
+            // as the assist brings you back to what the keys ask for.
+            if (kick)
+            {
+                var side2 = Vector3.ProjectOnPlane(_rotation * Vector3.right, Vector3.up);
+                if (side2.sqrMagnitude > 1e-4f) _velocity += side2.normalized * (_barrelDir * H.BarrelRollDodge);
+            }
 
             // Near the ground, however you're heading down, the descent eases to a safe touchdown: inside 80% of the
             // touchdown limit all the way through the flare (so the gauge stays green), and down to touchdown_speed.
