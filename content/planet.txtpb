@@ -156,7 +156,8 @@ landing {
     level_height: 14
     level_rate: 40
     barrel_roll_seconds: 0.6   # Shift+Q / Shift+E: a full roll that way, and a dodge sideways
-    barrel_roll_dodge: 14
+    barrel_roll_distance: 30   # m sideways over the roll (the fighter is 24 m long)
+    barrel_roll_dodge: 6       # m/s sideways drift it leaves you with (the assist eases it out)
     barrel_roll_cooldown: 0.8
     barrel_roll_fuel: 1.5
   }

@@ -190,12 +190,15 @@ message FlightHover {
   float hard_brake = 18;
   float level_height = 19;
   float level_rate = 20;
-  // Barrel roll (Shift+Q / Shift+E): a full 360 degree roll that way in barrel_roll_seconds, with a sideways kick of
-  // barrel_roll_dodge (m/s) the same way; then barrel_roll_cooldown seconds before the next, barrel_roll_fuel units each.
+  // Barrel roll (Shift+Q / Shift+E; Planet/BarrelRoll): a full 360 degree roll that way in barrel_roll_seconds,
+  // carrying the ship barrel_roll_distance (m) sideways the same way (level with the ground, eased in and out, not
+  // fought by the assist), leaving it drifting on at barrel_roll_dodge (m/s); then barrel_roll_cooldown seconds before
+  // the next, barrel_roll_fuel units each (on the planet).
   float barrel_roll_seconds = 21;
   float barrel_roll_dodge = 22;
   float barrel_roll_cooldown = 23;
   float barrel_roll_fuel = 24;
+  float barrel_roll_distance = 25;
 }
 
 // Flying in, for the page's flight HUD (the steps, the pad arrow, instruments, landing gauges): in the air /

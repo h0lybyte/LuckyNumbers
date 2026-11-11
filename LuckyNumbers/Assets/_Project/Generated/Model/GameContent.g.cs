@@ -2362,7 +2362,7 @@ namespace LuckyNumbers.Model
         public static readonly OrbitScene Orbit = new OrbitScene
         {
             Title = "OUTSIDE THE STATION",
-            Hint = "W/S thrust - A/D strafe - Space/C up, down - Q/E roll - Shift boost - X brake - click, then mouse to aim\nFly slowly into the docking beacon at the bay, then E to dock",
+            Hint = "W/S thrust - A/D strafe - Space/C up, down - Q/E roll (Shift: barrel roll) - Shift boost - X brake - click, then mouse to aim\nFly slowly into the docking beacon at the bay, then E to dock",
             DockPrompt = "E: dock",
             SlowPrompt = "Too fast to dock - brake (X)",
             DockOffset = 0.8f,
@@ -3358,9 +3358,10 @@ namespace LuckyNumbers.Model
                     LevelHeight = 14.0f,
                     LevelRate = 40.0f,
                     BarrelRollSeconds = 0.6f,
-                    BarrelRollDodge = 14.0f,
+                    BarrelRollDodge = 6.0f,
                     BarrelRollCooldown = 0.8f,
                     BarrelRollFuel = 1.5f,
+                    BarrelRollDistance = 30.0f,
                 },
                 OrbitAltitude = 260.0f,
                 BoardPrompt = "E: board your ship",
@@ -3382,7 +3383,7 @@ namespace LuckyNumbers.Model
         public static readonly FlightSchoolScene School = new FlightSchoolScene
         {
             Title = "FLIGHT SCHOOL",
-            Hint = "W/S thrust - A/D strafe - Space/C up, down - Q/E roll - Shift boost - X brake - click, then mouse to aim\nV camera - M fighter or freighter - R next skin - Esc back to the station",
+            Hint = "W/S thrust - A/D strafe - Space/C up, down - Q/E roll (Shift: barrel roll) - Shift boost - X brake - click, then mouse to aim\nV camera - M fighter or freighter - R next skin - Esc back to the station",
             FighterLength = 24.0f,
             FreighterLength = 140.0f,
             FreighterSpeed = 0.45f,
