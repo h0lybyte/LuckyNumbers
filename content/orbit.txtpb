@@ -4,7 +4,7 @@
 # Flies like the Flight School (planet.txtpb's landing.hover and the skin's stats). Placeholder numbers.
 
 title: "OUTSIDE THE STATION"
-hint: "W/S thrust - A/D strafe - Space/C up, down - Q/E roll - Shift boost - X brake - click, then mouse to aim\nFly slowly into the docking beacon at the bay, then E to dock"
+hint: "W/S thrust - A/D strafe - Space/C up, down - Q/E roll (Shift: barrel roll) - Shift boost - X brake - click, then mouse to aim\nFly slowly into the docking beacon at the bay, then E to dock"
 dock_prompt: "E: dock"
 slow_prompt: "Too fast to dock - brake (X)"
 

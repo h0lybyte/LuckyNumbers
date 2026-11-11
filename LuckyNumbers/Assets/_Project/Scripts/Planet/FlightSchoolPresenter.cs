@@ -157,6 +157,7 @@ namespace LuckyNumbers.Planet
             _flight.Position = _position;
             _flight.Rotation = _rotation;
             _flight.Step(_input, dt, Speed, Agility, level: _position.y < H.LevelHeight, _ship);
+            if (_flight.BarrelStarted) Debug.Log($"[School] barrel roll {(_flight.BarrelDirection < 0f ? "left" : "right")}");
             _position = _flight.Position;
             _rotation = _flight.Rotation;
             var floor = Floor;

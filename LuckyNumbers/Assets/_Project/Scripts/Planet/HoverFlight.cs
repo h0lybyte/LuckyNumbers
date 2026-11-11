@@ -7,7 +7,7 @@ namespace LuckyNumbers.Planet
 {
     /// <summary>
     /// The planet's hover flight (LandingPresenter.HoverMove: PlanetScene.landing.hover and the ship's speed and
-    /// agility) with no ground, gravity, fuel or crashes: for flying in space (the Flight School's deck, outside the
+    /// agility, and its Shift+Q/E barrel roll) with no ground, gravity, fuel or crashes: for flying in space (the Flight School's deck, outside the
     /// station). The caller keeps the ship out of whatever is solid after each Step.
     /// </summary>
     public sealed class HoverFlight
@@ -15,6 +15,11 @@ namespace LuckyNumbers.Planet
         public Vector3 Position, Velocity;
         public Quaternion Rotation = Quaternion.identity;
         Vector3 _spin, _jetSpin;
+        readonly BarrelRoll _barrel = new();   // Shift+Q/E
+
+        /// <summary>A barrel roll just started (for a log or a sound), and which way (-1 left, +1 right).</summary>
+        public bool BarrelStarted { get; private set; }
+        public float BarrelDirection => _barrel.Direction;
 
         static FlightLanding L => GameContent.Planet.Landing;
         static FlightHover H => L.Hover;
@@ -22,7 +27,11 @@ namespace LuckyNumbers.Planet
         /// <summary>Top speed (no boost) for a ship with this speed multiplier.</summary>
         public static float TopSpeed(float speed) => H.MaxSpeed * speed;
 
-        public void Stop() => Velocity = _spin = _jetSpin = Vector3.zero;
+        public void Stop()
+        {
+            Velocity = _spin = _jetSpin = Vector3.zero;
+            _barrel.Cancel();
+        }
 
         /// <summary>
         /// One frame of flying from the player's input: aim (mouse while the pointer is locked or held), thrust in the
@@ -37,6 +46,9 @@ namespace LuckyNumbers.Planet
             var look = steering ? new Vector2(input.Look.Value.X, input.Look.Value.Y) : Vector2.zero;
             var move = input.Move.Value;
             var roll = input.Roll.Value;
+            BarrelStarted = _barrel.TryStart(roll, input.Sprinting.Value, Rotation);
+            var barreling = _barrel.Active;
+            if (barreling) roll = 0f;   // the roll is the manoeuvre's, not the keys'
             var sp = math.max(0.1f, speed);
             var ag = math.max(0.1f, agility);
             var boost = input.Sprinting.Value ? math.max(1f, H.Boost) : 1f;
@@ -49,7 +61,8 @@ namespace LuckyNumbers.Planet
                                    -roll * H.RollRate * ag);
             _spin = Vector3.Lerp(_spin, want, settle);
             Rotation = Rotation * Quaternion.Euler(_spin * dt);
-            var turning = math.abs(look.x) + math.abs(look.y) > 0.5f || math.abs(roll) > 0.1f;
+            _barrel.Step(dt, ref Rotation, ref Position, ref Velocity);
+            var turning = math.abs(look.x) + math.abs(look.y) > 0.5f || math.abs(roll) > 0.1f || barreling;
             if (!turning && level)
             {
                 var nose = Vector3.ProjectOnPlane(Rotation * Vector3.forward, Vector3.up);
