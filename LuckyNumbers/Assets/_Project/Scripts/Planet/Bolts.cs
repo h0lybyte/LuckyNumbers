@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
+using LuckyNumbers.Core;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace LuckyNumbers.Planet
 {
@@ -14,38 +14,38 @@ namespace LuckyNumbers.Planet
         static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
         static readonly int ColorId = Shader.PropertyToID("_Color");
 
-        sealed class Bolt
+        struct Bolt
         {
-            public Transform View;
+            public Shape View;
             public Vector3 Position, Direction;
             public float Speed, Left, Length, Width;
             public Color Color;
             public string Source;
         }
 
-        readonly Material _material;
         readonly Transform _ignore;
         readonly List<Bolt> _bolts = new();
-        readonly List<(Transform view, float age, float life, float size)> _flashes = new();
+        readonly ShapePool _capsules;
+        readonly Flashes _flashes;
         readonly RaycastHit[] _hits = new RaycastHit[8];
-        readonly MaterialPropertyBlock _block = new();
         int _logged;
 
         public Bolts(Material material, Transform ignore)
         {
-            _material = material;
             _ignore = ignore;
+            // Pooled, warmed up front: the first shot of a fight shouldn't be the one that builds GameObjects.
+            _capsules = new ShapePool(PrimitiveType.Capsule, material, "Bolt", BaseColor, ColorId, prewarm: 8);
+            _flashes = new Flashes(new ShapePool(PrimitiveType.Sphere, material, "Bolt flash", BaseColor, ColorId, prewarm: 8), ownsPool: true);
         }
 
         public void Fire(Vector3 from, Vector3 target, float speed, float range, float length, float width, Color color, string source)
         {
             var dir = target - from;
             dir = dir.sqrMagnitude > 1e-4f ? dir.normalized : Vector3.forward;
-            var view = Shape(PrimitiveType.Capsule, from, new Vector3(width, length * 0.5f, width), color);
-            view.rotation = Quaternion.FromToRotation(Vector3.up, dir);
+            var view = _capsules.Get(from, Quaternion.FromToRotation(Vector3.up, dir), new Vector3(width, length * 0.5f, width), color);
             _bolts.Add(new Bolt { View = view, Position = from, Direction = dir, Speed = Mathf.Max(1f, speed), Left = range,
                                   Length = length, Width = width, Color = color, Source = source });
-            Flash(from, width * 3f, 0.06f, color);
+            _flashes.Add(from, width * 3f, 0.06f, color);
         }
 
         public void Tick(float dt)
@@ -61,24 +61,25 @@ namespace LuckyNumbers.Planet
                     target?.Hit(b.Source, hit.point, b.Direction);
                     if (hit.rigidbody != null && !hit.rigidbody.isKinematic)
                         hit.rigidbody.AddForceAtPosition(b.Direction * 3f, hit.point, ForceMode.Impulse);
-                    Flash(hit.point + hit.normal * 0.03f, b.Width * 6f, 0.2f, b.Color);
-                    Object.Destroy(b.View.gameObject);
-                    _bolts.RemoveAt(i);
+                    _flashes.Add(hit.point + hit.normal * 0.03f, b.Width * 6f, 0.2f, b.Color);
+                    Remove(i);
                     continue;
                 }
                 b.Position += b.Direction * step;
                 b.Left -= step;
-                b.View.position = b.Position - b.Direction * (b.Length * 0.5f);
-                if (b.Left <= 0f) { Object.Destroy(b.View.gameObject); _bolts.RemoveAt(i); }
+                b.View.Transform.position = b.Position - b.Direction * (b.Length * 0.5f);
+                if (b.Left <= 0f) { Remove(i); continue; }
+                _bolts[i] = b;
             }
-            for (var i = _flashes.Count - 1; i >= 0; i--)
-            {
-                var (view, age, life, size) = _flashes[i];
-                age += dt;
-                if (age >= life) { Object.Destroy(view.gameObject); _flashes.RemoveAt(i); continue; }
-                view.localScale = Vector3.one * (size * Mathf.Lerp(0.4f, 1f, age / life));
-                _flashes[i] = (view, age, life, size);
-            }
+            _flashes.Tick(dt);
+        }
+
+        /// <summary>Back to the pool; swap-remove (the last bolt, already ticked this frame, takes its slot).</summary>
+        void Remove(int i)
+        {
+            _capsules.Release(_bolts[i].View);
+            _bolts[i] = _bolts[^1];
+            _bolts.RemoveAt(_bolts.Count - 1);
         }
 
         bool Cast(Vector3 from, Vector3 dir, float distance, out RaycastHit best)
@@ -96,35 +97,11 @@ namespace LuckyNumbers.Planet
             return found;
         }
 
-        void Flash(Vector3 at, float size, float life, Color color)
-        {
-            var view = Shape(PrimitiveType.Sphere, at, Vector3.one * size * 0.4f, color);
-            _flashes.Add((view, 0f, life, size));
-        }
-
-        Transform Shape(PrimitiveType type, Vector3 at, Vector3 scale, Color color)
-        {
-            var go = GameObject.CreatePrimitive(type);
-            go.name = "Bolt";
-            Object.Destroy(go.GetComponent<Collider>());
-            var r = go.GetComponent<MeshRenderer>();
-            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            r.receiveShadows = false;
-            if (_material != null) r.sharedMaterial = _material;
-            _block.SetColor(BaseColor, color);
-            _block.SetColor(ColorId, color);
-            r.SetPropertyBlock(_block);
-            go.transform.SetPositionAndRotation(at, Quaternion.identity);
-            go.transform.localScale = scale;
-            return go.transform;
-        }
-
         public void Dispose()
         {
-            foreach (var b in _bolts) if (b.View != null) Object.Destroy(b.View.gameObject);
-            foreach (var f in _flashes) if (f.view != null) Object.Destroy(f.view.gameObject);
             _bolts.Clear();
-            _flashes.Clear();
+            _flashes.Dispose();
+            _capsules.Dispose();
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using LuckyNumbers.Core;
 using UnityEngine;
 
 namespace LuckyNumbers.Planet
@@ -63,18 +64,37 @@ namespace LuckyNumbers.Planet
         /// <summary>Off cooldown: the next TryFire shoots.</summary>
         public bool Ready => Time.time >= _nextShot;
 
-        sealed class Bolt { public Transform View; public Vector3 Position, Direction; public float Left; }
+        struct Bolt { public Shape View; public Vector3 Position, Direction; public float Left; }
+
+        static readonly int ColorA = Shader.PropertyToID("_ColorA");
+        static readonly int ColorB = Shader.PropertyToID("_ColorB");
+        /// <summary>
+        /// Bolt and flash shapes shared by every gun with the same material (most guns just lie there: none gets its
+        /// own pool). Built on the first shot, again after a scene change took the old ones.
+        /// </summary>
+        static readonly Dictionary<Material, (ShapePool capsules, ShapePool spheres)> Pools = new();
+        static (ShapePool capsules, ShapePool spheres) _unmaterialed;
+
+        static (ShapePool capsules, ShapePool spheres) PoolsFor(Material m)
+        {
+            var have = m != null ? Pools.TryGetValue(m, out var p) ? p : default : _unmaterialed;
+            if (have.capsules is { Alive: true }) return have;
+            have = (new ShapePool(PrimitiveType.Capsule, m, "Bolt", ColorA, ColorB, prewarm: 6),
+                    new ShapePool(PrimitiveType.Sphere, m, "Bolt flash", ColorA, ColorB, prewarm: 6));
+            if (m != null) Pools[m] = have; else _unmaterialed = have;
+            return have;
+        }
 
         /// <summary>Any gun fired (the station's range counts shots).</summary>
         public static event Action<WeaponView> Fired;
         /// <summary>Any gun's bolt hit something (the station's range counts hits on its targets).</summary>
         public static event Action<WeaponView, RaycastHit> BoltHit;
         readonly List<Bolt> _bolts = new();
-        readonly List<(Transform view, float age, float life, float size)> _flashes = new();
+        ShapePool _capsules;
+        Flashes _flashes;
         readonly RaycastHit[] _hits = new RaycastHit[8];
         Transform _ignore;
         Light _flashLight;
-        MaterialPropertyBlock _block;
         float _nextShot;
 
         /// <summary>Editor setup (SceneBuilder): measured hold points and the bolt's material.</summary>
@@ -114,10 +134,16 @@ namespace LuckyNumbers.Planet
             var from = MuzzleWorld;
             var dir = target - from;
             dir = dir.sqrMagnitude > 1e-4f ? dir.normalized : transform.forward;
-            var view = Shape(PrimitiveType.Capsule, from, new Vector3(boltWidth, boltLength * 0.5f, boltWidth), 0);
-            view.rotation = Quaternion.FromToRotation(Vector3.up, dir);
+            if (_capsules is not { Alive: true })
+            {
+                var (capsules, spheres) = PoolsFor(boltMaterial);
+                _capsules = capsules;
+                _flashes?.Clear();
+                _flashes = new Flashes(spheres, ownsPool: false);
+            }
+            var view = _capsules.Get(from, Quaternion.FromToRotation(Vector3.up, dir), new Vector3(boltWidth, boltLength * 0.5f, boltWidth), boltColor);
             _bolts.Add(new Bolt { View = view, Position = from, Direction = dir, Left = range });
-            Flash(from, 0.09f, 0.06f, gameObject.layer);   // muzzle flash with the gun (viewmodel when held)
+            _flashes.Add(from, 0.09f, 0.06f, boltColor, gameObject.layer);   // muzzle flash with the gun (viewmodel when held)
             if (_flashLight == null)
             {
                 _flashLight = new GameObject("MuzzleLight").AddComponent<Light>();
@@ -144,27 +170,20 @@ namespace LuckyNumbers.Planet
                     hit.collider.GetComponentInParent<IDamageable>()?.Hit(Source, hit.point, b.Direction);
                     if (hit.rigidbody != null && !hit.rigidbody.isKinematic)
                         hit.rigidbody.AddForceAtPosition(b.Direction * impulse, hit.point, ForceMode.Impulse);
-                    Flash(hit.point + hit.normal * 0.02f, 0.35f, 0.18f, 0);
+                    _flashes.Add(hit.point + hit.normal * 0.02f, 0.35f, 0.18f, boltColor);
                     Debug.Log($"[Weapon] bolt hit {hit.collider.name} after {range - b.Left + hit.distance:0.0} m");
                     BoltHit?.Invoke(this, hit);
-                    Destroy(b.View.gameObject);
-                    _bolts.RemoveAt(i);
+                    Remove(i);
                     continue;
                 }
                 b.Position += b.Direction * step;
                 b.Left -= step;
                 // The bolt's tail trails its head, so it never pokes through what it is about to hit.
-                b.View.position = b.Position - b.Direction * (boltLength * 0.5f);
-                if (b.Left <= 0f) { Destroy(b.View.gameObject); _bolts.RemoveAt(i); }
+                b.View.Transform.position = b.Position - b.Direction * (boltLength * 0.5f);
+                if (b.Left <= 0f) { Remove(i); continue; }
+                _bolts[i] = b;
             }
-            for (var i = _flashes.Count - 1; i >= 0; i--)
-            {
-                var (view, age, life, size) = _flashes[i];
-                age += dt;
-                if (age >= life) { Destroy(view.gameObject); _flashes.RemoveAt(i); continue; }
-                view.localScale = Vector3.one * (size * Mathf.Lerp(0.4f, 1f, age / life));
-                _flashes[i] = (view, age, life, size);
-            }
+            _flashes?.Tick(dt);
             if (_flashLight != null) _flashLight.intensity = Mathf.MoveTowards(_flashLight.intensity, 0f, dt * 60f);
         }
 
@@ -184,34 +203,19 @@ namespace LuckyNumbers.Planet
             return found;
         }
 
-        void Flash(Vector3 at, float size, float life, int layer)
+        /// <summary>Back to the pool; swap-remove (the last bolt, already ticked this frame, takes its slot).</summary>
+        void Remove(int i)
         {
-            var view = Shape(PrimitiveType.Sphere, at, Vector3.one * size * 0.4f, layer);
-            _flashes.Add((view, 0f, life, size));
-        }
-
-        Transform Shape(PrimitiveType type, Vector3 at, Vector3 scale, int layer)
-        {
-            var go = GameObject.CreatePrimitive(type);
-            go.name = "Bolt";
-            go.layer = layer;
-            Destroy(go.GetComponent<Collider>());
-            var r = go.GetComponent<MeshRenderer>();
-            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            if (boltMaterial != null) r.sharedMaterial = boltMaterial;
-            _block ??= new MaterialPropertyBlock();
-            _block.SetColor("_ColorA", boltColor);
-            _block.SetColor("_ColorB", boltColor);
-            r.SetPropertyBlock(_block);
-            go.transform.SetPositionAndRotation(at, Quaternion.identity);
-            go.transform.localScale = scale;
-            return go.transform;
+            _capsules.Release(_bolts[i].View);
+            _bolts[i] = _bolts[^1];
+            _bolts.RemoveAt(_bolts.Count - 1);
         }
 
         void OnDestroy()
         {
-            foreach (var b in _bolts) if (b.View != null) Destroy(b.View.gameObject);
-            foreach (var f in _flashes) if (f.view != null) Destroy(f.view.gameObject);
+            foreach (var b in _bolts) _capsules?.Release(b.View);   // the shapes are shared: back to the pool
+            _bolts.Clear();
+            _flashes?.Clear();
             if (_flashLight != null) Destroy(_flashLight.gameObject);
         }
 
