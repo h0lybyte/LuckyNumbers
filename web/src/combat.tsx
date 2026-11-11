@@ -1,9 +1,10 @@
 // Fights on the planet (Unity: Planet/CombatPresenter). Every attack is a d20 roll; the feed shows the last few,
 // newest at the bottom: who at whom, d20 + bonus = total against the armour, hit (and the damage dice) or miss.
-// The monster you hit last shows its health; going down shows the rescue.
+// The monster you hit last shows its health; going down shows the rescue. Your own rolls also land on the d20.
 import { useEffect, useRef, useState } from "react";
 import { useLNEvent, useLNState } from "./ln";
 import type { CombatRoll } from "./ln";
+import { AttackD20 } from "./relics";
 
 type Line = CombatRoll & { id: number; at: number };
 
@@ -24,6 +25,7 @@ export function CombatHud() {
   const [name, hp, max] = (combat?.target ?? "").split("|");
   return (
     <>
+      <AttackD20 />
       {combat?.target && (
         <div className="combat-target" aria-label={`${name}: ${hp} of ${max}`}>
           <span>{name}</span>
