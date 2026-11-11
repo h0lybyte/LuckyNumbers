@@ -76,7 +76,7 @@ namespace LuckyNumbers.Core
     /// their d20 table: the die, + your luck die, + the sheet's relic bonus, naturals stand; R uses the ready one) and
     /// drops them. Bulk against your Strength gives the load and walking speed.
     /// Gear goes into its equipment slot (InventoryEquipRequested, or dragged onto the slot) and out of the grid; its
-    /// bonuses reach the sheet through IEquipment (EquipmentChanged). Nothing is drawn: you're first-person arms.
+    /// bonuses reach the sheet through IEquipment (EquipmentChanged). Only a weapon with a model is drawn (FirstPersonPresenter puts it in your hands).
     /// Unequipping puts it back where there's room (InventoryUnequipRequested, or dragged onto a cell). The kit's gear
     /// starts equipped. Everything goes to PlayerInventory for the page.
     /// </summary>

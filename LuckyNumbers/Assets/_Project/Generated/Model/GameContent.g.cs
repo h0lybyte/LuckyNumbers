@@ -1957,6 +1957,7 @@ namespace LuckyNumbers.Model
                             Amount = 1,
                         },
                     },
+                    Model = "rifle_block",
                 },
                 new ItemDef
                 {
@@ -1982,6 +1983,7 @@ namespace LuckyNumbers.Model
                             Amount = 1,
                         },
                     },
+                    Model = "carbine",
                 },
                 new ItemDef
                 {

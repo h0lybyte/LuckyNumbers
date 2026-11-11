@@ -4,6 +4,24 @@ Releases are driven by this file: the **top `## x.y.z` entry is the game version
 Bumping it on `main` builds the Web player, uploads it to itch.io with that version,
 and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version does not rebuild.
 
+## 0.3.2 (2026-11-11)
+
+- chore: set up moon task runner
+- feat(ship): fly anywhere, fuel, ship stats (#42), twin lasers
+- feat(items): relics are items (items design step 3)
+- feat(jobs): Dispatch job board, seeded planets, intro only once
+- feat(ships): engine exhaust, every jet fires for its share of the move
+- feat(combat): monsters, d20 fights, shooting on foot, rescue
+- feat(ship): barrel roll on Shift+Q / Shift+E
+- feat(station): Flight School, a training deck to test-fly the ships
+- feat(encounters): dice-only standoffs and finds
+- fix(station): cryo pod flicker, the real fix (lost from #45)
+- feat(station): the shooting range is a room in the station (dev Range scene removed)
+- feat(range): d20 attack roll on every shot at the range
+- feat(combat): d20 panel for your planet attack rolls
+- feat(combat): aim, stance and recoil move the d20; the margin sets the damage
+- fix(items): the equipped gun is drawn into your hands
+
 ## 0.3.1 (2026-11-10)
 
 - The flight home: on foot beside your landed fighter, E boards it. Lift off and climb to orbit (the HUD
