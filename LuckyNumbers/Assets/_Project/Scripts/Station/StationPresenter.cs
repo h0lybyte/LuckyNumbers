@@ -466,6 +466,15 @@ namespace LuckyNumbers.Station
             _state.Caller.Value = _caller;
             Debug.Log($"[Station] back from the planet: {sold.Count} relic(s) sold for {total} cr ({_voyage.Credits.Value} cr total)");
             var lines = new List<StationCallLine>(sold.Count > 0 ? home.PaidLines : home.EmptyLines);
+            if (_voyage.Rescued.Value)
+            {
+                // The rescue drone brought you back (content/combat.txtpb rescue): Dispatch, not the museum.
+                _voyage.Rescued.Value = false;
+                lines = new List<StationCallLine>(GameContent.Combat?.Rescue?.Lines ?? new List<StationCallLine>());
+                _caller = "Dispatch";
+                _state.Caller.Value = _caller;
+                Debug.Log("[Station] back by rescue drone");
+            }
             if (_job.Active.Value)
             {
                 // The job: done if its goal was met (Clear counts kills on the planet), paid on top of the relics.

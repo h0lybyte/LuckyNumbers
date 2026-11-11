@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+import "luckynumbers/v1/common.proto";
+import "luckynumbers/v1/station.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Fighting on a planet (content/combat.txtpb). Every hit is a d20 roll: d20 + the attacker's bonus against the
+// target's armour; a natural 20 always hits and doubles the damage dice, a natural 1 always misses. You attack with
+// your equipped weapon (bolts from your hands), your ship's lasers or a melee weapon; your bonus is that weapon's
+// ability modifier plus attack_per_level x your level. Monsters roll their own `attack` against your armour
+// (player_armor + defense_ability's modifier). Damage takes Stamina first, then HP; at 0 HP you're rescued.
+message CombatConfig {
+  option (ln.config) = true;
+  repeated MonsterType monsters = 1;
+  // Monsters on a job's site: count + count_per_danger x danger (a Clear job: at least its goal), placed in a ring
+  // round the wreck between spawn_min and spawn_max metres.
+  int32 count = 2;
+  int32 count_per_danger = 3;
+  float spawn_min = 4;
+  float spawn_max = 5;
+  int32 player_armor = 6;
+  string defense_ability = 7;
+  float attack_per_level = 8;
+  // What each attack does: an equipped item (by item id), "ship" (the fighter's lasers), "melee", and "default"
+  // for an equipped weapon with no entry.
+  repeated CombatWeapon weapons = 9;
+  CombatRescue rescue = 10;
+}
+
+// A monster (a placeholder block until it has a model). `danger_min`: it only turns up on jobs at least that
+// dangerous. Metres, m/s, seconds.
+message MonsterType {
+  string id = 1;
+  string name = 2;
+  int32 hp = 3;
+  int32 armor = 4;
+  int32 attack = 5;
+  // Dice: "NdM+K" (e.g. "1d6+1").
+  string damage = 6;
+  float speed = 7;
+  // Its block: width, height, depth.
+  Vec3 size = 8;
+  Rgba color = 9;
+  // Bites from this close; notices you from `sight`; seconds between attacks.
+  float reach = 10;
+  float sight = 11;
+  float cooldown = 12;
+  int32 xp = 13;
+  int32 danger_min = 14;
+  // Relative chance among the monsters that can turn up.
+  float weight = 15;
+}
+
+message CombatWeapon {
+  // Item id, "ship", "melee" or "default".
+  string source = 1;
+  string name = 2;
+  // The ability whose modifier adds to the attack roll ("dex", "str").
+  string ability = 3;
+  string damage = 4;
+  // Hand weapons: seconds between shots, bolt speed (m/s), range (m), size, colour (HDR).
+  float cooldown = 5;
+  float speed = 6;
+  float range = 7;
+  float length = 8;
+  float width = 9;
+  Rgba color = 10;
+}
+
+// At 0 HP: a rescue drone takes you back to the station. You lose the relics you carried and pay `fee` credits
+// (as much as you have); HP and Stamina are full again. The station plays `lines` instead of the museum's call.
+message CombatRescue {
+  int32 fee = 1;
+  string downed_text = 2;
+  repeated StationCallLine lines = 3;
+}
+
+// One attack roll, for the page's roll feed: who at whom, the d20, the bonus, the total against the armour, hit or
+// not (crit on a natural 20, fumble on a 1), and the damage rolled (dice as text, e.g. "1d8+2").
+message CombatRoll {
+  option (ln.event) = true;
+  option (ln.web) = true;
+  string attacker = 1;
+  string target = 2;
+  int32 d20 = 3;
+  int32 bonus = 4;
+  int32 total = 5;
+  int32 armor = 6;
+  bool hit = 7;
+  bool crit = 8;
+  bool fumble = 9;
+  int32 damage = 10;
+  string dice = 11;
+  // You rolled it (else a monster attacked you).
+  bool player = 12;
+  string weapon = 13;
+}
+
+// The fight on this site (mirrored to the page): monsters still alive and killed, the one you hit last
+// ("name|hp|max", or "" once it's dead), and you're down (being rescued).
+message CombatState {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  int32 alive = 1;
+  int32 killed = 2;
+  string target = 3;
+  bool downed = 4;
+  int32 armor = 5;
+}

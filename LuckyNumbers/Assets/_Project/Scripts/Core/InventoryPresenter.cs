@@ -23,6 +23,9 @@ namespace LuckyNumbers.Core
         /// <summary>Is item `itemId` in the pack or worn (e.g. a unique relic you already picked up)?</summary>
         bool Has(string itemId);
 
+        /// <summary>What's equipped in a slot (null: nothing).</summary>
+        ItemDef EquippedIn(EquipSlot slot);
+
         /// <summary>Take every relic out and say what they were (name, value): the museum buys them at the station.</summary>
         System.Collections.Generic.List<(string Name, int Value)> TakeRelics();
 
@@ -215,6 +218,8 @@ namespace LuckyNumbers.Core
         public bool TryAdd(string itemId) => TryAdd(itemId, publish: true);
 
         public bool Has(string itemId) => _items.Exists(i => i.Def.Id == itemId);
+
+        public ItemDef EquippedIn(EquipSlot slot) => SlotItem(slot)?.Def;
 
         bool TryAdd(string itemId, bool publish)
         {

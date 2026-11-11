@@ -20,7 +20,7 @@ namespace LuckyNumbers.Model
         /// </summary>
         Salvage = 1,
         /// <summary>
-        /// Kill `target` monsters (needs the combat update; offered only when its type is enabled).
+        /// Kill `target` monsters (content/combat.txtpb).
         /// </summary>
         Clear = 2,
         /// <summary>
