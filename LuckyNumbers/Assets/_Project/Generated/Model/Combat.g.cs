@@ -42,8 +42,8 @@ namespace LuckyNumbers.Model
     }
 
     /// <summary>
-    /// A monster (a placeholder block until it has a model). `danger_min`: it only turns up on jobs at least that
-    /// dangerous. Metres, m/s, seconds.
+    /// A monster: a placeholder block, or `model` (a rigged creature, Art/Characters/&lt;model&gt;) once it has one.
+    /// `danger_min`: it only turns up on jobs at least that dangerous. Metres, m/s, seconds.
     /// </summary>
     public sealed class MonsterType
     {
@@ -74,9 +74,37 @@ namespace LuckyNumbers.Model
         /// Relative chance among the monsters that can turn up.
         /// </summary>
         public float Weight { get; set; }
+        /// <summary>
+        /// Its model (PlanetView's monster models, by name; empty = the placeholder block). `size` is then its hitbox.
+        /// </summary>
+        public string Model { get; set; }
+        public MonsterClips Clips { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public MonsterType Clone() => (MonsterType)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// A modelled monster's animations, by clip name (the model's takes). Walks play at the rate the body moves (the
+    /// bake records each clip's stride speed), so feet don't slide. Empty: that moment has no clip.
+    /// </summary>
+    public sealed class MonsterClips
+    {
+        public string Idle { get; set; }
+        /// <summary>
+        /// Ambling round home; chasing you.
+        /// </summary>
+        public string Walk { get; set; }
+        public string Run { get; set; }
+        public string Attack { get; set; }
+        /// <summary>
+        /// Hit and still standing; killed (it holds the last frame, then sinks into the ground).
+        /// </summary>
+        public string Hit { get; set; }
+        public string Die { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public MonsterClips Clone() => (MonsterClips)MemberwiseClone();
     }
 
     public sealed class CombatWeapon

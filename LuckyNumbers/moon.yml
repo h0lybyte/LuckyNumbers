@@ -67,22 +67,6 @@ tasks:
     command: "python3 tools/ln.py serve"
     preset: "server"
 
-  worktrees:
-    type: "run"
-    description: "List git worktrees and which are done (merged into origin/main, clean, idle 2 h+)."
-    command: "python3 tools/ln.py worktrees"
-    options:
-      cache: false
-      runInCI: false
-
-  worktrees-prune:
-    type: "run"
-    description: "Remove the done worktrees and delete their merged branches (never forced: uncommitted work stops it)."
-    command: "python3 tools/ln.py worktrees --prune"
-    options:
-      cache: false
-      runInCI: false
-
   deploy:
     type: "run"
     description: "butler push the Web build to itch.io (CI does this on release)."

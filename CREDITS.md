@@ -18,6 +18,10 @@ Lucky Numbers is made with the work of these people. Thank you.
   https://blendswap.com/blend/15782
   Changes: exported low-poly (chain subdivision off), modifiers baked, recoloured with the relic shader (tools/blender/export_relic.py).
   (`LuckyNumbers/Assets/_Project/Art/Models/Relics/LICENSE-blendswap-80554.html`)
+- **Aberration (the limping creature you fight on planets: rig and 17 animations)**: "Aberration - PSX Horror Creature" by **Rafael Martins (Blackwood Asylum: The Rake)** (Use in games allowed; the asset files may not be redistributed)
+  https://rafaelmarrtins.itch.io/aberration-psx-horror-creature
+  Changes: baked from the pack's glTF into one FBX (tools/blender/export_aberration.py) with root motion cut to in-place clips and each clip's stride speed recorded; the stray helper sphere dropped. The raw pack is kept out of this repo.
+  (`LuckyNumbers/Assets/_Project/Art/Characters/Aberration/`)
 - **Space station corridors and rooms (cream panels, leaning walls, ribs, portholes, doorways, deck)**: "PSX Starship Kit Free" by **heyheythere** ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/))
   https://heyheythere.itch.io/psx-starship-kit-free
   Changes: an alpha channel added to atlas.png as a light mask and the atlas packed with the station kit's into one (Art/Models/CombinedKit, tools/kitmask.py), RGB unchanged; room walls derived from the corridor walls with their lean cut back, corner fillers, window panes drawn as clear glass and door leaves slid in the shader, at build time.

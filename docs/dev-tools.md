@@ -13,7 +13,7 @@ Python 3 stdlib. Windows: `py tools/ln.py …`.
 | `gen [--check]` | Generate C# from `proto/` + `content/` into `Assets/_Project/Generated` |
 | `roslyn` | Build the Roslyn source generator (`tools/roslyn/`) into `Assets/_Project/Generators` |
 | `scenes` | Rebuild Title/Intro scenes from code (`Editor/SceneBuilder.cs`), editor closed |
-| `preview [space\|ship\|arms\|station\|exhaust]` | Render a shader check to `LuckyNumbers/Logs/preview-<what>.png` (`exhaust`: the fighter's engine flames per manoeuvre; `LN_EXHAUST_SHIP=freighter` for the freighter) |
+| `preview [space\|ship\|arms\|station\|exhaust\|monster]` | Render a shader check to `LuckyNumbers/Logs/preview-<what>.png` (`exhaust`: the fighter's engine flames per manoeuvre; `LN_EXHAUST_SHIP=freighter` for the freighter; `monster`: the Planet scene's monster models in 4 poses) |
 | `webshot [--wait text] [--steps JSON]` | Drive the served Web build (click, drag, scroll, sleep seconds, shot, `{"fps":5}`, keys: `{"key":["KeyW",2]}` or `{"down":"KeyW"}` … `{"up":"KeyW"}`). `LN_UNCAPPED=1` lifts vsync to show real frame cost (Node 22+, Chrome) |
 | `version [--notes]` | Version or notes from top of `CHANGELOG.md` |
 | `secrets [--dry-run]` | Push `.env` to GitHub Actions secrets; values never printed |

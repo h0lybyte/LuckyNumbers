@@ -14,6 +14,7 @@ namespace LuckyNumbers.Editor
     ///   merges them into chunks at runtime) and uncompressed (pieces must meet exactly on the 2 m grid); the
     ///   atlas keeps its full size, bilinear with mipmaps: the StationKit shader samples it "sharp bilinear"
     ///   (crisp PS1 texels up close, one anti-aliased pixel at texel edges, mips far off: no shimmer).
+    /// - Monsters (Art/Characters/Aberration): Blender's axes baked in (bakeAxisConversion), skins point-filtered.
     /// </summary>
     public sealed class ArtImport : AssetPostprocessor
     {
@@ -21,12 +22,14 @@ namespace LuckyNumbers.Editor
         const string Characters = "Assets/_Project/Art/Characters/";
 
         /// <summary>Bump when these rules change: Unity re-imports what they cover (otherwise old settings stick).</summary>
-        public override uint GetVersion() => 5;   // 5: hero ship meshes uncompressed (3: ship textures kept sharp)
+        public override uint GetVersion() => 8;   // 8: monsters get an avatar (7: their axis conversion baked (6: their skins point-filtered) (5: hero ship meshes uncompressed)
 
         bool Ours => assetPath.StartsWith(Models) || assetPath.StartsWith(Characters);
         bool Kit => assetPath.StartsWith(Models) && assetPath.Substring(Models.Length).Split('/')[0].EndsWith("Kit");
         /// <summary>Ships you see up close, big on screen (your fighter, the freighter wreck): textures kept sharp.</summary>
         bool Hero => assetPath.StartsWith(Models + "CargoShip/") || assetPath.StartsWith(Models + "Fighter/");
+        /// <summary>Monsters' skins: nearest-neighbour, the colour-reduced PSX texels they're painted for.</summary>
+        bool Monster => assetPath.StartsWith(Characters + "Aberration/");
 
         void OnPreprocessModel()
         {
@@ -51,6 +54,13 @@ namespace LuckyNumbers.Editor
             m.isReadable = false;
             m.addCollider = false;
             if (Hero) m.meshCompression = ModelImporterMeshCompression.Off;   // seen up close: no vertex quantising
+            // Blender Z-up baked into the bones and keys (the bake also applies its axes): its takes key the armature
+            // object too, and a converted node would be undone by them (the creature plays lying on its back).
+            if (Monster)
+            {
+                m.bakeAxisConversion = true;
+                m.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;   // without one the Animator binds nothing
+            }
             if (Kit)
             {
                 m.isReadable = true;
@@ -79,6 +89,12 @@ namespace LuckyNumbers.Editor
                 t.compressionQuality = 100;
                 t.filterMode = FilterMode.Trilinear;
                 t.anisoLevel = 8;
+            }
+            if (Monster)
+            {
+                t.filterMode = FilterMode.Point;
+                t.anisoLevel = 0;
+                t.compressionQuality = 100;   // a 512 colour-reduced skin: crunch at 50 smears its palette
             }
             if (Kit)
             {

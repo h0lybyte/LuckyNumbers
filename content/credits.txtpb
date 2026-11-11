@@ -38,6 +38,15 @@ sections {
     path: "LuckyNumbers/Assets/_Project/Art/Models/Relics/LICENSE-blendswap-80554.html"
   }
   credits {
+    what: "Aberration (the limping creature you fight on planets: rig and 17 animations)"
+    title: "Aberration - PSX Horror Creature"
+    author: "Rafael Martins (Blackwood Asylum: The Rake)"
+    license: "Use in games allowed; the asset files may not be redistributed"
+    url: "https://rafaelmarrtins.itch.io/aberration-psx-horror-creature"
+    notes: "Changes: baked from the pack's glTF into one FBX (tools/blender/export_aberration.py) with root motion cut to in-place clips and each clip's stride speed recorded; the stray helper sphere dropped. The raw pack is kept out of this repo."
+    path: "LuckyNumbers/Assets/_Project/Art/Characters/Aberration/"
+  }
+  credits {
     what: "Space station corridors and rooms (cream panels, leaning walls, ribs, portholes, doorways, deck)"
     title: "PSX Starship Kit Free"
     author: "heyheythere"

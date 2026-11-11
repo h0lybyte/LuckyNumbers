@@ -418,6 +418,34 @@ namespace LuckyNumbers.Model
                     DangerMin = 4,
                     Weight = 1.0f,
                 },
+                new MonsterType
+                {
+                    Id = "aberration",
+                    Name = "Aberration",
+                    Hp = 22,
+                    Armor = 12,
+                    Attack = 4,
+                    Damage = "1d8+1",
+                    Speed = 2.2f,
+                    Size = new Vec3(0.7f, 1.85f, 0.6f),
+                    Color = new Rgba(0.7f, 0.62f, 0.55f, 1.0f),
+                    Reach = 1.6f,
+                    Sight = 18.0f,
+                    Cooldown = 2.0f,
+                    Xp = 160,
+                    DangerMin = 2,
+                    Weight = 2.0f,
+                    Model = "aberration",
+                    Clips = new MonsterClips
+                    {
+                        Idle = "idle",
+                        Walk = "walk_limp",
+                        Run = "walk_fast",
+                        Attack = "attack_lunge",
+                        Hit = "knee_hit_recover",
+                        Die = "fall_forward",
+                    },
+                },
             },
             Count = 1,
             CountPerDanger = 1,
@@ -608,6 +636,16 @@ namespace LuckyNumbers.Model
                             LicenseUrl = "https://creativecommons.org/licenses/by/3.0/",
                             Notes = "Changes: exported low-poly (chain subdivision off), modifiers baked, recoloured with the relic shader (tools/blender/export_relic.py).",
                             Path = "LuckyNumbers/Assets/_Project/Art/Models/Relics/LICENSE-blendswap-80554.html",
+                        },
+                        new Credit
+                        {
+                            What = "Aberration (the limping creature you fight on planets: rig and 17 animations)",
+                            Title = "Aberration - PSX Horror Creature",
+                            Author = "Rafael Martins (Blackwood Asylum: The Rake)",
+                            License = "Use in games allowed; the asset files may not be redistributed",
+                            Url = "https://rafaelmarrtins.itch.io/aberration-psx-horror-creature",
+                            Notes = "Changes: baked from the pack's glTF into one FBX (tools/blender/export_aberration.py) with root motion cut to in-place clips and each clip's stride speed recorded; the stray helper sphere dropped. The raw pack is kept out of this repo.",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Characters/Aberration/",
                         },
                         new Credit
                         {
