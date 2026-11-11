@@ -55,7 +55,28 @@ jobs:
           git commit -am "release: $VERSION"
           git push origin HEAD:main
 
+      # The dispatch resolves `main` on GitHub's side, and right after a push it can still see the old tip (0.3.2's
+      # first run built 0.3.1 that way). So wait until main is the release commit, then check the run started on it,
+      # and if not cancel it and dispatch again.
       - name: Start Web release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run web.yml --ref main -f deploy=true
+          VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          sha="$(git rev-parse HEAD)"
+          for _ in $(seq 1 30); do
+            [ "$(gh api "repos/$GITHUB_REPOSITORY/commits/main" -q .sha)" = "$sha" ] && break
+            sleep 2
+          done
+          for _ in 1 2 3; do
+            url="$(gh workflow run web.yml --ref main -f deploy=true | grep -o 'https://[^ ]*/actions/runs/[0-9]*' || true)"
+            id="${url##*/}"
+            if [ -z "$id" ]; then echo "::warning::no run id from gh workflow run; not checking its commit"; exit 0; fi
+            head="$(gh run view "$id" --json headSha -q .headSha)"
+            if [ "$head" = "$sha" ]; then echo "Web release $VERSION: $url"; exit 0; fi
+            echo "::warning::Web release run $id started on ${head:0:7}, not the release commit ${sha:0:7}; cancelling and retrying"
+            gh run cancel "$id" || true
+            sleep 5
+          done
+          echo "::error::Web release kept starting on the wrong commit; run it by hand (Actions -> Web release, deploy ticked)"
+          exit 1

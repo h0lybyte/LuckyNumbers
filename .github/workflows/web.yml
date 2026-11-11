@@ -93,7 +93,7 @@ jobs:
       # fallback, 720p, WebGPU + WebGL 2, version stamped from CHANGELOG.md.
       - uses: game-ci/unity-builder@v4
         id: build
-        continue-on-error: ${{ steps.library.outputs.cache-matched-key != '' }} # a restored Library gets one retry, cold
+        continue-on-error: ${{ steps.library.outputs.cache-matched-key != '' }} # a restored Library gets retries (below)
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
@@ -107,16 +107,35 @@ jobs:
           # Docker's default /dev/shm is 64 MB; Unity's licensing and import workers use shared memory.
           dockerShmSize: 2g
 
-      # Self-heal: a stale or broken Library (e.g. the editor killed on start-up) must not block a release.
-      # Throw it away and build cold; the fresh Library is what gets cached.
-      - name: Discard restored Library after a failed build
+      # The editor sometimes gets killed (exit 137) a second into a launch with a good Library: 3 of 8 cached runs up
+      # to 0.3.2, each after the Library had already opened fine. Try once more with it before paying for a cold
+      # build (~7-13 min more).
+      - uses: game-ci/unity-builder@v4
+        id: warm
         if: steps.build.outcome == 'failure'
+        continue-on-error: true
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: ${{ env.PROJECT_PATH }}
+          targetPlatform: WebGL
+          buildMethod: LuckyNumbers.Editor.WebBuild.Build
+          customParameters: -lnGfx both -lnVersion ${{ needs.version.outputs.version }}
+          versioning: None
+          dockerShmSize: 2g
+
+      # Self-heal: a stale or broken Library must not block a release. Throw it away and build cold; the fresh
+      # Library is what gets cached.
+      - name: Discard restored Library after a failed build
+        if: steps.build.outcome == 'failure' && steps.warm.outcome == 'failure'
         run: |
           echo "::warning::Build with the restored Library (${{ steps.library.outputs.cache-matched-key }}) failed; retrying cold"
           sudo rm -rf "$PROJECT_PATH/Library" "$BUILD_DIR"
 
       - uses: game-ci/unity-builder@v4
-        if: steps.build.outcome == 'failure'
+        if: steps.build.outcome == 'failure' && steps.warm.outcome == 'failure'
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
