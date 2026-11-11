@@ -19,7 +19,7 @@ namespace LuckyNumbers.Station
     /// The bench, crates and boards are placeholder blocks (PLACEHOLDER_range_*) until they have models. The start of a
     /// practice mini-game.
     /// Every shot at a board or crate is an attack roll, as in a fight (Planet/Marksman, CombatRoll): d20 + the range
-    /// gun's ability modifier (content/combat.txtpb, the "default" weapon) + attack_per_level x level + aim, stance and
+    /// gun's ability modifier (content/combat.txtpb: the entry listing the held gun's model) + attack_per_level x level + aim, stance and
     /// recoil, against an armour of 8 + a point per 3 m. A miss sends the bolt wide (IFirstPerson.ShotCheck); the
     /// page's d20 shows each roll, graze to crit.
     /// Dev / tools (the page's URL): ?ln-range opens the station at the firing line (?ln-range=knife: facing that
@@ -215,7 +215,8 @@ namespace LuckyNumbers.Station
             var on = aimed.collider;
             var target = _targets.Contains(on) ? "Target board" : _crates.Contains(on) ? "Crate" : null;
             if (target == null) return true;
-            var w = RangeGun();
+            var gun = _firstPerson?.Held != null ? _firstPerson.Held.GetComponent<WeaponView>() : null;
+            var w = CombatWeapons.Held(gun);   // the gun's combat.txtpb entry: its dice, ability and fire rate
             var ability = w?.Ability ?? "dex";
             var parts = new[] { (ability.ToUpperInvariant(), Mod(ability)),
                                 ("level", (int)Mathf.Floor((GameContent.Combat?.AttackPerLevel ?? 0f) * Mathf.Max(1, _sheet?.Level.Value ?? 1))) };
@@ -227,15 +228,6 @@ namespace LuckyNumbers.Station
             Debug.Log($"[Range] {target} at {aimed.distance:0.0} m: d20 {s.D20} + {s.Bonus} ({s.Mods}) = {s.Total} vs {s.Armor}: " +
                       $"{(s.Crit ? "CRIT" : s.Strong ? "strong" : s.Graze ? "graze" : s.Hit ? "hit" : s.Fumble ? "fumble" : "miss")} {s.Damage}");
             return s.Hit;
-        }
-
-        /// <summary>The range guns roll as content/combat.txtpb's "default" weapon.</summary>
-        static CombatWeapon RangeGun()
-        {
-            var weapons = GameContent.Combat?.Weapons;
-            if (weapons == null) return null;
-            foreach (var w in weapons) if (w.Source == "default") return w;
-            return null;
         }
 
         int Mod(string ability)

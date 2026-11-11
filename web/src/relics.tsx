@@ -132,8 +132,8 @@ export function D20Panel({ face, settled, tone, heading, children }: {
 /** A shot's grade, best to worst: what the margin over the armour bought (Planet/Marksman). */
 export function grade(e: CombatRoll): { tone: string; title: string; dice: string } {
   if (e.fumble) return { tone: "fumble", title: "Fumble", dice: "" };
-  if (e.crit) return { tone: "crit", title: "Critical hit", dice: `${e.dice} x2` };
-  if (e.strong) return { tone: "strong", title: "Strong hit", dice: `${e.dice} +1 die` };
+  if (e.crit) return { tone: "crit", title: "Critical hit", dice: `max ${e.dice} + ${e.dice}` };
+  if (e.strong) return { tone: "strong", title: "Strong hit", dice: `${e.dice} +1 die, at least its max` };
   if (e.graze) return { tone: "graze", title: "Graze", dice: `${e.dice} \u00bd` };
   if (e.hit) return { tone: "good", title: "Hit", dice: e.dice };
   return { tone: "miss", title: "Miss", dice: "" };

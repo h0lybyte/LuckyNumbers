@@ -356,13 +356,15 @@ namespace LuckyNumbers.Planet
 
         /// <summary>
         /// IFirstPerson.ShotCheck: a held gun fired at a monster rolls now, with the equipped weapon's stats if it's
-        /// the equipped gun drawn (IFirstPerson.Equipped), else a found gun's ("default").
+        /// the equipped gun drawn (IFirstPerson.Equipped), else as its model's combat.txtpb entry (a found gun).
         /// </summary>
         bool HeldShot(RaycastHit aimed)
         {
             var m = MonsterAt(aimed.collider);
-            var source = _firstPerson.Held != null && _firstPerson.Held == _firstPerson.Equipped
-                ? _pack.EquippedIn(EquipSlot.Weapon)?.Id ?? "default" : "default";
+            var held = _firstPerson.Held;
+            var source = held != null && held == _firstPerson.Equipped
+                ? _pack.EquippedIn(EquipSlot.Weapon)?.Id ?? "default"
+                : CombatWeapons.Held(held != null ? held.GetComponent<WeaponView>() : null).Source;
             return m == null || _down || ShootAt(m, source, aimed);
         }
 
@@ -455,16 +457,7 @@ namespace LuckyNumbers.Planet
             Debug.Log($"[Combat] {m.Type.Name} killed ({_state.Killed.Value} so far, {_state.Alive.Value} left)");
         }
 
-        CombatWeapon Weapon(string source)
-        {
-            CombatWeapon fallback = null;
-            foreach (var w in C.Weapons)
-            {
-                if (w.Source == source) return w;
-                if (w.Source == "default") fallback = w;
-            }
-            return fallback ?? new CombatWeapon { Source = source, Name = source, Ability = "dex", Damage = "1d6", Cooldown = 0.5f, Speed = 80f, Range = 60f };
-        }
+        static CombatWeapon Weapon(string source) => CombatWeapons.For(source);
 
         int Mod(string ability)
         {

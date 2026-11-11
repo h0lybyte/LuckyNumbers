@@ -69,6 +69,9 @@ message CombatWeapon {
   float length = 8;
   float width = 9;
   Rgba color = 10;
+  // Gun models (Art/Models/Weapons names, e.g. "rifle_block") that shoot as this when held (the station range, a gun
+  // picked up): their seconds between shots, damage dice and ability come from here. Unlisted models: "default".
+  repeated string models = 11;
 }
 
 // At 0 HP: a rescue drone takes you back to the station. You lose the relics you carried and pay `fee` credits

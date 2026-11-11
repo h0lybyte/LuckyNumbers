@@ -34,7 +34,7 @@ namespace LuckyNumbers.Planet
         [SerializeField] float boltLength = 0.6f;
         [SerializeField] float boltWidth = 0.035f;
         [SerializeField] float range = 80f;
-        [SerializeField] float cooldown = 0.16f;                     // seconds between shots
+        [SerializeField] float cooldown = 0.16f;                     // seconds between shots (combat.txtpb's entry for this model wins)
         [SerializeField] float impulse = 3f;                         // push on what it hits (N s)
         [SerializeField] float recoil = 0.035f;                      // metres back per shot (pitch follows)
 
@@ -108,7 +108,8 @@ namespace LuckyNumbers.Planet
         public bool TryFire(Vector3 target, Transform ignore)
         {
             if (Time.time < _nextShot) return false;
-            _nextShot = Time.time + cooldown;
+            var rate = CombatWeapons.Held(this).Cooldown;
+            _nextShot = Time.time + (rate > 0f ? rate : cooldown);
             _ignore = ignore;
             var from = MuzzleWorld;
             var dir = target - from;
