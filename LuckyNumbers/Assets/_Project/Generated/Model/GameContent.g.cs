@@ -3175,6 +3175,26 @@ namespace LuckyNumbers.Model
             ShipSkin = "idolknight",
         };
 
+        /// <summary>From <c>content/school.txtpb</c>.</summary>
+        public static readonly FlightSchoolScene School = new FlightSchoolScene
+        {
+            Title = "FLIGHT SCHOOL",
+            Hint = "W/S thrust - A/D strafe - Space/C up, down - Q/E roll - Shift boost - X brake - click, then mouse to aim\nV camera - M fighter or freighter - R next skin - Esc back to the station",
+            FighterLength = 24.0f,
+            FreighterLength = 140.0f,
+            FreighterSpeed = 0.45f,
+            FreighterAgility = 0.3f,
+            StartHeight = 30.0f,
+            DeckSize = 1200.0f,
+            FloorClearance = 0.3f,
+            ChaseDistance = 1.45f,
+            ChaseHeight = 0.42f,
+            SideDistance = 2.2f,
+            OrbitDistance = 2.6f,
+            OrbitDegreesPerSecond = 18.0f,
+            ReadoutSeconds = 0.15f,
+        };
+
         /// <summary>From <c>content/ships.txtpb</c>.</summary>
         public static readonly ShipConfig Ships = new ShipConfig
         {
@@ -4154,6 +4174,15 @@ namespace LuckyNumbers.Model
                                 V = 1.0f,
                                 Yaw = 12.0f,
                                 Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "lab_bench",
+                                U = 0.5f,
+                                V = -0.3f,
+                                Yaw = 180.0f,
+                                Action = StationAction.FlightSchool,
+                                Prompt = "E: Flight School - test-fly your ship",
                             },
                         },
                     },

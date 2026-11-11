@@ -39,6 +39,7 @@ namespace LuckyNumbers.Editor
             BuildPlanet(rig);
             BuildStation(rig);
             BuildRange(rig);
+            BuildFlightSchool(rig);
 
             EditorBuildSettings.scenes = new[]
             {
@@ -47,11 +48,12 @@ namespace LuckyNumbers.Editor
                 new EditorBuildSettingsScene($"{ScenesDir}/Planet.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/Station.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/Range.unity", true),
+                new EditorBuildSettingsScene($"{ScenesDir}/FlightSchool.unity", true),
             };
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>($"{ScenesDir}/SampleScene.unity") != null)
                 AssetDatabase.DeleteAsset($"{ScenesDir}/SampleScene.unity"); // URP template scene
             AssetDatabase.SaveAssets();
-            Debug.Log("[SceneBuilder] built Title, Intro, Planet, Station, Range; build settings = [Title, Intro, Planet, Station, Range]");
+            Debug.Log("[SceneBuilder] built Title, Intro, Planet, Station, Range, FlightSchool; build settings = [Title, Intro, Planet, Station, Range, FlightSchool]");
         }
 
         static void BuildTitle(Rig rig)
@@ -588,6 +590,71 @@ namespace LuckyNumbers.Editor
 
             Scopes<RangeScope>();
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Range.unity");
+        }
+
+        /// <summary>
+        /// The Flight School (Planet/FlightSchoolPresenter): a training deck in space (LuckyNumbers/TrainingGrid) with
+        /// glowing pylons round it for reference, your fighter and the museum freighter (one shown at a time), the
+        /// chase camera with bloom (so the flames glow) and the crash site's overlay for the HUD.
+        /// </summary>
+        static void BuildFlightSchool(Rig rig)
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var school = LuckyNumbers.Model.GameContent.School;
+            RenderSettings.skybox = rig.Starfield;
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.25f, 0.27f, 0.32f);
+            var ui = Document("UI", rig.Panel, "Planet");   // hint, flight HUD, fade
+            var view = new GameObject("PlanetView").AddComponent<PlanetView>();
+
+            var camGo = new GameObject("FlightCamera");
+            camGo.tag = "MainCamera";
+            var cam = camGo.AddComponent<Camera>();
+            cam.clearFlags = CameraClearFlags.Skybox;
+            cam.fieldOfView = 65f;
+            cam.nearClipPlane = 0.3f;
+            cam.farClipPlane = 6000f;
+            cam.GetUniversalAdditionalCameraData().renderPostProcessing = true;
+            var volume = new GameObject("Glow").AddComponent<UnityEngine.Rendering.Volume>();
+            volume.isGlobal = true;
+            volume.sharedProfile = GlowProfile();
+
+            // The deck: one big plate (a Plane primitive is 10 m across), no collider (the presenter keeps you above it).
+            var grid = MaterialAsset("TrainingGrid", "LuckyNumbers/TrainingGrid");
+            grid.SetFloat("_Fade", school.DeckSize * 0.48f);
+            EditorUtility.SetDirty(grid);
+            var deck = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            deck.name = "Deck";
+            Object.DestroyImmediate(deck.GetComponent<Collider>());
+            deck.transform.localScale = new Vector3(school.DeckSize / 10f, 1f, school.DeckSize / 10f);
+            var deckRenderer = deck.GetComponent<MeshRenderer>();
+            deckRenderer.sharedMaterial = grid;
+            deckRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+            // Pylons in a ring (tall glowing posts): something to fly round and judge distance by.
+            var pylon = Tint("SchoolPylon", new Color(0.1f, 0.35f, 0.6f), new Color(0.4f, 0.9f, 1f), 1.2f, 0.3f);
+            var pylons = new GameObject("Pylons").transform;
+            for (var i = 0; i < 12; i++)
+            {
+                var a = i / 12f * Mathf.PI * 2f;
+                var post = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                post.name = $"Pylon {i}";
+                Object.DestroyImmediate(post.GetComponent<Collider>());
+                post.transform.SetParent(pylons, false);
+                var h = i % 3 == 0 ? 120f : 60f;
+                post.transform.localPosition = new Vector3(Mathf.Cos(a) * 260f, h / 2f, Mathf.Sin(a) * 260f);
+                post.transform.localScale = new Vector3(4f, h, 4f);
+                var r = post.GetComponent<MeshRenderer>();
+                r.sharedMaterial = pylon;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+
+            var fighter = ShipRig(name: "Fighter");
+            var freighter = FreighterRig();
+            Assign(view, ("document", ui), ("fighter", fighter), ("wreck", freighter), ("flightCamera", cam));
+
+            Scopes<FlightSchoolScope>();
+            EditorSceneManager.SaveScene(scene, $"{ScenesDir}/FlightSchool.unity");
         }
 
         const string WeaponsDir = "Assets/_Project/Art/Models/Weapons";

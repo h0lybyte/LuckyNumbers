@@ -33,6 +33,9 @@ namespace LuckyNumbers.Station
     /// Jobs (content/jobs.txtpb, PlayerJob): the first call is the first job (the freighter's mayday, then the intro).
     /// Back from a job, Dispatch says whether it's done (paid) and rings again; its board offers a few seeded jobs
     /// (JobBoard; the page picks one, JobAcceptRequested), and boarding flies you straight down to that job's planet.
+    ///
+    /// Flight School: a console in the Docking Bay (STATION_ACTION_FLIGHT_SCHOOL) takes you to the training deck
+    /// (GameScene.FlightSchool) to test-fly your ship; back from it (PlayerVoyage.training) you step out beside it.
     /// </summary>
     [Presenter]
     public sealed class StationPresenter : IStartable, IPostLateTickable, IDisposable
@@ -58,7 +61,7 @@ namespace LuckyNumbers.Station
         readonly PlayerVoyage _voyage;
         readonly IInventory _pack;
         readonly IPublisher<CharacterXpGained> _xp;
-        bool _returning;
+        bool _returning, _training;
         // Jobs: which call is ringing / playing, the board's offers, the body the station orbits.
         enum CallKind { Dispatch, Homecoming, Board }
         CallKind _ringKind, _activeKind;
@@ -139,6 +142,8 @@ namespace LuckyNumbers.Station
             SetPsx(false);
             _returning = _voyage.Returning.Value;
             _voyage.Returning.Value = false;
+            _training = _voyage.Training.Value && !_returning;
+            _voyage.Training.Value = false;
             if (_returning && _voyage.Trips.Value == 0) _voyage.Trips.Value = 1;   // back from a planet: you've been down
             _state.Call.Value = CallPhase.None;
             _caller = _config.Call?.Caller ?? "";
@@ -171,6 +176,7 @@ namespace LuckyNumbers.Station
             _ui.Hint(_config.Hint, _hintAlpha);
             DockShip();
             if (_returning) TeleportBesideShip();
+            if (_training) TeleportBesideConsole(StationAction.FlightSchool);
             _flow.Preload(NextScene);
             PlaceInSpace(_cts.Token).Forget();
         }
@@ -277,6 +283,7 @@ namespace LuckyNumbers.Station
                 PlaceWeapon(StationPlan.Centre(_station.Plan.Spawn), _config.SpawnYaw);   // the new spawn's
                 DockShip();
                 if (_returning) TeleportBesideShip();
+                if (_training) TeleportBesideConsole(StationAction.FlightSchool);
             }
             // The freighter of the job you're on (or were on, coming back): its site's own cargo manifest.
             var manifest = LuckyNumbers.Cargo.Manifest.Generate(GameContent.Cargo, Jobs.SiteSeed(_space.Seed, _job.Seed.Value));
@@ -405,6 +412,9 @@ namespace LuckyNumbers.Station
                 case StationAction.Answer:
                     Answer();
                     break;
+                case StationAction.FlightSchool:
+                    ToFlightSchool();
+                    break;
             }
         }
 
@@ -500,6 +510,34 @@ namespace LuckyNumbers.Station
             }
             StartCall(lines, home.CharsPerSecond, home.Objective, CallKind.Homecoming);
             foreach (var line in _callLines) Debug.Log($"[Station] {Fill(line.Speaker)}: {Fill(line.Text)}");
+        }
+
+        /// <summary>To the Flight School's training deck (fade out); it sends you back here, beside the console.</summary>
+        void ToFlightSchool()
+        {
+            _next = GameScene.FlightSchool;
+            _leaving = true;
+            _firstPerson.Active = false;
+            _state.Prompt.Value = "";
+            Debug.Log("[Station] to the Flight School");
+            Leave(_cts.Token).Forget();
+        }
+
+        /// <summary>Beside the first console that does `action` (on an open cell next to it), facing it.</summary>
+        void TeleportBesideConsole(StationAction action)
+        {
+            var sw = _layout.Switches.Find(x => x.Action == action);
+            if (sw == null) return;
+            var at = _station.Plan.PlanToWorld(sw.Col, sw.Row);
+            var steps = new[] { Vector3.back, Vector3.forward, Vector3.left, Vector3.right };
+            foreach (var step in steps)
+            {
+                var spot = at + step * 1.3f;
+                if (!StationPlan.Walkable(_station.Plan.At(StationPlan.CellOf(spot)))) continue;
+                Teleport(new Vector3(spot.x, 0f, spot.z), Quaternion.LookRotation(-step, Vector3.up).eulerAngles.y);
+                Debug.Log($"[Station] back from the Flight School, beside its console ({sw.Col:0.#}, {sw.Row:0.#})");
+                return;
+            }
         }
 
         /// <summary>Off the ship: on the deck beside it (the first open side of its hull), facing it.</summary>

@@ -9,7 +9,8 @@ export type GameScene =
   | "Intro"
   | "Planet"
   | "Station"
-  | "Range";
+  | "Range"
+  | "FlightSchool";
 
 export type CallPhase =
   | "None"
@@ -328,6 +329,8 @@ export interface PlayerVoyage {
   trips: number;
   /** Brought back by the rescue drone (you went down on the planet): the station's call says so. */
   rescued: boolean;
+  /** At the Flight School: back at the station you step out beside its console (not by your ship, no homecoming). */
+  training: boolean;
 }
 
 export interface DiceState {
