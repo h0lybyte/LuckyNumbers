@@ -29,6 +29,11 @@ namespace LuckyNumbers.Planet
         /// </summary>
         Rigidbody Equipped { get; }
         /// <summary>
+        /// Something else answers E here (a prompt is up: a call, a console, the ship, a relic): E then leaves the
+        /// equipped gun where it is (no holster, no draw). Set every frame by whoever shows the prompt.
+        /// </summary>
+        bool InteractElsewhere { get; set; }
+        /// <summary>
         /// Asked as a held gun fires, with what the crosshair is on (the attack rolls: the station range, fights).
         /// False: the shot misses, so the bolt goes wide of it. Null: every shot flies true.
         /// </summary>
@@ -94,6 +99,7 @@ namespace LuckyNumbers.Planet
         string _equippedModel = "";
         bool _holstered, _drawing;
         public Rigidbody Equipped => _equipped;
+        public bool InteractElsewhere { get; set; }
 
         public bool PickUp(Rigidbody thing)
         {
@@ -312,6 +318,7 @@ namespace LuckyNumbers.Planet
             var hold = eye.position + eye.forward * 0.42f + eye.right * 0.17f - eye.up * 0.19f;
 
             EquippedGun(eye);
+            if (_interact && InteractElsewhere && (_held == _equipped || (_held == null && _holstered))) _interact = false;   // E's for that
             if (_interact && _held != null && _held == _equipped) { Holster(); _holstered = true; _interact = false; }
             if (_interact && _held != null && _throwT < 0f) { Release(Vector3.zero); _interact = false; }
             if (_interact && _held == null && _reaching == null && _throwT < 0f)

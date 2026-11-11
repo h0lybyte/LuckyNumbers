@@ -1,7 +1,8 @@
 # proto-file: luckynumbers/v1/job.proto
 # proto-message: luckynumbers.v1.JobConfig
 # Dispatch's work. The first job is the museum freighter's mayday (content/station.txtpb call + the intro);
-# after that, each time you're back Dispatch rings with a board of offers on seeded planets.
+# after that, each time you're back Dispatch rings and sends a board of offers on seeded planets to your ship; you pick
+# one at the ship (E) when you're about to leave.
 # Fills: {client} {planet} {target} {count} {pay}. Placeholder values; tune with gameplay.
 
 offers: 3
@@ -14,12 +15,12 @@ first_pay: 0
 ring_prompt: "Dispatch is calling - E to answer"
 chars_per_second: 38
 board_lines { speaker: "Dispatch" text: "Welcome back. Got a few jobs on the board if you want them." seconds: 3.5 }
-board_lines { speaker: "Dispatch" text: "Pick one and I'll send the coordinates to your ship." seconds: 3 }
-board_objective: "Pick a job from Dispatch's board (1, 2 or 3)"
-taken_objective: "Board your ship in the Docking Bay: {title}"
+board_lines { speaker: "Dispatch" text: "I've sent them to your ship. Pick one when you're ready to go." seconds: 3 }
+board_objective: "Jobs are on your ship: pick one in the Docking Bay when you're ready to leave"
+taken_objective: "Leaving on: {title}"
 done_lines { speaker: "Dispatch" text: "{client} confirms the job's done. {pay} credits, transferred." seconds: 4 }
 failed_lines { speaker: "Dispatch" text: "{client} says the job isn't done. No pay this time." seconds: 4 }
-no_job_prompt: "Take a job from Dispatch first"
+no_job_prompt: "E: pick a job and leave"
 
 types {
   kind: JOB_KIND_SALVAGE
@@ -38,7 +39,7 @@ types {
 types {
   kind: JOB_KIND_CLEAR
   title: "Clear the nest on {planet}"
-  brief: "Something's nesting by the wreck on {planet}. {client} wants it gone: {count} of them."
+  brief: "Something's nesting on {planet}. {client} wants it gone: {count} of them."
   objective: "Kill {count} creatures on {planet}, then fly back to the station"
   pay: 600 pay_per_danger: 250 danger_min: 2 danger_max: 5
   target: 3 target_per_danger: 1

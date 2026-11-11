@@ -19,11 +19,12 @@ export function App({ dock }: { dock: HTMLElement | null }) {
 
   // ?ln-range: straight to the station's shooting range once Unity is up (the station puts you at its firing line;
   // ?ln-range=knife faces that weapon, &ln-bake bakes every weapon's grips: tools/ln.py bake-grasps);
+  // ?ln-board: the station between jobs, beside your ship (E opens the job board);
   // ?ln-flight: straight to the Flight School (test-flying the ships, their jets).
   useEffect(() => {
     if (!ready) return;
     const q = new URLSearchParams(location.search);
-    if (q.has("ln-range")) LN.send("SceneChangeRequested", { target: "Station" });
+    if (q.has("ln-range") || q.has("ln-board")) LN.send("SceneChangeRequested", { target: "Station" });
     else if (q.has("ln-flight")) LN.send("SceneChangeRequested", { target: "FlightSchool" });
   }, [ready]);
 
@@ -141,7 +142,13 @@ function PointerHint({ locked }: { locked: boolean }) {
 type Toast = { id: number; text: string; tone: "info" | "bad" | "good" };
 let nextToast = 1;
 
-const SCENE_TITLES: Partial<Record<GameScene, string>> = { Planet: "Crash site" };
+/** The toast as a scene opens: on a planet, the job's site (a Clear job has no wreck, just the nest). */
+function sceneTitle(scene: GameScene): string | undefined {
+  if (scene !== "Planet") return undefined;
+  const job = LN.getState("PlayerJob");
+  const site = job?.active && job.kind === "Clear" ? "Nest" : "Crash site";
+  return job?.active && job.planet ? `${site} - ${job.planet}` : site;
+}
 
 function Toasts() {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -151,7 +158,10 @@ function Toasts() {
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3500);
   };
 
-  useLNEvent("SceneEntered", (e) => SCENE_TITLES[e.scene] && push(SCENE_TITLES[e.scene]!));
+  useLNEvent("SceneEntered", (e) => {
+    const title = sceneTitle(e.scene);
+    if (title) push(title);
+  });
   useLNEvent("PlayerDamaged", (e) => push(`-${e.amount}${e.source ? ` (${e.source})` : ""}`, "bad"));
   useLNEvent("PlayerHealed", (e) => push(`+${e.amount}`, "good"));
   useLNEvent("PlayerDied", (e) => push(e.cause ? `You died: ${e.cause}` : "You died", "bad"));

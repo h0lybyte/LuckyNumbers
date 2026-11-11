@@ -798,7 +798,7 @@ namespace LuckyNumbers.Model
             StandoffsPerDanger = 0.5f,
             StandoffDistance = 13.0f,
             StandoffTitle = "{monster}",
-            StandoffText = "A {monster} stands between you and the wreck. It hasn't seen you yet.",
+            StandoffText = "A {monster} stands in your way. It hasn't seen you yet.",
             Options =
             {
                 new EncounterOption
@@ -2297,7 +2297,7 @@ namespace LuckyNumbers.Model
                 {
                     Kind = JobKind.Clear,
                     Title = "Clear the nest on {planet}",
-                    Brief = "Something's nesting by the wreck on {planet}. {client} wants it gone: {count} of them.",
+                    Brief = "Something's nesting on {planet}. {client} wants it gone: {count} of them.",
                     Objective = "Kill {count} creatures on {planet}, then fly back to the station",
                     Pay = 600,
                     PayPerDanger = 250,
@@ -2330,13 +2330,13 @@ namespace LuckyNumbers.Model
                 new StationCallLine
                 {
                     Speaker = "Dispatch",
-                    Text = "Pick one and I'll send the coordinates to your ship.",
+                    Text = "I've sent them to your ship. Pick one when you're ready to go.",
                     Seconds = 3.0f,
                 },
             },
             CharsPerSecond = 38.0f,
-            BoardObjective = "Pick a job from Dispatch's board (1, 2 or 3)",
-            TakenObjective = "Board your ship in the Docking Bay: {title}",
+            BoardObjective = "Jobs are on your ship: pick one in the Docking Bay when you're ready to leave",
+            TakenObjective = "Leaving on: {title}",
             DoneLines =
             {
                 new StationCallLine
@@ -2355,7 +2355,7 @@ namespace LuckyNumbers.Model
                     Seconds = 4.0f,
                 },
             },
-            NoJobPrompt = "Take a job from Dispatch first",
+            NoJobPrompt = "E: pick a job and leave",
         };
 
         /// <summary>From <c>content/planet.txtpb</c>.</summary>
@@ -3253,10 +3253,11 @@ namespace LuckyNumbers.Model
                 ZoomMin = 1.4f,
                 ZoomMax = 8.0f,
                 DragDegreesPerPixel = 0.25f,
-                Hint = "Drag to turn - scroll to zoom - M to close",
+                Hint = "White: you - cyan: ship - orange: wreck - drag to turn - scroll to zoom - M to close",
                 ZoomFrom = 1.06f,
                 OpenSeconds = 1.6f,
                 CloseSeconds = 0.8f,
+                ShipColor = new Rgba(0.3f, 0.9f, 1.0f, 1.0f),
             },
             Landing = new FlightLanding
             {
@@ -3690,12 +3691,12 @@ namespace LuckyNumbers.Model
             },
             Fuel = new ShipFuel
             {
-                Capacity = 100.0f,
+                Capacity = 1000.0f,
                 IdleBurn = 0.15f,
                 ThrustBurn = 0.9f,
                 Low = 0.2f,
                 EmptyDescent = 3.0f,
-                RechargePerSecond = 0.6f,
+                RechargePerSecond = 6.0f,
                 RechargeTo = 0.3f,
             },
             Guns =

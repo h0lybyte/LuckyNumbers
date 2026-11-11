@@ -7,7 +7,7 @@ standoffs: 1
 standoffs_per_danger: 0.5
 standoff_distance: 13
 standoff_title: "{monster}"
-standoff_text: "A {monster} stands between you and the wreck. It hasn't seen you yet."
+standoff_text: "A {monster} stands in your way. It hasn't seen you yet."
 surprise_bonus: 5
 
 options { id: "fight" label: "Fight" success: ENCOUNTER_OUTCOME_FIGHT failure: ENCOUNTER_OUTCOME_FIGHT

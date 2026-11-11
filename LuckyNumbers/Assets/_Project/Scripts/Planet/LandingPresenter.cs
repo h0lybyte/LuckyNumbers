@@ -388,7 +388,7 @@ namespace LuckyNumbers.Planet
             var padTurn = padFlat.magnitude < 6f ? "below" : math.abs(padHeading) < 8f ? "ahead"
                         : padHeading < 0f ? $"{-padHeading:0} deg left" : $"{padHeading:0} deg right";
             var hud = $"ALT {altitude:0} m    CLIMB {-vertical:+0.0;-0.0} m/s    SPEED {_velocity.magnitude:0} m/s    {power}    " +
-                      (Assisted ? $"<color=#46a758>PAD {padFlat.magnitude:0} m {padTurn}</color>" : $"WRECK {flat.magnitude:0} m {turn}");
+                      (Assisted ? $"<color=#46a758>PAD {padFlat.magnitude:0} m {padTurn}</color>" : $"{(_site == null || _site.HasWreck ? "WRECK" : "NEST")} {flat.magnitude:0} m {turn}");
             // Low down: the three touchdown limits, each green (fine), amber (close) or red (would crash).
             if (altitude < 40f)
                 hud += $"\n{Gauge("DESCENT", vertical, MaxVertical, "m/s")}    " +

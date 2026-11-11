@@ -88,6 +88,7 @@ map {
   walk_radius_metres: 3000
   crash_color { r: 1 g: 0.45 b: 0.15 a: 1 }
   pin_color { r: 1 g: 1 b: 1 a: 1 }
+  ship_color { r: 0.3 g: 0.9 b: 1 a: 1 }
   grout { r: 0.05 g: 0.05 b: 0.08 a: 1 }
   distance: 3.2
   zoom_min: 1.4
@@ -96,7 +97,7 @@ map {
   zoom_from: 1.06
   open_seconds: 1.6
   close_seconds: 0.8
-  hint: "Drag to turn - scroll to zoom - M to close"
+  hint: "White: you - cyan: ship - orange: wreck - drag to turn - scroll to zoom - M to close"
 }
 
 # Arrival: you fly your own fighter in and land it near the wreck. Fully piloted: mouse pitches and yaws,

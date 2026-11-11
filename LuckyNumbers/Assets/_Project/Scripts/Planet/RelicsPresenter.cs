@@ -154,6 +154,7 @@ namespace LuckyNumbers.Planet
             }
             // E: a relic within reach first; else your landed ship, if you're beside it (flies you back out).
             var board = onFoot && near == null && nearDrop == null ? _fighter.BoardPrompt(me) : "";
+            _firstPerson.InteractElsewhere = near != null || nearDrop != null || board != "";   // E's for that, not the gun
             if (_pickup && near != null) Take(near);
             else if (_pickup && nearDrop != null) PickUp(nearDrop);
             else if (_pickup && board != "") _fighter.Board();
