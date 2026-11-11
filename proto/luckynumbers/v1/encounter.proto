@@ -62,14 +62,17 @@ message EncounterOption {
   float calm_seconds = 10;
 }
 
+// Something lying near the wreck. Walk up to it and it opens itself: d20 + `skill` vs `dc` (no card), the result
+// shows as a toast (ItemHandled).
 message EncounterFind {
   string id = 1;
   string name = 2;
+  // What it looks like (flavour; not shown in game since finds have no card).
   string text = 3;
-  // Opening it: the skill and DC; or leave it.
+  // Opening it: the skill and DC.
   string skill = 4;
   int32 dc = 5;
-  string open_label = 6;
+  reserved 6; // open_label: finds open themselves, no button
   // On a success: an item into your pack (an item id), credits and XP.
   repeated string items = 7;
   int32 credits = 8;
@@ -84,7 +87,7 @@ message EncounterFind {
   float weight = 15;
 }
 
-// The open card (mirrored to the page): its title and text, the choices as "id|label|skill name|bonus|dc" (no
+// The open standoff card (mirrored to the page): its title and text, the choices as "id|label|skill name|bonus|dc" (no
 // skill: bonus and dc 0), and after a roll the result (rolled; d20, bonus, total, dc, success; the outcome text).
 message EncounterState {
   option (ln.state) = true;

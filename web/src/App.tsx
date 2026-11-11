@@ -178,7 +178,7 @@ function Toasts() {
   );
 }
 
-/** What the hands picked up, dropped or threw (ItemHandled), top right: for checking weapon holds. */
+/** What the hands picked up, dropped or threw, and finds opened (ItemHandled), top right. */
 function ItemToasts() {
   const [items, setItems] = useState<{ id: number; item: string; action: string; detail: string }[]>([]);
   useLNEvent("ItemHandled", (e) => {
@@ -189,7 +189,7 @@ function ItemToasts() {
   return (
     <div className="item-toasts" aria-live="polite">
       {items.map((t) => (
-        <div key={t.id} className={`toast item ${t.action === "dropped" || t.action === "threw" ? "" : "good"}`}>
+        <div key={t.id} className={`toast item ${t.action.startsWith("failed") ? "bad" : t.action === "dropped" || t.action === "threw" ? "" : "good"}`}>
           <div>
             {t.action} <strong>{t.item}</strong>
           </div>

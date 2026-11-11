@@ -928,7 +928,6 @@ namespace LuckyNumbers.Model
                     Text = "A sealed supply crate half buried in the dirt, its lock still blinking.",
                     Skill = "engineering",
                     Dc = 11,
-                    OpenLabel = "Bypass the lock",
                     Items =
                     {
                         "medpatch",
@@ -949,7 +948,6 @@ namespace LuckyNumbers.Model
                     Text = "The freighter's black box, half buried. Its data is worth something to someone.",
                     Skill = "computers",
                     Dc = 12,
-                    OpenLabel = "Pull the data",
                     Credits = 150,
                     Xp = 60,
                     SuccessText = "You copy the logs. Dispatch will pay 150 credits for them.",
@@ -965,7 +963,6 @@ namespace LuckyNumbers.Model
                     Text = "Someone else got here first, and didn't leave. Their kit is still on them.",
                     Skill = "medicine",
                     Dc = 10,
-                    OpenLabel = "Check them carefully",
                     Items =
                     {
                         "medpatch",

@@ -1,5 +1,5 @@
-// A dice-only encounter on the planet (Unity: Planet/CombatPresenter.Encounters): a standoff with a monster that
-// hasn't seen you, or something you found. Time stands still while the card is up. Pick a choice (click, or 1-5):
+// A dice-only standoff on the planet (Unity: Planet/CombatPresenter.Encounters): a monster that hasn't seen you
+// (finds open themselves, no card: their roll shows as a toast). Time stands still while the card is up. Pick a choice (click, or 1-5):
 // each is d20 + one of your skills against a DC, shown with your bonus. Then the roll and what happened; Continue
 // (Enter) lets time run again.
 import { useEffect } from "react";
@@ -39,7 +39,7 @@ export function EncounterCard() {
   const chance = (bonus: number, dc: number) => Math.round(100 * Math.min(19, Math.max(1, 21 - (dc - bonus))) / 20);
   return (
     <div className={`encounter ui ${e.kind}`} role="dialog" aria-label={e.title}>
-      <div className="encounter-kicker">{e.kind === "standoff" ? "Encounter" : "Found"}</div>
+      <div className="encounter-kicker">Encounter</div>
       <h2>{e.title}</h2>
       <p>{e.text}</p>
       {!rolled ? (
