@@ -512,7 +512,7 @@ kbd {
 
 .d20-panel {
   position: absolute;
-  top: 18%;
+  bottom: calc(max(var(--gap), env(safe-area-inset-bottom)) + 110px);   /* under the crosshair, clear of the toasts up top and the use prompt */
   left: 50%;
   transform: translateX(-50%);
   display: flex;

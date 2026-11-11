@@ -566,6 +566,21 @@ export interface EncounterChoice {
   option: string;
 }
 
+/**
+ * A find's roll as you walk up to it (Planet/CombatPresenter.Encounters): the page tumbles a d20 that lands on
+ * `roll`, then shows d20 + bonus = total vs DC and what happened. The loot (or the failure) lands with the die.
+ */
+export interface FindRolled {
+  find: string;
+  skill: string;
+  roll: number;
+  bonus: number;
+  total: number;
+  dc: number;
+  success: boolean;
+  text: string;
+}
+
 export interface InputActionPerformed {
   action: InputAction;
 }
@@ -713,6 +728,7 @@ export interface WebEvents {
   CutsceneStepStarted: CutsceneStepStarted;
   CutsceneFinished: CutsceneFinished;
   EncounterChoice: EncounterChoice;
+  FindRolled: FindRolled;
   InputActionPerformed: InputActionPerformed;
   InventoryEquipRequested: InventoryEquipRequested;
   InventoryUnequipRequested: InventoryUnequipRequested;

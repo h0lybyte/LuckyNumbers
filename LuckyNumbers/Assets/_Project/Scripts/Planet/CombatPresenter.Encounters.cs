@@ -12,8 +12,9 @@ namespace LuckyNumbers.Planet
     /// 20 / 1 always succeed / fail.
     ///
     /// A standoff stops time on a card (EncounterState): pick a choice (EncounterChoice), see the roll, "continue"
-    /// applies the outcome and lets time run again. A find just happens as you walk up: it rolls, what it held goes
-    /// into your pack (or the failure bites), and a toast (ItemHandled) shows the roll and the result.
+    /// applies the outcome and lets time run again. A find just happens as you walk up: it rolls (FindRolled: the page
+    /// tumbles a d20 while the block rattles), and as the die lands what it held goes into your pack (or the failure
+    /// bites). A find with no check just opens, with a toast (ItemHandled).
     /// </summary>
     public sealed partial class CombatPresenter
     {
@@ -23,7 +24,13 @@ namespace LuckyNumbers.Planet
             public Transform View;
             public Vector3 Position;
             public bool Done;
+            public float LandAt = -1f;   // rolling: resolves (loot / failure) when the die lands
+            public bool Success;
+            public Quaternion Rest;      // its yaw, to rattle about
         }
+
+        /// <summary>How long the page's d20 tumbles (web/src/relics.tsx FindD20) before the find's outcome lands.</summary>
+        const float FindSpin = 0.9f;
 
         sealed class Card
         {
@@ -95,11 +102,22 @@ namespace LuckyNumbers.Planet
                 return _card != null;
             }
             _choice = null;
+            foreach (var f in _finds)
+            {
+                if (f.Done || f.LandAt < 0f) continue;
+                if (Time.time >= f.LandAt) Resolve(f, f.Success);
+                else if (f.View != null)
+                {
+                    var t = Time.time * 40f;   // rattles while the die tumbles
+                    f.View.SetPositionAndRotation(f.Position + new Vector3(0f, math.abs(math.sin(t * 0.5f)) * 0.06f, 0f),
+                                                  f.Rest * Quaternion.Euler(math.sin(t) * 6f, 0f, math.cos(t * 1.3f) * 6f));
+                }
+            }
             if (!_firstPerson.Active || E == null) return false;
             var me = _player.Body.transform.position;
             foreach (var f in _finds)
             {
-                if (f.Done) continue;
+                if (f.Done || f.LandAt >= 0f) continue;
                 var d = Vector2.Distance(new Vector2(f.Position.x, f.Position.z), new Vector2(me.x, me.z));
                 if (d < math.max(1f, E.FindDistance)) OpenFind(f);
             }
@@ -115,32 +133,38 @@ namespace LuckyNumbers.Planet
         }
 
         /// <summary>
-        /// Walked up to a find: roll its check (no card, no choice), then loot it or take the failure, and say how it
-        /// went in a toast. Same roll as the card's: d20 + the skill vs its DC, natural 20 / 1 always succeed / fail.
+        /// Walked up to a find: roll its check (no card, no choice) and send it to the page (FindRolled), which tumbles
+        /// the d20; the loot or the failure lands with it (FindSpin later). Same roll as the card's: d20 + the skill vs
+        /// its DC, natural 20 / 1 always succeed / fail. No check: it just opens.
         /// </summary>
         void OpenFind(Find f)
         {
             var (_, _, skill, bonus, dc, _) = Option("open", "", f.Type.Skill, f.Type.Dc, 0f, null);
-            bool success;
-            string roll;
             if (string.IsNullOrEmpty(skill))
             {
-                success = true;
-                roll = "";
+                Resolve(f, true);
+                return;
             }
-            else
-            {
-                var d20 = _rng.NextInt(1, 21);
-                var total = d20 + bonus;
-                success = d20 == 20 || (d20 != 1 && total >= dc);
-                var call = d20 == 20 ? "natural 20" : d20 == 1 ? "natural 1" : success ? "success" : "failure";
-                roll = $"{skill} d20 {d20} {(bonus >= 0 ? "+" : "-")} {Mathf.Abs(bonus)} = {total} vs DC {dc}: {call}. ";
-                Debug.Log($"[Encounter] {f.Type.Name}: {skill} d20 {d20} + {bonus} = {total} vs DC {dc}: {(success ? "success" : "failure")}");
-            }
+            var d20 = _rng.NextInt(1, 21);
+            var total = d20 + bonus;
+            var success = d20 == 20 || (d20 != 1 && total >= dc);
+            Debug.Log($"[Encounter] {f.Type.Name}: {skill} d20 {d20} + {bonus} = {total} vs DC {dc}: {(success ? "success" : "failure")}");
+            f.Success = success;
+            if (f.View != null) f.Rest = f.View.rotation;
+            f.LandAt = Time.time + FindSpin;
+            _foundRolls.Publish(new FindRolled(f.Type.Name, skill, d20, bonus, total, dc, success,
+                                               success ? f.Type.SuccessText : f.Type.FailureText));
+        }
+
+        /// <summary>The die landed (or there was no check): loot it or take the failure. A toast only says what the d20 panel didn't.</summary>
+        void Resolve(Find f, bool success)
+        {
+            var rolled = f.LandAt >= 0f;
             var full = Loot(f, success);
-            var text = success ? f.Type.SuccessText : f.Type.FailureText;
-            if (full.Count > 0) text += $" No room for {string.Join(", ", full)}.";
-            _handled.Publish(new ItemHandled(f.Type.Name, success ? "opened" : "failed to open", roll + text));
+            if (rolled && full.Count == 0) return;
+            var text = rolled ? "" : success ? f.Type.SuccessText : f.Type.FailureText;
+            if (full.Count > 0) text += $"{(text.Length > 0 ? " " : "")}No room for {string.Join(", ", full)}.";
+            _handled.Publish(new ItemHandled(f.Type.Name, success ? "opened" : "failed to open", text));
         }
 
         (string, string, string, int, int, EncounterOption) Option(string id, string label, string skill, int dc, float perDanger, EncounterOption option)

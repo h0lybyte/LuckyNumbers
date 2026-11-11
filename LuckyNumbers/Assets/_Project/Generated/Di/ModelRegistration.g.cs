@@ -34,6 +34,7 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<CutsceneStepStarted>(options);
             builder.RegisterMessageBroker<CutsceneFinished>(options);
             builder.RegisterMessageBroker<EncounterChoice>(options);
+            builder.RegisterMessageBroker<FindRolled>(options);
             builder.RegisterMessageBroker<InputActionPerformed>(options);
             builder.RegisterMessageBroker<InventoryEquipRequested>(options);
             builder.RegisterMessageBroker<InventoryUnequipRequested>(options);

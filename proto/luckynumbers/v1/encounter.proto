@@ -113,3 +113,18 @@ message EncounterChoice {
   option (ln.web_in) = true;
   string option = 1;
 }
+
+// A find's roll as you walk up to it (Planet/CombatPresenter.Encounters): the page tumbles a d20 that lands on
+// `roll`, then shows d20 + bonus = total vs DC and what happened. The loot (or the failure) lands with the die.
+message FindRolled {
+  option (ln.event) = true;
+  option (ln.web) = true;
+  string find = 1;     // "Supply cache"
+  string skill = 2;    // the sheet's name for it ("Engineering")
+  int32 roll = 3;      // the d20
+  int32 bonus = 4;
+  int32 total = 5;
+  int32 dc = 6;
+  bool success = 7;
+  string text = 8;     // the find's success / failure text
+}
