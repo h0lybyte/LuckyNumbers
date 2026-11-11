@@ -101,6 +101,7 @@ namespace LuckyNumbers.Editor
             Assign(ground, ("material", MaterialAsset("Ground", "LuckyNumbers/Ground")));
 
             var (cam, _) = PlayerRig();
+            EquippedWeapons();   // the gun in your weapon slot, drawn into your hands
 
             // Sun: a star sphere far away (moved with the player at runtime).
             var sun = Sphere("Sun", rig.Star, null);
@@ -357,6 +358,7 @@ namespace LuckyNumbers.Editor
 
             // A test gun by the spawn (StationPresenter drops it there): pick up with E, click fires energy bolts.
             WeaponRig(StationWeapon);
+            EquippedWeapons();   // the gun in your weapon slot, drawn into your hands
 
             // The shooting range's weapons (every gun, melee weapon and mod, as in the dev range), parked inactive under
             // one root: StationRange lays them out on the Range room's bench once the station is built.
@@ -502,6 +504,28 @@ namespace LuckyNumbers.Editor
 
         static WeaponItem[] Weapons() =>
             JsonUtility.FromJson<WeaponIndex>(System.IO.File.ReadAllText($"{WeaponsDir}/weapons.json")).items;
+
+        /// <summary>
+        /// The models of the weapons you can equip (content/items.txtpb, a weapon item's `model`), parked inactive under
+        /// "Equipped weapons": FirstPersonPresenter draws the equipped one into your hands.
+        /// </summary>
+        static void EquippedWeapons()
+        {
+            var root = new GameObject("Equipped weapons").transform;
+            var done = new System.Collections.Generic.HashSet<string>();
+            foreach (var item in LuckyNumbers.Model.GameContent.Items.Items)
+            {
+                if (item.Slot != LuckyNumbers.Model.EquipSlot.Weapon || string.IsNullOrEmpty(item.Model) || !done.Add(item.Model)) continue;
+                if (System.Array.Find(Weapons(), w => w.name == item.Model) == null)
+                {
+                    Debug.LogWarning($"[SceneBuilder] item {item.Id}: model '{item.Model}' isn't in {WeaponsDir}/weapons.json");
+                    continue;
+                }
+                var rig = WeaponRig(item.Model);
+                rig.transform.SetParent(root, false);
+                rig.SetActive(false);
+            }
+        }
 
         static WeaponItem Weapon(string name) =>
             System.Array.Find(Weapons(), w => w.name == name) ?? throw new System.Exception($"{name} not in {WeaponsDir}/weapons.json");

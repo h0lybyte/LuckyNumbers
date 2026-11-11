@@ -1,4 +1,5 @@
 using System;
+using LuckyNumbers.Core;
 using LuckyNumbers.Model;
 using MessagePipe;
 using Unity.Mathematics;
@@ -20,8 +21,13 @@ namespace LuckyNumbers.Planet
         Rigidbody Held { get; }
         /// <summary>Reach for and pick up this thing as if E were pressed looking at it (scripts: the range's bake run).</summary>
         bool PickUp(Rigidbody thing);
-        /// <summary>Put down what's held, as E does.</summary>
+        /// <summary>Put down what's held, as E does (the equipped gun: holstered, not dropped).</summary>
         void Drop();
+        /// <summary>
+        /// The equipped weapon's model (the pack's weapon slot, its item's `model`), which the hands draw when they're
+        /// free and E holsters; null: none equipped, or it has no model yet.
+        /// </summary>
+        Rigidbody Equipped { get; }
         /// <summary>
         /// Asked as a held gun fires, with what the crosshair is on and how far (the station range's attack rolls).
         /// False: the shot misses, so the bolt goes wide of it. Null: every shot flies true.
@@ -35,7 +41,9 @@ namespace LuckyNumbers.Planet
     /// rise in the air, shake after the crash. Hands: palms go flat on things you face up close; E picks up a
     /// pebble (crouching and stepping in for it), E drops it, click throws it. A gun (WeaponView) is held in view
     /// instead, both hands on it (IK to its grip and foregrip), and click fires it; a melee weapon (MeleeView) is held
-    /// by the handle in the right fist, and click swings it.
+    /// by the handle in the right fist, and click swings it. The gun in your pack's weapon slot is drawn: its model
+    /// (SceneBuilder parks one per weapon item, inactive, under "Equipped weapons") comes up from the hip whenever the
+    /// hands are free; E holsters it (and draws it again), unequipping or dropping it from the pack puts it away.
     /// </summary>
     [Presenter]
     public sealed class FirstPersonPresenter : IStartable, ITickable, IDisposable, IFirstPerson
@@ -48,6 +56,7 @@ namespace LuckyNumbers.Planet
         readonly PlayerInput _input;
         readonly ISubscriber<InputActionPerformed> _actions;
         readonly IPublisher<ItemHandled> _handled;
+        readonly IInventory _pack;
         IDisposable _subscription;
         float _reportAt = float.MaxValue;   // when to toast how well the hands settled on what they just picked up
 
@@ -80,8 +89,19 @@ namespace LuckyNumbers.Planet
 
         public Rigidbody Held => _held;
 
+        // The equipped gun: its model (null: none), which item model that is, and whether E put it away.
+        Rigidbody _equipped;
+        string _equippedModel = "";
+        bool _holstered, _drawing;
+        public Rigidbody Equipped => _equipped;
+
         public bool PickUp(Rigidbody thing)
         {
+            if (thing != null && thing != _equipped && _equipped != null && (_held == _equipped || _reaching == _equipped))
+            {
+                Holster();   // hands free for it; the gun stays away until E
+                _holstered = true;
+            }
             if (thing == null || _held != null || _reaching != null || _throwT >= 0f) return false;
             _reaching = thing;
             _reachT = 0f;
@@ -91,7 +111,8 @@ namespace LuckyNumbers.Planet
 
         public void Drop()
         {
-            if (_held != null && _throwT < 0f) Release(Vector3.zero);
+            if (_held != null && _held == _equipped) { Holster(); _holstered = true; }
+            else if (_held != null && _throwT < 0f) Release(Vector3.zero);
         }
 
         public void Look(float yawDegrees, float pitchDegrees)
@@ -102,8 +123,9 @@ namespace LuckyNumbers.Planet
 
         [Inject]
         public FirstPersonPresenter(PlanetScene config, PlayerView player, ArmsView arms, PlayerInput input,
-                                    ISubscriber<InputActionPerformed> actions, IPublisher<ItemHandled> handled)
+                                    ISubscriber<InputActionPerformed> actions, IPublisher<ItemHandled> handled, IInventory pack)
         {
+            _pack = pack;
             _handled = handled;
             _config = config;
             _player = player;
@@ -289,10 +311,17 @@ namespace LuckyNumbers.Planet
         {
             var hold = eye.position + eye.forward * 0.42f + eye.right * 0.17f - eye.up * 0.19f;
 
+            EquippedGun(eye);
+            if (_interact && _held != null && _held == _equipped) { Holster(); _holstered = true; _interact = false; }
             if (_interact && _held != null && _throwT < 0f) { Release(Vector3.zero); _interact = false; }
             if (_interact && _held == null && _reaching == null && _throwT < 0f)
             {
-                if (!FindPebble(eye, out var pebble)) { Debug.Log($"[Hands] nothing to pick up there (looking {_pitch:0} deg down)"); return; }
+                if (!FindPebble(eye, out var pebble))
+                {
+                    if (_equipped != null && _holstered) { _holstered = false; Draw(eye); return; }   // E again: draw it
+                    Debug.Log($"[Hands] nothing to pick up there (looking {_pitch:0} deg down)");
+                    return;
+                }
                 _reaching = pebble;
                 _reachT = 0f;
                 // Crouch just enough for the shoulder to get within arm's length (with the step-in).
@@ -339,7 +368,7 @@ namespace LuckyNumbers.Planet
                 }
                 if (_reachT >= 1f)
                 {
-                    _held = _reaching; _reaching = null; _reachFrom = Vector3.zero; _carry = 1f;
+                    _held = _reaching; _reaching = null; _reachFrom = Vector3.zero; _carry = 1f; _drawing = false;
                     if (_weapon != null || _melee != null) _reportAt = Time.time + 1f;   // once the hold has settled
                 }
                 return;
@@ -462,8 +491,8 @@ namespace LuckyNumbers.Planet
             _kick = 0f;
             _arms.SetTriggerFinger(Right, true);
             Grasp(rb, true, Left, Right);
-            Debug.Log($"[Hands] picked up {rb.name}");
-            Toast(rb, "picked up", $"gun - scale {gun.HeldScale:0.00}, arms shift {gun.ArmsShift.x * 100f:0} cm");
+            Debug.Log($"[Hands] {(_drawing ? "drew" : "picked up")} {rb.name}");
+            Toast(rb, _drawing ? "drew" : "picked up", _drawing ? "equipped - E holsters it" : $"gun - scale {gun.HeldScale:0.00}, arms shift {gun.ArmsShift.x * 100f:0} cm");
         }
 
         void GrabMelee(Rigidbody rb, MeleeView blade, Transform eye)
@@ -476,8 +505,8 @@ namespace LuckyNumbers.Planet
             _melee = blade;
             blade.Take(_player.Body.transform);
             Grasp(rb, true, Right);
-            Debug.Log($"[Hands] picked up {rb.name}");
-            Toast(rb, "picked up", "melee - click swings");
+            Debug.Log($"[Hands] {(_drawing ? "drew" : "picked up")} {rb.name}");
+            Toast(rb, _drawing ? "drew" : "picked up", _drawing ? "equipped - click swings, E puts it away" : "melee - click swings");
         }
 
         /// <summary>
@@ -555,7 +584,7 @@ namespace LuckyNumbers.Planet
             if (_weapon.TryFire(target, _player.Body.transform)) _kick += _weapon.Recoil;
         }
 
-        void Release(Vector3 velocity)
+        void Release(Vector3 velocity, bool stow = false)
         {
             var rb = _held;
             _held = null;
@@ -575,6 +604,19 @@ namespace LuckyNumbers.Planet
                 _arms.SetPose(Left, null);
                 _arms.SetPose(Right, null);
             }
+            if (stow)
+            {
+                // Holstered: back under its parking root, out of the world (no body to fall, nothing to pick up).
+                rb.transform.SetParent(_equipRoot, false);
+                rb.transform.localScale = Vector3.one;
+                ArmsView.SetLayer(rb.transform, 0);
+                _arms.SetPose(Right, null);
+                rb.gameObject.SetActive(false);
+                Debug.Log($"[Hands] holstered {rb.name}");
+                Toast(rb, "holstered", "E draws it");
+                _reportAt = float.MaxValue;
+                return;
+            }
             rb.transform.SetParent(null, true);
             rb.transform.localScale = Vector3.one;   // a held gun is shrunk for the view
             ArmsView.SetLayer(rb.transform, 0);
@@ -587,6 +629,76 @@ namespace LuckyNumbers.Planet
             Debug.Log(velocity == Vector3.zero ? $"[Hands] dropped {rb.name}" : $"[Hands] threw {rb.name} at {velocity.magnitude:0.0} m/s");
             Toast(rb, velocity == Vector3.zero ? "dropped" : "threw", velocity == Vector3.zero ? "" : $"{velocity.magnitude:0.0} m/s");
             _reportAt = float.MaxValue;
+        }
+
+        // ---- the equipped gun -------------------------------------------------------------------------------------
+
+        Transform _equipRoot;
+        bool _equipRootLooked;
+
+        /// <summary>
+        /// Follow the pack's weapon slot: a new weapon (or none) puts the old model away and takes the new one's; the
+        /// hands draw it whenever they're free, unless E holstered it.
+        /// </summary>
+        void EquippedGun(Transform eye)
+        {
+            var model = _pack.EquippedIn(EquipSlot.Weapon)?.Model ?? "";
+            if (model != _equippedModel)
+            {
+                if (_equipped != null) Holster();
+                _equippedModel = model;
+                _equipped = EquipModel(model);
+                _holstered = false;
+                if (_equipped != null && _equipped.TryGetComponent<WeaponView>(out var gun))
+                    gun.Source = _pack.EquippedIn(EquipSlot.Weapon)?.Id ?? "default";
+            }
+            if (_equipped != null && !_holstered && _held == null && _reaching == null && _throwT < 0f) Draw(eye);
+        }
+
+        /// <summary>The parked model for an item model name (SceneBuilder: "Weapon &lt;model&gt;" under "Equipped weapons").</summary>
+        Rigidbody EquipModel(string model)
+        {
+            if (string.IsNullOrEmpty(model)) return null;
+            if (!_equipRootLooked)
+            {
+                _equipRootLooked = true;
+                _equipRoot = GameObject.Find("Equipped weapons")?.transform;
+                if (_equipRoot == null) Debug.LogWarning("[Hands] no 'Equipped weapons' in this scene (rebuild the scenes): equipped guns stay in the pack");
+            }
+            var t = _equipRoot != null ? _equipRoot.Find($"Weapon {model}") : null;
+            if (t == null)
+            {
+                if (_equipRoot != null) Debug.LogWarning($"[Hands] no equipped model 'Weapon {model}' (rebuild the scenes)");
+                return null;
+            }
+            return t.GetComponent<Rigidbody>();
+        }
+
+        /// <summary>Bring the equipped gun up from the hip: the second half of a pickup (no crouch, no reach down).</summary>
+        void Draw(Transform eye)
+        {
+            var rb = _equipped;
+            var t = rb.transform;
+            t.SetParent(null, false);
+            t.SetPositionAndRotation(eye.position - eye.up * 0.45f + eye.right * 0.2f + eye.forward * 0.15f, eye.rotation);
+            t.localScale = Vector3.one;
+            rb.isKinematic = true;
+            rb.gameObject.SetActive(true);
+            _reaching = rb;
+            _reachT = 0.5f;
+            _crouchFor = 0f;
+            _drawing = true;
+        }
+
+        /// <summary>Put the equipped gun away (out of the hands, or mid-draw), back where it's parked.</summary>
+        void Holster()
+        {
+            var rb = _equipped;
+            if (rb == null) return;
+            if (_reaching == rb) { _held = rb; _reaching = null; _reachFrom = Vector3.zero; }
+            _drawing = false;
+            if (_held == rb) Release(Vector3.zero, stow: true);
+            else if (rb.gameObject.activeSelf) rb.gameObject.SetActive(false);
         }
 
         /// <summary>A held thing's exact-shape colliders on (the fingers close onto them) or off, and those hands' grasp.</summary>

@@ -231,10 +231,10 @@ namespace LuckyNumbers.Station
         /// <summary>The test gun (if the scene has one): dropped on the deck just ahead of where you start.</summary>
         static void PlaceWeapon(Vector3 spawn, float yaw)
         {
-            // The test rifle, not one of the range's (those lie on its bench, RangeRoom).
+            // The test rifle, not one of the range's (those lie on its bench, RangeRoom) nor the equipped gun's model.
             WeaponView gun = null;
             foreach (var w in UnityEngine.Object.FindObjectsByType<WeaponView>(FindObjectsInactive.Include))
-                if (w.transform.parent == null || w.transform.parent.name != "Range weapons") { gun = w; break; }
+                if (w.transform.parent == null) { gun = w; break; }
             if (gun == null) return;
             var facing = Quaternion.Euler(0f, yaw, 0f);
             var at = spawn + facing * new Vector3(0.25f, 0.35f, 1.0f);
