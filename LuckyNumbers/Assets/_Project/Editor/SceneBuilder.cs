@@ -533,6 +533,7 @@ namespace LuckyNumbers.Editor
             var gem = Mat("RelicWaterGem", new Color(0.08f, 0.32f, 0.62f), new Color(0.35f, 0.78f, 0.98f), 1.2f);
             var crest = Mat("RelicCrestGem", new Color(0.55f, 0.85f, 0.9f), new Color(0.9f, 1f, 1f), 0.9f);
             var marble = Mat("RelicMarble", new Color(0.62f, 0.6f, 0.58f), new Color(0.9f, 0.88f, 0.82f), 0.3f);
+            var umber = Mat("RelicUmber", new Color(0.2f, 0.09f, 0.06f), new Color(0.42f, 0.24f, 0.12f), 0.55f);   // rim glow bronze-ish
             var root = new GameObject(name).transform;
             root.SetParent(parent, false);
             var model = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
@@ -542,11 +543,11 @@ namespace LuckyNumbers.Editor
             {
                 var count = r.GetComponent<MeshFilter>().sharedMesh.subMeshCount;
                 var mats = new Material[count];
-                // Parts named by their export script (the vase: marble Body, gold PanelA/PanelB bands); otherwise
-                // by submesh (the amulet: gold, water gem, crest gem).
+                // Parts named by their export script (the vase: marble Body = rim, neck rings and foot; the umber
+                // PanelA/PanelB = its painted belly); otherwise by submesh (the amulet: gold, water gem, crest gem).
                 for (var i = 0; i < count; i++)
                     mats[i] = r.name == "Body" ? marble
-                            : r.name.StartsWith("Panel") ? gold
+                            : r.name.StartsWith("Panel") ? umber
                             : count == 1 ? gold : i == 0 ? gold : i == 1 ? gem : crest;
                 r.sharedMaterials = mats;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;

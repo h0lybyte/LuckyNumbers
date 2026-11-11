@@ -511,6 +511,60 @@ namespace LuckyNumbers.Editor
                       $"{runFrom} -> {runTo}");
         }
 
+        /// <summary>
+        /// The named relics' own models (Planet.unity's artifact models) side by side on a ground plane, resting where
+        /// RelicsPresenter puts them (0.35 m up), to Logs/preview-relics.png: from eye height, close up on each, and a
+        /// low three-quarter view. Logs each one's size.
+        /// </summary>
+        [MenuItem("LuckyNumbers/Preview/Render Relics")]
+        public static void RenderRelics()
+        {
+            EditorSceneManager.OpenScene("Assets/_Project/Scenes/Planet.unity", OpenSceneMode.Single);
+            var view = Object.FindFirstObjectByType<LuckyNumbers.Planet.PlanetView>(FindObjectsInactive.Include)
+                       ?? throw new System.Exception("no PlanetView in Planet.unity");
+            var models = new SerializedObject(view).FindProperty("artifactModels");
+            var origin = new Vector3(0f, 1000f, 0f);
+            var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            ground.transform.position = origin;
+            ground.GetComponent<MeshRenderer>().sharedMaterial = new Material(Find("Universal Render Pipeline/Unlit")) { color = new Color(0.32f, 0.27f, 0.22f) };
+            var placed = new System.Collections.Generic.List<Transform>();
+            for (var i = 0; i < models.arraySize; i++)
+            {
+                if (models.GetArrayElementAtIndex(i).objectReferenceValue is not Transform t) continue;
+                var copy = Object.Instantiate(t);
+                copy.gameObject.SetActive(true);
+                copy.position = origin + new Vector3(1.2f * i, 0.35f, 0f);
+                var b = new Bounds();
+                var first = true;
+                foreach (var r in copy.GetComponentsInChildren<Renderer>())
+                    if (first) { b = r.bounds; first = false; } else b.Encapsulate(r.bounds);
+                Debug.Log($"[ShaderPreview] relic {t.name}: {b.size.x:0.00} x {b.size.y:0.00} x {b.size.z:0.00} m, bottom {b.min.y - origin.y:0.00} m");
+                placed.Add(copy);
+            }
+            if (placed.Count == 0) throw new System.Exception("no artifact models on PlanetView");
+            Shader.SetGlobalVector("_LnSunPosition", new Vector4(40f, 1060f, -30f, 1f));
+            Shader.SetGlobalVector("_LnSunColor", Color.white);
+            var mid = origin + new Vector3(0.6f * (placed.Count - 1), 0.35f, 0f);
+            Camera Cam(Vector3 at, Vector3 look, float fov)
+            {
+                var cam = new GameObject("Cam").AddComponent<Camera>();
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = new Color(0.12f, 0.12f, 0.16f);
+                cam.fieldOfView = fov;
+                cam.transform.position = at;
+                cam.transform.LookAt(look);
+                return cam;
+            }
+            var last = placed[placed.Count - 1].position;
+            SaveGrid(new[]
+            {
+                Cam(mid + new Vector3(0f, 1.35f, -3.2f), mid, 50f),                                // standing, a few steps off
+                Cam(last + new Vector3(0.9f, 0.25f, -1.4f), last + Vector3.up * 0.05f, 40f),     // close on the newest
+                Cam(placed[0].position + new Vector3(-0.5f, 0.3f, -0.8f), placed[0].position, 40f), // close on the first
+                Cam(mid + new Vector3(-2.2f, 0.4f, -2.2f), mid, 45f),                              // low three-quarter
+            }, "preview-relics.png");
+        }
+
         /// <summary>Cameras rendered into a 2 x 2 grid (each at half size), saved to Logs/.</summary>
         static void SaveGrid(Camera[] cams, string file) => SaveGrid(cams, 2, file, null, rowsAreCams: true);
 
