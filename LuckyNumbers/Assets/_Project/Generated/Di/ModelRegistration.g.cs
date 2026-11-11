@@ -21,6 +21,7 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<CharacterOriginRequested>(options);
             builder.RegisterMessageBroker<CharacterResetRequested>(options);
             builder.RegisterMessageBroker<CharacterXpGained>(options);
+            builder.RegisterMessageBroker<CharacterCallsignRequested>(options);
             builder.RegisterMessageBroker<SceneChangeRequested>(options);
             builder.RegisterMessageBroker<SceneEntered>(options);
             builder.RegisterMessageBroker<RangeResetRequested>(options);
@@ -50,6 +51,9 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<ShipPickerReady>(options);
             builder.RegisterMessageBroker<ShipSkinStepRequested>(options);
             builder.RegisterMessageBroker<ShipPickDone>(options);
+            builder.RegisterMessageBroker<SaveSlotsReady>(options);
+            builder.RegisterMessageBroker<SaveSlotPicked>(options);
+            builder.RegisterMessageBroker<SaveSlotDeleteRequested>(options);
             builder.RegisterMessageBroker<MenuItemSelected>(options);
         }
 
@@ -76,6 +80,7 @@ namespace LuckyNumbers.Model
             builder.Register<PlayerHealth>(Lifetime.Singleton);
             builder.Register<ShipPicker>(Lifetime.Singleton);
             builder.Register<PlayerVoyage>(Lifetime.Singleton);
+            builder.Register<SaveSlots>(Lifetime.Singleton);
             builder.Register<DiceState>(Lifetime.Singleton);
         }
     }

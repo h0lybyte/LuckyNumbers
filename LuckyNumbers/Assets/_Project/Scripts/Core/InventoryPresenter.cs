@@ -58,6 +58,22 @@ namespace LuckyNumbers.Core
         void Drop(DroppedItem item);
     }
 
+    /// <summary>An item in a save slot: what it is, where it sits (or the slot it's worn in), how many.</summary>
+    [Serializable]
+    public sealed class SavedItem
+    {
+        public string id, name, description;
+        public int value, x, y, rot, equipped, count;
+    }
+
+    /// <summary>The pack, for save slots (Core/SavePresenter).</summary>
+    public interface IPackSave
+    {
+        List<SavedItem> Capture();
+        /// <summary>Replace the pack with saved items (after the character is back, so its class kit doesn't repack it).</summary>
+        void Restore(List<SavedItem> items);
+    }
+
     /// <summary>What equipped gear adds up to (CharacterPresenter folds it into the sheet).</summary>
     public interface IEquipment
     {
@@ -81,7 +97,7 @@ namespace LuckyNumbers.Core
     /// starts equipped. Everything goes to PlayerInventory for the page.
     /// </summary>
     [Presenter]
-    public sealed class InventoryPresenter : IInventory, IEquipment, IStartable, ITickable, IDisposable
+    public sealed class InventoryPresenter : IInventory, IEquipment, IPackSave, IStartable, ITickable, IDisposable
     {
         sealed class Item
         {
@@ -211,6 +227,48 @@ namespace LuckyNumbers.Core
                 _strength = str;
                 Publish();
             }
+        }
+
+        // ---- IPackSave ----------------------------------------------------------------------------------------
+
+        public List<SavedItem> Capture() => _items.ConvertAll(i => new SavedItem
+        {
+            id = i.Def.Id, name = i.Name, description = i.Description, value = i.Value,
+            x = i.X, y = i.Y, rot = i.Rot, equipped = (int)i.Equipped, count = i.Count,
+        });
+
+        public void Restore(List<SavedItem> saved)
+        {
+            if (saved == null) return;
+            _items.Clear();
+            _readyAt.Clear();
+            _ready = 0;
+            _kitFor = _sheet.ClassId.Value;   // this is the kit now
+            var unplaced = new List<Item>();
+            foreach (var s in saved)
+            {
+                var def = Config.Items.Find(d => d.Id == s.id);
+                if (def == null)
+                {
+                    Debug.LogWarning($"[Inventory] save has '{s.id}', not in items.txtpb: left out");
+                    continue;
+                }
+                var rot = ((s.rot % 4) + 4) % 4;
+                var item = new Item
+                {
+                    Uid = _nextUid++, Def = def, Name = string.IsNullOrEmpty(s.name) ? def.Name : s.name,
+                    Description = string.IsNullOrEmpty(s.description) ? Describe(def) : s.description,
+                    Value = s.value, X = s.x, Y = s.y, Rot = rot, Count = Math.Clamp(s.count, 1, StackLimit(def)),
+                    Cells = Rotate(Parse(def.Shape), rot),
+                };
+                var slot = (EquipSlot)s.equipped;
+                if (slot != EquipSlot.None && def.Slot == slot && SlotItem(slot) == null) item.Equipped = slot;
+                else if (!Fits(item.Cells, item.X, item.Y, null)) { unplaced.Add(item); continue; }
+                _items.Add(item);
+            }
+            foreach (var item in unplaced) Add(item, publish: false);   // content changed shape: wherever it fits now
+            Publish();
+            _equipmentChanged.Publish(new EquipmentChanged());
         }
 
         // ---- IInventory ---------------------------------------------------------------------------------------

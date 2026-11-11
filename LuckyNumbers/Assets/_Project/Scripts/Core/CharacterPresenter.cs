@@ -19,6 +19,25 @@ namespace LuckyNumbers.Core
         UniTask RunAsync(CancellationToken ct);
     }
 
+    /// <summary>What a save slot keeps of the character (the scores roll again from the seed).</summary>
+    [Serializable]
+    public sealed class CharacterSave
+    {
+        public string callsign, classId, originId;
+        public uint seed;
+        public int[] moved;
+        public int level, xp;
+        public bool locked;
+    }
+
+    /// <summary>The character, for save slots (Core/SavePresenter).</summary>
+    public interface ICharacterSave
+    {
+        CharacterSave Capture();
+        /// <summary>Put a saved character back: rolled again from its seed, then its moves, class, origin and XP.</summary>
+        void Restore(CharacterSave save);
+    }
+
     /// <summary>
     /// The player's character sheet (content/character.txtpb), app-wide. Abilities roll from the lucky number
     /// (4d6 drop the lowest, seeded, so a universe always gives the same character); until you leave the station
@@ -29,7 +48,7 @@ namespace LuckyNumbers.Core
     /// (ICharacterSetup): CharacterSheet.setup opens the page's sheet until its Ready.
     /// </summary>
     [Presenter]
-    public sealed class CharacterPresenter : ICharacterSetup, IStartable, IDisposable
+    public sealed class CharacterPresenter : ICharacterSetup, ICharacterSave, IStartable, IDisposable
     {
         readonly CharacterSheet _sheet;
         readonly PlayerHealth _health;
@@ -42,6 +61,7 @@ namespace LuckyNumbers.Core
         readonly ISubscriber<CharacterXpGained> _xp;
         readonly ISubscriber<CharacterSheetReady> _pageReady;
         readonly ISubscriber<CharacterSetupDone> _setupDone;
+        readonly ISubscriber<CharacterCallsignRequested> _callsigns;
         readonly IEquipment _equipment;
         readonly ISubscriber<EquipmentChanged> _equipmentChanged;
         readonly List<IDisposable> _subscriptions = new();
@@ -66,8 +86,10 @@ namespace LuckyNumbers.Core
                                   ISubscriber<CharacterXpGained> xp,
                                   ISubscriber<CharacterSheetReady> pageReady,
                                   ISubscriber<CharacterSetupDone> setupDone,
-                                  IEquipment equipment, ISubscriber<EquipmentChanged> equipmentChanged)
+                                  IEquipment equipment, ISubscriber<EquipmentChanged> equipmentChanged,
+                                  ISubscriber<CharacterCallsignRequested> callsigns)
         {
+            _callsigns = callsigns;
             _sheet = sheet;
             _health = health;
             _flow = flow;
@@ -124,6 +146,7 @@ namespace LuckyNumbers.Core
                 Array.Clear(_moved, 0, _moved.Length);
                 Publish();
             }));
+            _subscriptions.Add(_callsigns.Subscribe(e => { if (!_locked) _sheet.Callsign.Value = Callsign(e.Callsign); }));
             _subscriptions.Add(_xp.Subscribe(e => Gain(e.Amount)));
             _subscriptions.Add(_pageReady.Subscribe(e => _page = e.On));
             _subscriptions.Add(_setupDone.Subscribe(_ => FinishSetup()));
@@ -143,6 +166,38 @@ namespace LuckyNumbers.Core
             return _setup.Task;
         }
 
+        public const int CallsignMax = 20;
+
+        /// <summary>Trimmed, cut to CallsignMax, no "|" (the page splits on it); empty: the default.</summary>
+        static string Callsign(string name)
+        {
+            name = (name ?? "").Replace("|", "").Trim();
+            if (name.Length > CallsignMax) name = name.Substring(0, CallsignMax).TrimEnd();
+            return name.Length > 0 ? name : Config.DefaultCallsign;
+        }
+
+        public CharacterSave Capture() => new()
+        {
+            callsign = _sheet.Callsign.Value, classId = _classId, originId = _originId, seed = _seed,
+            moved = (int[])_moved.Clone(), level = _level, xp = _xpTotal, locked = _locked,
+        };
+
+        public void Restore(CharacterSave save)
+        {
+            if (save == null || _rolled.Length == 0) return;
+            _locked = false;
+            Roll(save.seed == 0 ? 1u : save.seed);
+            for (var i = 0; i < _moved.Length && save.moved != null && i < save.moved.Length; i++) _moved[i] = save.moved[i];
+            _classId = FindClass(save.classId)?.Id ?? _classId;
+            _originId = FindOrigin(save.originId)?.Id ?? _originId;
+            _sheet.Callsign.Value = Callsign(save.callsign);
+            _level = Math.Max(1, save.level);
+            _xpTotal = Math.Max(0, save.xp);
+            _locked = save.locked;
+            _staminaMax = 0;   // back rested: full Stamina and HP
+            Publish();
+        }
+
         void FinishSetup()
         {
             _sheet.Setup.Value = false;
@@ -159,6 +214,7 @@ namespace LuckyNumbers.Core
                 _level = 1;
                 _xpTotal = 0;
                 Array.Clear(_moved, 0, _moved.Length);
+                _sheet.Callsign.Value = Config.DefaultCallsign;
             }
             // The sheet is set once you leave the station.
             else if (scene == GameScene.Intro || scene == GameScene.Planet) _locked = true;

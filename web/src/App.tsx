@@ -10,6 +10,7 @@ import { CombatHud } from "./combat";
 import { EncounterCard } from "./encounter";
 import { CharacterSheetGate } from "./sheet";
 import { HangarGate } from "./hangar";
+import { SaveSlotsGate } from "./saves";
 import type { GameScene, InboundEvent, WebEvents } from "./ln";
 
 export function App({ dock }: { dock: HTMLElement | null }) {
@@ -46,6 +47,7 @@ export function App({ dock }: { dock: HTMLElement | null }) {
       <StationHudGate />
       <CharacterSheetGate />
       <HangarGate />
+      <SaveSlotsGate />
       <Toasts />
       <ItemToasts />
       {inspector && dock && createPortal(<Inspector />, dock)}

@@ -360,6 +360,24 @@ export interface PlayerVoyage {
   training: boolean;
 }
 
+/**
+ * Save slots (Core/SavePresenter). Play on the title opens the page's picker: an empty slot starts a new character
+ * there (creation, the hangar, then the station), a filled one continues it (its universe, sheet, pack, ship, credits
+ * and job come back and you wake at the station). The run then saves to its slot on every scene change and every
+ * half minute. Kept in PlayerPrefs (the browser's IndexedDB on the web), one JSON record per slot.
+ */
+export interface SaveSlots {
+  /** The title's picker is up (Play was pressed). */
+  open: boolean;
+  /** The slot this run saves to (-1: none, e.g. a dev warp or no page). */
+  active: number;
+  /**
+   * Each slot "callsign|class|level|seed|played|where|credits" (played: unix ms; where: the scene, or the job's
+   * planet); "" when empty.
+   */
+  slots: string[];
+}
+
 export interface DiceState {
   faces: number[];
   rolling: boolean;
@@ -420,6 +438,11 @@ export interface CharacterResetRequested {
 export interface CharacterXpGained {
   amount: number;
   source: string;
+}
+
+/** The page's sheet: your name, while the character is being set up (trimmed, cut to 20; empty: the default). */
+export interface CharacterCallsignRequested {
+  callsign: string;
 }
 
 export interface SceneChangeRequested {
@@ -586,6 +609,20 @@ export interface ShipSkinStepRequested {
 export interface ShipPickDone {
 }
 
+/** The page has the slot picker (sent when it mounts): Play then asks which slot. Without it Play starts unsaved. */
+export interface SaveSlotsReady {
+  on: boolean;
+}
+
+/** The picker: slot `index` (empty: new character; filled: continue), or -1 to go back to the title. */
+export interface SaveSlotPicked {
+  index: number;
+}
+
+export interface SaveSlotDeleteRequested {
+  index: number;
+}
+
 export interface MenuItemSelected {
   action: MenuAction;
 }
@@ -610,6 +647,7 @@ export interface WebStates {
   PlayerHealth: PlayerHealth;
   ShipPicker: ShipPicker;
   PlayerVoyage: PlayerVoyage;
+  SaveSlots: SaveSlots;
   DiceState: DiceState;
 }
 
@@ -624,6 +662,7 @@ export interface WebEvents {
   CharacterOriginRequested: CharacterOriginRequested;
   CharacterResetRequested: CharacterResetRequested;
   CharacterXpGained: CharacterXpGained;
+  CharacterCallsignRequested: CharacterCallsignRequested;
   SceneChangeRequested: SceneChangeRequested;
   SceneEntered: SceneEntered;
   RangeResetRequested: RangeResetRequested;
@@ -651,10 +690,13 @@ export interface WebEvents {
   ShipPickerReady: ShipPickerReady;
   ShipSkinStepRequested: ShipSkinStepRequested;
   ShipPickDone: ShipPickDone;
+  SaveSlotsReady: SaveSlotsReady;
+  SaveSlotPicked: SaveSlotPicked;
+  SaveSlotDeleteRequested: SaveSlotDeleteRequested;
   MenuItemSelected: MenuItemSelected;
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "MenuItemSelected";
+export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "CharacterCallsignRequested" | "SceneChangeRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "SaveSlotsReady" | "SaveSlotPicked" | "SaveSlotDeleteRequested" | "MenuItemSelected";
 
-export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "CombatState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "ShipPicker", "PlayerVoyage", "DiceState"] as const;
+export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "CombatState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "ShipPicker", "PlayerVoyage", "SaveSlots", "DiceState"] as const;

@@ -46,6 +46,7 @@ namespace LuckyNumbers.Model
             "PlayerHealth",
             "ShipPicker",
             "PlayerVoyage",
+            "SaveSlots",
             "DiceState",
         };
 
@@ -312,13 +313,22 @@ namespace LuckyNumbers.Model
                 sink.MarkState(17);
             }
             {
+                var s = c.Resolve<SaveSlots>();
+                d.Add(s.Open.Subscribe(_ => sink.MarkState(18)));
+                d.Add(s.Active.Subscribe(_ => sink.MarkState(18)));
+                NotifyCollectionChangedEventHandler<string> hSlots = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(18);
+                s.Slots.CollectionChanged += hSlots;
+                d.Add(Disposable.Create(() => s.Slots.CollectionChanged -= hSlots));
+                sink.MarkState(18);
+            }
+            {
                 var s = c.Resolve<DiceState>();
-                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(18);
+                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(19);
                 s.Faces.CollectionChanged += hFaces;
                 d.Add(Disposable.Create(() => s.Faces.CollectionChanged -= hFaces));
-                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(18)));
-                d.Add(s.Seed.Subscribe(_ => sink.MarkState(18)));
-                sink.MarkState(18);
+                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(19)));
+                d.Add(s.Seed.Subscribe(_ => sink.MarkState(19)));
+                sink.MarkState(19);
             }
             d.Add(c.Resolve<ISubscriber<RelicRolled>>().Subscribe(e =>
             {
@@ -363,6 +373,11 @@ namespace LuckyNumbers.Model
             d.Add(c.Resolve<ISubscriber<CharacterXpGained>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("CharacterXpGained"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<CharacterCallsignRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("CharacterCallsignRequested"), e);
                 sink.EndEvent();
             }));
             d.Add(c.Resolve<ISubscriber<SceneChangeRequested>>().Subscribe(e =>
@@ -500,6 +515,21 @@ namespace LuckyNumbers.Model
                 Write(sink.BeginEvent("ShipPickDone"), e);
                 sink.EndEvent();
             }));
+            d.Add(c.Resolve<ISubscriber<SaveSlotsReady>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("SaveSlotsReady"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<SaveSlotPicked>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("SaveSlotPicked"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<SaveSlotDeleteRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("SaveSlotDeleteRequested"), e);
+                sink.EndEvent();
+            }));
             d.Add(c.Resolve<ISubscriber<MenuItemSelected>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("MenuItemSelected"), e);
@@ -531,7 +561,8 @@ namespace LuckyNumbers.Model
                 case 15: Write(b, c.Resolve<PlayerHealth>()); break;
                 case 16: Write(b, c.Resolve<ShipPicker>()); break;
                 case 17: Write(b, c.Resolve<PlayerVoyage>()); break;
-                case 18: Write(b, c.Resolve<DiceState>()); break;
+                case 18: Write(b, c.Resolve<SaveSlots>()); break;
+                case 19: Write(b, c.Resolve<DiceState>()); break;
             }
         }
 
@@ -560,6 +591,9 @@ namespace LuckyNumbers.Model
                     return true;
                 case "CharacterResetRequested":
                     c.Resolve<IPublisher<CharacterResetRequested>>().Publish(new CharacterResetRequested());
+                    return true;
+                case "CharacterCallsignRequested":
+                    c.Resolve<IPublisher<CharacterCallsignRequested>>().Publish(new CharacterCallsignRequested(Json.Get(o, "callsign") as string ?? ""));
                     return true;
                 case "SceneChangeRequested":
                     c.Resolve<IPublisher<SceneChangeRequested>>().Publish(new SceneChangeRequested(GameSceneParse(Json.Get(o, "target"))));
@@ -614,6 +648,15 @@ namespace LuckyNumbers.Model
                     return true;
                 case "ShipPickDone":
                     c.Resolve<IPublisher<ShipPickDone>>().Publish(new ShipPickDone());
+                    return true;
+                case "SaveSlotsReady":
+                    c.Resolve<IPublisher<SaveSlotsReady>>().Publish(new SaveSlotsReady(Json.Get(o, "on") is bool saveSlotsReadyOn && saveSlotsReadyOn));
+                    return true;
+                case "SaveSlotPicked":
+                    c.Resolve<IPublisher<SaveSlotPicked>>().Publish(new SaveSlotPicked((int)Json.Number(Json.Get(o, "index"))));
+                    return true;
+                case "SaveSlotDeleteRequested":
+                    c.Resolve<IPublisher<SaveSlotDeleteRequested>>().Publish(new SaveSlotDeleteRequested((int)Json.Number(Json.Get(o, "index"))));
                     return true;
                 case "MenuItemSelected":
                     c.Resolve<IPublisher<MenuItemSelected>>().Publish(new MenuItemSelected(MenuActionParse(Json.Get(o, "action"))));
@@ -1193,6 +1236,28 @@ namespace LuckyNumbers.Model
             b.Append('}');
         }
 
+        static void Write(StringBuilder b, SaveSlots s)
+        {
+            b.Append('{');
+            b.Append("\"open\":");
+            b.Append(s.Open.Value ? "true" : "false");
+            b.Append(",\"active\":");
+            Json.Num(b, s.Active.Value);
+            b.Append(",\"slots\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Slots)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Str(b, x);
+                }
+            }
+            b.Append(']');
+            b.Append('}');
+        }
+
         static void Write(StringBuilder b, DiceState s)
         {
             b.Append('{');
@@ -1294,6 +1359,14 @@ namespace LuckyNumbers.Model
             Json.Num(b, e.Amount);
             b.Append(",\"source\":");
             Json.Str(b, e.Source);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, CharacterCallsignRequested e)
+        {
+            b.Append('{');
+            b.Append("\"callsign\":");
+            Json.Str(b, e.Callsign);
             b.Append('}');
         }
 
@@ -1556,6 +1629,30 @@ namespace LuckyNumbers.Model
         static void Write(StringBuilder b, ShipPickDone e)
         {
             b.Append('{');
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, SaveSlotsReady e)
+        {
+            b.Append('{');
+            b.Append("\"on\":");
+            b.Append(e.On ? "true" : "false");
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, SaveSlotPicked e)
+        {
+            b.Append('{');
+            b.Append("\"index\":");
+            Json.Num(b, e.Index);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, SaveSlotDeleteRequested e)
+        {
+            b.Append('{');
+            b.Append("\"index\":");
+            Json.Num(b, e.Index);
             b.Append('}');
         }
 

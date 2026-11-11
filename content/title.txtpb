@@ -48,6 +48,8 @@ dice {
 # Play: UI fades, camera pushes toward home, then the intro continues from that exact view.
 play_transition_seconds: 1.4
 play_push_in: 0.3
+# Continue (a filled save slot): watch your universe form again first.
+continue_seconds: 1.6
 
 # The universe behind the title: see content/space/.
 backdrop_ref: "space/systems/home"
