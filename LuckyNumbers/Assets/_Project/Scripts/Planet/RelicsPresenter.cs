@@ -119,7 +119,8 @@ namespace LuckyNumbers.Planet
             var padReady = _view.LandingPad != null && _view.LandingPad.gameObject.activeSelf;
             if (!_spawned && _site.Built && _view.Wreck != null && _view.Wreck.Pivot.gameObject.activeInHierarchy &&
                 (padReady || _firstPerson.Active)) Spawn();
-            if (!_spawned) return;
+            // No relics yet (or never: a Clear job's site has no wreck to scatter them from), but the rest still runs:
+            // boarding your ship, picking up what you dropped and the use prompt mustn't wait on the relics.
 
             // Lying relics turn slowly and bob, so they read as something to pick up.
             foreach (var l in _lying)
