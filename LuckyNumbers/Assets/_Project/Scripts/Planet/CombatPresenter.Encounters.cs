@@ -8,9 +8,12 @@ namespace LuckyNumbers.Planet
 {
     /// <summary>
     /// Dice-only encounters (content/encounters.txtpb): standoffs with some of the site's monsters, and finds (caches,
-    /// a flight recorder, remains) near the wreck. Walk up to one and time stops on a card (EncounterState); pick a
-    /// choice (EncounterChoice) and it rolls d20 + that skill (the character sheet) against the DC, natural 20 / 1 always
-    /// succeed / fail; "continue" applies the outcome and lets time run again.
+    /// a flight recorder, remains) near the wreck. Each is d20 + a skill (the character sheet) against a DC, natural
+    /// 20 / 1 always succeed / fail.
+    ///
+    /// A standoff stops time on a card (EncounterState): pick a choice (EncounterChoice), see the roll, "continue"
+    /// applies the outcome and lets time run again. A find just happens as you walk up: it rolls, what it held goes
+    /// into your pack (or the failure bites), and a toast (ItemHandled) shows the roll and the result.
     /// </summary>
     public sealed partial class CombatPresenter
     {
@@ -19,13 +22,12 @@ namespace LuckyNumbers.Planet
             public EncounterFind Type;
             public Transform View;
             public Vector3 Position;
-            public bool Done, Away = true;   // Away: you've stepped back since its card last closed
+            public bool Done;
         }
 
         sealed class Card
         {
             public Monster Monster;
-            public Find Find;
             public List<(string id, string label, string skill, int bonus, int dc, EncounterOption option)> Options = new();
             public (string id, bool success, EncounterOption option)? Rolled;
         }
@@ -82,7 +84,7 @@ namespace LuckyNumbers.Planet
             return E.FindTypes[0];
         }
 
-        /// <summary>The card, if one is open (true: everything else waits); else whether you've walked up to a find.</summary>
+        /// <summary>The card, if one is open (true: everything else waits); else open any find you've walked up to.</summary>
         bool TickEncounters()
         {
             if (_card != null)
@@ -99,9 +101,7 @@ namespace LuckyNumbers.Planet
             {
                 if (f.Done) continue;
                 var d = Vector2.Distance(new Vector2(f.Position.x, f.Position.z), new Vector2(me.x, me.z));
-                var reach = math.max(1f, E.FindDistance);
-                if (d > reach * 2f) f.Away = true;
-                if (d < reach && f.Away) { OpenFind(f); return true; }
+                if (d < math.max(1f, E.FindDistance)) OpenFind(f);
             }
             return false;
         }
@@ -114,13 +114,33 @@ namespace LuckyNumbers.Planet
             Debug.Log($"[Encounter] standoff: {m.Type.Name}");
         }
 
+        /// <summary>
+        /// Walked up to a find: roll its check (no card, no choice), then loot it or take the failure, and say how it
+        /// went in a toast. Same roll as the card's: d20 + the skill vs its DC, natural 20 / 1 always succeed / fail.
+        /// </summary>
         void OpenFind(Find f)
         {
-            var card = new Card { Find = f };
-            card.Options.Add(Option("open", f.Type.OpenLabel ?? "Open it", f.Type.Skill, f.Type.Dc, 0f, null));
-            card.Options.Add(("leave", "Leave it", "", 0, 0, null));
-            Open(card, "find", f.Type.Name, f.Type.Text);
-            Debug.Log($"[Encounter] find: {f.Type.Name}");
+            var (_, _, skill, bonus, dc, _) = Option("open", "", f.Type.Skill, f.Type.Dc, 0f, null);
+            bool success;
+            string roll;
+            if (string.IsNullOrEmpty(skill))
+            {
+                success = true;
+                roll = "";
+            }
+            else
+            {
+                var d20 = _rng.NextInt(1, 21);
+                var total = d20 + bonus;
+                success = d20 == 20 || (d20 != 1 && total >= dc);
+                var call = d20 == 20 ? "natural 20" : d20 == 1 ? "natural 1" : success ? "success" : "failure";
+                roll = $"{skill} d20 {d20} {(bonus >= 0 ? "+" : "-")} {Mathf.Abs(bonus)} = {total} vs DC {dc}: {call}. ";
+                Debug.Log($"[Encounter] {f.Type.Name}: {skill} d20 {d20} + {bonus} = {total} vs DC {dc}: {(success ? "success" : "failure")}");
+            }
+            var full = Loot(f, success);
+            var text = success ? f.Type.SuccessText : f.Type.FailureText;
+            if (full.Count > 0) text += $" No room for {string.Join(", ", full)}.";
+            _handled.Publish(new ItemHandled(f.Type.Name, success ? "opened" : "failed to open", roll + text));
         }
 
         (string, string, string, int, int, EncounterOption) Option(string id, string label, string skill, int dc, float perDanger, EncounterOption option)
@@ -154,7 +174,6 @@ namespace LuckyNumbers.Planet
             }
             var pick = card.Options.Find(o => o.id == id);
             if (pick.id == null) return;
-            if (pick.id == "leave") { Close(); return; }
             // The roll (no skill: no roll, it just happens).
             bool success;
             if (string.IsNullOrEmpty(pick.skill))
@@ -176,12 +195,8 @@ namespace LuckyNumbers.Planet
             _encounter.Dc.Value = pick.dc;
             _encounter.Success.Value = success;
             card.Rolled = (pick.id, success, pick.option);
-            if (card.Monster != null)
-            {
-                var o = pick.option;
-                _encounter.Result.Value = Fill(success ? o?.SuccessText : o?.FailureText, card.Monster);
-            }
-            else _encounter.Result.Value = success ? card.Find.Type.SuccessText : card.Find.Type.FailureText;
+            var o = pick.option;
+            _encounter.Result.Value = Fill(success ? o?.SuccessText : o?.FailureText, card.Monster);
             _encounter.Rolled.Value = true;
         }
 
@@ -192,10 +207,8 @@ namespace LuckyNumbers.Planet
             _card = null;
             _encounter.Open.Value = false;
             _firstPerson.Unlock(ControlLock.Encounter);
-            if (card.Find != null) card.Find.Away = false;   // walk off before it asks again
             if (card.Rolled is not { } r) return;
-            if (card.Monster != null) Resolve(card.Monster, r.success ? r.option.Success : r.option.Failure, r.option, r.success);
-            else Loot(card.Find, r.success);
+            Resolve(card.Monster, r.success ? r.option.Success : r.option.Failure, r.option, r.success);
         }
 
         void Resolve(Monster m, EncounterOutcome outcome, EncounterOption option, bool success)
@@ -226,19 +239,27 @@ namespace LuckyNumbers.Planet
             Debug.Log($"[Encounter] {m.Type.Name}: {outcome}");
         }
 
-        void Loot(Find f, bool success)
+        /// <summary>A find's outcome: on a success what it held into your pack (returns what didn't fit), else its damage.</summary>
+        List<string> Loot(Find f, bool success)
         {
+            var full = new List<string>();
             f.Done = true;
             if (f.View != null) Object.Destroy(f.View.gameObject);
             if (success)
             {
                 foreach (var id in f.Type.Items)
-                    if (!_pack.TryAdd(id)) _pack.Say($"No room for the {id}");
+                {
+                    if (_pack.TryAdd(id)) continue;
+                    var name = GameContent.Items?.Items.Find(d => d.Id == id)?.Name ?? id;
+                    _pack.Say($"No room for the {name}");
+                    full.Add(name);
+                }
                 if (f.Type.Credits > 0) _voyage.Credits.Value += f.Type.Credits;
                 if (f.Type.Xp > 0) _xp.Publish(new CharacterXpGained(f.Type.Xp, f.Type.Name));
                 Debug.Log($"[Encounter] looted {f.Type.Name}: {string.Join(", ", f.Type.Items)} +{f.Type.Credits} cr");
             }
             else if (!string.IsNullOrEmpty(f.Type.FailureDamage)) TakeDamage(Dice.Roll(f.Type.FailureDamage, ref _rng), f.Type.Name);
+            return full;
         }
 
         /// <summary>A skill's name and bonus off the character sheet ("id|name|abbr|bonus|trained").</summary>

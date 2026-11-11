@@ -159,7 +159,7 @@ namespace LuckyNumbers.Model
     }
 
     /// <summary>
-    /// Something the player's hands picked up, dropped or threw (web: a toast, top right, for checking holds).
+    /// Something the player's hands picked up, dropped or threw, or a find opened on the planet (web: a toast, top right).
     /// </summary>
     public readonly struct ItemHandled
     {

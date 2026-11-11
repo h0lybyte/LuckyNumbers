@@ -96,17 +96,23 @@ namespace LuckyNumbers.Model
         public EncounterOption Clone() => (EncounterOption)MemberwiseClone();
     }
 
+    /// <summary>
+    /// Something lying near the wreck. Walk up to it and it opens itself: d20 + `skill` vs `dc` (no card), the result
+    /// shows as a toast (ItemHandled).
+    /// </summary>
     public sealed class EncounterFind
     {
         public string Id { get; set; }
         public string Name { get; set; }
+        /// <summary>
+        /// What it looks like (flavour; not shown in game since finds have no card).
+        /// </summary>
         public string Text { get; set; }
         /// <summary>
-        /// Opening it: the skill and DC; or leave it.
+        /// Opening it: the skill and DC.
         /// </summary>
         public string Skill { get; set; }
         public int Dc { get; set; }
-        public string OpenLabel { get; set; }
         /// <summary>
         /// On a success: an item into your pack (an item id), credits and XP.
         /// </summary>
@@ -131,7 +137,7 @@ namespace LuckyNumbers.Model
     }
 
     /// <summary>
-    /// The open card (mirrored to the page): its title and text, the choices as "id|label|skill name|bonus|dc" (no
+    /// The open standoff card (mirrored to the page): its title and text, the choices as "id|label|skill name|bonus|dc" (no
     /// skill: bonus and dc 0), and after a roll the result (rolled; d20, bonus, total, dc, success; the outcome text).
     /// </summary>
     public sealed class EncounterState : IDisposable
