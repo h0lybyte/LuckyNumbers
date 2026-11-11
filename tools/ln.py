@@ -7,6 +7,7 @@
     python3 tools/ln.py bake-grasps   bake weapons' finger grips into weapons.json (needs the build served)
     python3 tools/ln.py deploy        push the Web build to itch.io with butler
     python3 tools/ln.py bump          start the next CHANGELOG.md entry (patch; minor/major) from merged PRs
+    python3 tools/ln.py worktrees     list git worktrees, which are done; --prune removes those (and their branches)
 
 Unity is located from ProjectVersion.txt + the Unity Hub install folder.
 Override with UNITY_PATH=/path/to/Unity(.exe).
@@ -817,6 +818,13 @@ def main(argv=None) -> int:
     s.add_argument("--dry-run", action="store_true", help="only show which keys are set / empty")
     s.set_defaults(func=cmd_secrets)
 
+    s = sub.add_parser("worktrees", help="list git worktrees and which are done (merged, clean, idle); --prune removes them")
+    s.add_argument("--prune", action="store_true", help="remove the done ones and delete their merged branches")
+    s.add_argument("--base", default="origin/main", help="what 'merged' means (default origin/main)")
+    s.add_argument("--min-idle", type=float, default=2.0, help="hours since last use before one counts as done (default 2)")
+    s.add_argument("--no-fetch", action="store_true", help="don't fetch origin first")
+    s.set_defaults(func=cmd_worktrees)
+
     s = sub.add_parser("doctor", help="show what the tools detected")
     s.set_defaults(func=cmd_doctor)
 
@@ -825,6 +833,77 @@ def main(argv=None) -> int:
         return args.func(args)
     except RuntimeError as e:
         return fail(str(e))
+
+
+def git(*argv: str, cwd: Path = ROOT) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", *argv], cwd=cwd, capture_output=True, text=True)
+
+
+def cmd_worktrees(args) -> int:
+    """Each linked worktree: done (its HEAD is in --base, nothing uncommitted, not locked, idle for --min-idle hours)
+    or kept, and why. --prune removes the done ones with plain `git worktree remove` (never --force: anything
+    uncommitted stops it) and their branches with `git branch -d` (merged only). The main checkout is never touched."""
+    if not args.no_fetch:
+        git("fetch", "--quiet", "--prune", "origin")
+    if git("rev-parse", "--verify", "--quiet", args.base).returncode != 0:
+        return fail(f"no {args.base} (fetch it, or pass --base)")
+    blocks, cur = [], {}
+    for line in git("worktree", "list", "--porcelain").stdout.splitlines() + [""]:
+        if not line:
+            if cur:
+                blocks.append(cur)
+            cur = {}
+            continue
+        key, _, value = line.partition(" ")
+        cur[key] = value or True
+    now = time.time()
+    done, kept = [], 0
+    for w in blocks[1:]:   # the first is the main checkout
+        path = Path(w["worktree"])
+        branch = w["branch"].removeprefix("refs/heads/") if isinstance(w.get("branch"), str) else None
+        name = branch or f"(detached {w.get('HEAD', '')[:7]})"
+        if not path.is_dir():
+            state, why = "done", "folder is gone"
+        elif "locked" in w:
+            state, why = "keep", "locked"
+        else:
+            # Last use first: `git status` can rewrite the index, so it's run without optional locks (no write) after.
+            gitdir = Path(git("rev-parse", "--absolute-git-dir", cwd=path).stdout.strip())
+            used = max((p.stat().st_mtime for p in (gitdir / "index", gitdir / "HEAD", gitdir / "logs" / "HEAD") if p.exists()), default=0)
+            idle = max(0.0, (now - used) / 3600)
+            dirty = git("--no-optional-locks", "status", "--porcelain", cwd=path).stdout.strip()
+            merged = git("merge-base", "--is-ancestor", w.get("HEAD", ""), args.base).returncode == 0
+            if dirty:
+                state, why = "keep", f"uncommitted changes ({len(dirty.splitlines())} files)"
+            elif not merged:
+                ahead = git("rev-list", "--count", f"{args.base}..{w.get('HEAD', '')}").stdout.strip()
+                state, why = "keep", f"{ahead} commit(s) not in {args.base}"
+            elif idle < args.min_idle:
+                state, why = "keep", f"used {idle:.1f} h ago (in use?)"
+            else:
+                state, why = "done", f"merged, clean, idle {idle:.0f} h"
+        print(f"  {state:4}  {name:34} {why:38} {path}")
+        if state == "done":
+            done.append((path, branch))
+        else:
+            kept += 1
+    print(f"{len(done)} done, {kept} kept" + ("" if args.prune or not done else " (--prune removes the done ones)"))
+    if not args.prune:
+        return 0
+    failed = 0
+    for path, branch in done:
+        if path.is_dir():
+            r = git("worktree", "remove", str(path))
+            if r.returncode != 0:
+                failed += 1
+                print(f"  kept {path}: {r.stderr.strip()}")
+                continue
+            print(f"  removed {path}")
+        if branch:
+            r = git("branch", "-d", branch)
+            print(f"  deleted branch {branch}" if r.returncode == 0 else f"  kept branch {branch}: {r.stderr.strip()}")
+    git("worktree", "prune")
+    return 1 if failed else 0
 
 
 def cmd_doctor(args) -> int:
