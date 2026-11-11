@@ -26,6 +26,8 @@ namespace LuckyNumbers.Editor
         public static void BuildAll()
         {
             FontSetup.Build();
+            BakeWeapons();               // Prefabs/Weapons: addressable, loaded by WeaponRack (not baked into scenes)
+            AddressablesSetup.Apply();   // their addresses and AssetKeys, before any scene is built
             var starfield = MaterialAsset("Starfield", "LuckyNumbers/Starfield");
             var planet = MaterialAsset("Planet3D", "LuckyNumbers/Planet3D");
             var star = MaterialAsset("Star", "LuckyNumbers/Star");
@@ -102,8 +104,7 @@ namespace LuckyNumbers.Editor
             var ground = new GameObject("Ground").AddComponent<GroundView>();
             Assign(ground, ("material", MaterialAsset("Ground", "LuckyNumbers/Ground")));
 
-            var (cam, _) = PlayerRig();
-            EquippedWeapons();   // the gun in your weapon slot, drawn into your hands
+            var (cam, _) = PlayerRig();   // the gun in your weapon slot comes from WeaponRack (Addressables)
 
             // Sun: a star sphere far away (moved with the player at runtime).
             var sun = Sphere("Sun", rig.Star, null);
@@ -364,19 +365,8 @@ namespace LuckyNumbers.Editor
             // Your ship, docked in the bay (StationPresenter shows and poses it); solid, so you walk round it.
             ShipRig(collide: true);
 
-            // A test gun by the spawn (StationPresenter drops it there): pick up with E, click fires energy bolts.
-            WeaponRig(StationWeapon);
-            EquippedWeapons();   // the gun in your weapon slot, drawn into your hands
-
-            // The shooting range's weapons (every gun, melee weapon and mod, as in the dev range), parked inactive under
-            // one root: StationRange lays them out on the Range room's bench once the station is built.
-            var rangeWeapons = new GameObject(RangeWeaponsRoot).transform;
-            foreach (var w in Weapons())
-            {
-                var item = WeaponRig(w.name);
-                item.transform.SetParent(rangeWeapons, false);
-                item.SetActive(false);
-            }
+            // No weapons in the scene: the test gun by the spawn (StationPresenter), the equipped gun (FirstPersonPresenter)
+            // and the range's (RangeRoom) are copies of Prefabs/Weapons, loaded through WeaponRack.
 
             // Lamp glow: bloom on the station camera (its strength set from content by StationPresenter).
             eyes.GetUniversalAdditionalCameraData().renderPostProcessing = true;
@@ -592,31 +582,37 @@ namespace LuckyNumbers.Editor
         static WeaponItem[] Weapons() =>
             JsonUtility.FromJson<WeaponIndex>(System.IO.File.ReadAllText($"{WeaponsDir}/weapons.json")).items;
 
+        const string WeaponPrefabsDir = "Assets/_Project/Prefabs/Weapons";
+
         /// <summary>
-        /// The models of the weapons you can equip (content/items.txtpb, a weapon item's `model`), parked inactive under
-        /// "Equipped weapons": FirstPersonPresenter draws the equipped one into your hands.
+        /// Every weapon as a prefab in Prefabs/Weapons (the Weapons Addressables group, see AddressablesSetup.Rules):
+        /// each model in weapons.json (WeaponRig), plus a placeholder gun for each weapon item whose `model` is
+        /// "PLACEHOLDER_&lt;id&gt;". Saved inactive, as the scenes used to park them. Prefabs nothing names anymore go.
         /// </summary>
-        static void EquippedWeapons()
+        public static void BakeWeapons()
         {
-            var root = new GameObject("Equipped weapons").transform;
-            var done = new System.Collections.Generic.HashSet<string>();
+            if (!AssetDatabase.IsValidFolder("Assets/_Project/Prefabs")) AssetDatabase.CreateFolder("Assets/_Project", "Prefabs");
+            if (!AssetDatabase.IsValidFolder(WeaponPrefabsDir)) AssetDatabase.CreateFolder("Assets/_Project/Prefabs", "Weapons");
+            var names = new System.Collections.Generic.List<string>();
+            foreach (var w in Weapons()) names.Add(w.name);
             foreach (var item in LuckyNumbers.Model.GameContent.Items.Items)
             {
-                if (item.Slot != LuckyNumbers.Model.EquipSlot.Weapon || string.IsNullOrEmpty(item.Model) || !done.Add(item.Model)) continue;
-                if (item.Model.StartsWith("PLACEHOLDER_"))
-                {
-                    PlaceholderGun(item.Model).transform.SetParent(root, false);
-                    continue;
-                }
-                if (System.Array.Find(Weapons(), w => w.name == item.Model) == null)
-                {
-                    Debug.LogWarning($"[SceneBuilder] item {item.Id}: model '{item.Model}' isn't in {WeaponsDir}/weapons.json");
-                    continue;
-                }
-                var rig = WeaponRig(item.Model);
-                rig.transform.SetParent(root, false);
-                rig.SetActive(false);
+                if (item.Slot != LuckyNumbers.Model.EquipSlot.Weapon || string.IsNullOrEmpty(item.Model) || names.Contains(item.Model)) continue;
+                if (item.Model.StartsWith("PLACEHOLDER_")) names.Add(item.Model);
+                else Debug.LogWarning($"[SceneBuilder] item {item.Id}: model '{item.Model}' isn't in {WeaponsDir}/weapons.json");
             }
+            foreach (var name in names)
+            {
+                var rig = name.StartsWith("PLACEHOLDER_") ? PlaceholderGun(name) : WeaponRig(name);
+                PrefabUtility.SaveAsPrefabAsset(rig, $"{WeaponPrefabsDir}/{name}.prefab");
+                Object.DestroyImmediate(rig);
+            }
+            foreach (var guid in AssetDatabase.FindAssets("t:Prefab", new[] { WeaponPrefabsDir }))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!names.Contains(System.IO.Path.GetFileNameWithoutExtension(path))) AssetDatabase.DeleteAsset(path);
+            }
+            AssetDatabase.SaveAssets();
         }
 
         /// <summary>
@@ -774,10 +770,6 @@ namespace LuckyNumbers.Editor
         }
 
         const string WeaponsDir = "Assets/_Project/Art/Models/Weapons";
-        /// <summary>Which of Art/Models/Weapons lies in the station (any of the guns: their hold points are measured).</summary>
-        const string StationWeapon = "rifle_block";
-        /// <summary>The station scene's root for the range's weapons (StationRange finds it by this name).</summary>
-        const string RangeWeaponsRoot = "Range weapons";
 
         /// <summary>
         /// A model from Art/Models/Weapons: a root (+Z down the barrel, carryable: Rigidbody + box) holding the model,

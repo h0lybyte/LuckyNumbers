@@ -6,5 +6,50 @@ namespace LuckyNumbers.Core
     public static class AssetKeys
     {
         public static readonly AssetKey<global::UnityEngine.GameObject> SpikeSmokeCube = new("spike/smoke-cube");
+        public static readonly AssetKey<global::UnityEngine.GameObject> WeaponCarbine = new("weapon/carbine");
+        public static readonly AssetKey<global::UnityEngine.GameObject> WeaponHammer = new("weapon/hammer");
+        public static readonly AssetKey<global::UnityEngine.GameObject> WeaponHeavyCannon = new("weapon/heavy-cannon");
+        public static readonly AssetKey<global::UnityEngine.GameObject> WeaponKnife = new("weapon/knife");
+        public static readonly AssetKey<global::UnityEngine.GameObject> WeaponModBox = new("weapon/mod-box");
+        public static readonly AssetKey<global::UnityEngine.GameObject> WeaponModGrip = new("weapon/mod-grip");
+        public static readonly AssetKey<global::UnityEngine.GameObject> WeaponModScope = new("weapon/mod-scope");
+        public static readonly AssetKey<global::UnityEngine.GameObject> WeaponModSight = new("weapon/mod-sight");
+        public static readonly AssetKey<global::UnityEngine.GameObject> WeaponPlaceholderSidearm = new("weapon/placeholder-sidearm");
+        public static readonly AssetKey<global::UnityEngine.GameObject> WeaponRifleBlock = new("weapon/rifle-block");
+        public static readonly AssetKey<global::UnityEngine.GameObject> WeaponRifleGrip = new("weapon/rifle-grip");
+        public static readonly AssetKey<global::UnityEngine.GameObject> WeaponRifleSleek = new("weapon/rifle-sleek");
+        public static readonly AssetKey<global::UnityEngine.GameObject> WeaponRifleVent = new("weapon/rifle-vent");
+        public static readonly AssetKey<global::UnityEngine.GameObject> WeaponSniper = new("weapon/sniper");
+        public static readonly AssetKey<global::UnityEngine.GameObject> WeaponSniperBarrel = new("weapon/sniper-barrel");
+        public static readonly AssetKey<global::UnityEngine.GameObject> WeaponSniperLong = new("weapon/sniper-long");
+
+        /// <summary>Weapons, by file name.</summary>
+        public static readonly System.Collections.Generic.IReadOnlyDictionary<string, AssetKey<global::UnityEngine.GameObject>> Weapon =
+            new System.Collections.Generic.Dictionary<string, AssetKey<global::UnityEngine.GameObject>>
+            {
+                ["carbine"] = WeaponCarbine,
+                ["hammer"] = WeaponHammer,
+                ["heavy_cannon"] = WeaponHeavyCannon,
+                ["knife"] = WeaponKnife,
+                ["mod_box"] = WeaponModBox,
+                ["mod_grip"] = WeaponModGrip,
+                ["mod_scope"] = WeaponModScope,
+                ["mod_sight"] = WeaponModSight,
+                ["PLACEHOLDER_sidearm"] = WeaponPlaceholderSidearm,
+                ["rifle_block"] = WeaponRifleBlock,
+                ["rifle_grip"] = WeaponRifleGrip,
+                ["rifle_sleek"] = WeaponRifleSleek,
+                ["rifle_vent"] = WeaponRifleVent,
+                ["sniper"] = WeaponSniper,
+                ["sniper_barrel"] = WeaponSniperBarrel,
+                ["sniper_long"] = WeaponSniperLong,
+            };
+
+        /// <summary>Spikes, by file name.</summary>
+        public static readonly System.Collections.Generic.IReadOnlyDictionary<string, AssetKey<global::UnityEngine.GameObject>> Spike =
+            new System.Collections.Generic.Dictionary<string, AssetKey<global::UnityEngine.GameObject>>
+            {
+                ["SmokeCube"] = SpikeSmokeCube,
+            };
     }
 }
