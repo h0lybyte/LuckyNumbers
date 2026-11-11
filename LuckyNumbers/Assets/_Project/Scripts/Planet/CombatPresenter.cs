@@ -71,6 +71,7 @@ namespace LuckyNumbers.Planet
         readonly IPublisher<CharacterXpGained> _xp;
         readonly IPublisher<SceneChangeRequested> _scenes;
         readonly IPublisher<ItemHandled> _handled;
+        readonly IPublisher<FindRolled> _foundRolls;
         readonly ISubscriber<DevWarpRequested> _warps;
         readonly List<Monster> _monsters = new();
         readonly List<IDisposable> _subscriptions = new();
@@ -94,9 +95,11 @@ namespace LuckyNumbers.Planet
                                PlayerVoyage voyage, CombatState state, IPublisher<CombatRoll> rolls,
                                IPublisher<PlayerDamaged> damaged, IPublisher<PlayerDied> died, IPublisher<CharacterXpGained> xp,
                                IPublisher<SceneChangeRequested> scenes, ISubscriber<DevWarpRequested> warps,
-                               EncounterState encounter, ISubscriber<EncounterChoice> choices, IPublisher<ItemHandled> handled)
+                               EncounterState encounter, ISubscriber<EncounterChoice> choices, IPublisher<ItemHandled> handled,
+                               IPublisher<FindRolled> foundRolls)
         {
             _handled = handled;
+            _foundRolls = foundRolls;
             _encounter = encounter;
             _choices = choices;
             _site = site;

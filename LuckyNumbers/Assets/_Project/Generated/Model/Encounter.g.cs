@@ -185,4 +185,32 @@ namespace LuckyNumbers.Model
             Option = option;
         }
     }
+
+    /// <summary>
+    /// A find's roll as you walk up to it (Planet/CombatPresenter.Encounters): the page tumbles a d20 that lands on
+    /// `roll`, then shows d20 + bonus = total vs DC and what happened. The loot (or the failure) lands with the die.
+    /// </summary>
+    public readonly struct FindRolled
+    {
+        public readonly string Find;
+        public readonly string Skill;
+        public readonly int Roll;
+        public readonly int Bonus;
+        public readonly int Total;
+        public readonly int Dc;
+        public readonly bool Success;
+        public readonly string Text;
+
+        public FindRolled(string find, string skill, int roll, int bonus, int total, int dc, bool success, string text)
+        {
+            Find = find;
+            Skill = skill;
+            Roll = roll;
+            Bonus = bonus;
+            Total = total;
+            Dc = dc;
+            Success = success;
+            Text = text;
+        }
+    }
 }

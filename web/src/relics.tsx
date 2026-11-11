@@ -3,7 +3,7 @@
 // bearing (RelicSite). Unity rolls; this only shows it.
 import { useEffect, useRef, useState } from "react";
 import { LN, useLNEvent, useLNState } from "./ln";
-import type { CombatRoll, RelicRolled } from "./ln";
+import type { CombatRoll, FindRolled, RelicRolled } from "./ln";
 
 export function RelicHud() {
   const site = useLNState("RelicSite");
@@ -11,6 +11,7 @@ export function RelicHud() {
   return (
     <>
       <D20 />
+      <FindD20 />
       {site?.reveal && <div className="relic-reveal">{site.reveal}</div>}
       {pack && pack.ready !== 0 && pack.readyName && <ReadyRelic uid={pack.ready} name={pack.readyName} cooldown={pack.cooldown} />}
     </>
@@ -57,7 +58,7 @@ function D20() {
  * `face(e)`; gone after `holdMs`. `spinFor(e, sinceLastMs)` can shorten the spin (0: land at once), e.g. in a burst.
  */
 export function useDiceRoll<E>(
-  name: "RelicRolled" | "CombatRoll",
+  name: "RelicRolled" | "CombatRoll" | "FindRolled",
   face: (e: E) => number,
   spinMs: number,
   holdMs: number,
@@ -103,6 +104,27 @@ export function useDiceRoll<E>(
   });
   useEffect(() => clear, []);
   return { event, face: shown, settled };
+}
+
+/**
+ * A find you walked up to (crate, recorder, remains): the d20 tumbles ~0.9 s (Unity holds the loot or the failure
+ * till then, CombatPresenter.FindSpin), lands, and says d20 + skill = total vs DC and what it held.
+ */
+function FindD20() {
+  const { event: e, face, settled } = useDiceRoll<FindRolled>("FindRolled", (r) => r.roll, 900, 4200);
+  if (!e) return null;
+  const tone = e.roll === 20 ? "crit" : e.roll === 1 ? "fumble" : e.success ? "good" : "miss";
+  const title = e.roll === 20 ? "Natural 20" : e.roll === 1 ? "Natural 1" : e.success ? "Opened" : "Failed";
+  return (
+    <D20Panel face={face} settled={settled} tone={tone} heading={e.find}>
+      <div className="d20-sum">
+        d20 <b>{e.roll}</b>
+        {e.bonus !== 0 && <> {e.bonus > 0 ? "+" : "\u2212"} {e.skill} <b>{Math.abs(e.bonus)}</b></>} = <b>{e.total}</b> vs DC <b>{e.dc}</b>
+      </div>
+      <div className="d20-title">{title}</div>
+      <div className="d20-line">{e.text}</div>
+    </D20Panel>
+  );
 }
 
 /** The d20 and what's beside it (shown once it lands). */

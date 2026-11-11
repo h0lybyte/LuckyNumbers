@@ -451,6 +451,11 @@ namespace LuckyNumbers.Model
                 Write(sink.BeginEvent("EncounterChoice"), e);
                 sink.EndEvent();
             }));
+            d.Add(c.Resolve<ISubscriber<FindRolled>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("FindRolled"), e);
+                sink.EndEvent();
+            }));
             d.Add(c.Resolve<ISubscriber<InputActionPerformed>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("InputActionPerformed"), e);
@@ -1541,6 +1546,28 @@ namespace LuckyNumbers.Model
             b.Append('{');
             b.Append("\"option\":");
             Json.Str(b, e.Option);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, FindRolled e)
+        {
+            b.Append('{');
+            b.Append("\"find\":");
+            Json.Str(b, e.Find);
+            b.Append(",\"skill\":");
+            Json.Str(b, e.Skill);
+            b.Append(",\"roll\":");
+            Json.Num(b, e.Roll);
+            b.Append(",\"bonus\":");
+            Json.Num(b, e.Bonus);
+            b.Append(",\"total\":");
+            Json.Num(b, e.Total);
+            b.Append(",\"dc\":");
+            Json.Num(b, e.Dc);
+            b.Append(",\"success\":");
+            b.Append(e.Success ? "true" : "false");
+            b.Append(",\"text\":");
+            Json.Str(b, e.Text);
             b.Append('}');
         }
 

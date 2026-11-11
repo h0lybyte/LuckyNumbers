@@ -1,5 +1,5 @@
 // A dice-only standoff on the planet (Unity: Planet/CombatPresenter.Encounters): a monster that hasn't seen you
-// (finds open themselves, no card: their roll shows as a toast). Time stands still while the card is up. Pick a choice (click, or 1-5):
+// (finds open themselves, no card: their d20 tumbles in relics.tsx FindD20). Time stands still while the card is up. Pick a choice (click, or 1-5):
 // each is d20 + one of your skills against a DC, shown with your bonus. Then the roll and what happened; Continue
 // (Enter) lets time run again.
 import { useEffect } from "react";
