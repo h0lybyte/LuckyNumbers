@@ -83,6 +83,7 @@ namespace LuckyNumbers.Core
             public int kind, danger, pay, count, goal, completed;
             public string title, objective, client, body, planet, target;
             public uint seed;
+            public string[] recent;   // PlayerJob.RecentTargets (absent in older saves)
         }
 
         readonly SaveSlots _state;
@@ -307,6 +308,7 @@ namespace LuckyNumbers.Core
             pay = _job.Pay.Value, count = _job.Count.Value, goal = _job.Goal.Value, completed = _job.Completed.Value,
             title = _job.Title.Value, objective = _job.Objective.Value, client = _job.Client.Value, body = _job.Body.Value,
             planet = _job.Planet.Value, target = _job.Target.Value, seed = _job.Seed.Value,
+            recent = new List<string>(_job.RecentTargets).ToArray(),
         };
 
         void RestoreJob(JobSave j)
@@ -326,6 +328,8 @@ namespace LuckyNumbers.Core
             _job.Goal.Value = j.goal;
             _job.Done.Value = j.done;
             _job.Completed.Value = j.completed;
+            _job.RecentTargets.Clear();
+            if (j.recent != null) foreach (var r in j.recent) if (!string.IsNullOrEmpty(r)) _job.RecentTargets.Add(r);
             _job.Active.Value = j.active;
         }
 

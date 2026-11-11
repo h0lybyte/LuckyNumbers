@@ -538,6 +538,7 @@ namespace LuckyNumbers.Station
                 names.Add(name);
                 if (home.XpPerRelic > 0) _xp.Publish(new CharacterXpGained(home.XpPerRelic, name));
             }
+            Jobs.Remember(_job.RecentTargets, names);   // the next board won't send you after these again straight away
             _relicCount = sold.Count;
             _relics = names.Count switch
             {
@@ -716,7 +717,7 @@ namespace LuckyNumbers.Station
         void SendOffers()
         {
             if (_offers.Count > 0) return;
-            _offers = Jobs.Roll(J, GameContent.Cargo, _space.Seed, _voyage.Trips.Value, _space.Worlds);
+            _offers = Jobs.Roll(J, GameContent.Cargo, _space.Seed, _voyage.Trips.Value, _space.Worlds, _job.RecentTargets);
             _board.Offers.Clear();
             foreach (var o in _offers) _board.Offers.Add(Jobs.Encode(o));
             if (NeedsJob) _state.Objective.Value = Fill(J.BoardObjective);

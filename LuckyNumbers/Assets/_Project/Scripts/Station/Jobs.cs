@@ -21,7 +21,16 @@ namespace LuckyNumbers.Station
             public uint Seed;
         }
 
-        public static List<Offer> Roll(JobConfig config, CargoConfig cargo, uint universe, int round, IReadOnlyList<string> worlds)
+        /// <summary>How many of the latest relics brought back a Retrieve offer avoids (fewer while there are few).</summary>
+        public const int RecentLimit = 3;
+
+        /// <summary>
+        /// Dispatch's offers. `recent`: relics brought back lately (oldest first). A Retrieve offer's target is one
+        /// you haven't just brought back and no other offer on the board wants; with none like that (there aren't
+        /// enough relics yet), that slot is another kind of job instead.
+        /// </summary>
+        public static List<Offer> Roll(JobConfig config, CargoConfig cargo, uint universe, int round, IReadOnlyList<string> worlds,
+                                       IReadOnlyList<string> recent = null)
         {
             var offers = new List<Offer>();
             var types = new List<JobType>();
@@ -29,6 +38,7 @@ namespace LuckyNumbers.Station
             if (types.Count == 0 || worlds.Count == 0) return offers;
             var rng = new Random((universe ^ (0x10B5u * (uint)(round + 1)) ^ 0x9E3779B9u) | 1u);
             var first = rng.NextInt(types.Count);   // kinds take turns down the board, so it isn't all one kind
+            var avoid = Avoid(cargo, recent);
             for (var i = 0; i < math.max(1, config.Offers); i++)
             {
                 var type = types[(first + i) % types.Count];
@@ -42,20 +52,73 @@ namespace LuckyNumbers.Station
                     Danger = rng.NextInt(math.max(1, type.DangerMin), math.max(type.DangerMin, type.DangerMax) + 1),
                     Seed = rng.NextUInt() | 1u,
                 };
-                o.Pay = type.Pay + type.PayPerDanger * o.Danger;
-                o.Goal = type.Target + type.TargetPerDanger * o.Danger;
                 if (type.Kind == JobKind.Retrieve)
                 {
-                    // One piece of that wreck's cargo (the same manifest the planet will lay out).
+                    // One piece of that wreck's cargo (the same manifest the planet will lay out), not one you just
+                    // brought back or another offer already wants.
                     var manifest = Manifest.Generate(cargo, SiteSeed(universe, o.Seed));
-                    if (manifest.Relics.Count > 0) o.Target = manifest.Relics[rng.NextInt(manifest.Relics.Count)].Name;
+                    var fresh = new List<string>();
+                    foreach (var r in manifest.Relics) if (!avoid.Contains(r.Name)) fresh.Add(r.Name);
+                    if (fresh.Count > 0)
+                    {
+                        o.Target = fresh[rng.NextInt(fresh.Count)];
+                        avoid.Add(o.Target);
+                    }
+                    else
+                    {
+                        // Nothing fresh to fetch: the next kind down the board that isn't Retrieve takes the slot.
+                        var other = Other(types, first + i);
+                        if (other == null) continue;
+                        UnityEngine.Debug.Log($"[Jobs] no relic left to retrieve that isn't a repeat: {other.Kind} instead");
+                        o.Type = type = other;
+                        o.Danger = rng.NextInt(math.max(1, type.DangerMin), math.max(type.DangerMin, type.DangerMax) + 1);
+                    }
                 }
+                o.Pay = type.Pay + type.PayPerDanger * o.Danger;
+                o.Goal = type.Target + type.TargetPerDanger * o.Danger;
                 o.Title = Fill(type.Title, o);
                 o.Brief = Fill(type.Brief, o);
                 o.Objective = Fill(type.Objective, o);
                 offers.Add(o);
             }
             return offers;
+        }
+
+        /// <summary>
+        /// The relic names a Retrieve offer skips: the latest RecentLimit brought back, but never every relic there is
+        /// (so with a few relics they come round again), and always at least the last one (never twice running).
+        /// </summary>
+        static HashSet<string> Avoid(CargoConfig cargo, IReadOnlyList<string> recent)
+        {
+            var avoid = new HashSet<string>();
+            if (recent == null || recent.Count == 0) return avoid;
+            var relics = cargo?.Relics.Count ?? 0;
+            var keep = math.min(recent.Count, math.min(RecentLimit, math.max(1, relics - 1)));
+            for (var i = recent.Count - keep; i < recent.Count; i++) avoid.Add(recent[i]);
+            return avoid;
+        }
+
+        /// <summary>The next enabled kind after `from` (wrapping) that isn't Retrieve; null if there's none.</summary>
+        static JobType Other(List<JobType> types, int from)
+        {
+            for (var k = 1; k <= types.Count; k++)
+            {
+                var t = types[(from + k) % types.Count];
+                if (t.Kind != JobKind.Retrieve) return t;
+            }
+            return null;
+        }
+
+        /// <summary>Remember relics brought back (oldest first), keeping the latest RecentLimit.</summary>
+        public static void Remember(IList<string> recent, IEnumerable<string> names)
+        {
+            foreach (var name in names)
+            {
+                if (string.IsNullOrEmpty(name)) continue;
+                recent.Remove(name);   // brought back again: it's the latest now
+                recent.Add(name);
+            }
+            while (recent.Count > RecentLimit) recent.RemoveAt(0);
         }
 
         /// <summary>The planet's site seed for a job (terrain, wreck, cargo): the universe's, varied by the job's.</summary>
