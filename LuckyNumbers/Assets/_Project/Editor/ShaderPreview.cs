@@ -261,7 +261,7 @@ namespace LuckyNumbers.Editor
         {
             EditorSceneManager.OpenScene("Assets/_Project/Scenes/Planet.unity", OpenSceneMode.Single);
             Physics.SyncTransforms();
-            var template = Object.FindObjectsByType<LuckyNumbers.Planet.MonsterRig>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            var template = Object.FindObjectsByType<LuckyNumbers.Planet.MonsterRig>(FindObjectsInactive.Include);
             if (template.Length == 0) throw new System.Exception("no MonsterRig template in Planet.unity");
             var clips = new LuckyNumbers.Model.MonsterClips { Idle = "idle", Walk = "walk_limp", Run = "walk_fast", Attack = "attack_lunge",
                                                               Hit = "knee_hit_recover", Die = "fall_forward" };

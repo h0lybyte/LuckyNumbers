@@ -5,6 +5,7 @@
         "LuckyNumbers.Core",
         "LuckyNumbers.Title",
         "VContainer",
+        "MessagePipe",
         "LuckyNumbers.Space",
         "LuckyNumbers.Intro",
         "LuckyNumbers.Planet",
