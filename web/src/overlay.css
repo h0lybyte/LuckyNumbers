@@ -1366,3 +1366,69 @@ kbd {
 }
 .job-line.done { border-color: var(--good); }
 .job-line.done .job-kind { color: var(--good); }
+
+/* Fights (combat.tsx): the roll feed, the last monster hit, going down. */
+.combat-feed {
+  position: absolute;
+  right: max(var(--gap), env(safe-area-inset-right));
+  top: 38%;
+  width: min(330px, calc(100% - 2 * var(--gap)));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+  pointer-events: none;
+}
+.combat-feed li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0 8px;
+  padding: 4px 10px;
+  border-left: 3px solid var(--muted);
+  background: var(--scan), rgba(2, 8, 16, 0.82);
+  font: 11px var(--font-mono);
+  color: var(--fg);
+  animation: combat-in 0.18s ease-out;
+}
+.combat-feed .who { color: var(--muted); grid-column: 1 / -1; }
+.combat-feed .die { color: #e8fbff; font-weight: 600; }
+.combat-feed .sum { color: var(--muted); }
+.combat-feed b { grid-column: 2; grid-row: 2 / 4; align-self: center; font-size: 13px; }
+.combat-feed small { color: var(--muted); }
+.combat-feed .mine.hit { border-left-color: var(--good); }
+.combat-feed .mine.hit b { color: var(--good); }
+.combat-feed .theirs.hit { border-left-color: var(--bad); }
+.combat-feed .theirs.hit b { color: var(--bad); }
+.combat-feed .miss b { color: var(--muted); }
+.combat-feed .crit b { color: var(--gold, #ffd166); }
+@keyframes combat-in { from { transform: translateX(12px); opacity: 0; } }
+.combat-target {
+  position: absolute;
+  left: 50%;
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 64px);
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  font: 600 12px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bad);
+  pointer-events: none;
+}
+.combat-target-bar { width: 180px; height: 6px; border: 1px solid var(--bad); background: rgba(2, 8, 16, 0.75); }
+.combat-target-bar > div { height: 100%; background: var(--bad); transition: width 0.15s linear; }
+.combat-down {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  transform: translateX(-50%);
+  padding: 10px 18px;
+  border: 1px solid var(--bad);
+  background: var(--scan), rgba(30, 4, 8, 0.88);
+  color: var(--bad);
+  font: 600 16px var(--font-mono);
+  letter-spacing: 0.08em;
+  max-width: calc(100% - 2 * var(--gap));
+}

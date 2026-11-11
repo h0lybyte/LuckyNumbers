@@ -12,7 +12,7 @@ enum JobKind {
   JOB_KIND_UNSPECIFIED = 0;
   // Bring back relics from a wreck (any count; each still sells to the museum).
   JOB_KIND_SALVAGE = 1;
-  // Kill `target` monsters (needs the combat update; offered only when its type is enabled).
+  // Kill `target` monsters (content/combat.txtpb).
   JOB_KIND_CLEAR = 2;
   // Bring back one named relic from the wreck's cargo.
   JOB_KIND_RETRIEVE = 3;

@@ -94,6 +94,7 @@ namespace LuckyNumbers.Planet
                 var step = Mathf.Min(b.Speed * dt, b.Left);
                 if (Cast(b.Position, b.Direction, step, out var hit))
                 {
+                    hit.collider.GetComponentInParent<IDamageable>()?.Hit("ship", hit.point, b.Direction);
                     if (hit.rigidbody != null && !hit.rigidbody.isKinematic)
                         hit.rigidbody.AddForceAtPosition(b.Direction * b.Gun.Impulse, hit.point, ForceMode.Impulse);
                     Flash(hit.point + hit.normal * 0.05f, b.Gun.Width * 10f, 0.25f, b.Gun);
