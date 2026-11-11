@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using Cysharp.Text;
 using Cysharp.Threading.Tasks;
 using LuckyNumbers.Core;
 using LuckyNumbers.Intro;
@@ -333,9 +334,8 @@ namespace LuckyNumbers.Planet
             // Touchdown: the lowest of three gear points reaches the ground.
             var half = L.ShipLength * 0.5f;
             Vector3 Gear(float right, float forward) => _position + _rotation * new Vector3(right * half, -GearDrop, forward * half);
-            var lowest = float.MaxValue;
-            foreach (var g in new[] { Gear(0f, 0.7f), Gear(-0.55f, -0.5f), Gear(0.55f, -0.5f) })
-                lowest = math.min(lowest, g.y - _ground.SurfaceAt(g, 0f));   // the mesh you'd hit, not the height function
+            float Clearance(Vector3 g) => g.y - _ground.SurfaceAt(g, 0f);   // the mesh you'd hit, not the height function
+            var lowest = math.min(Clearance(Gear(0f, 0.7f)), math.min(Clearance(Gear(-0.55f, -0.5f)), Clearance(Gear(0.55f, -0.5f))));
             var normal = _ground.NormalAt(_position);
             var vertical = -Vector3.Dot(_velocity, normal);
             var horizontal = Vector3.ProjectOnPlane(_velocity, normal).magnitude;
@@ -378,29 +378,17 @@ namespace LuckyNumbers.Planet
                 return;
             }
 
-            // HUD: altitude, climb, speed, throttle, and where the wreck is (distance, and left/right of your heading).
+            // Where the wreck (or nest) and the pad are: distance on the ground, and left/right of your heading.
+            var nose = Vector3.ProjectOnPlane(_rotation * Vector3.forward, Vector3.up);
             var to = Wreck - _position;
             var flat = new Vector3(to.x, 0f, to.z);
-            var heading = Vector3.SignedAngle(Vector3.ProjectOnPlane(_rotation * Vector3.forward, Vector3.up), flat, Vector3.up);
-            var turn = math.abs(heading) < 8f ? "ahead" : heading < 0f ? $"{-heading:0} deg left" : $"{heading:0} deg right";
-            var power = HoverShip ? (_input.Braking.Value ? "BRAKING" : _input.Descending.Value ? "DOWN" : _input.Lifting.Value ? "UP" : "ASSIST") : Assisted
-                ? $"SET {_throttle * A.MaxSpeed * (_input.Sprinting.Value ? math.max(1f, A.BoostSpeed) : 1f):0} m/s{(hovering ? "  HOVER" : "")}"
-                : $"THROTTLE {_throttle * 100f:0}%{(boost > 1f ? " BOOST" : "")}";
+            var heading = Vector3.SignedAngle(nose, flat, Vector3.up);
             var toPad = _pad - _position;
             var padFlat = new Vector3(toPad.x, 0f, toPad.z);
-            var padHeading = Vector3.SignedAngle(Vector3.ProjectOnPlane(_rotation * Vector3.forward, Vector3.up), padFlat, Vector3.up);
-            var padTurn = padFlat.magnitude < 6f ? "below" : math.abs(padHeading) < 8f ? "ahead"
-                        : padHeading < 0f ? $"{-padHeading:0} deg left" : $"{padHeading:0} deg right";
-            var hud = $"ALT {altitude:0} m    CLIMB {-vertical:+0.0;-0.0} m/s    SPEED {_velocity.magnitude:0} m/s    {power}    " +
-                      (Assisted ? $"<color=#46a758>PAD {padFlat.magnitude:0} m {padTurn}</color>" : $"{(_site == null || _site.HasWreck ? "WRECK" : "NEST")} {flat.magnitude:0} m {turn}");
-            // Low down: the three touchdown limits, each green (fine), amber (close) or red (would crash).
-            if (altitude < 40f)
-                hud += $"\n{Gauge("DESCENT", vertical, MaxVertical, "m/s")}    " +
-                       $"{Gauge("DRIFT", horizontal, MaxHorizontal, "m/s")}    {Gauge("TILT", tilt, MaxTilt, "deg")}";
-            if (F != null)
-                hud += $"    FUEL {(_dry ? "<color=#e5484d>EMPTY</color>" : $"{100f * _playerShip.Fuel.Value / math.max(1f, _playerShip.FuelMax.Value):0}%")}";
-            if (CanLeave) hud += $"\n<color=#46a758>{L.LeavePrompt ?? "E: back to the station"}</color>";
-            _view.Flight(_pageHud ? "" : hud, null);
+            var padHeading = Vector3.SignedAngle(nose, padFlat, Vector3.up);
+            // HUD: the page draws its own; Unity's readout is only built when it's the one showing.
+            if (_pageHud) _view.Flight("", null);
+            else Readout(altitude, vertical, horizontal, tilt, hovering, boost, flat.magnitude, heading, padFlat.magnitude, padHeading);
 
             // For the page's HUD (15 times a second is plenty).
             _stateTimer -= dt;
@@ -588,10 +576,80 @@ namespace LuckyNumbers.Planet
             return new Vector3(math.clamp(turn.x, -1f, 1f), math.clamp(turn.y, -1f, 1f), math.clamp(turn.z, -1f, 1f));
         }
 
-        static string Gauge(string label, float value, float limit, string unit)
+        /// <summary>
+        /// Unity's flight readout: altitude, climb, speed, throttle, and where the wreck is (distance, and left/right
+        /// of your heading); low down the touchdown limits, then fuel and the way out. Written into a ZString builder
+        /// (no intermediate strings) and handed over as a span, so the label only takes a new string when it changed.
+        /// </summary>
+        void Readout(float altitude, float vertical, float horizontal, float tilt, bool hovering, float boost,
+                     float site, float heading, float pad, float padHeading)
+        {
+            var sb = ZString.CreateStringBuilder(true);   // one shared buffer (never nested here)
+            try
+            {
+                sb.AppendFormat("ALT {0:0} m    CLIMB {1:+0.0;-0.0} m/s    SPEED {2:0} m/s    ", altitude, -vertical, _velocity.magnitude);
+                if (HoverShip) sb.Append(_input.Braking.Value ? "BRAKING" : _input.Descending.Value ? "DOWN" : _input.Lifting.Value ? "UP" : "ASSIST");
+                else if (Assisted)
+                {
+                    sb.AppendFormat("SET {0:0} m/s", _throttle * A.MaxSpeed * (_input.Sprinting.Value ? math.max(1f, A.BoostSpeed) : 1f));
+                    if (hovering) sb.Append("  HOVER");
+                }
+                else
+                {
+                    sb.AppendFormat("THROTTLE {0:0}%", _throttle * 100f);
+                    if (boost > 1f) sb.Append(" BOOST");
+                }
+                sb.Append("    ");
+                if (Assisted)
+                {
+                    sb.AppendFormat("<color=#46a758>PAD {0:0} m ", pad);
+                    if (pad < 6f) sb.Append("below");
+                    else Turn(ref sb, padHeading);
+                    sb.Append("</color>");
+                }
+                else
+                {
+                    sb.Append(_site == null || _site.HasWreck ? "WRECK " : "NEST ");
+                    sb.AppendFormat("{0:0} m ", site);
+                    Turn(ref sb, heading);
+                }
+                // Low down: the three touchdown limits, each green (fine), amber (close) or red (would crash).
+                if (altitude < 40f)
+                {
+                    sb.Append('\n');
+                    Gauge(ref sb, "DESCENT", vertical, MaxVertical, "m/s");
+                    sb.Append("    ");
+                    Gauge(ref sb, "DRIFT", horizontal, MaxHorizontal, "m/s");
+                    sb.Append("    ");
+                    Gauge(ref sb, "TILT", tilt, MaxTilt, "deg");
+                }
+                if (F != null)
+                {
+                    if (_dry) sb.Append("    FUEL <color=#e5484d>EMPTY</color>");
+                    else sb.AppendFormat("    FUEL {0:0}%", 100f * _playerShip.Fuel.Value / math.max(1f, _playerShip.FuelMax.Value));
+                }
+                if (CanLeave)
+                {
+                    sb.Append("\n<color=#46a758>");
+                    sb.Append(L.LeavePrompt ?? "E: back to the station");
+                    sb.Append("</color>");
+                }
+                _view.Flight(sb.AsSpan());
+            }
+            finally { sb.Dispose(); }
+        }
+
+        /// <summary>"ahead", "12 deg left", "30 deg right".</summary>
+        static void Turn(ref Utf16ValueStringBuilder sb, float heading)
+        {
+            if (math.abs(heading) < 8f) sb.Append("ahead");
+            else sb.AppendFormat(heading < 0f ? "{0:0} deg left" : "{0:0} deg right", math.abs(heading));
+        }
+
+        static void Gauge(ref Utf16ValueStringBuilder sb, string label, float value, float limit, string unit)
         {
             var colour = value <= limit * 0.7f ? "#46a758" : value <= limit ? "#e5a23a" : "#e5484d";
-            return $"{label} <color={colour}>{math.max(0f, value):0.0} {unit}</color> / {limit:0}";
+            sb.AppendFormat("{0} <color={1}>{2:0.0} {3}</color> / {4:0}", label, colour, math.max(0f, value), unit, limit);
         }
 
         void Crash(string why, string reason = "")

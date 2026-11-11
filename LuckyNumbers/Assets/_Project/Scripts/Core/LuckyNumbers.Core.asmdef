@@ -11,6 +11,7 @@
         "MessagePipe.VContainer",
         "R3.Unity",
         "UniTask",
+        "ZString",
         "Unity.InputSystem",
         "Unity.Addressables",
         "Unity.ResourceManager"

@@ -181,11 +181,10 @@ namespace LuckyNumbers.Model
     }
 
     /// <summary>
-    /// What's in the pack (Core/InventoryPresenter; the page's Inventory and Equipment tabs). Each item
-    /// "uid|id|name|kind|x|y|rot|shape|bulk|value|color|description|actions|slot|equipped|bonuses|count": shape already
-    /// rotated (rows "/"), color "#rrggbb", actions bits 1 = use, 2 = drop, 4 = equip; slot = its EquipSlot, equipped =
-    /// the slot it's in now (0: in the grid; x, y unused then); bonuses as text ("Engineering +2, STR +1"); count = copies
-    /// in the stack (bulk and value are per copy).
+    /// What's in the pack (Core/InventoryPresenter; the page's Inventory and Equipment tabs). Each item is only what
+    /// varies per copy: "uid|kind|x|y|rot|equipped|count", kind = its index into `kinds` (what it is; the page turns the
+    /// kind's shape `rot` quarter turns itself), equipped = the slot it's in now (0: in the grid; x, y unused then),
+    /// count = copies in the stack.
     /// </summary>
     public sealed class PlayerInventory : IDisposable
     {
@@ -219,6 +218,12 @@ namespace LuckyNumbers.Model
         public readonly ReactiveProperty<int> Ready = new ReactiveProperty<int>();
         public readonly ReactiveProperty<string> ReadyName = new ReactiveProperty<string>();
         public readonly ReactiveProperty<float> Cooldown = new ReactiveProperty<float>();
+        /// <summary>
+        /// Every kind of item there is (items.txtpb, in order), sent once: "id|name|kind|shape|bulk|value|color|description|
+        /// actions|slot|bonuses": shape unturned (rows "/"), color "#rrggbb", actions bits 1 = use, 2 = drop, 4 = equip;
+        /// slot = its EquipSlot; bonuses as text ("Engineering +2, STR +1"); bulk and value are per copy.
+        /// </summary>
+        public readonly ObservableList<string> Kinds = new ObservableList<string>();
 
         public void Dispose()
         {

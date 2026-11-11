@@ -70,6 +70,7 @@ namespace LuckyNumbers.Planet
         float _slowUntil, _revealUntil;
         bool _revealAll;
         string _prompt = "";
+        object _promptFor;   // what _prompt is about (a Lying, a Dropped, the board prompt, the ready item's name; null: nothing)
 
         [Inject]
         public RelicsPresenter(ICrashSite site, PlanetView view, PlayerView player, GroundView ground, IFirstPerson firstPerson,
@@ -166,11 +167,17 @@ namespace LuckyNumbers.Planet
             _firstPerson.SpeedScale = (Time.time < _slowUntil ? _slowScale : 1f) * load;
             UpdateReveal(me);
 
+            // The prompt is for one thing at a time (the drop, the relic, the ship, the ready item, or nothing). Its
+            // text is only built when that thing changes, not every frame you stand next to it.
             var ready = _packState.ReadyName.Value;
+            var use = !string.IsNullOrEmpty(ready) && onFoot && _packState.Cooldown.Value <= 0f ? ready : null;
+            var about = nearDrop != null ? nearDrop : near != null ? near : board != "" ? board : (object)use;
+            if (ReferenceEquals(about, _promptFor)) return;
+            _promptFor = about;
             var prompt = nearDrop != null ? Fill(Config.PickupPrompt, Label(nearDrop.Item))
                        : near != null ? Fill(Config.PickupPrompt, near.Relic.Name)
                        : board != "" ? board
-                       : !string.IsNullOrEmpty(ready) && onFoot && _packState.Cooldown.Value <= 0f ? Fill(Config.UsePrompt, ready) : "";
+                       : use != null ? Fill(Config.UsePrompt, use) : "";
             if (prompt != _prompt)
             {
                 _prompt = prompt;

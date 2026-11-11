@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Cysharp.Text;
 using LuckyNumbers.Model;
 using MessagePipe;
 using ObservableCollections;
@@ -46,8 +47,8 @@ namespace LuckyNumbers.Core
     public sealed class DroppedItem
     {
         public ItemDef Def;
-        public string Name, Description;
-        public int Value, Count;
+        public int Count;
+        public string Name => Def.Name;   // the content's text, not a copy
     }
 
     /// <summary>A world items can be dropped into (lay `item` at the player's feet).</summary>
@@ -62,8 +63,10 @@ namespace LuckyNumbers.Core
     [Serializable]
     public sealed class SavedItem
     {
-        public string id, name, description;
-        public int value, x, y, rot, equipped, count;
+        public string id;
+        public int x, y, rot, equipped, count;
+        // Older saves also carry name, description and value: copies of the item's content, ignored (it's read from
+        // items.txtpb, so a reworded item reads the new way in an old save too).
     }
 
     /// <summary>The pack, for save slots (Core/SavePresenter).</summary>
@@ -103,8 +106,10 @@ namespace LuckyNumbers.Core
         {
             public int Uid;
             public ItemDef Def;
-            public string Name, Description;
-            public int Value, X, Y, Rot;
+            public string Name => Def.Name;                       // the content's text, not a copy
+            public string Description => Describe(Def);           // built once per item kind
+            public int Value => Def.Value;
+            public int X, Y, Rot;
             public EquipSlot Equipped;   // None: in the grid
             public int Count = 1;        // copies in this stack (ItemDef.stack)
             public bool[,] Cells;   // rotated footprint [row, column]
@@ -233,8 +238,7 @@ namespace LuckyNumbers.Core
 
         public List<SavedItem> Capture() => _items.ConvertAll(i => new SavedItem
         {
-            id = i.Def.Id, name = i.Name, description = i.Description, value = i.Value,
-            x = i.X, y = i.Y, rot = i.Rot, equipped = (int)i.Equipped, count = i.Count,
+            id = i.Def.Id, x = i.X, y = i.Y, rot = i.Rot, equipped = (int)i.Equipped, count = i.Count,
         });
 
         public void Restore(List<SavedItem> saved)
@@ -256,9 +260,7 @@ namespace LuckyNumbers.Core
                 var rot = ((s.rot % 4) + 4) % 4;
                 var item = new Item
                 {
-                    Uid = _nextUid++, Def = def, Name = string.IsNullOrEmpty(s.name) ? def.Name : s.name,
-                    Description = string.IsNullOrEmpty(s.description) ? Describe(def) : s.description,
-                    Value = s.value, X = s.x, Y = s.y, Rot = rot, Count = Math.Clamp(s.count, 1, StackLimit(def)),
+                    Uid = _nextUid++, Def = def, X = s.x, Y = s.y, Rot = rot, Count = Math.Clamp(s.count, 1, StackLimit(def)),
                     Cells = Rotate(Parse(def.Shape), rot),
                 };
                 var slot = (EquipSlot)s.equipped;
@@ -275,7 +277,11 @@ namespace LuckyNumbers.Core
 
         public bool TryAdd(string itemId) => TryAdd(itemId, publish: true);
 
-        public bool Has(string itemId) => _items.Exists(i => i.Def.Id == itemId);
+        public bool Has(string itemId)
+        {
+            foreach (var i in _items) if (i.Def.Id == itemId) return true;   // a loop, not Exists: no closure per call
+            return false;
+        }
 
         public ItemDef EquippedIn(EquipSlot slot) => SlotItem(slot)?.Def;
 
@@ -287,7 +293,7 @@ namespace LuckyNumbers.Core
                 Debug.LogWarning($"[Inventory] no item '{itemId}' in items.txtpb");
                 return false;
             }
-            var item = new Item { Uid = _nextUid++, Def = def, Name = def.Name, Description = Describe(def), Value = def.Value };
+            var item = new Item { Uid = _nextUid++, Def = def };
             return Add(item, publish);
         }
 
@@ -296,8 +302,7 @@ namespace LuckyNumbers.Core
             if (dropped?.Def == null) return false;
             var item = new Item
             {
-                Uid = _nextUid++, Def = dropped.Def, Name = dropped.Name, Description = dropped.Description,
-                Value = dropped.Value, Count = Math.Max(1, dropped.Count),
+                Uid = _nextUid++, Def = dropped.Def, Count = Math.Max(1, dropped.Count),
             };
             return Add(item, publish: true);
         }
@@ -383,18 +388,28 @@ namespace LuckyNumbers.Core
         {
             if (DropTarget == null || !DropTarget.CanDrop) return false;
             _items.Remove(item);
-            DropTarget.Drop(new DroppedItem { Def = item.Def, Name = item.Name, Description = item.Description, Value = item.Value, Count = item.Count });
+            DropTarget.Drop(new DroppedItem { Def = item.Def, Count = item.Count });
             return true;
         }
 
         /// <summary>A relic's description: whose it was and when, then its lore; else the item's own text.</summary>
+        /// <summary>An item kind's description: its lore (who, when, the text) or plain description. Built once per kind.</summary>
         static string Describe(ItemDef def)
         {
+            if (Descriptions.TryGetValue(def, out var text)) return text;
             var lore = def.Lore;
-            if (lore == null || string.IsNullOrEmpty(lore.Text)) return def.Description;
-            var who = string.IsNullOrEmpty(lore.Figure) ? "" : string.IsNullOrEmpty(lore.Era) ? $"{lore.Figure}. " : $"{lore.Figure}, {lore.Era}. ";
-            return who + lore.Text;
+            if (lore == null || string.IsNullOrEmpty(lore.Text)) text = def.Description ?? "";
+            else
+            {
+                var who = string.IsNullOrEmpty(lore.Figure) ? "" : string.IsNullOrEmpty(lore.Era) ? $"{lore.Figure}. " : $"{lore.Figure}, {lore.Era}. ";
+                text = who + lore.Text;
+            }
+            Descriptions.Add(def, text);
+            return text;
         }
+
+        // Keyed by the def itself: reloaded content brings new defs, and the old ones' entries go with them.
+        static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ItemDef, string> Descriptions = new();
 
         public void Say(string text)
         {
@@ -712,6 +727,7 @@ namespace LuckyNumbers.Core
 
         void Publish()
         {
+            PublishKinds();
             var rows = new List<string>(_items.Count);
             float bulk = 0f;
             var value = 0;
@@ -719,15 +735,20 @@ namespace LuckyNumbers.Core
             {
                 bulk += i.Def.Bulk * i.Count;
                 value += i.Value * i.Count;
-                var c = i.Def.Color;
-                var color = "#" + ColorUtility.ToHtmlStringRGB(new Color(c.R, c.G, c.B));
-                var usable = i.Def.Effects.Count > 0 || (i.Def.Use != null && i.Def.Use.Rolls.Count > 0);
-                var actions = (usable ? 1 : 0) | (i.Def.Kind != ItemKind.Relic ? 2 : 0) |
-                              (i.Def.Slot != EquipSlot.None ? 4 : 0);
-                rows.Add(string.Join("|", i.Uid, i.Def.Id, Clean(i.Name), (int)i.Def.Kind, i.X, i.Y, i.Rot, Shape(i.Cells),
-                                     i.Def.Bulk.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture), i.Value,
-                                     color, Clean(i.Description), actions, (int)i.Def.Slot, (int)i.Equipped,
-                                     Clean(BonusText(i.Def)), i.Count));
+                // Only what varies per copy; what it is comes from `kinds` (PublishKinds), sent once.
+                var sb = ZString.CreateStringBuilder(true);
+                try
+                {
+                    sb.Append(i.Uid); sb.Append('|');
+                    sb.Append(_kindIndex.TryGetValue(i.Def, out var kind) ? kind : -1); sb.Append('|');
+                    sb.Append(i.X); sb.Append('|');
+                    sb.Append(i.Y); sb.Append('|');
+                    sb.Append(i.Rot); sb.Append('|');
+                    sb.Append((int)i.Equipped); sb.Append('|');
+                    sb.Append(i.Count);
+                    rows.Add(sb.ToString());
+                }
+                finally { sb.Dispose(); }
             }
             var str = Strength();
             var extra = BulkBonus;
@@ -753,6 +774,33 @@ namespace LuckyNumbers.Core
             _state.Ready.Value = _ready;
             _state.ReadyName.Value = ready?.Name ?? "";
         }
+
+        /// <summary>
+        /// Every kind of item (items.txtpb, in order) for the page, once per loaded content: the text, colour, shape
+        /// and actions are the kind's, so the pack's rows only carry the index. Kept by def for those rows.
+        /// </summary>
+        void PublishKinds()
+        {
+            if (ReferenceEquals(_kindsFor, Config)) return;
+            _kindsFor = Config;
+            _kindIndex.Clear();
+            var rows = new List<string>(Config.Items.Count);
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            foreach (var d in Config.Items)
+            {
+                _kindIndex[d] = rows.Count;
+                var c = d.Color;
+                var usable = d.Effects.Count > 0 || (d.Use != null && d.Use.Rolls.Count > 0);
+                var actions = (usable ? 1 : 0) | (d.Kind != ItemKind.Relic ? 2 : 0) | (d.Slot != EquipSlot.None ? 4 : 0);
+                rows.Add(string.Join("|", Clean(d.Id), Clean(d.Name), (int)d.Kind, Shape(Parse(d.Shape)), d.Bulk.ToString("0.##", inv),
+                                     d.Value, "#" + ColorUtility.ToHtmlStringRGB(new Color(c.R, c.G, c.B)), Clean(Describe(d)),
+                                     actions, (int)d.Slot, Clean(BonusText(d))));
+            }
+            Set(_state.Kinds, rows);
+        }
+
+        ItemConfig _kindsFor;
+        readonly Dictionary<ItemDef, int> _kindIndex = new();
 
         /// <summary>"Engineering +2, STR +1, Stamina +2"</summary>
         static string BonusText(ItemDef d)
