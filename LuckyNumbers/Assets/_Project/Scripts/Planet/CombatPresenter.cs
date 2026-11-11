@@ -192,7 +192,7 @@ namespace LuckyNumbers.Planet
             if (_bolts != null) return;
             _rng = new Random((_site.Seed ^ 0xC0BA7u) | 1u);   // your lucky number rolls every fight
             var beam = _view.WreckBeacon != null ? _view.WreckBeacon.GetComponent<Renderer>() : null;
-            _bolts = new Bolts(beam != null ? new Material(beam.sharedMaterial) : null, _player.Body.transform);
+            _bolts = new Bolts(_player.Body.transform);
             var relic = _view.VaseTemplate != null ? _view.VaseTemplate.GetComponentInChildren<Renderer>(true) : null;
             _bodyMaterial = relic != null ? relic.sharedMaterial : beam != null ? beam.sharedMaterial : null;
         }

@@ -12,11 +12,8 @@ namespace LuckyNumbers.Planet
     /// </summary>
     public sealed class ShipGuns : IDisposable, IBoltSink
     {
-        static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
-        static readonly int ColorId = Shader.PropertyToID("_Color");
-
         readonly ShipView _ship;
-        readonly BoltField _field;   // unlit (the wreck beacon's material), coloured per gun
+        readonly BoltField _field;   // instanced, unlit, coloured per gun
         ShipGun[] _barrels = Array.Empty<ShipGun>();
         float[] _ready = Array.Empty<float>();
         float _firepower = 1f;
@@ -25,10 +22,10 @@ namespace LuckyNumbers.Planet
         /// <summary>Shots fired (the page's crosshair flashes on a change).</summary>
         public int Shots { get; private set; }
 
-        public ShipGuns(ShipView ship, Material material)
+        public ShipGuns(ShipView ship)
         {
             _ship = ship;
-            _field = new BoltField(material, "Laser", BaseColor, ColorId, prewarm: 0);   // Arm reserves per barrel
+            _field = new BoltField("Laser", prewarm: 0);   // Arm reserves per barrel
         }
 
         /// <summary>Mount the skin's guns, one per barrel (missing ids leave that barrel empty).</summary>

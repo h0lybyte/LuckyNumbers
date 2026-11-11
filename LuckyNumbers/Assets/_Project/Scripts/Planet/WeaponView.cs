@@ -29,7 +29,6 @@ namespace LuckyNumbers.Planet
         [SerializeField] Vector3 gripPalm = Vector3.left, gripAlong = new(0f, -0.5f, 1f), forePalm = Vector3.up, foreAlong = new(0.5f, 0f, 1f);
 
         [Header("Energy shots")]
-        [SerializeField] Material boltMaterial;
         [SerializeField] Color boltColor = new(0.35f, 1.6f, 2.6f);   // HDR: blooms in the station
         [SerializeField] float boltSpeed = 70f;                      // m/s
         [SerializeField] float boltLength = 0.6f;
@@ -64,24 +63,14 @@ namespace LuckyNumbers.Planet
         /// <summary>Off cooldown: the next TryFire shoots.</summary>
         public bool Ready => Time.time >= _nextShot;
 
-        static readonly int ColorA = Shader.PropertyToID("_ColorA");
-        static readonly int ColorB = Shader.PropertyToID("_ColorB");
         /// <summary>
-        /// The bolts of every gun with the same material, in one field that ticks itself (most guns just lie there:
-        /// none gets its own). Made on the first shot, again after a scene change took the old one. A bolt keeps
-        /// flying if its gun goes away; its hit just isn't reported.
+        /// The bolts of every gun, in one field that ticks itself (most guns just lie there: none gets its own). Made
+        /// on the first shot, again after a scene change took the old one. A bolt keeps flying if its gun goes away;
+        /// its hit just isn't reported.
         /// </summary>
-        static readonly Dictionary<Material, BoltField> Fields = new();
-        static BoltField _unmaterialed;
+        static BoltField _shared;
 
-        static BoltField FieldFor(Material m)
-        {
-            var have = m != null ? Fields.TryGetValue(m, out var f) ? f : null : _unmaterialed;
-            if (have is { Alive: true }) return have;
-            have = new BoltField(m, "Bolt", ColorA, ColorB, prewarm: 6, selfTick: true);
-            if (m != null) Fields[m] = have; else _unmaterialed = have;
-            return have;
-        }
+        static BoltField Shared => _shared is { Alive: true } ? _shared : _shared = new BoltField("Bolt", prewarm: 6, selfTick: true);
 
         /// <summary>Any gun fired (the station's range counts shots).</summary>
         public static event Action<WeaponView> Fired;
@@ -92,13 +81,13 @@ namespace LuckyNumbers.Planet
         Light _flashLight;
         float _nextShot;
 
-        /// <summary>Editor setup (SceneBuilder): measured hold points and the bolt's material.</summary>
+        /// <summary>Editor setup (SceneBuilder): measured hold points (`bolt`: no longer used, bolts are instanced).</summary>
         public void Init(Vector3 grip, Vector3 foregrip, Vector3 muzzle, Material bolt)
         {
             this.grip = grip;
             this.foregrip = foregrip;
             this.muzzle = muzzle;
-            boltMaterial = bolt;
+            _ = bolt;   // was the bolt material: bolts are instanced now (BoltField, Resources/Bolt)
         }
 
         /// <summary>Editor setup with a hold fitted to the arms (tools/blender/weapon_holds.py).</summary>
@@ -129,7 +118,7 @@ namespace LuckyNumbers.Planet
             var from = MuzzleWorld;
             var dir = target - from;
             dir = dir.sqrMagnitude > 1e-4f ? dir.normalized : transform.forward;
-            if (_field is not { Alive: true }) _field = FieldFor(boltMaterial);
+            if (_field is not { Alive: true }) _field = Shared;
             _field.Fire(new BoltShot
             {
                 From = from, Direction = dir, Speed = boltSpeed, Range = range, Length = boltLength, Width = boltWidth, Color = boltColor,
