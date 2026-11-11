@@ -11,7 +11,9 @@
         "MessagePipe.VContainer",
         "R3.Unity",
         "UniTask",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.Addressables",
+        "Unity.ResourceManager"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

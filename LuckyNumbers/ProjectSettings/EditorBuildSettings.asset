@@ -24,4 +24,5 @@ EditorBuildSettings:
     path: Assets/_Project/Scenes/Orbit.unity
     guid: 4930bbc5c7e34436d92ce65ddbc67979
   m_configObjects:
+    com.unity.addressableassets: {fileID: 11400000, guid: a8078c3144a3e46ad8bd2d1f962e43eb, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

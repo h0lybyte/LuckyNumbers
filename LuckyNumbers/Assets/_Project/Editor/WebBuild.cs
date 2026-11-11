@@ -109,6 +109,11 @@ namespace LuckyNumbers.Editor
                 var scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
                 if (scenes.Length == 0) throw new BuildFailedException("No enabled scenes in Build Settings.");
 
+                // Addresses from AddressablesSetup.Rules (the player compiles the AssetKeys.g.cs this writes), and no
+                // asset both addressable and in a scene. Addressables then builds its bundles with the player.
+                if (AddressablesSetup.Apply()) Debug.Log("[WebBuild] AssetKeys.g.cs regenerated");
+                AddressablesSetup.CheckDuplicates(scenes);
+
                 var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
                 {
                     scenes = scenes,

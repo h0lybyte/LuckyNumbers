@@ -13,7 +13,10 @@
         "Unity.RenderPipelines.Universal.Runtime",
         "LuckyNumbers.Model",
         "LuckyNumbers.Station",
-        "Unity.RenderPipelines.Core.Runtime"
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.Addressables",
+        "Unity.Addressables.Editor",
+        "Unity.ResourceManager"
     ],
     "includePlatforms": [
         "Editor"
