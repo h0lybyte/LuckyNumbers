@@ -159,6 +159,11 @@ namespace LuckyNumbers.Model
         /// Jobs finished (and paid) so far.
         /// </summary>
         public readonly ReactiveProperty<int> Completed = new ReactiveProperty<int>();
+        /// <summary>
+        /// The relics you brought back lately (names, oldest first; StationPresenter at homecoming): Retrieve offers skip
+        /// them so the board doesn't send you after the same piece twice running (Jobs.Roll).
+        /// </summary>
+        public readonly ObservableList<string> RecentTargets = new ObservableList<string>();
 
         public void Dispose()
         {

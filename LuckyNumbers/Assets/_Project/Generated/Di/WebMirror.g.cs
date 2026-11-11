@@ -230,6 +230,9 @@ namespace LuckyNumbers.Model
                 d.Add(s.Goal.Subscribe(_ => sink.MarkState(10)));
                 d.Add(s.Done.Subscribe(_ => sink.MarkState(10)));
                 d.Add(s.Completed.Subscribe(_ => sink.MarkState(10)));
+                NotifyCollectionChangedEventHandler<string> hRecentTargets = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(10);
+                s.RecentTargets.CollectionChanged += hRecentTargets;
+                d.Add(Disposable.Create(() => s.RecentTargets.CollectionChanged -= hRecentTargets));
                 sink.MarkState(10);
             }
             {
@@ -1100,6 +1103,18 @@ namespace LuckyNumbers.Model
             b.Append(s.Done.Value ? "true" : "false");
             b.Append(",\"completed\":");
             Json.Num(b, s.Completed.Value);
+            b.Append(",\"recentTargets\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.RecentTargets)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Str(b, x);
+                }
+            }
+            b.Append(']');
             b.Append('}');
         }
 
