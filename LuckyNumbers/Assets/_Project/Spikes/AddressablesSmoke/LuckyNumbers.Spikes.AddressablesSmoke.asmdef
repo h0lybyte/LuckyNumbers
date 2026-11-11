@@ -1,0 +1,22 @@
+{
+    "name": "LuckyNumbers.Spikes.AddressablesSmoke",
+    "rootNamespace": "LuckyNumbers.Spikes.AddressablesSmoke",
+    "references": [
+        "LuckyNumbers.Core",
+        "UniTask",
+        "Unity.Addressables",
+        "Unity.ResourceManager",
+        "LuckyNumbers.Model",
+        "MessagePipe",
+        "VContainer"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

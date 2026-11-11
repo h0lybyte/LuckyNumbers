@@ -4,6 +4,7 @@
     python3 tools/ln.py check         headless compile, report C# errors
     python3 tools/ln.py build-web     headless Web build -> LuckyNumbers/Builds/WebGL
     python3 tools/ln.py serve         serve the Web build with COOP/COEP headers
+    python3 tools/ln.py assets        apply Addressables groups/addresses, regenerate AssetKeys.g.cs
     python3 tools/ln.py bake-grasps   bake weapons' finger grips into weapons.json (needs the build served)
     python3 tools/ln.py deploy        push the Web build to itch.io with butler
     python3 tools/ln.py bump          start the next CHANGELOG.md entry (patch; minor/major) from merged PRs
@@ -311,6 +312,13 @@ def cmd_scenes(args) -> int:
                           "ln-scenes.log", args.force)
     errors = summarize_log(log)
     return 0 if code == 0 and not errors else fail("scene build failed, see log above")
+
+
+def cmd_assets(args) -> int:
+    code, log = run_unity(["-executeMethod", "LuckyNumbers.Editor.AddressablesSetup.ApplyBatch"],
+                          "ln-assets.log", args.force)
+    errors = summarize_log(log)
+    return 0 if code == 0 and not errors else fail("Addressables setup failed, see log above")
 
 
 def cmd_webshot(args) -> int:
@@ -760,6 +768,10 @@ def main(argv=None) -> int:
     s = sub.add_parser("scenes", help="rebuild game scenes from code (Editor/SceneBuilder.cs)")
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
     s.set_defaults(func=cmd_scenes)
+
+    s = sub.add_parser("assets", help="apply Addressables groups/addresses and regenerate AssetKeys.g.cs (Editor/AddressablesSetup.cs)")
+    s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
+    s.set_defaults(func=cmd_assets)
 
     s = sub.add_parser("webshot", help="screenshot the served Web build after a console marker (Node + Chrome)")
     s.add_argument("--url", default="http://localhost:8080/")

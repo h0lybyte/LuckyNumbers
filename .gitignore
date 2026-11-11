@@ -25,6 +25,9 @@
 /LuckyNumbers/[Aa]ssets/StreamingAssets/aa/
 /LuckyNumbers/[Aa]ssets/StreamingAssets/aa.meta
 /LuckyNumbers/[Aa]ssets/[Ss]treamingAssets/aa/*
+# Addressables build outputs, rewritten every build (link.xml before stripping; content state is for remote updates, unused)
+/LuckyNumbers/[Aa]ssets/AddressableAssetsData/link.xml*
+/LuckyNumbers/[Aa]ssets/AddressableAssetsData/WebGL*
 /LuckyNumbers/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
 /LuckyNumbers/[Aa]ssets/SceneDependencyCache*
 /LuckyNumbers/[Aa]ssets/_Recovery*
