@@ -35,7 +35,7 @@ find_min: 14
 find_max: 45
 find_types {
   id: "cache" name: "Sealed supply cache" weight: 3
-  text: "A crate thrown clear of the wreck, its lock still blinking."
+  text: "A sealed supply crate half buried in the dirt, its lock still blinking."
   skill: "engineering" dc: 11 open_label: "Bypass the lock"
   items: ["medpatch", "rations"] xp: 40
   success_text: "The lock clicks open: a med-patch and a ration bar."

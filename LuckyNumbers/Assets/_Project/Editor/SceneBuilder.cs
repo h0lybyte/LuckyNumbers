@@ -518,6 +518,11 @@ namespace LuckyNumbers.Editor
             foreach (var item in LuckyNumbers.Model.GameContent.Items.Items)
             {
                 if (item.Slot != LuckyNumbers.Model.EquipSlot.Weapon || string.IsNullOrEmpty(item.Model) || !done.Add(item.Model)) continue;
+                if (item.Model.StartsWith("PLACEHOLDER_"))
+                {
+                    PlaceholderGun(item.Model).transform.SetParent(root, false);
+                    continue;
+                }
                 if (System.Array.Find(Weapons(), w => w.name == item.Model) == null)
                 {
                     Debug.LogWarning($"[SceneBuilder] item {item.Id}: model '{item.Model}' isn't in {WeaponsDir}/weapons.json");
@@ -527,6 +532,48 @@ namespace LuckyNumbers.Editor
                 rig.transform.SetParent(root, false);
                 rig.SetActive(false);
             }
+        }
+
+        /// <summary>
+        /// A gun with no model yet (an item's `model: "PLACEHOLDER_<id>"`): obvious named blocks, a slide and a grip,
+        /// +Z down the barrel like the real ones, with hand-set hold points. Replace with the item's own model.
+        /// </summary>
+        static GameObject PlaceholderGun(string model)
+        {
+            var metal = Tint("WeaponMetal", new Color(0.42f, 0.44f, 0.47f), new Color(0.72f, 0.74f, 0.76f), 0.12f, 0f);
+            var bolt = Tint("WeaponBolt", new Color(0.35f, 1.6f, 2.6f), new Color(0.35f, 1.6f, 2.6f), 1.5f, 0f);
+            var root = new GameObject($"Weapon {model}");
+            void Part(string name, Vector3 at, Vector3 size, float pitch)
+            {
+                var part = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                part.name = $"{model}_{name}";
+                Object.DestroyImmediate(part.GetComponent<BoxCollider>());
+                part.transform.SetParent(root.transform, false);
+                part.transform.localPosition = at;
+                part.transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+                part.transform.localScale = size;
+                var r = part.GetComponent<MeshRenderer>();
+                r.sharedMaterial = metal;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                var grasp = part.AddComponent<MeshCollider>();   // the fingers close onto it while held
+                grasp.sharedMesh = part.GetComponent<MeshFilter>().sharedMesh;
+                grasp.enabled = false;
+            }
+            Part("slide", new Vector3(0f, 0.02f, 0.03f), new Vector3(0.035f, 0.045f, 0.2f), 0f);
+            Part("grip", new Vector3(0f, -0.04f, -0.045f), new Vector3(0.03f, 0.1f, 0.045f), -15f);
+            var box = root.AddComponent<BoxCollider>();
+            box.center = new Vector3(0f, -0.01f, 0.02f);
+            box.size = new Vector3(0.04f, 0.14f, 0.21f);
+            var body = root.AddComponent<Rigidbody>();
+            body.mass = 1f;
+            body.interpolation = RigidbodyInterpolation.Interpolate;
+            var view = root.AddComponent<WeaponView>();
+            // Right hand low on the grip, left cupping it from below and in front (no foregrip on a pistol).
+            view.Init(new Vector3(0f, -0.06f, -0.05f), new Vector3(0f, -0.06f, 0.0f), new Vector3(0f, 0.02f, 0.135f), bolt);
+            EditorUtility.SetDirty(view);
+            root.SetActive(false);
+            Debug.Log($"[SceneBuilder] placeholder gun {model}");
+            return root;
         }
 
         static WeaponItem Weapon(string name) =>
