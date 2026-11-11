@@ -312,6 +312,8 @@ message PlanetMap {
   float zoom_from = 16;
   float open_seconds = 17;
   float close_seconds = 18;
+  // Your landed ship's marker (the crash marker only shows where there's a wreck).
+  Rgba ship_color = 19;
 }
 
 // The planet map (M): open from the moment it starts opening until it has fully closed.

@@ -14,7 +14,8 @@ namespace LuckyNumbers.Planet
     /// sky (without the surface haze), your star where it really is (lighting the globe) and the planet's moons.
     /// The globe is turned so your crash cell points up, east along x, north along z: the same frame as the
     /// ground, so sky, sun and map all agree. Opens from straight above your own tile and pulls out; closes by
-    /// zooming back into it. Drag to orbit, scroll to zoom, M (or Esc) to close.
+    /// zooming back into it. Drag to orbit, scroll to zoom, M (or Esc) to close. Markers: you (the pin), your landed
+    /// ship, and the wreck where there is one.
     /// </summary>
     [Presenter]
     public sealed class MapPresenter : IStartable, ITickable, ILateTickable, IDisposable
@@ -29,6 +30,7 @@ namespace LuckyNumbers.Planet
         readonly PlayerView _player;
         readonly IFirstPerson _firstPerson;
         readonly ICrashSite _site;
+        readonly IFighter _fighter;
         readonly PlayerInput _input;
         readonly ISubscriber<InputActionPerformed> _actions;
         readonly MapState _state;
@@ -42,8 +44,10 @@ namespace LuckyNumbers.Planet
 
         [Inject]
         public MapPresenter(PlanetScene config, MapView map, PlanetView view, PlayerView player, IFirstPerson firstPerson,
-                            ICrashSite site, PlayerInput input, ISubscriber<InputActionPerformed> actions, MapState state)
+                            ICrashSite site, PlayerInput input, ISubscriber<InputActionPerformed> actions, MapState state,
+                            IFighter fighter)
         {
+            _fighter = fighter;
             _state = state;
             _config = config;
             _map = map;
@@ -111,7 +115,11 @@ namespace LuckyNumbers.Planet
                 }
             }
             _map.Look(_rotation, _distance);
-            _map.Place(_crash, Pin(config), config.CrashColor.ToColor(), config.PinColor.ToColor());
+            _map.Place(OnGlobe(_view.Wreck.Pivot.position, config), Pin(config), config.CrashColor.ToColor(), config.PinColor.ToColor());   // the wreck where it lies
+            _map.ShowCrash(_site.HasWreck);
+            var ship = _fighter.BoardingSpot;   // beside the landed ship (null while it isn't landed)
+            _map.PlaceShip(ship.HasValue ? OnGlobe(ship.Value, config) : null,
+                           config.ShipColor != null ? config.ShipColor.ToColor() : new Color(0.3f, 0.9f, 1f));
         }
 
         public void LateTick()
@@ -172,9 +180,12 @@ namespace LuckyNumbers.Planet
         }
 
         /// <summary>Where you are (globe space): walking (x, z) metres from where you woke goes east/north on a great circle.</summary>
-        Vector3 Pin(PlanetMap config)
+        Vector3 Pin(PlanetMap config) => OnGlobe(_player.Body.transform.position, config);
+
+        /// <summary>A point on the ground (world), in globe space: its (x, z) metres from where you woke, east/north.</summary>
+        Vector3 OnGlobe(Vector3 world, PlanetMap config)
         {
-            var offset = _player.Body.transform.position - WokeAt;
+            var offset = world - WokeAt;
             var walked = new Vector2(offset.x, offset.z);
             var angle = walked.magnitude / math.max(1f, config.WalkRadiusMetres);
             if (angle < 1e-6f) return _crash;

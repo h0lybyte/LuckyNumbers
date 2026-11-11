@@ -31,6 +31,11 @@ namespace LuckyNumbers.Planet
         System.Collections.Generic.IReadOnlyList<CelestialBody> Bodies { get; }
         /// <summary>Towards the sun, in the ground's frame (x east, y up, z north).</summary>
         Vector3 SunDirection { get; }
+        /// <summary>
+        /// Is the freighter's wreck here? Only salvage work (Salvage, Retrieve, and the first mayday) has one; a Clear
+        /// job's site is just the nest. Either way the site's middle is where the wreck would lie (PlanetView.Wreck's pivot).
+        /// </summary>
+        bool HasWreck { get; }
         /// <summary>The ground streams around `target` and the sun sits beyond `eye` (null: the player, the default).</summary>
         void Follow(Transform target, Transform eye);
     }
@@ -72,6 +77,7 @@ namespace LuckyNumbers.Planet
         public PlanetLook Look { get; private set; }
         public System.Collections.Generic.IReadOnlyList<CelestialBody> Bodies { get; private set; }
         public Vector3 SunDirection => _sunDirection;
+        public bool HasWreck { get; private set; } = true;
         public void Follow(Transform target, Transform eye) { _follow = target; _eye = eye; }
         ShipView _wreck => _view.Wreck;
 
@@ -214,12 +220,19 @@ namespace LuckyNumbers.Planet
                 Shader.SetGlobalVector(SunColor, star.Star.LightColor.ToColor());
             }
 
-            // Wreck: nose-down in front of where you wake, half dug in, still smouldering.
+            // Wreck: nose-down in front of where you wake, half dug in, still smouldering. Not on a Clear job: its pivot
+            // still marks the site's middle (the nest, the beacon, where you land), with nothing drawn there.
+            HasWreck = !(_job.Active.Value && _job.Kind.Value == JobKind.Clear);
             _wreck.Show(null, _config.WreckLength);   // the museum freighter (its own look)
             var at = new Vector3(0f, 0f, _config.WreckDistance);
             at.y = _ground.HeightAt(at) + _config.WreckLength * 0.04f;            // nose dug in, hull above ground
             _wreck.Pose(at, Quaternion.Euler(14f, rng.NextFloat(-160f, -110f), rng.NextFloat(-18f, 18f)));
             _wreck.SetHeat(0f, 0.4f);                                               // hull cooled (any heat tints the dark hull orange), lights on
+            if (!HasWreck)
+            {
+                _wreck.Hide();
+                Debug.Log("[Planet] no wreck here (a Clear job): just the nest");
+            }
         }
 
         /// <summary>Lying on your back, eyes open (fade in), sit up, stand, turn to the wreck; then you're in control.</summary>

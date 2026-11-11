@@ -89,11 +89,15 @@ namespace LuckyNumbers.Station
             Fill(s, j.Client.Value, j.Planet.Value, j.Target.Value, j.Goal.Value, j.Pay.Value, j.Title.Value);
 
         static string Fill(string s, string client, string planet, string target, int count, int pay, string title) =>
-            Capital((s ?? "").Replace("{client}", client ?? "").Replace("{planet}", planet ?? "").Replace("{target}", target ?? "")
+            Capital(Client(s, client).Replace("{planet}", planet ?? "").Replace("{target}", target ?? "")
                      .Replace("{count}", count.ToString()).Replace("{pay}", pay.ToString("N0")).Replace("{title}", title ?? ""));
 
         // "the Survey Office wants..." at the start of a line reads "The Survey Office wants...".
         static string Capital(string s) => s.Length > 0 && char.IsLower(s[0]) ? char.ToUpperInvariant(s[0]) + s.Substring(1) : s;
+
+        /// <summary>{client}, capitalised where it starts a sentence ("...on Onrika IV. The Survey Office wants...").</summary>
+        static string Client(string s, string client) =>
+            (s ?? "").Replace(". {client}", ". " + Capital(client ?? "")).Replace("{client}", client ?? "");
 
         static string Clean(string s) => (s ?? "").Replace("|", "/");
     }

@@ -8,12 +8,12 @@
 # Placeholder values; tune with gameplay.
 
 fuel {
-  capacity: 100          # units in a baseline tank
+  capacity: 1000         # units in a baseline tank (x10 in 0.3.3: flights felt far too short)
   idle_burn: 0.15        # per second just holding in the air
   thrust_burn: 0.9       # per second at full thrust (x boost while boosting)
   low: 0.2               # warn below a fifth of the tank
   empty_descent: 3       # m/s: dry, the reserve cells let you down this slowly
-  recharge_per_second: 0.6
+  recharge_per_second: 6   # x10 with the tank: the same refill time
   recharge_to: 0.3       # landed, the solar cells top it up to this share: never stranded
 }
 

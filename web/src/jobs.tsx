@@ -1,5 +1,6 @@
 // Dispatch's job board (Unity: Station/Jobs, JobBoard state): a few seeded jobs, each on a planet with its danger
-// and pay. Click one or press 1-3 to take it (JobAcceptRequested). On the planet, the job you're on sits under the
+// and pay. Opened at your ship (E): click one or press 1-3 to take it and leave (JobAcceptRequested), Esc closes it.
+// On the planet, the job you're on sits under the
 // HUD (PlayerJob) and turns green once its goal is met.
 import { useEffect } from "react";
 import { LN, useLNState } from "./ln";
@@ -31,7 +32,7 @@ export function JobBoardPanel() {
   if (!open) return null;
   return (
     <div className="job-board ui" role="dialog" aria-label="Dispatch job board">
-      <div className="job-kicker">Dispatch // job board</div>
+      <div className="job-kicker">Dispatch // pick a job to leave on // Esc closes</div>
       <ol>
         {offers.map((o, i) => (
           <li key={i}>

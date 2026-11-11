@@ -13,7 +13,8 @@ namespace LuckyNumbers.Station
     /// <summary>
     /// The station's shooting range (StationScene.range; the generator's RANGE room, north of comms: door and bench at
     /// its south end). Once the station is built this puts a firing-line bench across the room a few metres in from the
-    /// door, lays every weapon on it (the scene's "Range weapons", parked by SceneBuilder), barrels downrange (north),
+    /// door (aisles at both ends, clear of side doors), lays every weapon on it (the scene's "Range weapons", parked by
+    /// SceneBuilder), barrels downrange (north),
     /// drops loose crates midway for bolts to push about, and stands target boards at the north wall. While you're in the room RangeState says so and counts your
     /// shots and the hits on its targets (WeaponView.Fired / BoltHit); V cycles the hands side view. Crates and boards
     /// The bench, crates and boards are placeholder blocks (PLACEHOLDER_range_*) until they have models. The start of a
@@ -104,12 +105,34 @@ namespace LuckyNumbers.Station
             _root = new GameObject("Range").transform;
             _built = true;
 
-            // The firing line: a bench across the room, 2.4 m in from the south (door) wall; every weapon on it.
+            // The firing line: a bench across the room, 2.4 m in from the south wall; every weapon on it. The plan comes
+            // from the lucky number, so a doorway in a side wall can land on that line: then the bench moves north,
+            // clear of it, or (if that would crowd the range) stops short of that wall so there's a way in.
+            const float BenchDepth = 0.7f, Room = 0.9f;   // half a doorway (0.6) + a body's width each side
             var benchZ = _area.yMin + 2.4f;
-            var benchWidth = Mathf.Max(2f, _area.width - 1.2f);
-            Block("PLACEHOLDER_range_bench", new Vector3(_area.center.x, 0.42f, benchZ), new Vector3(benchWidth, 0.84f, 0.7f),
+            // Aisles at both ends (1.2 m, a doorway's width) so you can walk round it, down the range.
+            var aisle = _area.width >= 6f ? 1.2f : 0.6f;
+            float west = _area.xMin + aisle, east = _area.xMax - aisle;
+            var doors = SideDoors(plan, cells, minX, maxX);
+            foreach (var (z, _) in doors)
+                if (Mathf.Abs(z - benchZ) < BenchDepth / 2f + Room) benchZ = Mathf.Max(benchZ, z + BenchDepth / 2f + Room);
+            if (benchZ > _area.yMin + _area.height * 0.4f)
+            {
+                benchZ = _area.yMin + 2.4f;
+                foreach (var (z, side) in doors)
+                {
+                    if (Mathf.Abs(z - benchZ) >= BenchDepth / 2f + Room) continue;
+                    if (side < 0) west = Mathf.Max(west, _area.xMin + 1.8f);
+                    else east = Mathf.Min(east, _area.xMax - 1.8f);
+                }
+            }
+            var benchWidth = Mathf.Max(2f, east - west);
+            var benchX = (west + east) / 2f;
+            Block("PLACEHOLDER_range_bench", new Vector3(benchX, 0.42f, benchZ), new Vector3(benchWidth, 0.84f, BenchDepth),
                   new Color(0.32f, 0.24f, 0.16f));
-            LayWeapons(new Vector3(_area.center.x, 0.84f, benchZ), benchWidth);
+            LayWeapons(new Vector3(benchX, 0.84f, benchZ), benchWidth);
+            Debug.Log($"[Range] bench at {benchZ - _area.yMin:0.0} m in, {benchWidth:0.0} m wide; side doors at " +
+                      (doors.Count == 0 ? "none" : string.Join(", ", doors.ConvertAll(d => $"{(d.side < 0 ? "W" : "E")} {d.z - _area.yMin:0.0} m"))));
 
             // Loose crates midway (bolts push them), then the target boards at the north wall.
             var rng = new Unity.Mathematics.Random(0x5A7E1u);
@@ -137,6 +160,20 @@ namespace LuckyNumbers.Station
             _state.Hint.Value = config.Hint ?? "";
             _builtAt = Time.time;   // the URL's range options run once the layout has settled (Tick)
             Debug.Log($"[Range] {room.Name}: {_area.width:0}x{_area.height:0} m, {count} targets, {config.Crates} crates"); // marker for ln.py webshot
+        }
+
+        /// <summary>Doorways in the room's west (-1) and east (+1) walls: their middle's world z.</summary>
+        static List<(float z, int side)> SideDoors(StationPlan plan, List<Vector2Int> cells, int minX, int maxX)
+        {
+            var doors = new List<(float z, int side)>();
+            foreach (var c in cells)
+                foreach (var side in new[] { -1, 1 })
+                {
+                    var n = new Vector2Int(c.x + side, c.y);
+                    if ((side < 0 ? n.x < minX : n.x > maxX) && plan.At(n) == StationPlan.Kind.Doorway)
+                        doors.Add(((c.y + 0.5f) * StationPlan.Cell, side));
+                }
+            return doors;
         }
 
         /// <summary>Every range weapon along the bench (top centre `bench`), barrels north (downrange), a hair above.</summary>

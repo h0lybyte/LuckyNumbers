@@ -56,7 +56,7 @@ namespace LuckyNumbers.Core
         }
 
         /// <summary>The tank's size for this skin (units).</summary>
-        public static float FuelMax(string skin) => (GameContent.Ships?.Fuel?.Capacity ?? 100f) * Of(skin).Fuel;
+        public static float FuelMax(string skin) => (GameContent.Ships?.Fuel?.Capacity ?? 1000f) * Of(skin).Fuel;
 
         /// <summary>Fill the tank (the station; a new skin): fuel_max for the skin, fuel to it.</summary>
         public static void Refuel(PlayerShip ship)

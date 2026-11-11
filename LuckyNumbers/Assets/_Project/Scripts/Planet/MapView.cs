@@ -6,7 +6,8 @@ namespace LuckyNumbers.Planet
 {
     /// <summary>
     /// The planet map: a smooth hex globe (HexSphere cells inset over a dark grout sphere) on its own layer, seen
-    /// by its own camera, with the system's star and the planet's moons around it, a crash-site marker and a pin.
+    /// by its own camera, with the system's star and the planet's moons around it, a crash-site marker, a pin (you)
+    /// and your landed ship.
     /// Globe radius 1. Shown in place of the first-person view (the sky is the scene's skybox).
     /// </summary>
     [View]
@@ -41,7 +42,7 @@ namespace LuckyNumbers.Planet
         {
             crash.localPosition = crashDirection.normalized * 1.005f;
             crash.localRotation = Quaternion.FromToRotation(Vector3.up, crashDirection);
-            pin.localPosition = pinDirection.normalized * 1.012f;
+            pin.localPosition = pinDirection.normalized * 1.05f;   // over the crash marker's top: you always show
             Tint(crash, crashColor);
             Tint(pin, pinColor);
         }
@@ -64,6 +65,27 @@ namespace LuckyNumbers.Planet
             _moons.Add(moon);
             return moon.material;
         }
+
+        Transform _ship;
+
+        /// <summary>Your landed ship (a flat disc from the pin, on the ground under it), as a direction in globe space; null hides it.</summary>
+        public void PlaceShip(Vector3? direction, Color color)
+        {
+            if (_ship == null)
+            {
+                _ship = Instantiate(pin, pin.parent);
+                _ship.name = "Ship marker";
+                _ship.localScale = Vector3.Scale(pin.localScale, new Vector3(1.8f, 0.3f, 1.8f));
+            }
+            _ship.gameObject.SetActive(direction.HasValue);
+            if (!direction.HasValue) return;
+            _ship.localPosition = direction.Value.normalized * 1.004f;
+            _ship.localRotation = Quaternion.FromToRotation(Vector3.up, direction.Value);
+            Tint(_ship, color);
+        }
+
+        /// <summary>The crash marker on or off (no wreck on a Clear job).</summary>
+        public void ShowCrash(bool on) => crash.gameObject.SetActive(on);
 
         static void Tint(Transform t, Color c)
         {

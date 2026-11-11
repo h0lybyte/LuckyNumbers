@@ -486,6 +486,10 @@ namespace LuckyNumbers.Model
         public float ZoomFrom { get; set; }
         public float OpenSeconds { get; set; }
         public float CloseSeconds { get; set; }
+        /// <summary>
+        /// Your landed ship's marker (the crash marker only shows where there's a wreck).
+        /// </summary>
+        public Rgba ShipColor { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public PlanetMap Clone() => (PlanetMap)MemberwiseClone();

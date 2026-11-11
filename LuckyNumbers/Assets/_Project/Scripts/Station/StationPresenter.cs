@@ -31,8 +31,10 @@ namespace LuckyNumbers.Station
     /// (StationScene.homecoming), buying every relic in your pack for its value (credits) and XP for each.
     ///
     /// Jobs (content/jobs.txtpb, PlayerJob): the first call is the first job (the freighter's mayday, then the intro).
-    /// Back from a job, Dispatch says whether it's done (paid) and rings again; its board offers a few seeded jobs
-    /// (JobBoard; the page picks one, JobAcceptRequested), and boarding flies you straight down to that job's planet.
+    /// Back from a job, Dispatch says whether it's done (paid) and rings again, and sends a few seeded jobs to your
+    /// ship. You pick one when you're about to leave: E at the ship opens the board (JobBoard; the page picks one,
+    /// JobAcceptRequested) and taking a job flies you straight down to its planet. Esc or walking away closes it. The
+    /// board is there even if you skipped the call.
     ///
     /// Flight School: a console in the Docking Bay (STATION_ACTION_FLIGHT_SCHOOL) takes you to the training deck
     /// (GameScene.FlightSchool) to test-fly your ship; back from it (PlayerVoyage.training) you step out beside it.
@@ -80,6 +82,8 @@ namespace LuckyNumbers.Station
         GameScene NextScene => _voyage.Trips.Value == 0 ? _config.Next : GameScene.Planet;
         // Later trips need a job from the board first.
         bool NeedsJob => !_job.Active.Value && _voyage.Trips.Value > 0;
+        /// <summary>Dev (the page's URL): ?ln-board starts you beside the ship between jobs, to try the job board.</summary>
+        static bool DevBoard => (Application.absoluteURL ?? "").Contains("ln-board");
         // The call playing (Dispatch's, or the museum's on your return), and what the museum paid.
         List<StationCallLine> _callLines;
         GameScene _next;
@@ -191,7 +195,12 @@ namespace LuckyNumbers.Station
             _hintAlpha = 1f;
             _ui.Hint(_config.Hint, _hintAlpha);
             DockShip();
-            if (_returning) TeleportBesideShip();
+            if (DevBoard && _voyage.Trips.Value == 0 && !_job.Active.Value)
+            {
+                _voyage.Trips.Value = 1;   // between jobs: the board at the ship
+                Debug.Log("[Station] dev: ?ln-board, between jobs beside the ship");
+            }
+            if (_returning || DevBoard) TeleportBesideShip();
             if (_training) TeleportBesideConsole(StationAction.FlightSchool);
             if (_docked) TeleportBesideShip();
             _flow.Preload(NextScene);
@@ -331,7 +340,7 @@ namespace LuckyNumbers.Station
                 Teleport(StationPlan.Centre(_station.Plan.Spawn), _config.SpawnYaw);
                 PlaceWeapon(StationPlan.Centre(_station.Plan.Spawn), _config.SpawnYaw);   // the new spawn's
                 DockShip();
-                if (_returning) TeleportBesideShip();
+                if (_returning || DevBoard) TeleportBesideShip();
                 if (_training) TeleportBesideConsole(StationAction.FlightSchool);
                 if (_docked) TeleportBesideShip();
             }
@@ -371,6 +380,7 @@ namespace LuckyNumbers.Station
             var position = _player.Body.transform.position;
 
             // The map: M toggles it, Esc closes it; it follows you (plan coordinates, compass heading).
+            if (_closeMap && _board.Open.Value) { CloseBoard(); _closeMap = false; }   // Esc: the board first
             if (_toggleMap) _state.MapOpen.Value = !_state.MapOpen.Value;
             else if (_closeMap && _state.MapOpen.Value) _state.MapOpen.Value = false;
             _toggleMap = _closeMap = false;
@@ -415,14 +425,17 @@ namespace LuckyNumbers.Station
                     if (d < best) { best = d; console = sw; }
                 }
                 if (console != null) prompt = console.Prompt;
-                else if (NearShip(position)) prompt = NeedsJob ? J.NoJobPrompt : _layout.Dock.BoardPrompt;
+                else if (NearShip(position)) prompt = NeedsJob ? (_board.Open.Value ? "" : J.NoJobPrompt) : _layout.Dock.BoardPrompt;
             }
+            if (_board.Open.Value && !NearShip(position)) CloseBoard();   // walked away from the ship
             if (_state.Prompt.Value != prompt) _state.Prompt.Value = prompt;
+            _firstPerson.InteractElsewhere = prompt != "";   // E answers / uses / boards: the gun stays put
 
             if (_interact && !_leaving)
             {
                 if (_state.Call.Value == CallPhase.Ringing) Answer();
                 else if (console != null) Use(console.Action);
+                else if (NearShip(position) && NeedsJob && !_board.Open.Value) OpenBoard();   // pick the job here
                 else if (NearShip(position) && !NeedsJob) Board();
             }
             _interact = false;
@@ -658,7 +671,7 @@ namespace LuckyNumbers.Station
             {
                 case CallKind.Dispatch: TakeFirstJob(); break;
                 case CallKind.Homecoming: if (NeedsJob) Ring(CallKind.Board); break;   // Dispatch, with the board
-                case CallKind.Board: OpenBoard(); break;
+                case CallKind.Board: SendOffers(); break;   // to your ship: picked when you board
             }
         }
 
@@ -682,23 +695,40 @@ namespace LuckyNumbers.Station
             Debug.Log($"[Station] job: {_job.Title.Value} on {_job.Planet.Value}");
         }
 
-        void OpenBoard()
+        /// <summary>Dispatch's offers for this visit (seeded by the trip), rolled once: the call and the ship share them.</summary>
+        void SendOffers()
         {
+            if (_offers.Count > 0) return;
             _offers = Jobs.Roll(J, GameContent.Cargo, _space.Seed, _voyage.Trips.Value, _space.Worlds);
             _board.Offers.Clear();
             foreach (var o in _offers) _board.Offers.Add(Jobs.Encode(o));
-            _board.Open.Value = _offers.Count > 0;
-            _state.Objective.Value = Fill(J.BoardObjective);
+            if (NeedsJob) _state.Objective.Value = Fill(J.BoardObjective);
             foreach (var o in _offers) Debug.Log($"[Station] offer: {o.Title} ({o.Type.Kind}, {o.Planet}, danger {o.Danger}, {o.Pay} cr)");
         }
 
+        /// <summary>At the ship: the board, to pick the job you're leaving on.</summary>
+        void OpenBoard()
+        {
+            SendOffers();
+            _board.Open.Value = _offers.Count > 0;
+            if (_board.Open.Value) Debug.Log("[Station] job board open at the ship");
+        }
+
+        void CloseBoard()
+        {
+            _board.Open.Value = false;
+            Debug.Log("[Station] job board closed");
+        }
+
+        /// <summary>A job off the board: take it and leave on it.</summary>
         void Accept(int index)
         {
-            if (!_board.Open.Value || index < 0 || index >= _offers.Count) return;
+            if (!_board.Open.Value || index < 0 || index >= _offers.Count || _leaving) return;
             Jobs.Take(_job, _offers[index]);
             _board.Open.Value = false;
             _state.Objective.Value = Fill(J.TakenObjective);
             Debug.Log($"[Station] took job: {_job.Title.Value} on {_job.Planet.Value} ({_job.Body.Value}), {_job.Pay.Value} cr");
+            Board();
         }
 
         void Board()
