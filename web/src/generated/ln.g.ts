@@ -472,6 +472,14 @@ export interface CombatRoll {
   /** You rolled it (else a monster attacked you). */
   player: boolean;
   weapon: string;
+  /**
+   * Your shots (Planet/Marksman): how far over the armour decides the damage. Missed by 1-2: a graze (half the dice);
+   * beat it by 5+: a strong hit (one more die); a natural 20 doubles the dice.
+   */
+  graze: boolean;
+  strong: boolean;
+  /** What made up the bonus, e.g. "DEX +1 · aim +2 · steady +1 · recoil -3". */
+  mods: string;
 }
 
 /** The dice roll's lucky number: Space regenerates the universe from it. */

@@ -141,8 +141,18 @@ namespace LuckyNumbers.Model
         /// </summary>
         public readonly bool Player;
         public readonly string Weapon;
+        /// <summary>
+        /// Your shots (Planet/Marksman): how far over the armour decides the damage. Missed by 1-2: a graze (half the dice);
+        /// beat it by 5+: a strong hit (one more die); a natural 20 doubles the dice.
+        /// </summary>
+        public readonly bool Graze;
+        public readonly bool Strong;
+        /// <summary>
+        /// What made up the bonus, e.g. "DEX +1 · aim +2 · steady +1 · recoil -3".
+        /// </summary>
+        public readonly string Mods;
 
-        public CombatRoll(string attacker, string target, int d20, int bonus, int total, int armor, bool hit, bool crit, bool fumble, int damage, string dice, bool player, string weapon)
+        public CombatRoll(string attacker, string target, int d20, int bonus, int total, int armor, bool hit, bool crit, bool fumble, int damage, string dice, bool player, string weapon, bool graze, bool strong, string mods)
         {
             Attacker = attacker;
             Target = target;
@@ -157,6 +167,9 @@ namespace LuckyNumbers.Model
             Dice = dice;
             Player = player;
             Weapon = weapon;
+            Graze = graze;
+            Strong = strong;
+            Mods = mods;
         }
     }
 

@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLNEvent, useLNState } from "./ln";
 import type { CombatRoll } from "./ln";
-import { AttackD20 } from "./relics";
+import { AttackD20, grade } from "./relics";
 
 type Line = CombatRoll & { id: number; at: number };
 
@@ -46,8 +46,11 @@ export function CombatHud() {
                 {l.bonus >= 0 ? "+" : ""}
                 {l.bonus} = {l.total} vs {l.armor}
               </span>
-              <b>{l.crit ? `CRIT ${l.damage}` : l.fumble ? "FUMBLE" : l.hit ? `HIT ${l.damage}` : "MISS"}</b>
-              {l.hit && <small>{l.dice}{l.crit ? " x2" : ""}</small>}
+              <b>
+                {l.crit ? `CRIT ${l.damage}` : l.fumble ? "FUMBLE" : l.strong ? `STRONG ${l.damage}`
+                  : l.graze ? `GRAZE ${l.damage}` : l.hit ? `HIT ${l.damage}` : "MISS"}
+              </b>
+              {l.hit && <small>{grade(l).dice}</small>}
             </li>
           ))}
         </ol>
