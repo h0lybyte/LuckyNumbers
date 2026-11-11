@@ -18,9 +18,10 @@ namespace LuckyNumbers.Station
     /// shots and the hits on its targets (WeaponView.Fired / BoltHit); V cycles the hands side view. Crates and boards
     /// The bench, crates and boards are placeholder blocks (PLACEHOLDER_range_*) until they have models. The start of a
     /// practice mini-game.
-    /// Every shot at a board or crate is an attack roll, as in a fight (CombatRoll, Dice.Attack): d20 + the range gun's
-    /// ability modifier (content/combat.txtpb, the "default" weapon) + attack_per_level x level, against an armour of
-    /// 8 + a point per 3 m. A miss sends the bolt wide (IFirstPerson.ShotCheck); the page's d20 shows each roll.
+    /// Every shot at a board or crate is an attack roll, as in a fight (Planet/Marksman, CombatRoll): d20 + the range
+    /// gun's ability modifier (content/combat.txtpb, the "default" weapon) + attack_per_level x level + aim, stance and
+    /// recoil, against an armour of 8 + a point per 3 m. A miss sends the bolt wide (IFirstPerson.ShotCheck); the
+    /// page's d20 shows each roll, graze to crit.
     /// Dev / tools (the page's URL): ?ln-range opens the station at the firing line (?ln-range=knife: facing that
     /// weapon, ready to pick up); &amp;ln-slowmo plays at quarter speed (swings, recoil); &amp;ln-sideview starts with the
     /// side view on; &amp;ln-bake picks up every gun and melee weapon in turn, solves each hand's grip live and logs it as
@@ -46,6 +47,7 @@ namespace LuckyNumbers.Station
         readonly CharacterSheet _sheet;
         readonly MessagePipe.IPublisher<CombatRoll> _rolls;
         readonly HashSet<Collider> _crates = new();
+        readonly Marksman _marksman = new();
         Unity.Mathematics.Random _rng = new(0xD20A77u);
         float _builtAt = -1f;
         bool _urlDone;
@@ -208,19 +210,23 @@ namespace LuckyNumbers.Station
         }
 
         /// <summary>A shot at a board or crate: roll to hit (false: it misses, the bolt goes wide). Anything else just flies.</summary>
-        bool AttackRoll(Collider on, float distance)
+        bool AttackRoll(RaycastHit aimed)
         {
+            var on = aimed.collider;
             var target = _targets.Contains(on) ? "Target board" : _crates.Contains(on) ? "Crate" : null;
             if (target == null) return true;
             var w = RangeGun();
-            var bonus = Mod(w?.Ability ?? "dex") + (int)Mathf.Floor((GameContent.Combat?.AttackPerLevel ?? 0f) * Mathf.Max(1, _sheet?.Level.Value ?? 1));
-            var armor = 8 + Mathf.RoundToInt(distance / 3f);
-            var (d20, total, hit, crit, fumble) = Dice.Attack(bonus, armor, ref _rng);
+            var ability = w?.Ability ?? "dex";
+            var parts = new[] { (ability.ToUpperInvariant(), Mod(ability)),
+                                ("level", (int)Mathf.Floor((GameContent.Combat?.AttackPerLevel ?? 0f) * Mathf.Max(1, _sheet?.Level.Value ?? 1))) };
+            var armor = 8 + Mathf.RoundToInt(aimed.distance / 3f);
             var dice = w?.Damage ?? "1d6";
-            var damage = hit ? Dice.Roll(dice, ref _rng, crit) : 0;
-            _rolls?.Publish(new CombatRoll("You", target, d20, bonus, total, armor, hit, crit, fumble, damage, dice, true, w?.Name ?? "Gun"));
-            Debug.Log($"[Range] {target} at {distance:0.0} m: d20 {d20} + {bonus} = {total} vs {armor}: {(hit ? $"{(crit ? "CRIT " : "")}hit {damage}" : "miss")}");
-            return hit;
+            var s = _marksman.Roll(parts, armor, dice, aimed, _player.Camera.transform, _player.Body, ref _rng);
+            _rolls?.Publish(new CombatRoll("You", target, s.D20, s.Bonus, s.Total, s.Armor, s.Hit, s.Crit, s.Fumble, s.Damage, dice, true,
+                                           w?.Name ?? "Gun", s.Graze, s.Strong, s.Mods));
+            Debug.Log($"[Range] {target} at {aimed.distance:0.0} m: d20 {s.D20} + {s.Bonus} ({s.Mods}) = {s.Total} vs {s.Armor}: " +
+                      $"{(s.Crit ? "CRIT" : s.Strong ? "strong" : s.Graze ? "graze" : s.Hit ? "hit" : s.Fumble ? "fumble" : "miss")} {s.Damage}");
+            return s.Hit;
         }
 
         /// <summary>The range guns roll as content/combat.txtpb's "default" weapon.</summary>
