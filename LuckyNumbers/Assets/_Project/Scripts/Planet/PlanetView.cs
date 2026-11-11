@@ -19,7 +19,6 @@ namespace LuckyNumbers.Planet
         [SerializeField] Transform amuletTemplate;            // relic shapes (off): copied per relic at the crash site
         [SerializeField] Transform vaseTemplate;
         [SerializeField] Transform relicBeamTemplate;         // thin beam over a revealed relic
-        [SerializeField] Transform[] artifactModels = System.Array.Empty<Transform>();   // named artifacts' own models (off), by name
         [SerializeField] MonsterRig[] monsterModels = System.Array.Empty<MonsterRig>();   // monsters' models (off), by name (MonsterType.model)
         [SerializeField] Transform landingPad;                // ring on the ground where to land (flight assist; off otherwise)
 
@@ -43,13 +42,6 @@ namespace LuckyNumbers.Planet
         public Transform VaseTemplate => vaseTemplate;
         public Transform RelicBeamTemplate => relicBeamTemplate;
 
-        /// <summary>A relic's own model template by name (ItemDef.model), or null.</summary>
-        public Transform ArtifactModel(string name)
-        {
-            if (string.IsNullOrEmpty(name)) return null;
-            foreach (var t in artifactModels) if (t != null && t.name == name) return t;
-            return null;
-        }
         /// <summary>A monster's model template by name (MonsterType.model), or null (it's a placeholder block).</summary>
         public MonsterRig MonsterModel(string name)
         {

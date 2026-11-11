@@ -28,6 +28,7 @@ namespace LuckyNumbers.Editor
             FontSetup.Build();
             BakeWeapons();               // Prefabs/Weapons: addressable, loaded by WeaponRack (not baked into scenes)
             BakeShips();                 // Prefabs/Ships: hulls, fitted by ShipYard into the scenes' shells
+            BakeRelics();                // Prefabs/Relics: named relics' models, loaded by RelicsPresenter at the crash site
             AddressablesSetup.Apply();   // their addresses and AssetKeys, before any scene is built
             var starfield = MaterialAsset("Starfield", "LuckyNumbers/Starfield");
             var planet = MaterialAsset("Planet3D", "LuckyNumbers/Planet3D");
@@ -225,14 +226,9 @@ namespace LuckyNumbers.Editor
             amulet.gameObject.SetActive(false);
             vase.gameObject.SetActive(false);
             relicBeam.gameObject.SetActive(false);
-            // The vase is 1.98 m in the file: 0.35 makes it ~0.7 m, sitting on the ground at the relic's 0.35 m rest height.
-            var artifacts = new[] { ArtifactModel(relicRoot, "water_amulet", 3f), ArtifactModel(relicRoot, "roman_vase", 0.35f) };
             Assign(view, ("wreck", wreck), ("fighter", fighter), ("flightCamera", flightCam), ("wreckBeacon", beam.transform),
                    ("landingPad", pad.transform), ("amuletTemplate", amulet), ("vaseTemplate", vase), ("relicBeamTemplate", relicBeam));
             var vso = new SerializedObject(view);
-            var models = vso.FindProperty("artifactModels");
-            models.arraySize = artifacts.Length;
-            for (var i = 0; i < artifacts.Length; i++) models.GetArrayElementAtIndex(i).objectReferenceValue = artifacts[i];
             // Monsters' models (off; CombatPresenter copies one per monster whose MonsterType.model names it).
             var monsterRoot = new GameObject("MonsterTemplates").transform;
             var monsterModels = vso.FindProperty("monsterModels");
@@ -514,6 +510,51 @@ namespace LuckyNumbers.Editor
             EditorUtility.SetDirty(rig);
             model.SetActive(false);
             return rig;
+        }
+
+        const string RelicPrefabsDir = "Assets/_Project/Prefabs/Relics";
+
+        /// <summary>
+        /// Model scale per relic `model` (its FBX in Art/Models/Relics): sized to read on the ground. The amulet is 13 cm
+        /// in its file; the vase 1.98 m (0.35 makes it ~0.7 m, standing on the ground at the relic's 0.35 m rest height).
+        /// </summary>
+        static readonly System.Collections.Generic.Dictionary<string, float> RelicScales = new()
+        {
+            ["water_amulet"] = 3f,
+            ["roman_vase"] = 0.35f,
+        };
+
+        /// <summary>
+        /// Every named relic's model as a prefab in Prefabs/Relics (the Relics Addressables group, see
+        /// AddressablesSetup.Rules): each relic item's `model`, dressed on the Relic shader. RelicsPresenter loads them
+        /// by that name. Prefabs nothing names anymore go. Open one (double-click) to see it in Prefab Mode.
+        /// </summary>
+        public static void BakeRelics()
+        {
+            if (!AssetDatabase.IsValidFolder("Assets/_Project/Prefabs")) AssetDatabase.CreateFolder("Assets/_Project", "Prefabs");
+            if (!AssetDatabase.IsValidFolder(RelicPrefabsDir)) AssetDatabase.CreateFolder("Assets/_Project/Prefabs", "Relics");
+            var names = new System.Collections.Generic.List<string>();
+            foreach (var item in LuckyNumbers.Model.GameContent.Items.Items)
+            {
+                if (item.Kind != LuckyNumbers.Model.ItemKind.Relic || string.IsNullOrEmpty(item.Model) || names.Contains(item.Model)) continue;
+                if (!RelicScales.TryGetValue(item.Model, out var scale))
+                {
+                    Debug.LogWarning($"[SceneBuilder] relic {item.Id}: model '{item.Model}' has no scale in SceneBuilder.RelicScales; using 1");
+                    scale = 1f;
+                }
+                var root = ArtifactModel(null, item.Model, scale);
+                root.gameObject.SetActive(true);
+                PrefabUtility.SaveAsPrefabAsset(root.gameObject, $"{RelicPrefabsDir}/{item.Model}.prefab");
+                Object.DestroyImmediate(root.gameObject);
+                names.Add(item.Model);
+            }
+            foreach (var guid in AssetDatabase.FindAssets("t:Prefab", new[] { RelicPrefabsDir }))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!names.Contains(System.IO.Path.GetFileNameWithoutExtension(path))) AssetDatabase.DeleteAsset(path);
+            }
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[SceneBuilder] relics: {string.Join(", ", names)}");
         }
 
         static Transform ArtifactModel(Transform parent, string name, float scale)
