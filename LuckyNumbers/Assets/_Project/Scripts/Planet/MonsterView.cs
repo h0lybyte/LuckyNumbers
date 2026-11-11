@@ -60,6 +60,21 @@ namespace LuckyNumbers.Planet
 
         public void Hit(string source, Vector3 point, Vector3 direction) => Damaged?.Invoke(this, source, point);
 
+        /// <summary>A plain tinted placeholder block (no collider, nothing to hit): encounter finds.</summary>
+        public static Transform Block(string name, Vector3 size, Color color, Material material)
+        {
+            var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            go.name = name;
+            Destroy(go.GetComponent<Collider>());
+            go.transform.localScale = size;
+            var r = go.GetComponent<Renderer>();
+            if (material != null) r.sharedMaterial = material;
+            var b = new MaterialPropertyBlock();
+            Set(b, color);
+            r.SetPropertyBlock(b);
+            return go.transform;
+        }
+
         /// <summary>Flash white for a moment (a hit).</summary>
         public void Flash() => _flash = 0.15f;
 

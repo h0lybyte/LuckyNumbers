@@ -31,6 +31,7 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<UniverseSeedChanged>(options);
             builder.RegisterMessageBroker<CutsceneStepStarted>(options);
             builder.RegisterMessageBroker<CutsceneFinished>(options);
+            builder.RegisterMessageBroker<EncounterChoice>(options);
             builder.RegisterMessageBroker<InputActionPerformed>(options);
             builder.RegisterMessageBroker<InventoryEquipRequested>(options);
             builder.RegisterMessageBroker<InventoryUnequipRequested>(options);
@@ -61,6 +62,7 @@ namespace LuckyNumbers.Model
             builder.Register<StationState>(Lifetime.Singleton);
             builder.Register<CombatState>(Lifetime.Singleton);
             builder.Register<CameraHandoff>(Lifetime.Singleton);
+            builder.Register<EncounterState>(Lifetime.Singleton);
             builder.Register<PlayerInput>(Lifetime.Singleton);
             builder.Register<PlayerInventory>(Lifetime.Singleton);
             builder.Register<JobBoard>(Lifetime.Singleton);

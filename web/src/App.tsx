@@ -7,6 +7,7 @@ import { RelicHud } from "./relics";
 import { FlightHud } from "./flight";
 import { JobBoardPanel, JobLine } from "./jobs";
 import { CombatHud } from "./combat";
+import { EncounterCard } from "./encounter";
 import { CharacterSheetGate } from "./sheet";
 import { HangarGate } from "./hangar";
 import type { GameScene, InboundEvent, WebEvents } from "./ln";
@@ -67,6 +68,7 @@ function StationHudGate() {
         <RelicHud />
         <JobLine />
         <CombatHud />
+        <EncounterCard />
       </>
     );
   return null;

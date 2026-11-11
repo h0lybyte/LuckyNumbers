@@ -157,6 +157,26 @@ export interface CombatState {
 }
 
 /**
+ * The open card (mirrored to the page): its title and text, the choices as "id|label|skill name|bonus|dc" (no
+ * skill: bonus and dc 0), and after a roll the result (rolled; d20, bonus, total, dc, success; the outcome text).
+ */
+export interface EncounterState {
+  open: boolean;
+  kind: string;
+  title: string;
+  text: string;
+  options: string[];
+  rolled: boolean;
+  skill: string;
+  d20: number;
+  bonus: number;
+  total: number;
+  dc: number;
+  success: boolean;
+  result: string;
+}
+
+/**
  * What's in the pack (Core/InventoryPresenter; the page's Inventory and Equipment tabs). Each item
  * "uid|id|name|kind|x|y|rot|shape|bulk|value|color|description|actions|slot|equipped|bonuses|count": shape already
  * rotated (rows "/"), color "#rrggbb", actions bits 1 = use, 2 = drop, 4 = equip; slot = its EquipSlot, equipped =
@@ -462,6 +482,11 @@ export interface CutsceneFinished {
   cutsceneId: string;
 }
 
+/** The page picks a choice on the card (an option id), or "continue" to close it after the roll. */
+export interface EncounterChoice {
+  option: string;
+}
+
 export interface InputActionPerformed {
   action: InputAction;
 }
@@ -554,6 +579,7 @@ export interface WebStates {
   LoadingState: LoadingState;
   StationState: StationState;
   CombatState: CombatState;
+  EncounterState: EncounterState;
   PlayerInventory: PlayerInventory;
   JobBoard: JobBoard;
   PlayerJob: PlayerJob;
@@ -588,6 +614,7 @@ export interface WebEvents {
   UniverseSeedChanged: UniverseSeedChanged;
   CutsceneStepStarted: CutsceneStepStarted;
   CutsceneFinished: CutsceneFinished;
+  EncounterChoice: EncounterChoice;
   InputActionPerformed: InputActionPerformed;
   InventoryEquipRequested: InventoryEquipRequested;
   InventoryUnequipRequested: InventoryUnequipRequested;
@@ -607,6 +634,6 @@ export interface WebEvents {
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "MenuItemSelected";
+export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "MenuItemSelected";
 
-export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "StationState", "CombatState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "ShipPicker", "PlayerVoyage", "DiceState"] as const;
+export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "StationState", "CombatState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "ShipPicker", "PlayerVoyage", "DiceState"] as const;
