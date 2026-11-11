@@ -310,7 +310,7 @@ namespace LuckyNumbers.Planet
         /// </summary>
         void Shoot()
         {
-            var locked = Cursor.lockState == CursorLockMode.Locked;
+            var locked = PointerLock.Locked;
             _lockSeen |= locked;
             if (!_input.PointerPressed.Value || !(locked || !_lockSeen) || _firstPerson.Held != null || _firstPerson.Equipped != null || Time.time < _nextShot) return;
             var item = _pack.EquippedIn(EquipSlot.Weapon);
@@ -476,7 +476,7 @@ namespace LuckyNumbers.Planet
             if (_down) return;
             _down = true;
             _state.Downed.Value = true;
-            _firstPerson.Active = false;
+            _firstPerson.Lock(ControlLock.Downed);
             _died.Publish(new PlayerDied(cause));
             Debug.Log($"[Combat] down ({cause}): rescue drone");
             var r = C.Rescue;
@@ -492,7 +492,7 @@ namespace LuckyNumbers.Planet
             _health.Current.Value = _health.Max.Value;
             _sheet.Stamina.Value = _sheet.StaminaMax.Value;
             _voyage.Rescued.Value = true;
-            _voyage.Returning.Value = true;
+            _voyage.Arrival.Value = StationArrival.Planet;
             Debug.Log($"[Combat] rescued: lost {lost.Count} relic(s), paid {fee} cr");
             _scenes.Publish(new SceneChangeRequested(GameScene.Station));
         }

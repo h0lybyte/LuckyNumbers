@@ -294,11 +294,11 @@ namespace LuckyNumbers.Station
             _leaving = true;
             _flight.Stop();
             _ship.EnginesOff();
-            Cursor.lockState = CursorLockMode.None;
+            PointerLock.Release();
             _view.Hint("", 0f);
             Debug.Log("[Orbit] docked: back to the station");
             await UniTask.Delay(TimeSpan.FromSeconds(0.6), cancellationToken: _cts.Token);
-            _voyage.Docked.Value = true;   // the station puts you off the ship beside it
+            _voyage.Arrival.Value = StationArrival.Orbit;   // the station puts you off the ship beside it
             _scenes.Publish(new SceneChangeRequested(GameScene.Station));
         }
 

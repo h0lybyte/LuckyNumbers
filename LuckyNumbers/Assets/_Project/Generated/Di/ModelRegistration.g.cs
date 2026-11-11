@@ -78,6 +78,7 @@ namespace LuckyNumbers.Model
             builder.Register<LandingSite>(Lifetime.Singleton);
             builder.Register<PlayerShip>(Lifetime.Singleton);
             builder.Register<PlayerHealth>(Lifetime.Singleton);
+            builder.Register<PlayerControl>(Lifetime.Singleton);
             builder.Register<ShipPicker>(Lifetime.Singleton);
             builder.Register<PlayerVoyage>(Lifetime.Singleton);
             builder.Register<SaveSlots>(Lifetime.Singleton);

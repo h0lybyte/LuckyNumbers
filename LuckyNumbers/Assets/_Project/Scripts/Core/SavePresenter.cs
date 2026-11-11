@@ -202,9 +202,13 @@ namespace LuckyNumbers.Core
             _voyage.LastPayout.Value = 0;
             _voyage.Rescued.Value = false;
             // You wake at the station: back from wherever the save was.
-            _voyage.Returning.Value = save.scene == nameof(GameScene.Planet) || save.scene == nameof(GameScene.Intro);
-            _voyage.Training.Value = save.scene == nameof(GameScene.FlightSchool);
-            _voyage.Docked.Value = save.scene == nameof(GameScene.Orbit);   // flying round outside: docked again
+            _voyage.Arrival.Value = save.scene switch
+            {
+                nameof(GameScene.Planet) or nameof(GameScene.Intro) => StationArrival.Planet,
+                nameof(GameScene.FlightSchool) => StationArrival.FlightSchool,
+                nameof(GameScene.Orbit) => StationArrival.Orbit,   // flying round outside: docked again
+                _ => StationArrival.None,
+            };
             RestoreJob(save.job);
 
             _state.Active.Value = index;

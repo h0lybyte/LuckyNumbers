@@ -249,6 +249,10 @@ function Inspector() {
       <header>
         <strong>Bridge</strong>
         <span className={ready ? "ok" : "wait"}>{ready ? "connected" : "waiting for Unity"}</span>
+        {/* Who holds the player (ControlLock bits): "free" when none. */}
+        <span className="hint" title="PlayerControl.locks">
+          control: {states.PlayerControl?.locks.length ? states.PlayerControl.locks.join(" + ") : "free"}
+        </span>
         <span className="hint">` to close</span>
       </header>
 

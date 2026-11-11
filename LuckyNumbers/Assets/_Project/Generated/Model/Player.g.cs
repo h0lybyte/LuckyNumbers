@@ -9,6 +9,64 @@ using R3;
 
 namespace LuckyNumbers.Model
 {
+    /// <summary>
+    /// Why the player can't walk and look right now, one bit per owner. Each system sets and clears only its own bit
+    /// (IFirstPerson.Lock / Unlock); the player has control when none is set. Overlaps resolve themselves: closing the
+    /// map while an encounter card is up clears MAP only, and the card still holds you.
+    /// </summary>
+    [System.Flags]
+    public enum ControlLock
+    {
+        None = 0,
+        /// <summary>
+        /// The scene hasn't handed you control yet (set from the start; the wake-up, the station spawn clear it).
+        /// </summary>
+        Spawn = 1,
+        /// <summary>
+        /// In the ship's seat: flying down, or boarded to fly back out.
+        /// </summary>
+        Vehicle = 2,
+        /// <summary>
+        /// The planet map is open (or opening / closing). Frees the pointer.
+        /// </summary>
+        Map = 4,
+        /// <summary>
+        /// An encounter card is up: time stands still. Frees the pointer.
+        /// </summary>
+        Encounter = 8,
+        /// <summary>
+        /// Knocked down: the rescue drone takes it from here.
+        /// </summary>
+        Downed = 16,
+        /// <summary>
+        /// Fading out to another scene.
+        /// </summary>
+        Leaving = 32,
+    }
+
+    /// <summary>
+    /// Where you're coming back to the station from: one at a time; the station reads it as it loads, then clears it.
+    /// </summary>
+    public enum StationArrival
+    {
+        /// <summary>
+        /// Not coming back from anywhere: the station's spawn.
+        /// </summary>
+        None = 0,
+        /// <summary>
+        /// Out of the planet's atmosphere (or rescued): beside your ship, and the museum calls (the homecoming).
+        /// </summary>
+        Planet = 1,
+        /// <summary>
+        /// From the Flight School: beside its console (not by your ship, no homecoming).
+        /// </summary>
+        FlightSchool = 2,
+        /// <summary>
+        /// Docked again after flying round outside (GameScene.Orbit): beside your ship (no homecoming).
+        /// </summary>
+        Orbit = 3,
+    }
+
     public sealed class PlayerConfig
     {
         public int MaxHealth { get; set; }
@@ -51,6 +109,20 @@ namespace LuckyNumbers.Model
         {
             Current.Dispose();
             Max.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Who holds the player right now (FirstPersonPresenter writes it; each on-foot scene starts at SPAWN, and it
+    /// keeps the last one's outside them).
+    /// </summary>
+    public sealed class PlayerControl : IDisposable
+    {
+        public readonly ReactiveProperty<ControlLock> Locks = new ReactiveProperty<ControlLock>();
+
+        public void Dispose()
+        {
+            Locks.Dispose();
         }
     }
 
@@ -187,7 +259,7 @@ namespace LuckyNumbers.Model
     /// </summary>
     public sealed class PlayerVoyage : IDisposable
     {
-        public readonly ReactiveProperty<bool> Returning = new ReactiveProperty<bool>();
+        public readonly ReactiveProperty<StationArrival> Arrival = new ReactiveProperty<StationArrival>();
         public readonly ReactiveProperty<int> Credits = new ReactiveProperty<int>();
         public readonly ReactiveProperty<int> LastPayout = new ReactiveProperty<int>();
         /// <summary>
@@ -198,24 +270,14 @@ namespace LuckyNumbers.Model
         /// Brought back by the rescue drone (you went down on the planet): the station's call says so.
         /// </summary>
         public readonly ReactiveProperty<bool> Rescued = new ReactiveProperty<bool>();
-        /// <summary>
-        /// At the Flight School: back at the station you step out beside its console (not by your ship, no homecoming).
-        /// </summary>
-        public readonly ReactiveProperty<bool> Training = new ReactiveProperty<bool>();
-        /// <summary>
-        /// Docked again after flying round outside (GameScene.Orbit): you step off beside your ship (no homecoming).
-        /// </summary>
-        public readonly ReactiveProperty<bool> Docked = new ReactiveProperty<bool>();
 
         public void Dispose()
         {
-            Returning.Dispose();
+            Arrival.Dispose();
             Credits.Dispose();
             LastPayout.Dispose();
             Trips.Dispose();
             Rescued.Dispose();
-            Training.Dispose();
-            Docked.Dispose();
         }
     }
 }

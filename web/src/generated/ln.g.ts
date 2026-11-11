@@ -45,6 +45,26 @@ export type JobKind =
   | "Clear"
   | "Retrieve";
 
+/**
+ * Why the player can't walk and look right now, one bit per owner. Each system sets and clears only its own bit
+ * (IFirstPerson.Lock / Unlock); the player has control when none is set. Overlaps resolve themselves: closing the
+ * map while an encounter card is up clears MAP only, and the card still holds you.
+ */
+export type ControlLock =
+  | "Spawn"
+  | "Vehicle"
+  | "Map"
+  | "Encounter"
+  | "Downed"
+  | "Leaving";
+
+/** Where you're coming back to the station from: one at a time; the station reads it as it loads, then clears it. */
+export type StationArrival =
+  | "None"
+  | "Planet"
+  | "FlightSchool"
+  | "Orbit";
+
 export type MenuAction =
   | "Unspecified"
   | "Play"
@@ -323,6 +343,14 @@ export interface PlayerHealth {
 }
 
 /**
+ * Who holds the player right now (FirstPersonPresenter writes it; each on-foot scene starts at SPAWN, and it
+ * keeps the last one's outside them).
+ */
+export interface PlayerControl {
+  locks: ControlLock[];
+}
+
+/**
  * The hangar, after character creation on the title (Title/ShipPickerPresenter): your fighter turns in front of
  * the camera while the page cycles its skins, then launches. `skin` is the file name (Art/Models/Fighter/Skins),
  * `index` of `count`. The choice goes to PlayerShip.
@@ -350,17 +378,13 @@ export interface ShipPicker {
  * and your credits (the museum pays for relics you bring back), with the last payout for the page's toast.
  */
 export interface PlayerVoyage {
-  returning: boolean;
+  arrival: StationArrival;
   credits: number;
   lastPayout: number;
   /** Trips down to a planet so far: the first one plays the intro cutscene, later ones fly straight down. */
   trips: number;
   /** Brought back by the rescue drone (you went down on the planet): the station's call says so. */
   rescued: boolean;
-  /** At the Flight School: back at the station you step out beside its console (not by your ship, no homecoming). */
-  training: boolean;
-  /** Docked again after flying round outside (GameScene.Orbit): you step off beside your ship (no homecoming). */
-  docked: boolean;
 }
 
 /**
@@ -648,6 +672,7 @@ export interface WebStates {
   LandingSite: LandingSite;
   PlayerShip: PlayerShip;
   PlayerHealth: PlayerHealth;
+  PlayerControl: PlayerControl;
   ShipPicker: ShipPicker;
   PlayerVoyage: PlayerVoyage;
   SaveSlots: SaveSlots;
@@ -702,4 +727,4 @@ export interface WebEvents {
 /** Events the page may publish into the game. */
 export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "CharacterCallsignRequested" | "SceneChangeRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "SaveSlotsReady" | "SaveSlotPicked" | "SaveSlotDeleteRequested" | "MenuItemSelected";
 
-export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "CombatState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "ShipPicker", "PlayerVoyage", "SaveSlots", "DiceState"] as const;
+export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "CombatState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "PlayerControl", "ShipPicker", "PlayerVoyage", "SaveSlots", "DiceState"] as const;

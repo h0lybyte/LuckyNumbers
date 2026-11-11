@@ -44,6 +44,7 @@ namespace LuckyNumbers.Model
             "LandingSite",
             "PlayerShip",
             "PlayerHealth",
+            "PlayerControl",
             "ShipPicker",
             "PlayerVoyage",
             "SaveSlots",
@@ -285,51 +286,54 @@ namespace LuckyNumbers.Model
                 sink.MarkState(15);
             }
             {
-                var s = c.Resolve<ShipPicker>();
-                d.Add(s.Open.Subscribe(_ => sink.MarkState(16)));
-                d.Add(s.Skin.Subscribe(_ => sink.MarkState(16)));
-                d.Add(s.Index.Subscribe(_ => sink.MarkState(16)));
-                d.Add(s.Count.Subscribe(_ => sink.MarkState(16)));
-                d.Add(s.Name.Subscribe(_ => sink.MarkState(16)));
-                d.Add(s.Role.Subscribe(_ => sink.MarkState(16)));
-                d.Add(s.Description.Subscribe(_ => sink.MarkState(16)));
-                d.Add(s.Speed.Subscribe(_ => sink.MarkState(16)));
-                d.Add(s.Agility.Subscribe(_ => sink.MarkState(16)));
-                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(16)));
-                d.Add(s.Efficiency.Subscribe(_ => sink.MarkState(16)));
-                d.Add(s.Toughness.Subscribe(_ => sink.MarkState(16)));
-                d.Add(s.Firepower.Subscribe(_ => sink.MarkState(16)));
-                d.Add(s.Guns.Subscribe(_ => sink.MarkState(16)));
+                var s = c.Resolve<PlayerControl>();
+                d.Add(s.Locks.Subscribe(_ => sink.MarkState(16)));
                 sink.MarkState(16);
             }
             {
-                var s = c.Resolve<PlayerVoyage>();
-                d.Add(s.Returning.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.Credits.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.LastPayout.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.Trips.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.Rescued.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.Training.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.Docked.Subscribe(_ => sink.MarkState(17)));
+                var s = c.Resolve<ShipPicker>();
+                d.Add(s.Open.Subscribe(_ => sink.MarkState(17)));
+                d.Add(s.Skin.Subscribe(_ => sink.MarkState(17)));
+                d.Add(s.Index.Subscribe(_ => sink.MarkState(17)));
+                d.Add(s.Count.Subscribe(_ => sink.MarkState(17)));
+                d.Add(s.Name.Subscribe(_ => sink.MarkState(17)));
+                d.Add(s.Role.Subscribe(_ => sink.MarkState(17)));
+                d.Add(s.Description.Subscribe(_ => sink.MarkState(17)));
+                d.Add(s.Speed.Subscribe(_ => sink.MarkState(17)));
+                d.Add(s.Agility.Subscribe(_ => sink.MarkState(17)));
+                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(17)));
+                d.Add(s.Efficiency.Subscribe(_ => sink.MarkState(17)));
+                d.Add(s.Toughness.Subscribe(_ => sink.MarkState(17)));
+                d.Add(s.Firepower.Subscribe(_ => sink.MarkState(17)));
+                d.Add(s.Guns.Subscribe(_ => sink.MarkState(17)));
                 sink.MarkState(17);
             }
             {
-                var s = c.Resolve<SaveSlots>();
-                d.Add(s.Open.Subscribe(_ => sink.MarkState(18)));
-                d.Add(s.Active.Subscribe(_ => sink.MarkState(18)));
-                NotifyCollectionChangedEventHandler<string> hSlots = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(18);
-                s.Slots.CollectionChanged += hSlots;
-                d.Add(Disposable.Create(() => s.Slots.CollectionChanged -= hSlots));
+                var s = c.Resolve<PlayerVoyage>();
+                d.Add(s.Arrival.Subscribe(_ => sink.MarkState(18)));
+                d.Add(s.Credits.Subscribe(_ => sink.MarkState(18)));
+                d.Add(s.LastPayout.Subscribe(_ => sink.MarkState(18)));
+                d.Add(s.Trips.Subscribe(_ => sink.MarkState(18)));
+                d.Add(s.Rescued.Subscribe(_ => sink.MarkState(18)));
                 sink.MarkState(18);
             }
             {
+                var s = c.Resolve<SaveSlots>();
+                d.Add(s.Open.Subscribe(_ => sink.MarkState(19)));
+                d.Add(s.Active.Subscribe(_ => sink.MarkState(19)));
+                NotifyCollectionChangedEventHandler<string> hSlots = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(19);
+                s.Slots.CollectionChanged += hSlots;
+                d.Add(Disposable.Create(() => s.Slots.CollectionChanged -= hSlots));
+                sink.MarkState(19);
+            }
+            {
                 var s = c.Resolve<DiceState>();
-                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(19);
+                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(20);
                 s.Faces.CollectionChanged += hFaces;
                 d.Add(Disposable.Create(() => s.Faces.CollectionChanged -= hFaces));
-                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(19)));
-                d.Add(s.Seed.Subscribe(_ => sink.MarkState(19)));
-                sink.MarkState(19);
+                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(20)));
+                d.Add(s.Seed.Subscribe(_ => sink.MarkState(20)));
+                sink.MarkState(20);
             }
             d.Add(c.Resolve<ISubscriber<RelicRolled>>().Subscribe(e =>
             {
@@ -560,10 +564,11 @@ namespace LuckyNumbers.Model
                 case 13: Write(b, c.Resolve<LandingSite>()); break;
                 case 14: Write(b, c.Resolve<PlayerShip>()); break;
                 case 15: Write(b, c.Resolve<PlayerHealth>()); break;
-                case 16: Write(b, c.Resolve<ShipPicker>()); break;
-                case 17: Write(b, c.Resolve<PlayerVoyage>()); break;
-                case 18: Write(b, c.Resolve<SaveSlots>()); break;
-                case 19: Write(b, c.Resolve<DiceState>()); break;
+                case 16: Write(b, c.Resolve<PlayerControl>()); break;
+                case 17: Write(b, c.Resolve<ShipPicker>()); break;
+                case 18: Write(b, c.Resolve<PlayerVoyage>()); break;
+                case 19: Write(b, c.Resolve<SaveSlots>()); break;
+                case 20: Write(b, c.Resolve<DiceState>()); break;
             }
         }
 
@@ -1185,6 +1190,14 @@ namespace LuckyNumbers.Model
             b.Append('}');
         }
 
+        static void Write(StringBuilder b, PlayerControl s)
+        {
+            b.Append('{');
+            b.Append("\"locks\":");
+            ControlLockNames(b, s.Locks.Value);
+            b.Append('}');
+        }
+
         static void Write(StringBuilder b, ShipPicker s)
         {
             b.Append('{');
@@ -1222,8 +1235,8 @@ namespace LuckyNumbers.Model
         static void Write(StringBuilder b, PlayerVoyage s)
         {
             b.Append('{');
-            b.Append("\"returning\":");
-            b.Append(s.Returning.Value ? "true" : "false");
+            b.Append("\"arrival\":");
+            Json.Str(b, StationArrivalName(s.Arrival.Value));
             b.Append(",\"credits\":");
             Json.Num(b, s.Credits.Value);
             b.Append(",\"lastPayout\":");
@@ -1232,10 +1245,6 @@ namespace LuckyNumbers.Model
             Json.Num(b, s.Trips.Value);
             b.Append(",\"rescued\":");
             b.Append(s.Rescued.Value ? "true" : "false");
-            b.Append(",\"training\":");
-            b.Append(s.Training.Value ? "true" : "false");
-            b.Append(",\"docked\":");
-            b.Append(s.Docked.Value ? "true" : "false");
             b.Append('}');
         }
 
@@ -1808,6 +1817,74 @@ namespace LuckyNumbers.Model
                 case "Salvage": return JobKind.Salvage;
                 case "Clear": return JobKind.Clear;
                 case "Retrieve": return JobKind.Retrieve;
+                default: return default;
+            }
+        }
+
+        static void ControlLockNames(StringBuilder b, ControlLock v)
+        {
+            b.Append('[');
+            var first = true;
+            if ((v & ControlLock.Spawn) != 0)
+            {
+                if (!first) b.Append(',');
+                first = false;
+                Json.Str(b, "Spawn");
+            }
+            if ((v & ControlLock.Vehicle) != 0)
+            {
+                if (!first) b.Append(',');
+                first = false;
+                Json.Str(b, "Vehicle");
+            }
+            if ((v & ControlLock.Map) != 0)
+            {
+                if (!first) b.Append(',');
+                first = false;
+                Json.Str(b, "Map");
+            }
+            if ((v & ControlLock.Encounter) != 0)
+            {
+                if (!first) b.Append(',');
+                first = false;
+                Json.Str(b, "Encounter");
+            }
+            if ((v & ControlLock.Downed) != 0)
+            {
+                if (!first) b.Append(',');
+                first = false;
+                Json.Str(b, "Downed");
+            }
+            if ((v & ControlLock.Leaving) != 0)
+            {
+                if (!first) b.Append(',');
+                first = false;
+                Json.Str(b, "Leaving");
+            }
+            b.Append(']');
+        }
+
+        static string StationArrivalName(StationArrival v)
+        {
+            switch (v)
+            {
+                case StationArrival.None: return "None";
+                case StationArrival.Planet: return "Planet";
+                case StationArrival.FlightSchool: return "FlightSchool";
+                case StationArrival.Orbit: return "Orbit";
+                default: return ((int)v).ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
+        static StationArrival StationArrivalParse(object v)
+        {
+            if (v is double n) return (StationArrival)(int)n;
+            switch (v as string)
+            {
+                case "None": return StationArrival.None;
+                case "Planet": return StationArrival.Planet;
+                case "FlightSchool": return StationArrival.FlightSchool;
+                case "Orbit": return StationArrival.Orbit;
                 default: return default;
             }
         }

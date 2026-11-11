@@ -41,8 +41,7 @@ namespace LuckyNumbers.Planet
         public void Step(PlayerInput input, float dt, float speed, float agility, bool level, ShipView ship)
         {
             var pressed = input.PointerPressed.Value;
-            if (pressed && Cursor.lockState != CursorLockMode.Locked) Cursor.lockState = CursorLockMode.Locked;
-            var steering = Cursor.lockState == CursorLockMode.Locked || pressed;
+            var steering = PointerLock.Steer(pressed);
             var look = steering ? new Vector2(input.Look.Value.X, input.Look.Value.Y) : Vector2.zero;
             var move = input.Move.Value;
             var roll = input.Roll.Value;

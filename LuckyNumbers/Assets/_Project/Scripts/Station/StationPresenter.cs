@@ -65,7 +65,7 @@ namespace LuckyNumbers.Station
         readonly PlayerVoyage _voyage;
         readonly IInventory _pack;
         readonly IPublisher<CharacterXpGained> _xp;
-        bool _returning, _training, _docked;
+        StationArrival _arrival;   // where you came in from (PlayerVoyage.arrival, spent as the station loads)
         // Jobs: which call is ringing / playing, the board's offers, the body the station orbits.
         enum CallKind { Dispatch, Homecoming, Board }
         CallKind _ringKind, _activeKind;
@@ -97,7 +97,8 @@ namespace LuckyNumbers.Station
 
         StationLayout _layout;   // as built: content's, seeded (generator), or the page's editor
         readonly Dictionary<Vector2Int, string> _roomOf = new();
-        bool _inSpace, _leaving, _interact, _toggleMap, _closeMap;
+        bool _inSpace, _interact, _toggleMap, _closeMap;
+        bool Leaving => (_firstPerson.Locks & ControlLock.Leaving) != 0;   // fading out to the next scene
         Vector3 _orbitPosition, _dockPosition;
         Bounds _hull;   // the docked ship's world bounds (boarding is measured from it)
         Quaternion _stationInSpace = Quaternion.identity;
@@ -155,13 +156,9 @@ namespace LuckyNumbers.Station
             SetLights(StationLightMode.On);
             SetGlow(_config.Glow);
             SetPsx(false);
-            _returning = _voyage.Returning.Value;
-            _voyage.Returning.Value = false;
-            _training = _voyage.Training.Value && !_returning;
-            _voyage.Training.Value = false;
-            _docked = _voyage.Docked.Value && !_returning;
-            _voyage.Docked.Value = false;
-            if (_returning && _voyage.Trips.Value == 0) _voyage.Trips.Value = 1;   // back from a planet: you've been down
+            _arrival = _voyage.Arrival.Value;
+            _voyage.Arrival.Value = StationArrival.None;
+            if (_arrival == StationArrival.Planet && _voyage.Trips.Value == 0) _voyage.Trips.Value = 1;   // back from a planet: you've been down
             _state.Call.Value = CallPhase.None;
             _caller = _config.Call?.Caller ?? "";
             _state.Caller.Value = _caller;
@@ -185,7 +182,7 @@ namespace LuckyNumbers.Station
 
             var spawn = StationPlan.Centre(_station.Plan.Spawn);
             Teleport(spawn, _config.SpawnYaw);
-            _firstPerson.Active = true;
+            _firstPerson.Unlock(ControlLock.Spawn);
             PlaceWeapon(spawn, _config.SpawnYaw);
 
             _ui.Bind();
@@ -200,9 +197,7 @@ namespace LuckyNumbers.Station
                 _voyage.Trips.Value = 1;   // between jobs: the board at the ship
                 Debug.Log("[Station] dev: ?ln-board, between jobs beside the ship");
             }
-            if (_returning || DevBoard) TeleportBesideShip();
-            if (_training) TeleportBesideConsole(StationAction.FlightSchool);
-            if (_docked) TeleportBesideShip();
+            PlaceOnArrival();
             _flow.Preload(NextScene);
             PlaceInSpace(_cts.Token).Forget();
         }
@@ -340,9 +335,7 @@ namespace LuckyNumbers.Station
                 Teleport(StationPlan.Centre(_station.Plan.Spawn), _config.SpawnYaw);
                 PlaceWeapon(StationPlan.Centre(_station.Plan.Spawn), _config.SpawnYaw);   // the new spawn's
                 DockShip();
-                if (_returning || DevBoard) TeleportBesideShip();
-                if (_training) TeleportBesideConsole(StationAction.FlightSchool);
-                if (_docked) TeleportBesideShip();
+                PlaceOnArrival();
             }
             // The freighter of the job you're on (or were on, coming back): its site's own cargo manifest.
             var manifest = LuckyNumbers.Cargo.Manifest.Generate(GameContent.Cargo, Jobs.SiteSeed(_space.Seed, _job.Seed.Value));
@@ -357,7 +350,7 @@ namespace LuckyNumbers.Station
             _stationInSpace = Quaternion.LookRotation((Vector3)(at - (float3)_orbitPosition), Vector3.up);
             _space.Camera.nearClipPlane = math.max(0.001f, diameter * 0.01f);
             _inSpace = true;
-            if (_returning) Homecoming();
+            if (_arrival == StationArrival.Planet) Homecoming();
             Debug.Log($"[Station] ready: orbiting {target} \"{_planet}\" (seed {_space.Seed})"); // marker for ln.py webshot
         }
 
@@ -372,9 +365,9 @@ namespace LuckyNumbers.Station
                 var cam = _space.Camera;
                 cam.transform.SetPositionAndRotation(_orbitPosition, _stationInSpace * eyes.transform.rotation);
                 cam.fieldOfView = eyes.fieldOfView;
-                if (!_leaving) _fade = Mathf.MoveTowards(_fade, 0f, dt / 0.8f);
+                if (!Leaving) _fade = Mathf.MoveTowards(_fade, 0f, dt / 0.8f);
             }
-            if (_leaving) _fade = Mathf.MoveTowards(_fade, 1f, dt / 0.6f);
+            if (Leaving) _fade = Mathf.MoveTowards(_fade, 1f, dt / 0.6f);
             _ui.Fade(_fade);
 
             var position = _player.Body.transform.position;
@@ -431,7 +424,7 @@ namespace LuckyNumbers.Station
             if (_state.Prompt.Value != prompt) _state.Prompt.Value = prompt;
             _firstPerson.InteractElsewhere = prompt != "";   // E answers / uses / boards: the gun stays put
 
-            if (_interact && !_leaving)
+            if (_interact && !Leaving)
             {
                 if (_state.Call.Value == CallPhase.Ringing) Answer();
                 else if (console != null) Use(console.Action);
@@ -583,8 +576,7 @@ namespace LuckyNumbers.Station
         void ToFlightSchool()
         {
             _next = GameScene.FlightSchool;
-            _leaving = true;
-            _firstPerson.Active = false;
+            _firstPerson.Lock(ControlLock.Leaving);
             _state.Prompt.Value = "";
             Debug.Log("[Station] to the Flight School");
             Leave(_cts.Token).Forget();
@@ -594,8 +586,7 @@ namespace LuckyNumbers.Station
         void Undock()
         {
             _next = GameScene.Orbit;
-            _leaving = true;
-            _firstPerson.Active = false;
+            _firstPerson.Lock(ControlLock.Leaving);
             _state.Prompt.Value = "";
             PlayerShipStats.Refuel(_playerShip);   // docked: the station fills the tank
             Debug.Log("[Station] launch: out of the bay");
@@ -620,6 +611,16 @@ namespace LuckyNumbers.Station
         }
 
         /// <summary>Off the ship: on the deck beside it (the first open side of its hull), facing it.</summary>
+        /// <summary>
+        /// Stand where you came in: by the Flight School console, beside your ship (or there for ?ln-board), or the
+        /// spawn (left as is).
+        /// </summary>
+        void PlaceOnArrival()
+        {
+            if (_arrival == StationArrival.FlightSchool) TeleportBesideConsole(StationAction.FlightSchool);
+            else if (_arrival != StationArrival.None || DevBoard) TeleportBesideShip();
+        }
+
         void TeleportBesideShip()
         {
             var c = _hull.center;
@@ -723,7 +724,7 @@ namespace LuckyNumbers.Station
         /// <summary>A job off the board: take it and leave on it.</summary>
         void Accept(int index)
         {
-            if (!_board.Open.Value || index < 0 || index >= _offers.Count || _leaving) return;
+            if (!_board.Open.Value || index < 0 || index >= _offers.Count || Leaving) return;
             Jobs.Take(_job, _offers[index]);
             _board.Open.Value = false;
             _state.Objective.Value = Fill(J.TakenObjective);
@@ -742,10 +743,9 @@ namespace LuckyNumbers.Station
             }
             _next = NextScene;
             _voyage.Trips.Value++;
-            _leaving = true;
             PlayerShipStats.Refuel(_playerShip);   // docked: the station fills the tank
             Debug.Log($"[Station] refuelled: {_playerShip.Fuel.Value:0} units");
-            _firstPerson.Active = false;
+            _firstPerson.Lock(ControlLock.Leaving);
             _state.Prompt.Value = "";
             Leave(_cts.Token).Forget();
         }

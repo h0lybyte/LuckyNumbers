@@ -30,6 +30,8 @@ def _check(model: Model, msg: Message) -> None:
                                       or not all(f.type in SCALARS or f.type == T_ENUM for f in msg.fields)):
         raise ValueError(f"{msg.full}: (ln.web_in) goes on an (ln.event) whose fields are all scalars/enums")
     for f in msg.fields:
+        if f.type == T_ENUM and model.enums[f.type_name].flags and (f.repeated or OPT_WEB_IN in msg.options):
+            raise ValueError(f"{msg.full}.{f.name}: (ln.flags) enums go out to the page only, and not repeated")
         if f.type in SCALARS or f.type == T_ENUM:
             continue
         if f.type == T_MESSAGE and OPT_VALUE in model.messages[f.type_name].options:
@@ -53,7 +55,8 @@ class _CSharp:
     def write_value(self, f: Field, expr: str) -> str:
         """Statement appending `expr` (of field f's element type) as JSON to `b`."""
         if f.type == T_ENUM:
-            return f"Json.Str(b, {self.m.enums[f.type_name].name}Name({expr}));"
+            e = self.m.enums[f.type_name]
+            return f"{e.name}Names(b, {expr});" if e.flags else f"Json.Str(b, {e.name}Name({expr}));"
         if f.type == T_MESSAGE:
             return f"Write(b, {expr});"
         if f.type == 9:
@@ -161,6 +164,17 @@ class _CSharp:
         for full in values:
             L += self.writer(self.m.messages[full], state=False) + [""]
         for e in enums:
+            if e.flags:   # the set bits' names, as an array
+                L += [f"        static void {e.name}Names(StringBuilder b, {e.name} v)", "        {",
+                      "            b.Append('[');", "            var first = true;"]
+                for n, num, _ in e.values:
+                    if num == 0:
+                        continue
+                    L += [f"            if ((v & {e.name}.{enum_member(e, n)}) != 0)", "            {",
+                          "                if (!first) b.Append(',');", "                first = false;",
+                          f'                Json.Str(b, "{enum_member(e, n)}");', "            }"]
+                L += ["            b.Append(']');", "        }", ""]
+                continue
             L += [f"        static string {e.name}Name({e.name} v)", "        {", "            switch (v)", "            {"]
             L += [f'                case {e.name}.{enum_member(e, n)}: return "{enum_member(e, n)}";' for n, _, _ in e.values]
             L += ["                default: return ((int)v).ToString(CultureInfo.InvariantCulture);", "            }",
@@ -354,7 +368,8 @@ def _ts_type(model: Model, f: Field) -> str:
     if f.type in TS_SCALARS:
         t = TS_SCALARS[f.type]
     elif f.type == T_ENUM:
-        t = model.enums[f.type_name].name
+        e = model.enums[f.type_name]
+        t = f"{e.name}[]" if e.flags else e.name   # (ln.flags): the set members
     else:
         t = model.messages[f.type_name].name
     return f"{t}[]" if f.repeated else t
@@ -367,7 +382,7 @@ def _ts(model: Model, states: list[Message], events: list[Message], enums: list)
     for e in enums:
         L += _ts_doc(e.doc, "")
         L.append(f"export type {e.name} =")
-        L += [f'  | "{enum_member(e, n)}"' for n, _, _ in e.values]
+        L += [f'  | "{enum_member(e, n)}"' for n, num, _ in e.values if not (e.flags and num == 0)]
         L[-1] += ";"
         L.append("")
     for msg in [model.messages[v] for v in values] + states + events:
