@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using LuckyNumbers.Core;
 using LuckyNumbers.Model;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace LuckyNumbers.Planet
 {
@@ -15,22 +14,21 @@ namespace LuckyNumbers.Planet
     public sealed class ShipGuns : IDisposable
     {
         static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
-        static readonly int Color = Shader.PropertyToID("_Color");
+        static readonly int ColorId = Shader.PropertyToID("_Color");
 
-        sealed class Bolt
+        struct Bolt
         {
-            public Transform View;
+            public Shape View;
             public Vector3 Position, Direction;
             public float Speed, Left;
             public ShipGun Gun;
         }
 
         readonly ShipView _ship;
-        readonly Material _material;   // unlit (the wreck beacon's), coloured per gun
         readonly List<Bolt> _bolts = new();
-        readonly List<(Transform view, float age, float life, float size)> _flashes = new();
+        readonly ShapePool _capsules;   // unlit (the wreck beacon's material), coloured per gun
+        readonly Flashes _flashes;
         readonly RaycastHit[] _hits = new RaycastHit[8];
-        MaterialPropertyBlock _block;
         ShipGun[] _barrels = Array.Empty<ShipGun>();
         float[] _ready = Array.Empty<float>();
         float _firepower = 1f;
@@ -42,7 +40,8 @@ namespace LuckyNumbers.Planet
         public ShipGuns(ShipView ship, Material material)
         {
             _ship = ship;
-            _material = material;
+            _capsules = new ShapePool(PrimitiveType.Capsule, material, "Laser", BaseColor, ColorId, prewarm: 8);
+            _flashes = new Flashes(new ShapePool(PrimitiveType.Sphere, material, "Laser flash", BaseColor, ColorId, prewarm: 8), ownsPool: true);
         }
 
         /// <summary>Mount the skin's guns, one per barrel (missing ids leave that barrel empty).</summary>
@@ -76,10 +75,9 @@ namespace LuckyNumbers.Planet
                 if (other != i) _ready[other] = Mathf.Max(_ready[other], Time.time + Mathf.Max(0.02f, gun.Cooldown) / _firepower * 0.5f);
                 var from = _ship.Muzzle(i);
                 var dir = _ship.Pivot.forward;
-                var view = Shape(PrimitiveType.Capsule, from, new Vector3(gun.Width, gun.Length * 0.5f, gun.Width), gun);
-                view.rotation = Quaternion.FromToRotation(Vector3.up, dir);
+                var view = _capsules.Get(from, Quaternion.FromToRotation(Vector3.up, dir), new Vector3(gun.Width, gun.Length * 0.5f, gun.Width), Tint(gun));
                 _bolts.Add(new Bolt { View = view, Position = from, Direction = dir, Speed = gun.Speed + Mathf.Max(0f, carry), Left = gun.Range, Gun = gun });
-                Flash(from, gun.Width * 4f, 0.07f, gun);
+                _flashes.Add(from, gun.Width * 4f, 0.07f, Tint(gun));
                 Shots++;
                 return true;
             }
@@ -97,25 +95,26 @@ namespace LuckyNumbers.Planet
                     hit.collider.GetComponentInParent<IDamageable>()?.Hit("ship", hit.point, b.Direction);
                     if (hit.rigidbody != null && !hit.rigidbody.isKinematic)
                         hit.rigidbody.AddForceAtPosition(b.Direction * b.Gun.Impulse, hit.point, ForceMode.Impulse);
-                    Flash(hit.point + hit.normal * 0.05f, b.Gun.Width * 10f, 0.25f, b.Gun);
+                    _flashes.Add(hit.point + hit.normal * 0.05f, b.Gun.Width * 10f, 0.25f, Tint(b.Gun));
                     Debug.Log($"[Guns] bolt hit {hit.collider.name} after {b.Gun.Range - b.Left + hit.distance:0} m");
-                    Object.Destroy(b.View.gameObject);
-                    _bolts.RemoveAt(i);
+                    Remove(i);
                     continue;
                 }
                 b.Position += b.Direction * step;
                 b.Left -= step;
-                b.View.position = b.Position - b.Direction * (b.Gun.Length * 0.5f);   // the tail trails the head
-                if (b.Left <= 0f) { Object.Destroy(b.View.gameObject); _bolts.RemoveAt(i); }
+                b.View.Transform.position = b.Position - b.Direction * (b.Gun.Length * 0.5f);   // the tail trails the head
+                if (b.Left <= 0f) { Remove(i); continue; }
+                _bolts[i] = b;
             }
-            for (var i = _flashes.Count - 1; i >= 0; i--)
-            {
-                var (view, age, life, size) = _flashes[i];
-                age += dt;
-                if (age >= life) { Object.Destroy(view.gameObject); _flashes.RemoveAt(i); continue; }
-                view.localScale = Vector3.one * (size * Mathf.Lerp(0.4f, 1f, age / life));
-                _flashes[i] = (view, age, life, size);
-            }
+            _flashes.Tick(dt);
+        }
+
+        /// <summary>Back to the pool; swap-remove (the last bolt, already ticked this frame, takes its slot).</summary>
+        void Remove(int i)
+        {
+            _capsules.Release(_bolts[i].View);
+            _bolts[i] = _bolts[^1];
+            _bolts.RemoveAt(_bolts.Count - 1);
         }
 
         bool Cast(Vector3 from, Vector3 dir, float distance, out RaycastHit best)
@@ -133,38 +132,17 @@ namespace LuckyNumbers.Planet
             return found;
         }
 
-        void Flash(Vector3 at, float size, float life, ShipGun gun)
+        static Color Tint(ShipGun gun)
         {
-            var view = Shape(PrimitiveType.Sphere, at, Vector3.one * size * 0.4f, gun);
-            _flashes.Add((view, 0f, life, size));
-        }
-
-        Transform Shape(PrimitiveType type, Vector3 at, Vector3 scale, ShipGun gun)
-        {
-            var go = GameObject.CreatePrimitive(type);
-            go.name = "Laser";
-            Object.Destroy(go.GetComponent<Collider>());
-            var r = go.GetComponent<MeshRenderer>();
-            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            r.receiveShadows = false;
-            if (_material != null) r.sharedMaterial = _material;
             var g = gun.Color;
-            var c = g.R + g.G + g.B > 0f ? new UnityEngine.Color(g.R, g.G, g.B, 1f) : new UnityEngine.Color(2.6f, 0.35f, 0.3f);
-            _block ??= new MaterialPropertyBlock();
-            _block.SetColor(BaseColor, c);
-            _block.SetColor(Color, c);
-            r.SetPropertyBlock(_block);
-            go.transform.SetPositionAndRotation(at, Quaternion.identity);
-            go.transform.localScale = scale;
-            return go.transform;
+            return g.R + g.G + g.B > 0f ? new Color(g.R, g.G, g.B, 1f) : new Color(2.6f, 0.35f, 0.3f);
         }
 
         public void Dispose()
         {
-            foreach (var b in _bolts) if (b.View != null) Object.Destroy(b.View.gameObject);
-            foreach (var f in _flashes) if (f.view != null) Object.Destroy(f.view.gameObject);
             _bolts.Clear();
-            _flashes.Clear();
+            _flashes.Dispose();
+            _capsules.Dispose();
         }
     }
 }
