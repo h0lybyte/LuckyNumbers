@@ -1,0 +1,112 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+import "luckynumbers/v1/common.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Dice-only encounters on a planet (content/encounters.txtpb). Two kinds, both a skill check: d20 + your skill
+// bonus (the character sheet) against a DC (dc + dc_per_danger x the job's danger); a natural 20 always succeeds and
+// a natural 1 always fails. The rolls come from the site's seed (your lucky number).
+// - Standoffs: some of the site's monsters (`standoffs` + per danger) wait for you; walk up to one and time stops
+//   on a card: Fight, Sneak past, Bluff, Intimidate or Back off, each its own skill.
+// - Finds: placeholder caches near the wreck; walk up to one and choose to open it (a skill) or leave it.
+message EncounterConfig {
+  option (ln.config) = true;
+  int32 standoffs = 1;
+  float standoffs_per_danger = 2;
+  // The card opens this close (metres) to a standoff monster that hasn't noticed you.
+  float standoff_distance = 3;
+  // "{monster}" fills in.
+  string standoff_title = 4;
+  string standoff_text = 5;
+  repeated EncounterOption options = 6;
+  int32 finds = 7;
+  float find_distance = 8;
+  // Placed between find_min and find_max metres from the wreck.
+  float find_min = 9;
+  float find_max = 10;
+  repeated EncounterFind find_types = 11;
+  // Fight's edge: your first shot at a monster you chose to fight gets this much on its d20 (surprise).
+  int32 surprise_bonus = 12;
+}
+
+// What a standoff option does on a success or a failure.
+enum EncounterOutcome {
+  ENCOUNTER_OUTCOME_UNSPECIFIED = 0;
+  // It comes for you (Fight; most failures).
+  ENCOUNTER_OUTCOME_FIGHT = 1;
+  // It comes for you and bites first (a bad failure).
+  ENCOUNTER_OUTCOME_AMBUSHED = 2;
+  // It doesn't notice you: it leaves you be unless you shoot it (Sneak).
+  ENCOUNTER_OUTCOME_IGNORED = 3;
+  // It runs off and is gone (Bluff, Intimidate); half its XP.
+  ENCOUNTER_OUTCOME_FLEES = 4;
+  // You get clear: it loses interest for `calm_seconds` (Back off).
+  ENCOUNTER_OUTCOME_CALM = 5;
+}
+
+message EncounterOption {
+  string id = 1;
+  string label = 2;
+  // Skill id (content/character.txtpb skills); empty: no roll (always succeeds, e.g. Fight).
+  string skill = 3;
+  int32 dc = 4;
+  float dc_per_danger = 5;
+  EncounterOutcome success = 6;
+  EncounterOutcome failure = 7;
+  string success_text = 8;
+  string failure_text = 9;
+  float calm_seconds = 10;
+}
+
+message EncounterFind {
+  string id = 1;
+  string name = 2;
+  string text = 3;
+  // Opening it: the skill and DC; or leave it.
+  string skill = 4;
+  int32 dc = 5;
+  string open_label = 6;
+  // On a success: an item into your pack (an item id), credits and XP.
+  repeated string items = 7;
+  int32 credits = 8;
+  int32 xp = 9;
+  string success_text = 10;
+  // On a failure: damage (dice, "" for none).
+  string failure_damage = 11;
+  string failure_text = 12;
+  // Its placeholder block.
+  Vec3 size = 13;
+  Rgba color = 14;
+  float weight = 15;
+}
+
+// The open card (mirrored to the page): its title and text, the choices as "id|label|skill name|bonus|dc" (no
+// skill: bonus and dc 0), and after a roll the result (rolled; d20, bonus, total, dc, success; the outcome text).
+message EncounterState {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  bool open = 1;
+  string kind = 2;
+  string title = 3;
+  string text = 4;
+  repeated string options = 5;
+  bool rolled = 6;
+  string skill = 7;
+  int32 d20 = 8;
+  int32 bonus = 9;
+  int32 total = 10;
+  int32 dc = 11;
+  bool success = 12;
+  string result = 13;
+}
+
+// The page picks a choice on the card (an option id), or "continue" to close it after the roll.
+message EncounterChoice {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  string option = 1;
+}

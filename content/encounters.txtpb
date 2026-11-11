@@ -1,0 +1,62 @@
+# proto-file: luckynumbers/v1/encounter.proto
+# proto-message: luckynumbers.v1.EncounterConfig
+# Dice-only encounters: d20 + your skill vs DC (nat 20 succeeds, nat 1 fails); DC grows with the job's danger.
+# Fills: {monster}. Placeholder values; tune with gameplay.
+
+standoffs: 1
+standoffs_per_danger: 0.5
+standoff_distance: 13
+standoff_title: "{monster}"
+standoff_text: "A {monster} stands between you and the wreck. It hasn't seen you yet."
+surprise_bonus: 5
+
+options { id: "fight" label: "Fight" success: ENCOUNTER_OUTCOME_FIGHT failure: ENCOUNTER_OUTCOME_FIGHT
+          success_text: "You raise your weapon. It hasn't seen you: your first shot gets +5." }
+options { id: "sneak" label: "Sneak past" skill: "stealth" dc: 10 dc_per_danger: 1
+          success: ENCOUNTER_OUTCOME_IGNORED failure: ENCOUNTER_OUTCOME_AMBUSHED
+          success_text: "You keep low and slip by. It never knows you were there."
+          failure_text: "A stone shifts under your boot. It turns, and lunges." }
+options { id: "bluff" label: "Bluff it off" skill: "bluff" dc: 12 dc_per_danger: 1
+          success: ENCOUNTER_OUTCOME_FLEES failure: ENCOUNTER_OUTCOME_FIGHT
+          success_text: "You mimic its warning call. It backs off and bolts."
+          failure_text: "It isn't fooled." }
+options { id: "intimidate" label: "Scare it" skill: "intimidate" dc: 13 dc_per_danger: 1
+          success: ENCOUNTER_OUTCOME_FLEES failure: ENCOUNTER_OUTCOME_AMBUSHED
+          success_text: "You stand tall and roar. It scrambles away."
+          failure_text: "It doesn't scare. It charges." }
+options { id: "back" label: "Back off" skill: "athletics" dc: 8 dc_per_danger: 1
+          success: ENCOUNTER_OUTCOME_CALM failure: ENCOUNTER_OUTCOME_FIGHT calm_seconds: 12
+          success_text: "You back away slowly. It loses interest, for now."
+          failure_text: "You stumble. It's seen you." }
+
+finds: 2
+find_distance: 2.5
+find_min: 14
+find_max: 45
+find_types {
+  id: "cache" name: "Sealed supply cache" weight: 3
+  text: "A crate thrown clear of the wreck, its lock still blinking."
+  skill: "engineering" dc: 11 open_label: "Bypass the lock"
+  items: ["medpatch", "rations"] xp: 40
+  success_text: "The lock clicks open: a med-patch and a ration bar."
+  failure_damage: "1d4" failure_text: "The lock sparks and bites your fingers."
+  size { x: 0.8 y: 0.5 z: 0.6 } color { r: 0.25 g: 0.55 b: 0.85 a: 1 }
+}
+find_types {
+  id: "terminal" name: "Flight recorder" weight: 2
+  text: "The freighter's black box, half buried. Its data is worth something to someone."
+  skill: "computers" dc: 12 open_label: "Pull the data"
+  credits: 150 xp: 60
+  success_text: "You copy the logs. Dispatch will pay 150 credits for them."
+  failure_text: "The drive is corrupted. Nothing worth keeping."
+  size { x: 0.5 y: 0.35 z: 0.5 } color { r: 0.95 g: 0.55 b: 0.15 a: 1 }
+}
+find_types {
+  id: "body" name: "Spacer's remains" weight: 1
+  text: "Someone else got here first, and didn't leave. Their kit is still on them."
+  skill: "medicine" dc: 10 open_label: "Check them carefully"
+  items: ["medpatch", "ping"] xp: 30
+  success_text: "Spores, but you're careful: a med-patch and a ping beacon."
+  failure_damage: "1d6" failure_text: "Spores burst in your face."
+  size { x: 1.6 y: 0.3 z: 0.6 } color { r: 0.55 g: 0.5 b: 0.45 a: 1 }
+}

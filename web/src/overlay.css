@@ -1432,3 +1432,50 @@ kbd {
   letter-spacing: 0.08em;
   max-width: calc(100% - 2 * var(--gap));
 }
+
+/* A dice-only encounter (encounter.tsx): the card, its choices with their odds, the roll. */
+.encounter {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(480px, calc(100% - 2 * var(--gap)));
+  max-height: calc(100% - 2 * var(--gap));
+  overflow: auto;
+  padding: 14px 18px;
+  border: 1px solid var(--edge);
+  border-top: 3px solid var(--warn);
+  background: var(--scan), var(--panel);
+  clip-path: var(--chamfer);
+}
+.encounter.find { border-top-color: var(--neon); }
+.encounter-kicker { font: 10px var(--font-mono); letter-spacing: 0.2em; text-transform: uppercase; color: var(--warn); }
+.encounter.find .encounter-kicker { color: var(--neon); }
+.encounter h2 { margin: 4px 0 2px; font: 600 20px var(--font-mono); letter-spacing: 0.06em; color: #e8fbff; }
+.encounter > p { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+.encounter-options { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.encounter-options button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border: 1px solid var(--edge);
+  background: rgba(0, 229, 255, 0.04);
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.encounter-options button:hover, .encounter-options button:focus-visible { border-color: var(--neon); background: rgba(0, 229, 255, 0.1); }
+.encounter-options b { font: 600 14px var(--font-mono); color: #e8fbff; }
+.encounter-check { font: 11px var(--font-mono); color: var(--fg); text-align: right; }
+.encounter-check small { color: var(--neon); margin-left: 4px; }
+.encounter-result { display: grid; gap: 8px; }
+.encounter-roll { font: 13px var(--font-mono); color: var(--fg); }
+.encounter-roll .die { color: #e8fbff; font-weight: 700; }
+.encounter-result.good strong { color: var(--good); }
+.encounter-result.bad strong { color: var(--bad); }
+.encounter-result p { margin: 0; font-size: 14px; }
+.encounter-result button { justify-self: end; }
