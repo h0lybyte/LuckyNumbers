@@ -175,6 +175,49 @@ namespace LuckyNumbers.Editor
             });
         }
 
+        /// <summary>
+        /// Landing legs (content/engines.txtpb `legs`, LuckyNumbers/LandingLeg) on the fighter, standing on a grey floor,
+        /// from the side-front (left) and below-behind (right), to Logs/preview-legs.png. Rows: coming out (0.3), half
+        /// (0.65), landed on the ground (planet height), docked (the bay's higher deck).
+        /// </summary>
+        [MenuItem("LuckyNumbers/Preview/Render Legs")]
+        public static void RenderLegs()
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            RenderSettings.skybox = new Material(Find("LuckyNumbers/Starfield"));
+            Shader.SetGlobalVector("_LnSunPosition", new Vector4(40f, 30f, -26f, 1f));
+            Shader.SetGlobalVector("_LnSunColor", new Color(1f, 0.95f, 0.85f));
+            Shader.SetGlobalVector("_LnSkyColor", Vector4.zero);
+            Shader.SetGlobalVector("_LnGroundColor", Vector4.zero);
+            const float length = 4f;
+            var ship = SceneBuilder.ShipRig();
+            ship.Show(System.Environment.GetEnvironmentVariable("LN_SHIP_SKIN") ?? "idolknight", length);
+            var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
+            floor.GetComponent<Renderer>().sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Unlit")) { color = new Color(0.3f, 0.3f, 0.32f) };
+            var rows = new (float extend, float height)[]
+            {
+                (0.3f, length * 0.15f), (0.65f, length * 0.15f), (1f, length * 0.15f),   // landing: LandingPresenter.GearDrop
+                (1f, length * 0.16f),                                                 // docked: StationPresenter
+            };
+            Camera Cam(Vector3 at, Vector3 look)
+            {
+                var c = new GameObject("PreviewCamera").AddComponent<Camera>();
+                c.fieldOfView = 40f;
+                c.clearFlags = CameraClearFlags.Skybox;
+                c.nearClipPlane = 0.05f;
+                c.transform.SetPositionAndRotation(at, Quaternion.LookRotation(look - at));
+                return c;
+            }
+            var cams = new[] { Cam(new Vector3(4.2f, 1.1f, 3.2f), new Vector3(0f, 0.3f, 0f)), Cam(new Vector3(-2.6f, 0.25f, -3.6f), new Vector3(0f, 0.25f, 0.2f)) };
+            SaveGrid(cams, rows.Length, "preview-legs.png", row =>
+            {
+                var r = rows[row];
+                ship.Pose(new Vector3(0f, r.height, 0f), Quaternion.identity);
+                ship.GearDown(r.height, instant: true);
+                ship.SnapGear(r.extend);
+            });
+        }
+
         /// <summary>First-person arms: lists clips, renders 4 poses from the rig's own camera to Logs/preview-arms.png.</summary>
         [MenuItem("LuckyNumbers/Preview/Render Arms")]
         public static void RenderArms()

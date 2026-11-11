@@ -44,6 +44,20 @@ message ShipEngines {
   repeated Thruster thrusters = 2;
   // What it turns about (roughly its centre of mass), pivot space.
   Vec3 centre = 3;
+  // Landing legs (ShipView.GearDown / GearUp): out only while it sits landed or docked. None: no legs.
+  repeated LandingLeg legs = 4;
+}
+
+// A landing leg: a grey telescoping strut (LuckyNumbers/LandingLeg: housing, piston, foot pad) from the hull down
+// to the ground, however high the ship sits. Position and radius in the pivot space and units, like Thruster.
+message LandingLeg {
+  string name = 1;
+  // Where it leaves the hull: the top of the strut.
+  Vec3 position = 2;
+  // The housing's radius (the piston is thinner, the foot pad wider).
+  float radius = 3;
+  // Leaned out to its own side (degrees; by position.x, so a leg on the centre line stays straight).
+  float splay_degrees = 4;
 }
 
 // One jet. Position and sizes in the model's pivot space: +Z forward (nose), +Y up, +X right, in model units
