@@ -355,6 +355,16 @@ namespace LuckyNumbers.Editor
             // A test gun by the spawn (StationPresenter drops it there): pick up with E, click fires energy bolts.
             WeaponRig(StationWeapon);
 
+            // The shooting range's weapons (every gun, melee weapon and mod, as in the dev range), parked inactive under
+            // one root: StationRange lays them out on the Range room's bench once the station is built.
+            var rangeWeapons = new GameObject(RangeWeaponsRoot).transform;
+            foreach (var w in Weapons())
+            {
+                var item = WeaponRig(w.name);
+                item.transform.SetParent(rangeWeapons, false);
+                item.SetActive(false);
+            }
+
             // Lamp glow: bloom on the station camera (its strength set from content by StationPresenter).
             eyes.GetUniversalAdditionalCameraData().renderPostProcessing = true;
             var volume = new GameObject("Glow").AddComponent<UnityEngine.Rendering.Volume>();
@@ -593,6 +603,8 @@ namespace LuckyNumbers.Editor
         const string WeaponsDir = "Assets/_Project/Art/Models/Weapons";
         /// <summary>Which of Art/Models/Weapons lies in the station (any of the guns: their hold points are measured).</summary>
         const string StationWeapon = "rifle_block";
+        /// <summary>The station scene's root for the range's weapons (StationRange finds it by this name).</summary>
+        const string RangeWeaponsRoot = "Range weapons";
 
         /// <summary>
         /// A model from Art/Models/Weapons: a root (+Z down the barrel, carryable: Rigidbody + box) holding the model,

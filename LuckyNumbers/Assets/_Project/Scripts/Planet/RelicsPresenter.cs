@@ -381,16 +381,10 @@ namespace LuckyNumbers.Planet
             var size = new Vector3(w * 0.25f, 0.18f, rows.Length * 0.25f);
             at.y = _ground.SurfaceAt(at) + size.y * 0.5f + 0.05f;
 
-            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cube.name = $"PLACEHOLDER_{item.Def.Id}";   // no model yet: replace with the item's own (docs/items.md)
-            UnityEngine.Object.Destroy(cube.GetComponent<Collider>());   // nothing to trip on
-            cube.transform.localScale = size;
-            cube.transform.position = at;
+            // No model yet: a placeholder block, replace with the item's own (docs/items.md). Nothing to trip on.
             var c = item.Def.Color;
-            var block = new MaterialPropertyBlock();
-            block.SetColor("_BaseColor", new Color(c.R, c.G, c.B, 1f));
-            block.SetColor("_Color", new Color(c.R, c.G, c.B, 1f));
-            cube.GetComponent<Renderer>().SetPropertyBlock(block);
+            var cube = Placeholders.Block($"PLACEHOLDER_{item.Def.Id}", size, new Color(c.R, c.G, c.B, 1f), collider: false);
+            cube.transform.position = at;
             _dropped.Add(new Dropped { Item = item, Shape = cube.transform, Rest = at });
             Debug.Log($"[Relics] dropped {Label(item)} ({cube.name})");
         }

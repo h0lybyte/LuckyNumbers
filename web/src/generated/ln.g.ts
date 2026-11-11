@@ -146,6 +146,14 @@ export interface PlayerInventory {
   cooldown: number;
 }
 
+/** You in the range: whether you're in the room, and your shots and hits (on its targets) since you walked in or reset. */
+export interface RangeState {
+  inside: boolean;
+  shots: number;
+  hits: number;
+  hint: string;
+}
+
 /** Live station state (mirrored to the web page). */
 export interface StationState {
   lights: StationLightMode;
@@ -438,6 +446,10 @@ export interface InventoryDropRequested {
   uid: number;
 }
 
+/** The page: start the count again. */
+export interface RangeResetRequested {
+}
+
 /** The page (or a console) answers the ringing call. */
 export interface StationCallAnswered {
 }
@@ -515,6 +527,7 @@ export interface WebStates {
   FlowState: FlowState;
   LoadingState: LoadingState;
   PlayerInventory: PlayerInventory;
+  RangeState: RangeState;
   StationState: StationState;
   JobBoard: JobBoard;
   PlayerJob: PlayerJob;
@@ -550,6 +563,7 @@ export interface WebEvents {
   InventoryMoveRequested: InventoryMoveRequested;
   InventoryUseRequested: InventoryUseRequested;
   InventoryDropRequested: InventoryDropRequested;
+  RangeResetRequested: RangeResetRequested;
   StationCallAnswered: StationCallAnswered;
   StationPlanRequested: StationPlanRequested;
   PsxModeRequested: PsxModeRequested;
@@ -567,6 +581,6 @@ export interface WebEvents {
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "MenuItemSelected";
+export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "SceneChangeRequested" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "MenuItemSelected";
 
-export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "PlayerInventory", "StationState", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "ShipPicker", "PlayerVoyage", "DiceState"] as const;
+export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "PlayerInventory", "RangeState", "StationState", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "ShipPicker", "PlayerVoyage", "DiceState"] as const;

@@ -219,6 +219,20 @@ generator {
     items { piece: "barrel" u: 1.25 v: 0.1 solid: true }
     items { piece: "canister" u: 1.25 v: 0.25 solid: true }
   }
+  rooms {
+    # Long north-south off comms: the door at the south end, then the firing-line bench, targets at the north (range).
+    role: STATION_ROOM_ROLE_RANGE name: "Range" min_width: 4 max_width: 5 min_depth: 10 max_depth: 12
+  }
+}
+
+# --- The shooting range (the generator's Range room) ---
+# Every weapon on its bench (E picks one up, click fires, E puts it down, V side view), loose crates to knock about,
+# and targets at the far end counting your hits. The start of a practice mini-game.
+range {
+  room: "Range"
+  targets: 3
+  crates: 6
+  hint: "E picks up a weapon - click fires / swings - E puts it down - V side view"
 }
 
 # --- Coming back from the planet ---

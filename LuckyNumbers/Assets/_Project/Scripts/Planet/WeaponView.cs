@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -56,6 +57,11 @@ namespace LuckyNumbers.Planet
         public float Recoil => recoil;
 
         sealed class Bolt { public Transform View; public Vector3 Position, Direction; public float Left; }
+
+        /// <summary>Any gun fired (the station's range counts shots).</summary>
+        public static event Action<WeaponView> Fired;
+        /// <summary>Any gun's bolt hit something (the station's range counts hits on its targets).</summary>
+        public static event Action<WeaponView, RaycastHit> BoltHit;
         readonly List<Bolt> _bolts = new();
         readonly List<(Transform view, float age, float life, float size)> _flashes = new();
         readonly RaycastHit[] _hits = new RaycastHit[8];
@@ -114,6 +120,7 @@ namespace LuckyNumbers.Planet
             _flashLight.transform.position = from;
             _flashLight.intensity = 4f;
             Debug.Log($"[Weapon] {name} fired");
+            Fired?.Invoke(this);
             return true;
         }
 
@@ -130,6 +137,7 @@ namespace LuckyNumbers.Planet
                         hit.rigidbody.AddForceAtPosition(b.Direction * impulse, hit.point, ForceMode.Impulse);
                     Flash(hit.point + hit.normal * 0.02f, 0.35f, 0.18f, 0);
                     Debug.Log($"[Weapon] bolt hit {hit.collider.name} after {range - b.Left + hit.distance:0.0} m");
+                    BoltHit?.Invoke(this, hit);
                     Destroy(b.View.gameObject);
                     _bolts.RemoveAt(i);
                     continue;

@@ -3833,6 +3833,15 @@ namespace LuckyNumbers.Model
                             },
                         },
                     },
+                    new StationRoomRule
+                    {
+                        Role = StationRoomRole.Range,
+                        Name = "Range",
+                        MinWidth = 4,
+                        MaxWidth = 5,
+                        MinDepth = 10,
+                        MaxDepth = 12,
+                    },
                 },
                 MinCorridor = 2,
                 MaxCorridor = 4,
@@ -3879,6 +3888,13 @@ namespace LuckyNumbers.Model
                 CharsPerSecond = 38.0f,
                 Objective = "Rest up, or board your ship in the Docking Bay to fly back down",
                 XpPerRelic = 150,
+            },
+            Range = new StationRange
+            {
+                Room = "Range",
+                Targets = 3,
+                Crates = 6,
+                Hint = "E picks up a weapon - click fires / swings - E puts it down - V side view",
             },
         };
 

@@ -34,6 +34,7 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<InventoryUseRequested>(options);
             builder.RegisterMessageBroker<InventoryDropRequested>(options);
             builder.RegisterMessageBroker<ItemEffectRequested>(options);
+            builder.RegisterMessageBroker<RangeResetRequested>(options);
             builder.RegisterMessageBroker<StationCallAnswered>(options);
             builder.RegisterMessageBroker<StationPlanRequested>(options);
             builder.RegisterMessageBroker<PsxModeRequested>(options);
@@ -60,6 +61,7 @@ namespace LuckyNumbers.Model
             builder.Register<CameraHandoff>(Lifetime.Singleton);
             builder.Register<PlayerInput>(Lifetime.Singleton);
             builder.Register<PlayerInventory>(Lifetime.Singleton);
+            builder.Register<RangeState>(Lifetime.Singleton);
             builder.Register<StationState>(Lifetime.Singleton);
             builder.Register<JobBoard>(Lifetime.Singleton);
             builder.Register<PlayerJob>(Lifetime.Singleton);

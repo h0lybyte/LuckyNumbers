@@ -8,8 +8,8 @@ namespace LuckyNumbers.Station
 {
     /// <summary>
     /// Seeded station layouts (StationScene.generator): a hub in the middle, the gallery north of it (towards the
-    /// planet), the docking bay west, comms east, and a corridor south of it with storage, the cabins and
-    /// engineering hanging off it. Sizes, offsets and corridor lengths come from the lucky number; each room joins
+    /// planet), the docking bay west, comms east (with the shooting range north of it), and a corridor south of it with
+    /// storage, the cabins and engineering hanging off it. Sizes, offsets and corridor lengths come from the lucky number; each room joins
     /// its corridor through a doorway; windows go on walls that face away from the hub. Every layout is checked
     /// (doorways between two opposite walkable cells, corridors touching rooms only through doorways, windows on a
     /// room, nothing walkable on the border, everything reachable) and re-rolled until one passes.
@@ -97,9 +97,9 @@ namespace LuckyNumbers.Station
             }
 
             // West / east: the bay and comms, through corridors from the hub's side walls.
-            void Side(StationRoomRule rule, int dir)
+            Room Side(StationRoomRule rule, int dir)
             {
-                if (rule == null) return;
+                if (rule == null) return null;
                 var size = Size(ref rng, rule);
                 var y = Between(ref rng, h.yMin + 1, h.yMax - 2);
                 var length = Between(ref rng, minC, maxC);
@@ -110,10 +110,27 @@ namespace LuckyNumbers.Station
                 Paint(new Vector2Int(door, y), 'D');
                 var y0 = y - Between(ref rng, 1, size.height - 2);
                 var x0 = dir < 0 ? door - size.width : door + 1;
-                AddRoom(rule, rule.Name, new RectInt(x0, y0, size.width, size.height));
+                return AddRoom(rule, rule.Name, new RectInt(x0, y0, size.width, size.height));
             }
             Side(Rule(StationRoomRole.Bay), -1);
-            Side(Rule(StationRoomRole.Comms), +1);
+            var comms = Side(Rule(StationRoomRole.Comms), +1);
+
+            // North of comms: the shooting range, long north-south, its door in comms' north wall through a corridor
+            // (door and bench at its south end, targets at the north).
+            var rangeRule = Rule(StationRoomRole.Range);
+            if (rangeRule != null && comms != null)
+            {
+                var c = comms.Rect;
+                var size = Size(ref rng, rangeRule);
+                var x = Between(ref rng, c.xMin + 1, c.xMax - 2);
+                var length = Between(ref rng, minC, maxC);
+                Paint(new Vector2Int(x, c.yMin - 1), 'D');
+                for (var i = 0; i < length; i++) Paint(new Vector2Int(x, c.yMin - 2 - i), 'c');
+                var door = c.yMin - 2 - length;
+                Paint(new Vector2Int(x, door), 'D');
+                var x0 = x - Between(ref rng, 1, size.width - 2);
+                AddRoom(rangeRule, rangeRule.Name, new RectInt(x0, door - size.height, size.width, size.height));
+            }
 
             // South: a corridor down from the hub, then a spine running west-east with rooms hanging below it.
             var below = new List<(StationRoomRule rule, string name, bool yours)>();
