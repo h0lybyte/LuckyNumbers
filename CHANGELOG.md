@@ -4,6 +4,22 @@ Releases are driven by this file: the **top `## x.y.z` entry is the game version
 Bumping it on `main` builds the Web player, uploads it to itch.io with that version,
 and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version does not rebuild.
 
+## 0.3.3 (2026-11-11)
+
+- feat(combat): per-gun fire rates and dice; strong/crit damage floors
+- ci: warm retry before a cold build; Web release starts on the release commit
+- feat(save): save slots on the title; name your character
+- feat(station): Flight Academy room north of the docking bay
+- feat(orbit): launch from the bay, fly round the station, dock again
+- feat: ship on the map, 10x fuel, wreck only on salvage, range aisles, pick jobs at the ship
+- fix(flight): barrel roll actually carries you sideways
+- fix: no wreck talk on Clear sites; the sidearm is drawn as placeholder blocks
+- refactor(control): one bit-mask for who holds the player
+- chore: ln.py worktrees + moon game:worktrees / worktrees-prune
+- feat(ship): landing legs that come out when it's landed or docked
+- feat(combat): the Aberration, the first monster with a real model
+- chore(moon): game:worktree-new, and worktrees-prune cleans origin too
+
 ## 0.3.2 (2026-11-11)
 
 - chore: set up moon task runner
