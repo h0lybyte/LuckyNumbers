@@ -280,6 +280,14 @@ namespace LuckyNumbers.Model
         public float HardBrake { get; set; }
         public float LevelHeight { get; set; }
         public float LevelRate { get; set; }
+        /// <summary>
+        /// Barrel roll (Shift+Q / Shift+E): a full 360 degree roll that way in barrel_roll_seconds, with a sideways kick of
+        /// barrel_roll_dodge (m/s) the same way; then barrel_roll_cooldown seconds before the next, barrel_roll_fuel units each.
+        /// </summary>
+        public float BarrelRollSeconds { get; set; }
+        public float BarrelRollDodge { get; set; }
+        public float BarrelRollCooldown { get; set; }
+        public float BarrelRollFuel { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public FlightHover Clone() => (FlightHover)MemberwiseClone();
