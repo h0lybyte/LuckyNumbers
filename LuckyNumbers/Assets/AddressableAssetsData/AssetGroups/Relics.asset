@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Relics
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Relics
+  m_GUID: cbdff14020aa94430b80638095d53644
+  m_SerializeEntries:
+  - m_GUID: 661294f395fbd4d44ac1deeba3fb6747
+    m_Address: relic/roman-vase
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b753b80d0cf114148be3a6edc3cde2cd
+    m_Address: relic/water-amulet
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: b9d3571235561429c802157337c555a1, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: d54cdcfb6f0cb442abca49459f401cd5, type: 2}
+    m_SchemaDisplayOrder:
+    - Relics_BundledAssetGroupSchema
+  m_IncludeInBuild: 1
+  m_IncludeInBuildMigrated: 1

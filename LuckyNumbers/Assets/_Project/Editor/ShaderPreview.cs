@@ -512,27 +512,26 @@ namespace LuckyNumbers.Editor
         }
 
         /// <summary>
-        /// The named relics' own models (Planet.unity's artifact models) side by side on a ground plane, resting where
+        /// The named relics' prefabs (Prefabs/Relics) side by side on a ground plane, resting where
         /// RelicsPresenter puts them (0.35 m up), to Logs/preview-relics.png: from eye height, close up on each, and a
         /// low three-quarter view. Logs each one's size.
         /// </summary>
         [MenuItem("LuckyNumbers/Preview/Render Relics")]
         public static void RenderRelics()
         {
-            EditorSceneManager.OpenScene("Assets/_Project/Scenes/Planet.unity", OpenSceneMode.Single);
-            var view = Object.FindFirstObjectByType<LuckyNumbers.Planet.PlanetView>(FindObjectsInactive.Include)
-                       ?? throw new System.Exception("no PlanetView in Planet.unity");
-            var models = new SerializedObject(view).FindProperty("artifactModels");
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var models = new System.Collections.Generic.List<GameObject>();
+            foreach (var guid in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/_Project/Prefabs/Relics" }))
+                models.Add(AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid)));
             var origin = new Vector3(0f, 1000f, 0f);
             var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
             ground.transform.position = origin;
             ground.GetComponent<MeshRenderer>().sharedMaterial = new Material(Find("Universal Render Pipeline/Unlit")) { color = new Color(0.32f, 0.27f, 0.22f) };
             var placed = new System.Collections.Generic.List<Transform>();
-            for (var i = 0; i < models.arraySize; i++)
+            for (var i = 0; i < models.Count; i++)
             {
-                if (models.GetArrayElementAtIndex(i).objectReferenceValue is not Transform t) continue;
+                var t = models[i].transform;
                 var copy = Object.Instantiate(t);
-                copy.gameObject.SetActive(true);
                 copy.position = origin + new Vector3(1.2f * i, 0.35f, 0f);
                 var b = new Bounds();
                 var first = true;
@@ -541,7 +540,7 @@ namespace LuckyNumbers.Editor
                 Debug.Log($"[ShaderPreview] relic {t.name}: {b.size.x:0.00} x {b.size.y:0.00} x {b.size.z:0.00} m, bottom {b.min.y - origin.y:0.00} m");
                 placed.Add(copy);
             }
-            if (placed.Count == 0) throw new System.Exception("no artifact models on PlanetView");
+            if (placed.Count == 0) throw new System.Exception("no relic prefabs in Prefabs/Relics (SceneBuilder.BakeRelics)");
             Shader.SetGlobalVector("_LnSunPosition", new Vector4(40f, 1060f, -30f, 1f));
             Shader.SetGlobalVector("_LnSunColor", Color.white);
             var mid = origin + new Vector3(0.6f * (placed.Count - 1), 0.35f, 0f);

@@ -44,6 +44,8 @@ namespace LuckyNumbers.Editor
             // SceneBuilder.BakeShips: the freighter's hull (and its solid twin, the wreck); ShipYard fits them into the
             // scenes' ShipView shells. Not Orbit: its freighter is never shown, so its shell has no hull.
             new("Ships", "Assets/_Project/Prefabs/Ships", "t:Prefab", "ship/", "Intro", "Planet", "FlightSchool"),
+            // SceneBuilder.BakeRelics: named relics' models (an item's `model`); RelicsPresenter lays them out at the crash site.
+            new("Relics", "Assets/_Project/Prefabs/Relics", "t:Prefab", "relic/", "Planet"),
             // SPIKE: delete with the AddressablesSmoke folder.
             // Labelled Station so Title's preload (its next scene) downloads it: the smoke test exercises prefetch.
             new("Spikes", "Assets/_Project/Spikes/AddressablesSmoke", "t:Prefab", "spike/", "Station"),

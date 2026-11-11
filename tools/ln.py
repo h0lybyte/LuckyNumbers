@@ -5,6 +5,7 @@
     python3 tools/ln.py build-web     headless Web build -> LuckyNumbers/Builds/WebGL
     python3 tools/ln.py serve         serve the Web build with COOP/COEP headers
     python3 tools/ln.py assets        apply Addressables groups/addresses, regenerate AssetKeys.g.cs
+    python3 tools/ln.py relic NAME    open the editor on a relic prefab in Prefab Mode (e.g. roman_vase)
     python3 tools/ln.py bake-grasps   bake weapons' finger grips into weapons.json (needs the build served)
     python3 tools/ln.py deploy        push the Web build to itch.io with butler
     python3 tools/ln.py bump          start the next CHANGELOG.md entry (patch; minor/major) from merged PRs
@@ -305,6 +306,20 @@ def cmd_preview(args) -> int:
     if code != 0 or errors or not out.is_file():
         return fail("preview failed, see log above")
     print(f"Preview: {out}")
+    return 0
+
+
+def cmd_relic(args) -> int:
+    """Open the editor on a relic's prefab (Prefabs/Relics) in Prefab Mode (Editor/RelicOpen.cs)."""
+    if editor_is_open():
+        return fail("Unity already has this project open: double-click "
+                    f"Assets/_Project/Prefabs/Relics/{args.name}.prefab in the Project window instead.")
+    unity = find_unity()
+    LOGS.mkdir(parents=True, exist_ok=True)
+    subprocess.Popen([str(unity), "-projectPath", str(PROJECT), "-executeMethod",
+                      "LuckyNumbers.Editor.RelicOpen.FromCommandLine", "-lnRelic", args.name],
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    print(f"Unity {unity_version()} opening, then {args.name}.prefab in Prefab Mode")
     return 0
 
 
@@ -789,6 +804,9 @@ def main(argv=None) -> int:
     s.add_argument("--timeout", type=int, default=300)
     s.set_defaults(func=cmd_bake_grasps)
 
+    s = sub.add_parser("relic", help="open the editor on a relic's prefab in Prefab Mode (e.g. roman_vase)")
+    s.add_argument("name", nargs="?", default="roman_vase")
+    s.set_defaults(func=cmd_relic)
     s = sub.add_parser("preview", help="render shaders to LuckyNumbers/Logs/preview-<what>.png")
     s.add_argument("what", nargs="?", choices=["space", "ship", "arms", "station", "exhaust", "legs", "monster", "relics"], default="space")
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")

@@ -58,6 +58,7 @@ namespace LuckyNumbers.Planet
         readonly ISubscriber<RelicRolled> _rolled;
         readonly ISubscriber<InputActionPerformed> _actions;
         readonly ISubscriber<DevWarpRequested> _warps;
+        readonly AssetScope _assets;   // the relics' own models (Prefabs/Relics, the Relics group), released with the scene
         readonly List<IDisposable> _subscriptions = new();
         readonly List<Lying> _lying = new();
         readonly List<Dropped> _dropped = new();
@@ -76,8 +77,10 @@ namespace LuckyNumbers.Planet
         public RelicsPresenter(ICrashSite site, PlanetView view, PlayerView player, GroundView ground, IFirstPerson firstPerson,
                                IPublisher<CharacterXpGained> xp, IInventory pack, PlayerInventory packState,
                                ISubscriber<ItemEffectRequested> itemEffects, RelicSite relicSite, ISubscriber<RelicRolled> rolled,
-                               ISubscriber<InputActionPerformed> actions, ISubscriber<DevWarpRequested> warps, IFighter fighter, PlayerJob job)
+                               ISubscriber<InputActionPerformed> actions, ISubscriber<DevWarpRequested> warps, IFighter fighter, PlayerJob job,
+                               AssetScope assets)
         {
+            _assets = assets;
             _job = job;
             _fighter = fighter;
             _warps = warps;
@@ -187,11 +190,39 @@ namespace LuckyNumbers.Planet
 
         float _slowScale = 1f;
 
-        /// <summary>Lay the manifest's relics out between the wreck and the pad, on the ground (not ones you carry).</summary>
+        /// <summary>Once: load the relics' own models (Addressables), then lay them out.</summary>
         void Spawn()
         {
             _spawned = true;
+            SpawnAsync(_cts.Token).Forget();
+        }
+
+        async UniTaskVoid SpawnAsync(CancellationToken ct)
+        {
             var manifest = Manifest.Generate(Config, _site.Seed);
+            // Each named relic's `model` from the Relics group (prefetched with the scene, so this is quick); a relic
+            // without one, or one that fails to load, lies as the plain amulet shape in its colours.
+            var models = new Dictionary<string, Transform>();
+            foreach (var relic in manifest.Relics)
+            {
+                var name = relic.Def.Model;
+                if (string.IsNullOrEmpty(name) || models.ContainsKey(name)) continue;
+                if (!AssetKeys.Relic.TryGetValue(name, out var key))
+                {
+                    Debug.LogWarning($"[Relics] {relic.Def.Id}: model '{name}' isn't a prefab in Prefabs/Relics (SceneBuilder.BakeRelics)");
+                    continue;
+                }
+                try { models[name] = (await _assets.LoadAsync(key, ct)).transform; }
+                catch (OperationCanceledException) { return; }
+                catch (Exception e) { Debug.LogWarning($"[Relics] {relic.Def.Id}: {e.Message}"); }
+            }
+            if (ct.IsCancellationRequested || _view == null) return;
+            Place(manifest, models);
+        }
+
+        /// <summary>Lay the manifest's relics out between the wreck and the pad, on the ground (not ones you carry).</summary>
+        void Place(Manifest manifest, Dictionary<string, Transform> models)
+        {
             var rng = new Random((_site.Seed ^ 0x5E1C5u) | 1u);
             var wreck = _view.Wreck.Pivot.position;
             // Clear of the hull whatever the ship's size: at least the wreck's own footprint (from its renderers) + 4 m.
@@ -206,7 +237,7 @@ namespace LuckyNumbers.Planet
             foreach (var relic in manifest.Relics)
             {
                 if (_pack.Has(relic.Def.Id)) continue;   // unique: already in your pack (brought back from an earlier landing)
-                var own = _view.ArtifactModel(relic.Def.Model);   // the relic's own model, if it has one
+                var own = !string.IsNullOrEmpty(relic.Def.Model) && models.TryGetValue(relic.Def.Model, out var m) ? m : null;
                 var template = own != null ? own : _view.AmuletTemplate;
                 if (template == null) continue;
                 var distance = named == 0 ? min : rng.NextFloat(min, max);
