@@ -16,7 +16,7 @@ namespace LuckyNumbers.Spikes.LibsSmokeTest
         public void Request(GameScene scene) => _publisher.Publish(new SceneChangeRequested(scene));
     }
 
-    /// <summary>Constructor without any attribute: probes whether stripping removes it.</summary>
+    /// <summary>Constructor without any attribute: probes whether stripping removes it (own container, see LibsSmokeTest).</summary>
     public sealed class PlainService
     {
         public readonly int Answer;
@@ -27,6 +27,10 @@ namespace LuckyNumbers.Spikes.LibsSmokeTest
     public sealed class StartProbe : IStartable
     {
         public static bool Started;
+
+        [Inject]   // an implicit constructor is stripped too (Medium), and the scope's build fails without one
+        public StartProbe() { }
+
         public void Start() => Started = true;
     }
 
@@ -38,7 +42,6 @@ namespace LuckyNumbers.Spikes.LibsSmokeTest
             builder.RegisterModelEvents(options); // generated from (ln.event) messages
             builder.RegisterModelState();         // generated from (ln.state) messages
             builder.Register<InjectedService>(Lifetime.Singleton);
-            builder.Register<PlainService>(Lifetime.Singleton);
             builder.RegisterEntryPoint<StartProbe>();
         }, "SmokeTestScope");
     }

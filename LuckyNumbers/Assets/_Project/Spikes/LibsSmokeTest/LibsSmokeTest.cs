@@ -59,26 +59,40 @@ namespace LuckyNumbers.Spikes.LibsSmokeTest
             Check("MessagePipe publish/subscribe", () =>
             {
                 // IL2CPP has no open-generic support: every message type is registered explicitly.
+                // A local provider: GlobalMessagePipe belongs to the game (RootLifetimeScope), don't replace it.
                 var builder = new BuiltinContainerBuilder();
                 builder.AddMessagePipe();
                 builder.AddMessageBroker<int>();
-                GlobalMessagePipe.SetProvider(builder.BuildServiceProvider());
+                var provider = builder.BuildServiceProvider();
                 var got = 0;
-                using var _ = GlobalMessagePipe.GetSubscriber<int>().Subscribe(x => got = x);
-                GlobalMessagePipe.GetPublisher<int>().Publish(5);
+                using var _ = ((ISubscriber<int>)provider.GetService(typeof(ISubscriber<int>))).Subscribe(x => got = x);
+                ((IPublisher<int>)provider.GetService(typeof(IPublisher<int>))).Publish(5);
                 return got == 5;
             });
 
             Line($"INFO R3 default frame provider: {ObservableSystem.DefaultFrameProvider.GetType().Name}");
 
-            Check("Generated content: intro dice 6 6 6", () =>
+            Check("Generated content: intro + title", () =>
             {
-                var dice = GameContent.Intro.Steps[0];
-                return dice.Step == CutsceneStep.StepCase.DiceRoll
-                       && string.Join(",", dice.DiceRoll.Faces) == "6,6,6"
+                // content/intro.txtpb: the ship arrives first (the dice are rolled on the title now), ends on Planet.
+                return GameContent.Intro.Steps[0].Step == CutsceneStep.StepCase.ShipArrives
                        && GameContent.Intro.Steps[^1].GoTo.Scene == GameScene.Planet
                        && GameContent.Title.Title == "Lucky Numbers";
             });
+
+            // Informational: does stripping keep a constructor nothing marks? (Medium: no.) Its own container, so
+            // the probe failing can't break the scope below. The rule this shows: registered types need [Inject].
+            try
+            {
+                var plain = new ContainerBuilder();
+                plain.Register<PlainService>(Lifetime.Singleton);
+                using var c = plain.Build();
+                Line($"INFO VContainer plain ctor (no [Inject]): kept ({c.Resolve<PlainService>().Answer})");
+            }
+            catch (Exception e)
+            {
+                Line($"INFO VContainer plain ctor (no [Inject]): stripped, so register only [Inject] ctors ({e.GetType().Name})");
+            }
 
             // VContainer (+ MessagePipe.VContainer). Separate checks so a stripped
             // constructor shows up as its own failure.
@@ -87,7 +101,6 @@ namespace LuckyNumbers.Spikes.LibsSmokeTest
             if (scope != null)
             {
                 Check("VContainer resolve ([Inject] ctor)", () => scope.Container.Resolve<InjectedService>() != null);
-                Check("VContainer resolve (plain ctor)", () => scope.Container.Resolve<PlainService>().Answer == 42);
                 Check("Generated event via MessagePipe + VContainer", () =>
                 {
                     var got = GameScene.Unspecified;
@@ -128,7 +141,8 @@ namespace LuckyNumbers.Spikes.LibsSmokeTest
                 return true;
             });
 
-            // Informational: managed thread pool on Web (System.Threading is single-threaded there).
+            // Informational: managed thread pool on Web. C# threads don't run there (only Burst job workers do),
+            // so a timeout is the expected answer; Burst jobs are covered by the WebThreadsTest spike.
             // Bounded by a timeout so a hang can't block the result line.
             try
             {
