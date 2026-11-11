@@ -123,10 +123,11 @@ namespace LuckyNumbers.Station
                                 IPublisher<CharacterXpGained> xp, PlayerJob job, JobBoard board, LandingSite landing,
                                 ISubscriber<JobAcceptRequested> accepts, ISubscriber<DevWarpRequested> warps, ArmsView arms,
                                 RangeState rangeState, ISubscriber<RangeResetRequested> rangeResets, CharacterSheet sheet,
-                                IPublisher<CombatRoll> rolls)
+                                IPublisher<CombatRoll> rolls, WeaponRack rack)
         {
+            _rack = rack;
             _range = new RangeRoom(station, player, arms, rangeState, warps, (at, yaw, pitch) => Teleport(at, yaw, pitch), firstPerson,
-                                   sheet, rolls);
+                                   sheet, rolls, rack);
             _rangeResets = rangeResets;
             _job = job;
             _board = board;
@@ -241,14 +242,24 @@ namespace LuckyNumbers.Station
             bloom.intensity.Override(intensity);
         }
 
-        /// <summary>The test gun (if the scene has one): dropped on the deck just ahead of where you start.</summary>
-        static void PlaceWeapon(Vector3 spawn, float yaw)
+        /// <summary>Which of Prefabs/Weapons lies by the spawn (any of the guns: their hold points are measured).</summary>
+        const string TestGun = "rifle_block";
+
+        readonly WeaponRack _rack;
+        UniTask<Rigidbody>? _testGun;
+
+        /// <summary>The test gun: dropped on the deck just ahead of where you start (again after a rebuild).</summary>
+        void PlaceWeapon(Vector3 spawn, float yaw) => PlaceWeaponAsync(spawn, yaw).Forget();
+
+        async UniTaskVoid PlaceWeaponAsync(Vector3 spawn, float yaw)
         {
-            // The test rifle, not one of the range's (those lie on its bench, RangeRoom) nor the equipped gun's model.
-            WeaponView gun = null;
-            foreach (var w in UnityEngine.Object.FindObjectsByType<WeaponView>(FindObjectsInactive.Include))
-                if (w.transform.parent == null) { gun = w; break; }
-            if (gun == null) return;
+            // Its own copy (WeaponRack.Loose), not one of the range's (those lie on its bench) nor the equipped gun's.
+            _testGun ??= WeaponRack.Share(_rack.Loose(TestGun, _cts.Token));   // a rebuild can ask again while it loads
+            Rigidbody loaded;
+            try { loaded = await _testGun.Value; }
+            catch (OperationCanceledException) { return; }
+            if (loaded == null) return;
+            var gun = loaded.transform;
             var facing = Quaternion.Euler(0f, yaw, 0f);
             var at = spawn + facing * new Vector3(0.25f, 0.35f, 1.0f);
             var turned = facing * Quaternion.Euler(0f, 80f, 0f);

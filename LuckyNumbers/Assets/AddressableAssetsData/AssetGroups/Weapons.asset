@@ -1,0 +1,138 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Weapons
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: Weapons
+  m_GUID: 31a8e7e9a43cc44dfac1b4a640417272
+  m_SerializeEntries:
+  - m_GUID: 25685ce6f79634f058fbdff625988492
+    m_Address: weapon/sniper
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    - Station
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4baabc9494b004945ba03c3928177fea
+    m_Address: weapon/rifle-sleek
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    - Station
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 5a943406b188c4b6d9ac33f7583fe07b
+    m_Address: weapon/rifle-grip
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    - Station
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 653358b3d1d5e4974b44a8abf62d8c37
+    m_Address: weapon/placeholder-sidearm
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    - Station
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 671d07cfc4ad748cbb42b475c2563a5b
+    m_Address: weapon/knife
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    - Station
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 6912e0b200da741028645407ac47c0e4
+    m_Address: weapon/mod-sight
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    - Station
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7aa11ee0e1edc4580ab115950a60f3eb
+    m_Address: weapon/heavy-cannon
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    - Station
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 92951150c1a4048728d15b3c2a4ff85b
+    m_Address: weapon/mod-grip
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    - Station
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: a102184a1ec0d4012b70cae06107e261
+    m_Address: weapon/mod-scope
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    - Station
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b896ffd690ef5420092194c5ac8b1353
+    m_Address: weapon/carbine
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    - Station
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: c51da1e0d2de1413a87f508fcfe65410
+    m_Address: weapon/rifle-block
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    - Station
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d20ecaffc3f994155af80a8a92a8098e
+    m_Address: weapon/hammer
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    - Station
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d617f16479f914fae83c758ffbe9c347
+    m_Address: weapon/sniper-long
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    - Station
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d7da96be9e4ed44de82e1b192596e7df
+    m_Address: weapon/sniper-barrel
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    - Station
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d8d1e17e749894e2091e21f63b8b6eed
+    m_Address: weapon/rifle-vent
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    - Station
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d92ddfc2b61df4b53a000cf69f64e3a5
+    m_Address: weapon/mod-box
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    - Station
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: b9d3571235561429c802157337c555a1, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 082b7cfcec0ce45aebc9f2ad3245fa74, type: 2}
+    m_SchemaDisplayOrder:
+    - Weapons_BundledAssetGroupSchema
+  m_IncludeInBuild: 1
+  m_IncludeInBuildMigrated: 1

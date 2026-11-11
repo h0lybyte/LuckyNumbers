@@ -1,4 +1,5 @@
 using System;
+using Cysharp.Threading.Tasks;
 using LuckyNumbers.Core;
 using LuckyNumbers.Model;
 using MessagePipe;
@@ -149,8 +150,9 @@ namespace LuckyNumbers.Planet
         [Inject]
         public FirstPersonPresenter(PlanetScene config, PlayerView player, ArmsView arms, PlayerInput input,
                                     ISubscriber<InputActionPerformed> actions, IPublisher<ItemHandled> handled, IInventory pack,
-                                    PlayerControl control)
+                                    PlayerControl control, WeaponRack rack)
         {
+            _rack = rack;
             _control = control;
             _control.Locks.Value = ControlLock.Spawn;   // a new scene: nobody's handed you control yet
             _pack = pack;
@@ -662,8 +664,9 @@ namespace LuckyNumbers.Planet
 
         // ---- the equipped gun -------------------------------------------------------------------------------------
 
+        readonly WeaponRack _rack;
         Transform _equipRoot;
-        bool _equipRootLooked;
+        string _equipFailed;
 
         /// <summary>
         /// Follow the pack's weapon slot: a new weapon (or none) puts the old model away and takes the new one's; the
@@ -672,11 +675,11 @@ namespace LuckyNumbers.Planet
         void EquippedGun(Transform eye)
         {
             var model = _pack.EquippedIn(EquipSlot.Weapon)?.Model ?? "";
-            if (model != _equippedModel)
+            if (model != _equippedModel && !EquipLoading(model, out var next))
             {
                 if (_equipped != null) Holster();
                 _equippedModel = model;
-                _equipped = EquipModel(model);
+                _equipped = next;
                 _holstered = false;
                 if (_equipped != null && _equipped.TryGetComponent<WeaponView>(out var gun))
                     gun.Source = _pack.EquippedIn(EquipSlot.Weapon)?.Id ?? "default";
@@ -684,23 +687,28 @@ namespace LuckyNumbers.Planet
             if (_equipped != null && !_holstered && _held == null && _reaching == null && _throwT < 0f) Draw(eye);
         }
 
-        /// <summary>The parked model for an item model name (SceneBuilder: "Weapon &lt;model&gt;" under "Equipped weapons").</summary>
-        Rigidbody EquipModel(string model)
+        /// <summary>
+        /// The parked copy for an item model name ("Weapon &lt;model&gt;" under "Equipped weapons", from WeaponRack): true
+        /// while it's still loading (the gun in your hands stays until it lands), else `rb` is it (null: no model).
+        /// </summary>
+        bool EquipLoading(string model, out Rigidbody rb)
         {
-            if (string.IsNullOrEmpty(model)) return null;
-            if (!_equipRootLooked)
+            rb = null;
+            if (string.IsNullOrEmpty(model) || !_rack.Has(model)) return false;
+            var task = _rack.Equipped(model);
+            switch (task.Status)
             {
-                _equipRootLooked = true;
-                _equipRoot = GameObject.Find("Equipped weapons")?.transform;
-                if (_equipRoot == null) Debug.LogWarning("[Hands] no 'Equipped weapons' in this scene (rebuild the scenes): equipped guns stay in the pack");
+                case UniTaskStatus.Pending:
+                    return true;
+                case UniTaskStatus.Succeeded:
+                    rb = task.GetAwaiter().GetResult();
+                    if (rb != null) _equipRoot = rb.transform.parent;
+                    return false;
+                default:
+                    if (_equipFailed != model) Debug.LogWarning($"[Hands] couldn't load the equipped model '{model}': it stays in the pack");
+                    _equipFailed = model;
+                    return false;
             }
-            var t = _equipRoot != null ? _equipRoot.Find($"Weapon {model}") : null;
-            if (t == null)
-            {
-                if (_equipRoot != null) Debug.LogWarning($"[Hands] no equipped model 'Weapon {model}' (rebuild the scenes)");
-                return null;
-            }
-            return t.GetComponent<Rigidbody>();
         }
 
         /// <summary>Bring the equipped gun up from the hip: the second half of a pickup (no crouch, no reach down).</summary>

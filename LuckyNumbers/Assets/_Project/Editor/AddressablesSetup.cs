@@ -39,6 +39,8 @@ namespace LuckyNumbers.Editor
 
         static readonly Rule[] Rules =
         {
+            // SceneBuilder.BakeWeapons; loaded by WeaponRack in the scenes with hands (fetched while the one before plays).
+            new("Weapons", "Assets/_Project/Prefabs/Weapons", "t:Prefab", "weapon/", "Planet", "Station"),
             // SPIKE: delete with the AddressablesSmoke folder.
             // Labelled Station so Title's preload (its next scene) downloads it: the smoke test exercises prefetch.
             new("Spikes", "Assets/_Project/Spikes/AddressablesSmoke", "t:Prefab", "spike/", "Station"),
@@ -147,6 +149,25 @@ namespace LuckyNumbers.Editor
                 if (!names.Add(name)) throw new BuildFailedException($"[Addressables] two addresses make key {name}: rename one");
                 var type = e.MainAssetType ?? typeof(UnityEngine.Object);
                 sb.AppendLine($"        public static readonly AssetKey<global::{type.FullName}> {name} = new(\"{e.address}\");");
+            }
+            // Per rule, by file name: for assets content names (an item's `model`), AssetKeys.Weapon["rifle_block"].
+            foreach (var rule in Rules)
+            {
+                var group = settings.FindGroup(rule.Group);
+                if (group == null || group.entries.Count == 0) continue;
+                var ofRule = group.entries.OrderBy(e => e.address, StringComparer.Ordinal).ToList();
+                var type = ofRule[0].MainAssetType ?? typeof(UnityEngine.Object);
+                if (ofRule.Any(e => e.MainAssetType != ofRule[0].MainAssetType)) continue;   // mixed types: constants only
+                var dict = Pascal(rule.Prefix.TrimEnd('/'));
+                if (!names.Add(dict)) throw new BuildFailedException($"[Addressables] lookup {dict} clashes with a key: rename one");
+                sb.AppendLine();
+                sb.AppendLine($"        /// <summary>{rule.Group}, by file name.</summary>");
+                sb.AppendLine($"        public static readonly System.Collections.Generic.IReadOnlyDictionary<string, AssetKey<global::{type.FullName}>> {dict} =");
+                sb.AppendLine($"            new System.Collections.Generic.Dictionary<string, AssetKey<global::{type.FullName}>>");
+                sb.AppendLine("            {");
+                foreach (var e in ofRule)
+                    sb.AppendLine($"                [\"{Path.GetFileNameWithoutExtension(e.AssetPath)}\"] = {Pascal(e.address)},");
+                sb.AppendLine("            };");
             }
             sb.AppendLine("    }");
             sb.AppendLine("}");
