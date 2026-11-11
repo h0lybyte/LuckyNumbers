@@ -77,8 +77,16 @@ tasks:
 
   worktrees-prune:
     type: "run"
-    description: "Remove the done worktrees and delete their merged branches (never forced: uncommitted work stops it)."
-    command: "python3 tools/ln.py worktrees --prune"
+    description: "Remove the done worktrees and delete their merged branches, here and on origin (never forced: uncommitted work stops it). `-- --min-idle 0` for ones just merged."
+    command: "python3 tools/ln.py worktrees --prune --remote"
+    options:
+      cache: false
+      runInCI: false
+
+  worktree-new:
+    type: "run"
+    description: "New worktree: `moon run game:worktree-new -- <name>` -> .claude/worktrees/<name> on branch <name> from origin/main, Library + art-src copied in."
+    command: "python3 tools/ln.py worktree-new"
     options:
       cache: false
       runInCI: false
