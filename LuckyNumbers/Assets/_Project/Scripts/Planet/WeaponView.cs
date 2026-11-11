@@ -11,7 +11,7 @@ namespace LuckyNumbers.Planet
     /// FirstPersonPresenter holds it in view (right hand on the grip, left on the foregrip, IK) and fires it on click:
     /// energy bolts that fly from the muzzle to where you aim, nudging what they hit.
     /// </summary>
-    public sealed class WeaponView : MonoBehaviour
+    public sealed class WeaponView : MonoBehaviour, IBoltSink
     {
         [Header("Hold (local, +Z barrel)")]
         [SerializeField] Vector3 grip;        // where the right palm closes (middle of the pistol grip)
@@ -64,24 +64,22 @@ namespace LuckyNumbers.Planet
         /// <summary>Off cooldown: the next TryFire shoots.</summary>
         public bool Ready => Time.time >= _nextShot;
 
-        struct Bolt { public Shape View; public Vector3 Position, Direction; public float Left; }
-
         static readonly int ColorA = Shader.PropertyToID("_ColorA");
         static readonly int ColorB = Shader.PropertyToID("_ColorB");
         /// <summary>
-        /// Bolt and flash shapes shared by every gun with the same material (most guns just lie there: none gets its
-        /// own pool). Built on the first shot, again after a scene change took the old ones.
+        /// The bolts of every gun with the same material, in one field that ticks itself (most guns just lie there:
+        /// none gets its own). Made on the first shot, again after a scene change took the old one. A bolt keeps
+        /// flying if its gun goes away; its hit just isn't reported.
         /// </summary>
-        static readonly Dictionary<Material, (ShapePool capsules, ShapePool spheres)> Pools = new();
-        static (ShapePool capsules, ShapePool spheres) _unmaterialed;
+        static readonly Dictionary<Material, BoltField> Fields = new();
+        static BoltField _unmaterialed;
 
-        static (ShapePool capsules, ShapePool spheres) PoolsFor(Material m)
+        static BoltField FieldFor(Material m)
         {
-            var have = m != null ? Pools.TryGetValue(m, out var p) ? p : default : _unmaterialed;
-            if (have.capsules is { Alive: true }) return have;
-            have = (new ShapePool(PrimitiveType.Capsule, m, "Bolt", ColorA, ColorB, prewarm: 6),
-                    new ShapePool(PrimitiveType.Sphere, m, "Bolt flash", ColorA, ColorB, prewarm: 6));
-            if (m != null) Pools[m] = have; else _unmaterialed = have;
+            var have = m != null ? Fields.TryGetValue(m, out var f) ? f : null : _unmaterialed;
+            if (have is { Alive: true }) return have;
+            have = new BoltField(m, "Bolt", ColorA, ColorB, prewarm: 6, selfTick: true);
+            if (m != null) Fields[m] = have; else _unmaterialed = have;
             return have;
         }
 
@@ -89,10 +87,7 @@ namespace LuckyNumbers.Planet
         public static event Action<WeaponView> Fired;
         /// <summary>Any gun's bolt hit something (the station's range counts hits on its targets).</summary>
         public static event Action<WeaponView, RaycastHit> BoltHit;
-        readonly List<Bolt> _bolts = new();
-        ShapePool _capsules;
-        Flashes _flashes;
-        readonly RaycastHit[] _hits = new RaycastHit[8];
+        BoltField _field;
         Transform _ignore;
         Light _flashLight;
         float _nextShot;
@@ -134,16 +129,14 @@ namespace LuckyNumbers.Planet
             var from = MuzzleWorld;
             var dir = target - from;
             dir = dir.sqrMagnitude > 1e-4f ? dir.normalized : transform.forward;
-            if (_capsules is not { Alive: true })
+            if (_field is not { Alive: true }) _field = FieldFor(boltMaterial);
+            _field.Fire(new BoltShot
             {
-                var (capsules, spheres) = PoolsFor(boltMaterial);
-                _capsules = capsules;
-                _flashes?.Clear();
-                _flashes = new Flashes(spheres, ownsPool: false);
-            }
-            var view = _capsules.Get(from, Quaternion.FromToRotation(Vector3.up, dir), new Vector3(boltWidth, boltLength * 0.5f, boltWidth), boltColor);
-            _bolts.Add(new Bolt { View = view, Position = from, Direction = dir, Left = range });
-            _flashes.Add(from, 0.09f, 0.06f, boltColor, gameObject.layer);   // muzzle flash with the gun (viewmodel when held)
+                From = from, Direction = dir, Speed = boltSpeed, Range = range, Length = boltLength, Width = boltWidth, Color = boltColor,
+                ImpactSize = 0.35f, ImpactLife = 0.18f, ImpactLift = 0.02f, Impulse = impulse,
+                Source = Source, Ignore = transform, IgnoreAlso = _ignore, Sink = this,
+            });
+            _field.Flash(from, 0.09f, 0.06f, boltColor, gameObject.layer);   // muzzle flash with the gun (viewmodel when held)
             if (_flashLight == null)
             {
                 _flashLight = new GameObject("MuzzleLight").AddComponent<Light>();
@@ -160,62 +153,17 @@ namespace LuckyNumbers.Planet
 
         void Update()
         {
-            var dt = Time.deltaTime;
-            for (var i = _bolts.Count - 1; i >= 0; i--)
-            {
-                var b = _bolts[i];
-                var step = Mathf.Min(boltSpeed * dt, b.Left);
-                if (Cast(b.Position, b.Direction, step, out var hit))
-                {
-                    hit.collider.GetComponentInParent<IDamageable>()?.Hit(Source, hit.point, b.Direction);
-                    if (hit.rigidbody != null && !hit.rigidbody.isKinematic)
-                        hit.rigidbody.AddForceAtPosition(b.Direction * impulse, hit.point, ForceMode.Impulse);
-                    _flashes.Add(hit.point + hit.normal * 0.02f, 0.35f, 0.18f, boltColor);
-                    Debug.Log($"[Weapon] bolt hit {hit.collider.name} after {range - b.Left + hit.distance:0.0} m");
-                    BoltHit?.Invoke(this, hit);
-                    Remove(i);
-                    continue;
-                }
-                b.Position += b.Direction * step;
-                b.Left -= step;
-                // The bolt's tail trails its head, so it never pokes through what it is about to hit.
-                b.View.Transform.position = b.Position - b.Direction * (boltLength * 0.5f);
-                if (b.Left <= 0f) { Remove(i); continue; }
-                _bolts[i] = b;
-            }
-            _flashes?.Tick(dt);
-            if (_flashLight != null) _flashLight.intensity = Mathf.MoveTowards(_flashLight.intensity, 0f, dt * 60f);
+            if (_flashLight != null) _flashLight.intensity = Mathf.MoveTowards(_flashLight.intensity, 0f, Time.deltaTime * 60f);
         }
 
-        bool Cast(Vector3 from, Vector3 dir, float distance, out RaycastHit best)
+        void IBoltSink.OnBoltHit(in BoltShot shot, in RaycastHit hit, IDamageable target, float travelled)
         {
-            best = default;
-            best.distance = float.MaxValue;
-            var n = Physics.RaycastNonAlloc(from, dir, _hits, distance, ~0, QueryTriggerInteraction.Ignore);
-            var found = false;
-            for (var i = 0; i < n; i++)
-            {
-                var h = _hits[i];
-                if (h.collider.transform.IsChildOf(transform)) continue;
-                if (_ignore != null && h.collider.transform.IsChildOf(_ignore)) continue;
-                if (h.distance < best.distance) { best = h; found = true; }
-            }
-            return found;
-        }
-
-        /// <summary>Back to the pool; swap-remove (the last bolt, already ticked this frame, takes its slot).</summary>
-        void Remove(int i)
-        {
-            _capsules.Release(_bolts[i].View);
-            _bolts[i] = _bolts[^1];
-            _bolts.RemoveAt(_bolts.Count - 1);
+            Debug.Log($"[Weapon] bolt hit {hit.collider.name} after {travelled:0.0} m");
+            BoltHit?.Invoke(this, hit);
         }
 
         void OnDestroy()
         {
-            foreach (var b in _bolts) _capsules?.Release(b.View);   // the shapes are shared: back to the pool
-            _bolts.Clear();
-            _flashes?.Clear();
             if (_flashLight != null) Destroy(_flashLight.gameObject);
         }
 

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using LuckyNumbers.Core;
 using LuckyNumbers.Model;
 using UnityEngine;
@@ -8,27 +7,16 @@ namespace LuckyNumbers.Planet
 {
     /// <summary>
     /// Energy bolts fired from your hands (CombatPresenter): fly from a point toward where you aim, skip your own
-    /// body, and on a hit tell an IDamageable (with the shot's source) and flash. Unlit, tinted per shot.
+    /// body, and on a hit tell an IDamageable (with the shot's source) and flash. Unlit, tinted per shot. A
+    /// <see cref="BoltField"/> flies them.
     /// </summary>
-    public sealed class Bolts : IDisposable
+    public sealed class Bolts : IDisposable, IBoltSink
     {
         static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
         static readonly int ColorId = Shader.PropertyToID("_Color");
 
-        struct Bolt
-        {
-            public Shape View;
-            public Vector3 Position, Direction;
-            public float Speed, Left, Length, ImpactSize, ImpactLife;
-            public Color Color;
-            public string Source;
-        }
-
         readonly Transform _ignore;
-        readonly List<Bolt> _bolts = new();
-        readonly ShapePool _capsules;
-        readonly Flashes _flashes;
-        readonly RaycastHit[] _hits = new RaycastHit[8];
+        readonly BoltField _field;
         int _logged;
 
         public Bolts(Material material, Transform ignore)
@@ -40,80 +28,33 @@ namespace LuckyNumbers.Planet
             var weapons = GameContent.Combat?.Weapons;
             if (weapons != null) foreach (var w in weapons) if (w.Bolt != null) prewarm = Mathf.Max(prewarm, w.Bolt.PrewarmOr(0));
             if (prewarm <= 0) prewarm = 8;
-            _capsules = new ShapePool(PrimitiveType.Capsule, material, "Bolt", BaseColor, ColorId, prewarm);
-            _flashes = new Flashes(new ShapePool(PrimitiveType.Sphere, material, "Bolt flash", BaseColor, ColorId, prewarm), ownsPool: true);
+            _field = new BoltField(material, "Bolt", BaseColor, ColorId, prewarm);
         }
 
         /// <summary>Shoot `p` (a hand gun's bolt) from `from` toward `target`; hits tell IDamageables `source` shot them.</summary>
         public void Fire(Vector3 from, Vector3 target, Projectile p, string source)
         {
-            var dir = target - from;
-            dir = dir.sqrMagnitude > 1e-4f ? dir.normalized : Vector3.forward;
-            var length = Mathf.Max(0.2f, p.Length);
             var width = Mathf.Max(0.02f, p.Width);
             var color = p.Tint(new Color(0.4f, 1.6f, 2.6f));
             var (muzzle, muzzleLife) = p.Muzzle.Of(width, 3f, 0.06f);
             var (impact, impactLife) = p.Impact.Of(width, 6f, 0.2f);
-            var view = _capsules.Get(from, Quaternion.FromToRotation(Vector3.up, dir), new Vector3(width, length * 0.5f, width), color);
-            _bolts.Add(new Bolt { View = view, Position = from, Direction = dir, Speed = Mathf.Max(1f, p.Speed), Left = Mathf.Max(5f, p.Range),
-                                  Length = length, ImpactSize = impact, ImpactLife = impactLife, Color = color, Source = source });
-            _flashes.Add(from, muzzle, muzzleLife, color);
-        }
-
-        public void Tick(float dt)
-        {
-            for (var i = _bolts.Count - 1; i >= 0; i--)
+            _field.Fire(new BoltShot
             {
-                var b = _bolts[i];
-                var step = Mathf.Min(b.Speed * dt, b.Left);
-                if (Cast(b.Position, b.Direction, step, out var hit))
-                {
-                    var target = hit.collider.GetComponentInParent<IDamageable>();
-                    if (_logged++ < 6) Debug.Log($"[Bolts] {b.Source} hit {hit.collider.name}{(target != null ? " (damageable)" : "")}");
-                    target?.Hit(b.Source, hit.point, b.Direction);
-                    if (hit.rigidbody != null && !hit.rigidbody.isKinematic)
-                        hit.rigidbody.AddForceAtPosition(b.Direction * 3f, hit.point, ForceMode.Impulse);
-                    _flashes.Add(hit.point + hit.normal * 0.03f, b.ImpactSize, b.ImpactLife, b.Color);
-                    Remove(i);
-                    continue;
-                }
-                b.Position += b.Direction * step;
-                b.Left -= step;
-                b.View.Transform.position = b.Position - b.Direction * (b.Length * 0.5f);
-                if (b.Left <= 0f) { Remove(i); continue; }
-                _bolts[i] = b;
-            }
-            _flashes.Tick(dt);
+                From = from, Direction = target - from, Speed = Mathf.Max(1f, p.Speed), Range = Mathf.Max(5f, p.Range),
+                Length = Mathf.Max(0.2f, p.Length), Width = width, Color = color,
+                ImpactSize = impact, ImpactLife = impactLife, ImpactLift = 0.03f, Impulse = 3f,
+                Source = source, Ignore = _ignore, Sink = this,
+            });
+            _field.Flash(from, muzzle, muzzleLife, color);
         }
 
-        /// <summary>Back to the pool; swap-remove (the last bolt, already ticked this frame, takes its slot).</summary>
-        void Remove(int i)
+        public void Tick(float dt) => _field.Tick(dt);
+
+        void IBoltSink.OnBoltHit(in BoltShot shot, in RaycastHit hit, IDamageable target, float travelled)
         {
-            _capsules.Release(_bolts[i].View);
-            _bolts[i] = _bolts[^1];
-            _bolts.RemoveAt(_bolts.Count - 1);
+            if (_logged++ < 6) Debug.Log($"[Bolts] {shot.Source} hit {hit.collider.name}{(target != null ? " (damageable)" : "")}");
         }
 
-        bool Cast(Vector3 from, Vector3 dir, float distance, out RaycastHit best)
-        {
-            best = default;
-            best.distance = float.MaxValue;
-            var n = Physics.RaycastNonAlloc(from, dir, _hits, distance, ~0, QueryTriggerInteraction.Ignore);
-            var found = false;
-            for (var i = 0; i < n; i++)
-            {
-                var h = _hits[i];
-                if (_ignore != null && h.collider.transform.IsChildOf(_ignore)) continue;
-                if (h.distance < best.distance) { best = h; found = true; }
-            }
-            return found;
-        }
-
-        public void Dispose()
-        {
-            _bolts.Clear();
-            _flashes.Dispose();
-            _capsules.Dispose();
-        }
+        public void Dispose() => _field.Dispose();
     }
 }
