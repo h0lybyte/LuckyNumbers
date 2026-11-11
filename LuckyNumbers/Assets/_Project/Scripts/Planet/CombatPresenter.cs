@@ -38,6 +38,8 @@ namespace LuckyNumbers.Planet
             public MonsterView View;
             public Vector3 Position, Home;
             public float Heading, Cooldown, Dying = -1f, Wander;
+            // A model's death: its fall + a beat lying there (seconds), then it sinks into the ground.
+            public float DeathFor;
             public int Hp;
             public bool Aggro;
             // Encounters (CombatPresenter.Encounters): a standoff waiting for you; let you pass; running off; calm
@@ -121,16 +123,20 @@ namespace LuckyNumbers.Planet
             _state.Armor.Value = PlayerArmor();
             _firstPerson.ShotCheck = HeldShot;   // a held gun's shots at a monster roll as they're fired
             StartEncounters();
-            // Dev (the page's inspector): "monster" drops one a few metres ahead of you.
+            // Dev (the page's inspector): "monster" drops one a few metres ahead of you ("monster:<id>": that one).
             _subscriptions.Add(_warps.Subscribe(e =>
             {
                 if (e.To == "standoff" || e.To == "find") { DevEncounter(e.To); return; }
-                if (e.To != "monster" || C == null || C.Monsters.Count == 0) return;
+                if (e.To == null || !(e.To == "monster" || e.To.StartsWith("monster:")) || C == null || C.Monsters.Count == 0) return;
+                EnsureBolts();   // seeds the dice Pick rolls
+                var wanted = e.To.Length > 8 ? e.To.Substring(8) : null;
+                var type = wanted != null ? null : Pick(5);
+                foreach (var t in C.Monsters) if (t.Id == wanted) type = t;
+                if (type == null) { Debug.LogWarning($"[Combat] dev: no monster \"{wanted}\""); return; }
                 // 10 m ahead of you, and your view turned onto it (so a test can just hold fire).
                 var eye = _player.Camera.transform;
                 var flat = Vector3.ProjectOnPlane(_player.Body.transform.forward, Vector3.up).normalized;
-                EnsureBolts();
-                Spawn(Pick(5), _player.Body.transform.position + flat * 10f, false);
+                Spawn(type, _player.Body.transform.position + flat * 10f, false);
                 var m = _monsters[^1];
                 _devAim = m;
                 _devAimUntil = Time.time + 3f;
@@ -206,7 +212,10 @@ namespace LuckyNumbers.Planet
         void Spawn(MonsterType type, Vector3 at, bool aggro)
         {
             var size = new Vector3(type.Size.X > 0f ? type.Size.X : 1f, type.Size.Y > 0f ? type.Size.Y : 1f, type.Size.Z > 0f ? type.Size.Z : 1f);
-            var view = MonsterView.Create(type.Id, size, new Color(type.Color.R, type.Color.G, type.Color.B, 1f), _bodyMaterial);
+            var model = _view.MonsterModel(type.Model);
+            var view = model != null
+                ? MonsterView.CreateModel(type.Id, model, size, type.Clips)
+                : MonsterView.Create(type.Id, size, new Color(type.Color.R, type.Color.G, type.Color.B, 1f), _bodyMaterial);
             var m = new Monster { Type = type, View = view, Position = at, Home = at, Hp = math.max(1, type.Hp), Aggro = aggro,
                                   Heading = _rng.NextFloat(360f), Wander = _rng.NextFloat(3f) };
             view.Damaged += (v, source, point) => Hurt(m, source);
@@ -222,8 +231,17 @@ namespace LuckyNumbers.Planet
             if (m.Dying >= 0f)
             {
                 m.Dying += dt;
-                m.View.transform.localScale = Size(m) * math.max(0.01f, 1f - m.Dying / 0.4f);
-                if (m.Dying >= 0.4f)
+                var gone = 0.4f;
+                if (m.View.Modelled)
+                {
+                    // Falls (its clip), lies there, then sinks out of sight.
+                    const float sink = 1.2f;
+                    gone = m.DeathFor + sink;
+                    var down = math.saturate((m.Dying - m.DeathFor) / sink) * Size(m).y;
+                    m.View.transform.position = m.Position - Vector3.up * down;
+                }
+                else m.View.transform.localScale = Size(m) * math.max(0.01f, 1f - m.Dying / 0.4f);
+                if (m.Dying >= gone)
                 {
                     UnityEngine.Object.Destroy(m.View.gameObject);
                     _monsters.Remove(m);
@@ -240,6 +258,7 @@ namespace LuckyNumbers.Planet
                 m.Fleeing += dt;
                 m.Heading = Mathf.MoveTowardsAngle(m.Heading, Mathf.Atan2(-to.x, -to.z) * Mathf.Rad2Deg, 540f * dt);
                 m.Position += Quaternion.Euler(0f, m.Heading, 0f) * Vector3.forward * (m.Type.Speed * 1.6f * dt);
+                m.View.Move(m.Type.Speed * 1.6f, true);
                 Place(m, dt);
                 if (m.Fleeing > 3.5f) m.Dying = 0f;
                 return;
@@ -249,11 +268,16 @@ namespace LuckyNumbers.Planet
             if (onFoot && _onFootFor > 4f && distance < m.Type.Sight && !calm) m.Aggro = true;
             if (m.Aggro && Time.time < m.CalmUntil) m.Aggro = false;
             var reach = math.max(0.8f, m.Type.Reach) + Size(m).z * 0.5f;
+            var walked = 0f;
             if (m.Aggro && onFoot)
             {
                 m.Heading = Mathf.MoveTowardsAngle(m.Heading, Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg, 360f * dt);
-                if (distance > reach * 0.85f)
+                if (m.View.Busy) { }   // staggered by a hit: holds still a moment
+                else if (distance > reach * 0.85f)
+                {
                     m.Position += Quaternion.Euler(0f, m.Heading, 0f) * Vector3.forward * (m.Type.Speed * dt);
+                    walked = m.Type.Speed;
+                }
                 else if (m.Cooldown <= 0f) Bite(m);
                 if (distance > m.Type.Sight * 3f) m.Aggro = false;   // lost you
             }
@@ -265,7 +289,9 @@ namespace LuckyNumbers.Planet
                 var home = m.Home - m.Position;
                 if (home.magnitude > 6f) m.Heading = Mathf.MoveTowardsAngle(m.Heading, Mathf.Atan2(home.x, home.z) * Mathf.Rad2Deg, 180f * dt);
                 m.Position += Quaternion.Euler(0f, m.Heading, 0f) * Vector3.forward * (m.Type.Speed * 0.25f * dt);
+                walked = m.Type.Speed * 0.25f;
             }
+            m.View.Move(walked, m.Aggro);
             Place(m, dt);
         }
 
@@ -275,7 +301,7 @@ namespace LuckyNumbers.Planet
         {
             var size = Size(m);
             m.Position.y = _ground.SurfaceAt(m.Position) + size.y * 0.5f;
-            var hop = m.Aggro ? math.abs(math.sin(Time.time * 9f + m.Home.x)) * size.y * 0.12f : 0f;   // scuttles when it's after you
+            var hop = m.Aggro && !m.View.Modelled ? math.abs(math.sin(Time.time * 9f + m.Home.x)) * size.y * 0.12f : 0f;   // scuttles when it's after you
             m.View.transform.SetPositionAndRotation(m.Position + Vector3.up * hop, Quaternion.Euler(0f, m.Heading, 0f));
         }
 
@@ -283,6 +309,7 @@ namespace LuckyNumbers.Planet
         void Bite(Monster m)
         {
             m.Cooldown = math.max(0.3f, m.Type.Cooldown);
+            m.View.Attack();
             var armor = PlayerArmor();
             var (d20, total, hit, crit, fumble) = Dice.Attack(m.Type.Attack, armor, ref _rng);
             var damage = hit ? Dice.Roll(m.Type.Damage, ref _rng, crit) : 0;
@@ -435,11 +462,13 @@ namespace LuckyNumbers.Planet
             m.Hp -= damage;
             _state.Target.Value = m.Hp > 0 ? $"{m.Type.Name}|{m.Hp}|{math.max(1, m.Type.Hp)}" : "";
             if (m.Hp <= 0) Kill(m);
+            else m.View.Staggered();
         }
 
         void Kill(Monster m)
         {
             m.Dying = 0f;
+            m.DeathFor = m.View.Die() + 1.5f;
             var col = m.View.GetComponent<Collider>();
             if (col != null) col.enabled = false;
             _state.Killed.Value++;

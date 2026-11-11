@@ -1,0 +1,89 @@
+{
+  "clips": [
+    {
+      "name": "attack_ground",
+      "seconds": 1.0667,
+      "speed": 0.0
+    },
+    {
+      "name": "attack_lunge",
+      "seconds": 1.2,
+      "speed": 0.0
+    },
+    {
+      "name": "crawl",
+      "seconds": 2.5333,
+      "speed": 0.3826
+    },
+    {
+      "name": "fall_backward",
+      "seconds": 0.4,
+      "speed": 0.0
+    },
+    {
+      "name": "fall_forward",
+      "seconds": 0.5333,
+      "speed": 0.0
+    },
+    {
+      "name": "get_up_prone",
+      "seconds": 2.4,
+      "speed": 0.0
+    },
+    {
+      "name": "get_up_supine",
+      "seconds": 2.6,
+      "speed": 0.0
+    },
+    {
+      "name": "idle",
+      "seconds": 5.0,
+      "speed": 0.0
+    },
+    {
+      "name": "knee_hit_recover",
+      "seconds": 1.8,
+      "speed": 0.0
+    },
+    {
+      "name": "leg_buckle_l",
+      "seconds": 0.4667,
+      "speed": 0.0
+    },
+    {
+      "name": "leg_buckle_r",
+      "seconds": 0.4667,
+      "speed": 0.0
+    },
+    {
+      "name": "ragdoll_neutral",
+      "seconds": 0.2,
+      "speed": 0.0
+    },
+    {
+      "name": "roll_to_prone",
+      "seconds": 1.0667,
+      "speed": 0.0
+    },
+    {
+      "name": "stumble_fall",
+      "seconds": 0.5333,
+      "speed": 0.0
+    },
+    {
+      "name": "walk_fast",
+      "seconds": 1.6667,
+      "speed": 0.6797
+    },
+    {
+      "name": "walk_limp",
+      "seconds": 2.4,
+      "speed": 0.4785
+    },
+    {
+      "name": "walk_limp_b",
+      "seconds": 2.8,
+      "speed": 0.418
+    }
+  ]
+}

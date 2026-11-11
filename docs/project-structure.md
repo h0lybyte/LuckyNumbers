@@ -7,6 +7,7 @@ LuckyNumbers/            Unity project
     Art/Models/Fighter/  fighter1.fbx + Skins/ (RetroVandal, see CREDITS.md)
     Art/Models/CargoShip/ museum freighter (Vaportrash, CC BY): cargo_ship.fbx (part per material), Textures/, cargo_ship_collision.obj
     Art/Characters/Arms/ first-person arms rig + 18 clips (DrillImpact, CC0)
+    Art/Characters/Aberration/ monster: baked FBX + clips, skin, stride speeds (Rafael Martins; tools/blender/export_aberration.py)
     Art/Fonts/Exo2/      UI font + SDF assets
     Editor/              WebBuild, SceneBuilder, ShaderPreview, FontSetup, ArtImport (model/skin import rules)
     link.xml             keeps reflection-built assemblies through code stripping
@@ -28,6 +29,7 @@ LuckyNumbers/            Unity project
     Spikes/WebThreadsTest/  temporary threading benchmark
   Builds/                build output (gitignored)
 proto/, content/         schema + authored data (source of truth)
+art-src/                 raw licensed art packs we may not redistribute (gitignored, local only); bakes from them are committed
 tools/ln.py              dev CLI (protogen.py, webshot.mjs, roslyn/)
 .moon/, */moon.yml       moon workspace + per-project tasks wrapping ln.py (docs/moon.md)
 CHANGELOG.md             version source, triggers releases

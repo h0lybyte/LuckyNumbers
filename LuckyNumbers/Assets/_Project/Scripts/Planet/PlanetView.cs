@@ -20,6 +20,7 @@ namespace LuckyNumbers.Planet
         [SerializeField] Transform vaseTemplate;
         [SerializeField] Transform relicBeamTemplate;         // thin beam over a revealed relic
         [SerializeField] Transform[] artifactModels = System.Array.Empty<Transform>();   // named artifacts' own models (off), by name
+        [SerializeField] MonsterRig[] monsterModels = System.Array.Empty<MonsterRig>();   // monsters' models (off), by name (MonsterType.model)
         [SerializeField] Transform landingPad;                // ring on the ground where to land (flight assist; off otherwise)
 
         [Ui("flash")] VisualElement _flash;
@@ -47,6 +48,13 @@ namespace LuckyNumbers.Planet
         {
             if (string.IsNullOrEmpty(name)) return null;
             foreach (var t in artifactModels) if (t != null && t.name == name) return t;
+            return null;
+        }
+        /// <summary>A monster's model template by name (MonsterType.model), or null (it's a placeholder block).</summary>
+        public MonsterRig MonsterModel(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return null;
+            foreach (var t in monsterModels) if (t != null && t.name == name) return t;
             return null;
         }
         public Transform LandingPad => landingPad;

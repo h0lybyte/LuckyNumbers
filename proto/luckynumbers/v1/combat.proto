@@ -31,8 +31,8 @@ message CombatConfig {
   CombatRescue rescue = 10;
 }
 
-// A monster (a placeholder block until it has a model). `danger_min`: it only turns up on jobs at least that
-// dangerous. Metres, m/s, seconds.
+// A monster: a placeholder block, or `model` (a rigged creature, Art/Characters/<model>) once it has one.
+// `danger_min`: it only turns up on jobs at least that dangerous. Metres, m/s, seconds.
 message MonsterType {
   string id = 1;
   string name = 2;
@@ -53,6 +53,22 @@ message MonsterType {
   int32 danger_min = 14;
   // Relative chance among the monsters that can turn up.
   float weight = 15;
+  // Its model (PlanetView's monster models, by name; empty = the placeholder block). `size` is then its hitbox.
+  string model = 16;
+  MonsterClips clips = 17;
+}
+
+// A modelled monster's animations, by clip name (the model's takes). Walks play at the rate the body moves (the
+// bake records each clip's stride speed), so feet don't slide. Empty: that moment has no clip.
+message MonsterClips {
+  string idle = 1;
+  // Ambling round home; chasing you.
+  string walk = 2;
+  string run = 3;
+  string attack = 4;
+  // Hit and still standing; killed (it holds the last frame, then sinks into the ground).
+  string hit = 5;
+  string die = 6;
 }
 
 message CombatWeapon {

@@ -127,3 +127,6 @@ $RECYCLE.BIN/
 # moon
 .moon/cache
 .moon/docker
+
+# Raw licensed art packs (not redistributable): kept local, baked into Assets by tools/blender/*
+/art-src/

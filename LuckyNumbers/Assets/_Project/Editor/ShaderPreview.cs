@@ -295,6 +295,82 @@ namespace LuckyNumbers.Editor
         }
 
         /// <summary>
+        /// The Planet scene's monster models (MonsterTemplates), built as CombatPresenter builds them
+        /// (MonsterView.CreateModel), posed from 4 clips (idle, run, attack, fall) seen from its front-left, to
+        /// Logs/preview-monster.png. Logs its hitbox against its mesh's bounds and which way it faces.
+        /// </summary>
+        [MenuItem("LuckyNumbers/Preview/Render Monster")]
+        public static void RenderMonster()
+        {
+            EditorSceneManager.OpenScene("Assets/_Project/Scenes/Planet.unity", OpenSceneMode.Single);
+            Physics.SyncTransforms();
+            var template = Object.FindObjectsByType<LuckyNumbers.Planet.MonsterRig>(FindObjectsInactive.Include);
+            if (template.Length == 0) throw new System.Exception("no MonsterRig template in Planet.unity");
+            var clips = new LuckyNumbers.Model.MonsterClips { Idle = "idle", Walk = "walk_limp", Run = "walk_fast", Attack = "attack_lunge",
+                                                              Hit = "knee_hit_recover", Die = "fall_forward" };
+            var size = new Vector3(0.7f, 1.85f, 0.6f);
+            var view = LuckyNumbers.Planet.MonsterView.CreateModel(template[0].name, template[0], size, clips);
+            var origin = new Vector3(0f, 1000f, 0f);
+            view.transform.position = origin + Vector3.up * size.y * 0.5f;
+            var rig = view.GetComponentInChildren<LuckyNumbers.Planet.MonsterRig>();
+            var an = rig.GetComponent<Animator>();
+            if (an) an.cullingMode = AnimatorCullingMode.AlwaysAnimate;   // edit mode: nothing has been seen yet, so it'd cull
+            Debug.Log($"[ShaderPreview] monster animator {(an ? $"avatar {an.avatar} valid {an.avatar?.isValid} human {an.avatar?.isHuman} root motion {an.applyRootMotion}" : "none")}");
+            Shader.SetGlobalVector("_LnSunPosition", new Vector4(40f, 1060f, 30f, 1f));
+            Shader.SetGlobalVector("_LnSunColor", Color.white);
+            var cam = new GameObject("Cam").AddComponent<Camera>();
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.12f, 0.12f, 0.16f);
+            cam.fieldOfView = 40f;
+            // In front (it faces +Z) and to its left, at chest height.
+            cam.transform.position = origin + new Vector3(-2.2f, 1.3f, 3.6f);
+            cam.transform.LookAt(origin + Vector3.up * 0.95f);
+            var sheet = new Texture2D(Width, Height, TextureFormat.RGB24, false);
+            var rt = new RenderTexture(Width / 2, Height / 2, 24, RenderTextureFormat.ARGB32);
+            var poses = new[] { ("idle", 0.3f), ("walk_fast", 0.5f), ("attack_lunge", 0.45f), ("fall_forward", 1f) };
+            for (var k = 0; k < poses.Length; k++)
+            {
+                rig.Pose(poses[k].Item1, rig.Length(poses[k].Item1) * poses[k].Item2);   // the game's PlayableGraph, not SampleAnimation
+                var b = new Bounds();
+                var first = true;
+                foreach (var r in rig.GetComponentsInChildren<SkinnedMeshRenderer>())
+                {
+                    r.updateWhenOffscreen = true;
+                    if (first) { b = r.bounds; first = false; } else b.Encapsulate(r.bounds);
+                }
+                Physics.SyncTransforms();
+                var hitbox = view.GetComponent<Collider>().bounds;
+                Debug.Log($"[ShaderPreview] monster {poses[k].Item1}: mesh {b.min - origin}..{b.max - origin}, hitbox {hitbox.min - origin}..{hitbox.max - origin}, " +
+                          $"stride {rig.Stride(poses[k].Item1):0.00} m/s");
+                // Edit mode doesn't re-skin between samples: bake each pose into a plain mesh and draw that.
+                var baked = new System.Collections.Generic.List<GameObject>();
+                foreach (var r in rig.GetComponentsInChildren<SkinnedMeshRenderer>())
+                {
+                    var mesh = new Mesh();
+                    r.BakeMesh(mesh, true);
+                    var go = new GameObject("Pose");
+                    go.transform.SetPositionAndRotation(r.transform.position, r.transform.rotation);
+                    go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                    go.AddComponent<MeshRenderer>().sharedMaterials = r.sharedMaterials;
+                    r.enabled = false;
+                    baked.Add(go);
+                }
+                var request = new RenderPipeline.StandardRequest { destination = rt };
+                if (RenderPipeline.SupportsRenderRequest(cam, request)) RenderPipeline.SubmitRenderRequest(cam, request);
+                else { cam.targetTexture = rt; cam.Render(); }
+                RenderTexture.active = rt;
+                sheet.ReadPixels(new Rect(0, 0, Width / 2, Height / 2), (k % 2) * Width / 2, (1 - k / 2) * Height / 2);
+                RenderTexture.active = null;
+                foreach (var go in baked) Object.DestroyImmediate(go);
+                foreach (var r in rig.GetComponentsInChildren<SkinnedMeshRenderer>()) r.enabled = true;
+            }
+            sheet.Apply();
+            var outPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", "preview-monster.png"));
+            File.WriteAllBytes(outPath, sheet.EncodeToPNG());
+            Debug.Log($"[ShaderPreview] wrote {outPath}");
+        }
+
+        /// <summary>
         /// The station (content/station.txtpb) from both PSX kits: three eye-height views and a top-down plan
         /// (ceilings face down, so from above they're culled and the rooms show) to Logs/preview-station.png.
         /// </summary>

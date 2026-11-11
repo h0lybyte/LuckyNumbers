@@ -230,6 +230,12 @@ namespace LuckyNumbers.Editor
             var models = vso.FindProperty("artifactModels");
             models.arraySize = artifacts.Length;
             for (var i = 0; i < artifacts.Length; i++) models.GetArrayElementAtIndex(i).objectReferenceValue = artifacts[i];
+            // Monsters' models (off; CombatPresenter copies one per monster whose MonsterType.model names it).
+            var monsterRoot = new GameObject("MonsterTemplates").transform;
+            var monsterModels = vso.FindProperty("monsterModels");
+            var monsters = new[] { MonsterModel(monsterRoot, "aberration", "Aberration") };
+            monsterModels.arraySize = monsters.Length;
+            for (var i = 0; i < monsters.Length; i++) monsterModels.GetArrayElementAtIndex(i).objectReferenceValue = monsters[i];
             vso.ApplyModifiedPropertiesWithoutUndo();
             Scopes<PlanetScope>();
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Planet.unity");
@@ -439,6 +445,85 @@ namespace LuckyNumbers.Editor
         /// materials by sub-mesh order: gold metal, the main gem in water blue, the crest gem pale; chains gold.
         /// Scaled up so a 13 cm amulet reads on the ground.
         /// </summary>
+        const string CharactersDir = "Assets/_Project/Art/Characters";
+
+        [System.Serializable] sealed class BakedClip { public string name; public float seconds, speed; }
+        [System.Serializable] sealed class BakedClips { public BakedClip[] clips; }
+
+        /// <summary>
+        /// A monster's model template (off): Art/Characters/&lt;folder&gt;/&lt;name&gt;.fbx (baked by
+        /// tools/blender/export_&lt;name&gt;.py) with its skin &lt;name&gt;_body.png on the Ship shader, every take as a
+        /// clip and each clip's stride speed from &lt;name&gt;.json. Turned so it faces +Z: its front is worked out from
+        /// its hips (thigh_l to thigh_r is its right), whatever axes the FBX came in with.
+        /// </summary>
+        static MonsterRig MonsterModel(Transform parent, string name, string folder)
+        {
+            var dir = $"{CharactersDir}/{folder}";
+            var fbxPath = $"{dir}/{name}.fbx";
+            var fbx = AssetDatabase.LoadAssetAtPath<GameObject>(fbxPath) ?? throw new System.Exception($"{fbxPath} missing");
+            var model = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
+            model.name = name;
+            model.transform.SetParent(parent, false);
+            var mat = MaterialAsset($"Monster_{name}", "LuckyNumbers/Ship");
+            mat.mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>($"{dir}/{name}_body.png");
+            mat.SetFloat("_Glow", 0f);
+            mat.SetFloat("_Rim", 0.2f);
+            mat.SetFloat("_Lift", 0.4f);
+            EditorUtility.SetDirty(mat);
+            foreach (var r in model.GetComponentsInChildren<Renderer>(true))
+            {
+                r.sharedMaterial = mat;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            var animator = model.GetComponent<Animator>();
+            if (animator == null) animator = model.AddComponent<Animator>();   // Unity null: no ?? on components
+            if (animator.avatar == null)
+                foreach (var o in AssetDatabase.LoadAllAssetsAtPath(fbxPath))
+                    if (o is Avatar avatar) animator.avatar = avatar;
+            animator.applyRootMotion = false;
+            animator.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+            var baked = AssetDatabase.LoadAssetAtPath<TextAsset>($"{dir}/{name}.json");
+            var strides = baked != null ? JsonUtility.FromJson<BakedClips>(baked.text).clips : System.Array.Empty<BakedClip>();
+            var clips = new System.Collections.Generic.List<AnimationClip>();
+            var speeds = new System.Collections.Generic.List<float>();
+            foreach (var o in AssetDatabase.LoadAllAssetsAtPath(fbxPath))
+            {
+                if (o is not AnimationClip clip || clip.name.StartsWith("__preview")) continue;
+                clips.Add(clip);
+                var speed = 0f;
+                foreach (var b in strides) if (b.name == MonsterRig.Short(clip.name)) speed = b.speed;
+                speeds.Add(speed);
+            }
+            Transform Bone(string bone)
+            {
+                foreach (var t in model.GetComponentsInChildren<Transform>(true)) if (t.name == bone) return t;
+                return null;
+            }
+            var left = Bone("thigh_l");
+            var right = Bone("thigh_r");
+            if (left != null && right != null)
+            {
+                var side = Vector3.ProjectOnPlane(right.position - left.position, Vector3.up);
+                var front = Vector3.Cross(side, Vector3.up);
+                var turn = Vector3.SignedAngle(front, Vector3.forward, Vector3.up);
+                model.transform.localRotation = Quaternion.Euler(0f, turn, 0f) * model.transform.localRotation;
+                Debug.Log($"[SceneBuilder] monster {name}: {clips.Count} clips, turned {turn:0} deg to face +Z");
+            }
+            // Culling box: the bind pose's bounds are the import's (Blender axes: lying down, knee high), so a standing
+            // creature would vanish at the screen's edges. A 2.6 m box round its body, in each skin's bone space.
+            foreach (var skin in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                var space = skin.rootBone != null ? skin.rootBone : skin.transform;
+                skin.updateWhenOffscreen = false;
+                skin.localBounds = new Bounds(space.InverseTransformPoint(model.transform.position + Vector3.up * 1f), Vector3.one * 2.6f);
+            }
+            var rig = model.AddComponent<MonsterRig>();
+            rig.Init(animator, clips.ToArray(), speeds.ToArray());
+            EditorUtility.SetDirty(rig);
+            model.SetActive(false);
+            return rig;
+        }
+
         static Transform ArtifactModel(Transform parent, string name, float scale)
         {
             var fbx = AssetDatabase.LoadAssetAtPath<GameObject>($"{RelicsDir}/{name}.fbx")

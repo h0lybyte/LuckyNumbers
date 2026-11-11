@@ -1,7 +1,7 @@
 # proto-file: luckynumbers/v1/combat.proto
 # proto-message: luckynumbers.v1.CombatConfig
 # Fighting on a planet: every hit is d20 + bonus vs armour (nat 20 hits and doubles the dice, nat 1 misses).
-# Monsters are placeholder blocks until they have models. Placeholder values; tune with gameplay.
+# Monsters are placeholder blocks until they have models (`model`). Placeholder values; tune with gameplay.
 
 count: 1
 count_per_danger: 1
@@ -45,6 +45,16 @@ monsters {
   id: "brute" name: "Rock Brute" hp: 28 armor: 13 attack: 4 damage: "1d10"
   speed: 2.8 size { x: 1.8 y: 2.2 z: 1.6 } color { r: 0.6 g: 0.35 b: 0.25 a: 1 }
   reach: 2.4 sight: 14 cooldown: 2.4 xp: 200 danger_min: 4 weight: 1
+}
+
+# Modelled: "Aberration" by Rafael Martins (Art/Characters/Aberration, see CREDITS.md). A slow limping patient
+# that breaks into a lurching run when it sees you; its hitbox is its body (1.86 m tall).
+monsters {
+  id: "aberration" name: "Aberration" hp: 22 armor: 12 attack: 4 damage: "1d8+1"
+  speed: 2.2 size { x: 0.7 y: 1.85 z: 0.6 } color { r: 0.7 g: 0.62 b: 0.55 a: 1 }
+  reach: 1.6 sight: 18 cooldown: 2.0 xp: 160 danger_min: 2 weight: 2
+  model: "aberration"
+  clips { idle: "idle" walk: "walk_limp" run: "walk_fast" attack: "attack_lunge" hit: "knee_hit_recover" die: "fall_forward" }
 }
 
 rescue {
