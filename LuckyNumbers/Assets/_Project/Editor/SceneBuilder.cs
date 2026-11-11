@@ -561,20 +561,26 @@ namespace LuckyNumbers.Editor
         {
             var fbx = AssetDatabase.LoadAssetAtPath<GameObject>($"{RelicsDir}/{name}.fbx")
                       ?? throw new System.Exception($"{name}.fbx missing in {RelicsDir}");
-            Material Mat(string asset, Color a, Color b, float glow)
+            Material Mat(string asset, Color a, Color b, float glow, string paint = null)
             {
                 var m = MaterialAsset(asset, "LuckyNumbers/Relic");
                 m.SetColor("_ColorA", a);
                 m.SetColor("_ColorB", b);
                 m.SetFloat("_Glow", glow);
+                // A painted part (the vase's own textures, beside its FBX): the paint under near-white tones, no mid band.
+                m.SetTexture("_MainTex", paint == null ? null
+                    : AssetDatabase.LoadAssetAtPath<Texture2D>($"{RelicsDir}/{paint}") ?? throw new System.Exception($"{paint} missing in {RelicsDir}"));
+                m.SetFloat("_Band", paint == null ? 1f : 0f);
                 EditorUtility.SetDirty(m);
                 return m;
             }
             var gold = Mat("RelicGold", new Color(0.62f, 0.44f, 0.12f), new Color(0.95f, 0.78f, 0.35f), 0.35f);
             var gem = Mat("RelicWaterGem", new Color(0.08f, 0.32f, 0.62f), new Color(0.35f, 0.78f, 0.98f), 1.2f);
             var crest = Mat("RelicCrestGem", new Color(0.55f, 0.85f, 0.9f), new Color(0.9f, 1f, 1f), 0.9f);
-            var marble = Mat("RelicMarble", new Color(0.62f, 0.6f, 0.58f), new Color(0.9f, 0.88f, 0.82f), 0.3f);
-            var umber = Mat("RelicUmber", new Color(0.2f, 0.09f, 0.06f), new Color(0.42f, 0.24f, 0.12f), 0.55f);   // rim glow bronze-ish
+            // The vase's own paint (RenderX's textures): grey marble, and the two filigree panels round its belly.
+            var marble = Mat("RelicMarble", new Color(0.92f, 0.9f, 0.88f), new Color(1.1f, 1.08f, 1.04f), 0.25f, "roman_vase_marble.jpg");
+            var panelA = Mat("RelicVasePanelA", new Color(1f, 0.96f, 0.9f), new Color(1.15f, 1.1f, 1f), 0.4f, "roman_vase_panel_a.jpg");
+            var panelB = Mat("RelicVasePanelB", new Color(1f, 0.96f, 0.9f), new Color(1.15f, 1.1f, 1f), 0.4f, "roman_vase_panel_b.jpg");
             var root = new GameObject(name).transform;
             root.SetParent(parent, false);
             var model = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
@@ -584,11 +590,12 @@ namespace LuckyNumbers.Editor
             {
                 var count = r.GetComponent<MeshFilter>().sharedMesh.subMeshCount;
                 var mats = new Material[count];
-                // Parts named by their export script (the vase: marble Body = rim, neck rings and foot; the umber
-                // PanelA/PanelB = its painted belly); otherwise by submesh (the amulet: gold, water gem, crest gem).
+                // Parts named by their export script (the vase: marble Body = rim, shoulder and foot; PanelA/PanelB =
+                // its painted belly and rings); otherwise by submesh (the amulet: gold, water gem, crest gem).
                 for (var i = 0; i < count; i++)
                     mats[i] = r.name == "Body" ? marble
-                            : r.name.StartsWith("Panel") ? umber
+                            : r.name == "PanelA" ? panelA
+                            : r.name == "PanelB" ? panelB
                             : count == 1 ? gold : i == 0 ? gold : i == 1 ? gem : crest;
                 r.sharedMaterials = mats;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
