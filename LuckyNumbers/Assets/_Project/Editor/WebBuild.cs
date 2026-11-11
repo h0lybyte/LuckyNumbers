@@ -68,11 +68,16 @@ namespace LuckyNumbers.Editor
             // refused pointer lock from stopping the game.
             PlayerSettings.WebGL.template = "PROJECT:LuckyNumbers";
 
+            // No Unity splash (allowed on every license since Unity 6): its logo texture was the build's single
+            // biggest asset (2.7 MB uncompressed), and the title screen already covers the load.
+            PlayerSettings.SplashScreen.show = false;
+            PlayerSettings.SplashScreen.showUnityLogo = false;
+
             PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.WebGL, false);
             PlayerSettings.SetGraphicsAPIs(BuildTarget.WebGL, ApisFor(gfx));
 
             AssetDatabase.SaveAssets();
-            Debug.Log($"[WebBuild] Settings applied: threads=on, gzip + decompression fallback, 1280x720, strip=Medium, wasm=DiskSizeLTO, " +
+            Debug.Log($"[WebBuild] Settings applied: threads=on, gzip + decompression fallback, 1280x720, no splash, strip=Medium, wasm=DiskSizeLTO, " +
                       $"graphics={string.Join("+", ApisFor(gfx))}");
         }
 
