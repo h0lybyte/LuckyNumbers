@@ -1105,6 +1105,29 @@ namespace LuckyNumbers.Model
                         },
                     },
                     Centre = new Vec3(default(float), -0.005f, default(float)),
+                    Legs =
+                    {
+                        new LandingLeg
+                        {
+                            Name = "nose",
+                            Position = new Vec3(default(float), -0.024f, 0.13f),
+                            Radius = 0.0065f,
+                        },
+                        new LandingLeg
+                        {
+                            Name = "rear_l",
+                            Position = new Vec3(-0.085f, -0.032f, -0.095f),
+                            Radius = 0.0085f,
+                            SplayDegrees = 14.0f,
+                        },
+                        new LandingLeg
+                        {
+                            Name = "rear_r",
+                            Position = new Vec3(0.085f, -0.032f, -0.095f),
+                            Radius = 0.0085f,
+                            SplayDegrees = 14.0f,
+                        },
+                    },
                 },
                 new ShipEngines
                 {

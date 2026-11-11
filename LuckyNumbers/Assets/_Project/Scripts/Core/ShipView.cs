@@ -16,6 +16,9 @@ namespace LuckyNumbers.Core
     /// opposite pairs fire to pitch, yaw and roll. Flames spool up and die down; EnginesOff cuts them all.
     /// Cold-gas jets (LuckyNumbers/ColdGas) don't burn: past a small share they puff compressed air, one short
     /// cloud after another while still asked, so fine corrections show as little bursts under and beside the ship.
+    ///
+    /// Landing legs (the layout's `legs`, LandingGear): tucked away unless whoever parks the ship calls GearDown with
+    /// how high it sits (landed on the ground, docked in the bay); GearUp folds them as it lifts off.
     /// </summary>
     public sealed class ShipView : MonoBehaviour
     {
@@ -52,7 +55,9 @@ namespace LuckyNumbers.Core
         readonly List<Jet> _jets = new();
         MaterialPropertyBlock _blockStore;
         MaterialPropertyBlock _block => _blockStore ??= new MaterialPropertyBlock();   // not in a field initializer (Unity)
-        bool _jetsBuilt, _running;
+        bool _jetsBuilt, _running, _gearBuilt;
+        LandingGear _gear;
+        const float GearSeconds = 0.9f;   // the legs' whole travel, tucked to on the ground
         float _boost = 1f;
         Material _mainMat, _rcsMat, _gasMat;
         static Mesh _plume;
@@ -105,6 +110,7 @@ namespace LuckyNumbers.Core
                 Debug.Log($"[Ship] {name}: skin {tex.name}");
             }
             BuildJets();
+            BuildGear();
             pivot.localScale = Vector3.one * (length / Mathf.Max(modelLength, 1e-4f));
             pivot.gameObject.SetActive(true);
         }
@@ -117,10 +123,27 @@ namespace LuckyNumbers.Core
         public void Hide()
         {
             EnginesOff(instant: true);
+            GearUp(instant: true);
             pivot.gameObject.SetActive(false);
         }
 
         public void Pose(Vector3 position, Quaternion rotation) => pivot.SetPositionAndRotation(position, rotation);
+
+        /// <summary>
+        /// Legs out to the ground <paramref name="height"/> metres below the pivot (along the ship's down). Call after
+        /// Show (it sizes the ship). No legs in the layout: nothing.
+        /// </summary>
+        public void GearDown(float height, bool instant = false) =>
+            _gear?.Down(height / Mathf.Max(1e-6f, pivot.lossyScale.y), instant);
+
+        /// <summary>Fold the legs away (lifting off).</summary>
+        public void GearUp(bool instant = false) => _gear?.Up(instant);
+
+        /// <summary>Set the legs part way out now (previews: no LateUpdate in the editor).</summary>
+        public void SnapGear(float extend) => _gear?.Snap(extend);
+
+        /// <summary>How far out the legs are: 0 tucked away .. 1 on the ground.</summary>
+        public float Gear => _gear?.Value ?? 0f;
 
         /// <summary>Entry heat 0..1, engine throttle (glow multiplier).</summary>
         public void SetHeat(float heat, float throttle)
@@ -201,6 +224,7 @@ namespace LuckyNumbers.Core
 
         void LateUpdate()
         {
+            _gear?.Step(Time.deltaTime, GearSeconds);
             if (_jets.Count == 0) return;
             var cfg = GameContent.Engines;
             var dt = Time.deltaTime;
@@ -244,6 +268,19 @@ namespace LuckyNumbers.Core
                 if (j.Def.Gas) _block.SetFloat(Puff, j.Age);
                 j.Renderer.SetPropertyBlock(_block);
             }
+        }
+
+        /// <summary>The layout's landing legs, under the pivot (LandingGear), tucked away.</summary>
+        void BuildGear()
+        {
+            if (_gearBuilt) return;
+            _gearBuilt = true;
+            if (string.IsNullOrEmpty(engines)) return;
+            var layout = GameContent.Engines?.Ships.Find(s => s.Ship == engines);
+            if (layout == null || layout.Legs.Count == 0) return;
+            var material = Resources.Load<Material>("LandingLeg");
+            if (material == null) Debug.LogWarning($"[Ship] {name}: no Resources/LandingLeg material, no legs");
+            _gear = LandingGear.Build(pivot, layout.Legs, material);
         }
 
         /// <summary>A flame per jet in the layout, under the pivot (so it scales and moves with the ship).</summary>

@@ -149,6 +149,8 @@ namespace LuckyNumbers.Planet
         float MaxTilt => L.MaxTouchdownTilt * Tough;
         bool CanLeave => _phase == Phase.Flying && !_exiting && !_boarding && L.OrbitAltitude > 0f && _altitude >= L.OrbitAltitude;
         Vector3 Wreck => _view.Wreck.Pivot.position;
+        // How high the pivot sits standing on its landing legs (the touchdown gear points are their feet).
+        float GearDrop => L.ShipLength * 0.15f;
 
         public async UniTask ArriveAsync(ICrashSite site, CancellationToken ct)
         {
@@ -158,6 +160,7 @@ namespace LuckyNumbers.Planet
             _player.Camera.enabled = false;                        // the chase camera instead (and no arms)
             _view.FlightCamera.gameObject.SetActive(true);
             Ship.Show(PlayerShipSkin.Current(_playerShip), L.ShipLength);
+            Ship.GearUp(instant: true);                            // coming in from orbit: legs tucked away
             _ownColliders = Ship.Pivot.GetComponentsInChildren<Collider>(true);
             _stats = PlayerShipStats.Of(_playerShip);
             PlayerShipStats.EnsureFuel(_playerShip);
@@ -330,7 +333,7 @@ namespace LuckyNumbers.Planet
 
             // Touchdown: the lowest of three gear points reaches the ground.
             var half = L.ShipLength * 0.5f;
-            Vector3 Gear(float right, float forward) => _position + _rotation * new Vector3(right * half, -half * 0.18f, forward * half);
+            Vector3 Gear(float right, float forward) => _position + _rotation * new Vector3(right * half, -GearDrop, forward * half);
             var lowest = float.MaxValue;
             foreach (var g in new[] { Gear(0f, 0.7f), Gear(-0.55f, -0.5f), Gear(0.55f, -0.5f) })
                 lowest = math.min(lowest, g.y - _ground.SurfaceAt(g, 0f));   // the mesh you'd hit, not the height function
@@ -347,7 +350,11 @@ namespace LuckyNumbers.Planet
             // Lifting off: no touchdown (you're sitting on the ground) or bumps until the gear is well clear.
             if (_clearing)
             {
-                if (lowest > math.max(2f, L.ShipLength * 0.12f)) _clearing = false;
+                if (lowest > math.max(2f, L.ShipLength * 0.12f))
+                {
+                    _clearing = false;
+                    Ship.GearUp();   // well clear: fold the legs
+                }
                 else lowest = float.MaxValue;
             }
             if (lowest <= 0f)
@@ -599,6 +606,7 @@ namespace LuckyNumbers.Planet
             _spin = _jetSpin = Vector3.zero;
             Ship.SetHeat(0.9f, 0.2f);                                          // scorched
             Ship.EnginesOff(instant: true);
+            Ship.GearUp(instant: true);
             _view.Flight("", _pageHud ? null : L.CrashedText);
             Debug.Log($"[Landing] crashed: {why}");
             FlashAsync().Forget();
@@ -621,8 +629,9 @@ namespace LuckyNumbers.Planet
             // Settle on the ground, upright along the slope.
             var forward = Vector3.ProjectOnPlane(_rotation * Vector3.forward, normal).normalized;
             _rotation = Quaternion.LookRotation(forward, normal);
-            _position.y = _ground.SurfaceAt(_position) + L.ShipLength * 0.5f * 0.18f;   // resting on the mesh
+            _position.y = _ground.SurfaceAt(_position) + GearDrop;   // standing on its legs on the mesh
             Ship.Pose(_position, _rotation);
+            Ship.GearDown(GearDrop);   // the legs come out to the ground
             Ship.SetHeat(0f, 0.3f);
             Ship.EnginesOff();                                                 // parked: the flames die down
             SetSolid(true);

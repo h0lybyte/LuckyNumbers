@@ -70,9 +70,37 @@ namespace LuckyNumbers.Model
         /// What it turns about (roughly its centre of mass), pivot space.
         /// </summary>
         public Vec3 Centre { get; set; }
+        /// <summary>
+        /// Landing legs (ShipView.GearDown / GearUp): out only while it sits landed or docked. None: no legs.
+        /// </summary>
+        public List<LandingLeg> Legs { get; } = new List<LandingLeg>();
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public ShipEngines Clone() => (ShipEngines)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// A landing leg: a grey telescoping strut (LuckyNumbers/LandingLeg: housing, piston, foot pad) from the hull down
+    /// to the ground, however high the ship sits. Position and radius in the pivot space and units, like Thruster.
+    /// </summary>
+    public sealed class LandingLeg
+    {
+        public string Name { get; set; }
+        /// <summary>
+        /// Where it leaves the hull: the top of the strut.
+        /// </summary>
+        public Vec3 Position { get; set; }
+        /// <summary>
+        /// The housing's radius (the piston is thinner, the foot pad wider).
+        /// </summary>
+        public float Radius { get; set; }
+        /// <summary>
+        /// Leaned out to its own side (degrees; by position.x, so a leg on the centre line stays straight).
+        /// </summary>
+        public float SplayDegrees { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public LandingLeg Clone() => (LandingLeg)MemberwiseClone();
     }
 
     /// <summary>
