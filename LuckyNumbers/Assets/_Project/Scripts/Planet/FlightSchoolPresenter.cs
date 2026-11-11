@@ -39,7 +39,8 @@ namespace LuckyNumbers.Planet
         bool _freighter, _leaving, _cycleView, _swapShip, _nextSkin, _exit;
         int _skin;
         View _camera;
-        Vector3 _position, _velocity, _spin, _jetSpin, _camPos;
+        readonly HoverFlight _flight = new();
+        Vector3 _position, _camPos;
         Quaternion _rotation = Quaternion.identity;
         float _orbit, _fade = 1f, _readoutAt;
         ShipStats _stats = new();
@@ -114,7 +115,7 @@ namespace LuckyNumbers.Planet
             _stats = PlayerShipStats.Of(SkinName);
             _ship.Show(freighter ? null : SkinName, Length);
             _ship.Pose(_position, _rotation);
-            _velocity = _spin = _jetSpin = Vector3.zero;
+            _flight.Stop();
             _position.y = Mathf.Max(_position.y, Floor + Length * 0.5f);
         }
 
@@ -145,82 +146,29 @@ namespace LuckyNumbers.Planet
                 _readoutAt = Time.time + math.max(0.05f, S.ReadoutSeconds);
                 var name = _freighter ? "Museum freighter" : $"{_stats.Name} ({SkinName})";
                 var jets = _ship.JetReadout();
-                _view.Flight($"{S.Title}   {name}   {_velocity.magnitude:0} m/s   height {_position.y:0} m   {ViewNames[(int)_camera]} camera\n" +
+                _view.Flight($"{S.Title}   {name}   {_flight.Velocity.magnitude:0} m/s   height {_position.y:0} m   {ViewNames[(int)_camera]} camera\n" +
                              (jets == "" ? "-" : jets), null);
             }
         }
 
-        /// <summary>The planet's hover flight (LandingPresenter.HoverMove) without the ground, fuel or crashes.</summary>
+        /// <summary>The planet's hover flight (HoverFlight), over the deck: it's a floor, and its edge keeps you over it.</summary>
         void Fly(float dt)
         {
-            var pressed = _input.PointerPressed.Value;
-            if (pressed && Cursor.lockState != CursorLockMode.Locked) Cursor.lockState = CursorLockMode.Locked;
-            var steering = Cursor.lockState == CursorLockMode.Locked || pressed;
-            var look = steering ? new Vector2(_input.Look.Value.X, _input.Look.Value.Y) : Vector2.zero;
-            var move = _input.Move.Value;
-            var roll = _input.Roll.Value;
-            var sp = Speed;
-            var ag = Agility;
-            var boost = _input.Sprinting.Value ? math.max(1f, H.Boost) : 1f;
-
-            // Aim.
-            var settle = 1f - math.exp(-math.max(0.5f, H.TurnSmoothing) * dt);
-            var turn = H.TurnRate * ag;
-            var want = new Vector3(math.clamp(-look.y * L.TurnDegreesPerPixel / dt, -turn, turn),
-                                   math.clamp(look.x * L.TurnDegreesPerPixel / dt, -turn, turn),
-                                   -roll * H.RollRate * ag);
-            _spin = Vector3.Lerp(_spin, want, settle);
-            _rotation = _rotation * Quaternion.Euler(_spin * dt);
-            var height = _position.y;
-            var turning = math.abs(look.x) + math.abs(look.y) > 0.5f || math.abs(roll) > 0.1f;
-            if (!turning && height < H.LevelHeight)
-            {
-                // Low over the deck with no steering, it levels itself (as over the ground).
-                var nose = Vector3.ProjectOnPlane(_rotation * Vector3.forward, Vector3.up);
-                if (nose.sqrMagnitude > 1e-4f)
-                    _rotation = Quaternion.RotateTowards(_rotation, Quaternion.LookRotation(nose, Vector3.up), H.LevelRate * ag * dt);
-            }
-
-            // Travel: the velocity the keys ask for, in the ship's frame; the assist eases towards it.
-            var forward = move.Y > 0.1f ? H.MaxSpeed * sp * boost * move.Y : move.Y < -0.1f ? H.ReverseSpeed * sp * move.Y : 0f;
-            var side = math.abs(move.X) > 0.1f ? H.StrafeSpeed * sp * move.X : 0f;
-            var vertical = _input.Lifting.Value ? H.ClimbSpeed * sp * boost : _input.Descending.Value ? -H.DescendSpeed * sp : 0f;
-            var target = _input.Braking.Value ? Vector3.zero : _rotation * new Vector3(side, vertical, forward);
-            var change = target - _velocity;
-            var pushing = target.sqrMagnitude > 0.01f && Vector3.Dot(change, target) > 0f;
-            var rate = (_input.Braking.Value ? H.HardBrake : pushing ? H.Accel : H.Brake) * ag * dt;
-            if (change.magnitude > rate) change = change.normalized * rate;
-            _velocity += change;
-            _position += _velocity * dt;
-
-            // The deck is a floor; its edge (and a ceiling well above) keep you over it.
+            _flight.Position = _position;
+            _flight.Rotation = _rotation;
+            _flight.Step(_input, dt, Speed, Agility, level: _position.y < H.LevelHeight, _ship);
+            _position = _flight.Position;
+            _rotation = _flight.Rotation;
             var floor = Floor;
             if (_position.y < floor)
             {
                 _position.y = floor;
-                if (_velocity.y < 0f) _velocity.y = 0f;
+                if (_flight.Velocity.y < 0f) _flight.Velocity.y = 0f;
             }
             var edge = S.DeckSize * 0.45f;
             _position.x = Mathf.Clamp(_position.x, -edge, edge);
             _position.z = Mathf.Clamp(_position.z, -edge, edge);
             _position.y = Mathf.Min(_position.y, S.DeckSize * 0.5f);
-
-            // Jets, as on the planet: this frame's change of velocity, plus holding the ship up and its speed.
-            _ship.SetHeat(0f, 0.6f + 0.9f * (_velocity.magnitude / math.max(1f, H.MaxSpeed * sp)) * boost + (pushing ? 0.5f : 0.2f));
-            var toShip = Quaternion.Inverse(_rotation);
-            var ask = toShip * (change / math.max(rate, 1e-4f));
-            var hold = toShip * (Vector3.up * 0.3f + _velocity / math.max(1f, H.MaxSpeed * sp) * 0.5f);
-            _ship.SetThrust(ask + hold, JetTurn(dt, H.TurnRate * ag), boost);
-        }
-
-        /// <summary>The jets' turn (as LandingPresenter.JetTurn): kick to start and stop a turn, a little burn during it.</summary>
-        Vector3 JetTurn(float dt, float rate)
-        {
-            rate = math.max(1f, rate);
-            var change = (_spin - _jetSpin) / math.max(dt, 1e-4f);
-            _jetSpin = _spin;
-            var t = change / (rate * 4f) + _spin / rate * 0.4f;
-            return new Vector3(math.clamp(t.x, -1f, 1f), math.clamp(t.y, -1f, 1f), math.clamp(t.z, -1f, 1f));
         }
 
         /// <summary>The camera for the current view, eased towards its spot, never under the deck.</summary>

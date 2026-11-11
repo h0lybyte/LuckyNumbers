@@ -34,6 +34,9 @@ export function CharacterSheetGate() {
       const want: Tab | null = e.code === "KeyC" ? "sheet" : e.code === "KeyI" ? "inventory" : null;
       if (want) {
         if (LN.states.FlightState?.flying) return;
+        // Only where the sheet shows (not the Flight School or outside the station: C is descend there).
+        const scene = LN.states.FlowState?.scene;
+        if (scene !== "Station" && scene !== "Planet") return;
         e.stopImmediatePropagation();
         // Same tab again closes; the other key switches.
         if (openRef.current && tabRef.current === want) setOpen(false);

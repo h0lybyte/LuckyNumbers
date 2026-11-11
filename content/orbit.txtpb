@@ -1,0 +1,21 @@
+# proto-file: luckynumbers/v1/orbit.proto
+# proto-message: luckynumbers.v1.OrbitScene
+# Outside the station: launched from the Docking Bay's console, fly round your station and dock again.
+# Flies like the Flight School (planet.txtpb's landing.hover and the skin's stats). Placeholder numbers.
+
+title: "OUTSIDE THE STATION"
+hint: "W/S thrust - A/D strafe - Space/C up, down - Q/E roll - Shift boost - X brake - click, then mouse to aim\nFly slowly into the docking beacon at the bay, then E to dock"
+dock_prompt: "E: dock"
+slow_prompt: "Too fast to dock - brake (X)"
+
+dock_offset: 0.8     # ship lengths off the bay's outer wall
+dock_radius: 0.6
+dock_speed: 0.18     # of top speed
+start_distance: 2.5
+
+hull_height: 9       # m before scaling: two storeys, the roof and the deck under them
+range: 40
+
+chase_distance: 1.45
+chase_height: 0.42
+readout_seconds: 0.15

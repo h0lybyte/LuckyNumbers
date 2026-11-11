@@ -71,6 +71,10 @@ namespace LuckyNumbers.Model
         /// Go to the Flight School (test-fly your ship); you come back beside this console.
         /// </summary>
         FlightSchool = 4,
+        /// <summary>
+        /// Launch: take your ship out of the Docking Bay into space round the station (GameScene.Orbit); dock to come back.
+        /// </summary>
+        Undock = 5,
     }
 
     public enum CallPhase

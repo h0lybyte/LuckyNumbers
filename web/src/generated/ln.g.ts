@@ -9,7 +9,8 @@ export type GameScene =
   | "Intro"
   | "Planet"
   | "Station"
-  | "FlightSchool";
+  | "FlightSchool"
+  | "Orbit";
 
 export type CallPhase =
   | "None"
@@ -358,6 +359,8 @@ export interface PlayerVoyage {
   rescued: boolean;
   /** At the Flight School: back at the station you step out beside its console (not by your ship, no homecoming). */
   training: boolean;
+  /** Docked again after flying round outside (GameScene.Orbit): you step off beside your ship (no homecoming). */
+  docked: boolean;
 }
 
 /**
