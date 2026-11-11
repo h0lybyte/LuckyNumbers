@@ -87,7 +87,7 @@ namespace LuckyNumbers.Model
         public bool Consumable { get; set; }
         /// <summary>
         /// While equipped (in its slot): bonuses to abilities, skills, Stamina, HP, relic rolls and the bulk you carry
-        /// freely. Nothing is drawn: you're first-person arms, so gear is all numbers.
+        /// freely. Nothing is drawn (you're first-person arms) except an equipped weapon with a model, in your hands.
         /// </summary>
         public List<AbilityBonus> AbilityBonuses { get; } = new List<AbilityBonus>();
         public List<SkillBonus> SkillBonuses { get; } = new List<SkillBonus>();
@@ -104,7 +104,8 @@ namespace LuckyNumbers.Model
         /// </summary>
         public int Stack { get; set; }
         /// <summary>
-        /// Its own model (file name in Art/Models/Relics, built into the scene); empty: a placeholder block.
+        /// Its own model, built into the scene: a relic's file name in Art/Models/Relics, a weapon's in Art/Models/Weapons
+        /// (drawn into your hands while equipped). Empty: a placeholder block (and an equipped weapon fires from the hip).
         /// </summary>
         public string Model { get; set; }
         /// <summary>

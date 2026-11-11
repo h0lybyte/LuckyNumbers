@@ -304,12 +304,15 @@ namespace LuckyNumbers.Planet
 
         // ---- Your attacks ---------------------------------------------------------------------------------------
 
-        /// <summary>Hold the button with a weapon equipped and nothing in your hands: bolts toward the crosshair.</summary>
+        /// <summary>
+        /// Hold the button with a weapon equipped and nothing in your hands: bolts toward the crosshair. Not for a gun
+        /// with a model (IFirstPerson.Equipped): that one's drawn into your hands and fires from there.
+        /// </summary>
         void Shoot()
         {
             var locked = Cursor.lockState == CursorLockMode.Locked;
             _lockSeen |= locked;
-            if (!_input.PointerPressed.Value || !(locked || !_lockSeen) || _firstPerson.Held != null || Time.time < _nextShot) return;
+            if (!_input.PointerPressed.Value || !(locked || !_lockSeen) || _firstPerson.Held != null || _firstPerson.Equipped != null || Time.time < _nextShot) return;
             var item = _pack.EquippedIn(EquipSlot.Weapon);
             if (item == null) return;
             var w = Weapon(item.Id);
@@ -351,11 +354,16 @@ namespace LuckyNumbers.Planet
             return aimed.point + side * (aimed.collider.bounds.extents.magnitude + 0.35f);
         }
 
-        /// <summary>IFirstPerson.ShotCheck: a held gun (WeaponView, "default") fired at a monster rolls now.</summary>
+        /// <summary>
+        /// IFirstPerson.ShotCheck: a held gun fired at a monster rolls now, with the equipped weapon's stats if it's
+        /// the equipped gun drawn (IFirstPerson.Equipped), else a found gun's ("default").
+        /// </summary>
         bool HeldShot(RaycastHit aimed)
         {
             var m = MonsterAt(aimed.collider);
-            return m == null || _down || ShootAt(m, "default", aimed);
+            var source = _firstPerson.Held != null && _firstPerson.Held == _firstPerson.Equipped
+                ? _pack.EquippedIn(EquipSlot.Weapon)?.Id ?? "default" : "default";
+            return m == null || _down || ShootAt(m, source, aimed);
         }
 
         /// <summary>

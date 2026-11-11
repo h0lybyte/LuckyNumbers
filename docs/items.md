@@ -88,10 +88,13 @@ Each step is its own PR. Do 3 after both branches land so nothing collides.
 - **Unequipping (or a swap) with a full pack drops the item at your feet**, and so does Drop: the item goes into the
   world, where E picks it back up (rule 1). It shows as a placeholder block until it has a model. With no world
   around (the title, character creation), Drop removes it and a full-pack unequip is refused.
+- **The equipped weapon is in your hands.** A `WEAPON`-slot item with a `model` (a file in Art/Models/Weapons:
+  carbine, salvage rifle) is drawn whenever your hands are free, and its hits roll with that item's stats
+  (`combat.txtpb` `weapons`). E holsters it and E draws it again. Unequipping or dropping it puts it away.
+  A weapon without a model yet (the sidearm) fires from the hip, unseen.
 
 ## Open questions
 
 - **Selling a relic to the museum:** is it gone for that universe?
 - **Wearable relics:** add a `NECK` / `ACCESSORY` slot so the amulet can be worn for a luck bonus?
-- **Hands:** is the held item just whatever is equipped in `WEAPON` / `TOOL`, plus a drawn / holstered state?
 - **Gear and the d20:** `relic_bonus` exists. Should more gear feed the luck die?

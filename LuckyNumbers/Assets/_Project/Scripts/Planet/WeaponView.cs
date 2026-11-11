@@ -55,6 +55,11 @@ namespace LuckyNumbers.Planet
         public Vector3 ForeAlong => foreAlong;
         public Vector3 MuzzleWorld => transform.TransformPoint(muzzle);
         public float Recoil => recoil;
+        /// <summary>
+        /// Whose stats its hits roll with (content/combat.txtpb `weapons` source): "default" for a gun found lying
+        /// around, the item's id for the equipped gun the hands draw (FirstPersonPresenter).
+        /// </summary>
+        public string Source { get; set; } = "default";
         /// <summary>Off cooldown: the next TryFire shoots.</summary>
         public bool Ready => Time.time >= _nextShot;
 
@@ -135,7 +140,7 @@ namespace LuckyNumbers.Planet
                 var step = Mathf.Min(boltSpeed * dt, b.Left);
                 if (Cast(b.Position, b.Direction, step, out var hit))
                 {
-                    hit.collider.GetComponentInParent<IDamageable>()?.Hit("default", hit.point, b.Direction);
+                    hit.collider.GetComponentInParent<IDamageable>()?.Hit(Source, hit.point, b.Direction);
                     if (hit.rigidbody != null && !hit.rigidbody.isKinematic)
                         hit.rigidbody.AddForceAtPosition(b.Direction * impulse, hit.point, ForceMode.Impulse);
                     Flash(hit.point + hit.normal * 0.02f, 0.35f, 0.18f, 0);

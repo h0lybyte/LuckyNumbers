@@ -50,7 +50,7 @@ items {
   stack: 3
 }
 
-# ---- gear: equip into its slot (Equipment tab) for the bonuses; nothing is drawn --------------------------------------------------------------------------------
+# ---- gear: equip into its slot (Equipment tab) for the bonuses; a weapon with a `model` (Art/Models/Weapons) is drawn into your hands --------------------------------------------------------------------------------
 
 items {
   id: "sidearm" name: "Sidearm" kind: ITEM_KIND_WEAPON slot: EQUIP_SLOT_WEAPON
@@ -60,13 +60,13 @@ items {
 }
 items {
   id: "rifle" name: "Salvage rifle" kind: ITEM_KIND_WEAPON slot: EQUIP_SLOT_WEAPON
-  description: "Long, heavy, reliable." shape: "####/..#." bulk: 2.5 value: 900
+  description: "Long, heavy, reliable." shape: "####/..#." bulk: 2.5 value: 900 model: "rifle_block"
   color { r: 0.55 g: 0.6 b: 0.7 a: 1 }
   skill_bonuses { skill: "intimidate" amount: 2 } skill_bonuses { skill: "perception" amount: 1 }
 }
 items {
   id: "carbine" name: "Carbine" kind: ITEM_KIND_WEAPON slot: EQUIP_SLOT_WEAPON
-  description: "Short coil carbine. Light enough to carry everywhere." shape: "###/.#." bulk: 1.5 value: 650
+  description: "Short coil carbine. Light enough to carry everywhere." shape: "###/.#." bulk: 1.5 value: 650 model: "carbine"
   color { r: 0.5 g: 0.65 b: 0.75 a: 1 }
   skill_bonuses { skill: "intimidate" amount: 1 } skill_bonuses { skill: "perception" amount: 1 }
 }

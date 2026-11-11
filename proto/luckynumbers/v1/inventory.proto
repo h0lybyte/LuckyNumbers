@@ -70,7 +70,7 @@ message ItemDef {
   float seconds = 12;
   bool consumable = 13;
   // While equipped (in its slot): bonuses to abilities, skills, Stamina, HP, relic rolls and the bulk you carry
-  // freely. Nothing is drawn: you're first-person arms, so gear is all numbers.
+  // freely. Nothing is drawn (you're first-person arms) except an equipped weapon with a model, in your hands.
   repeated AbilityBonus ability_bonuses = 14;
   repeated SkillBonus skill_bonuses = 15;
   int32 stamina_bonus = 16;
@@ -81,7 +81,8 @@ message ItemDef {
   bool unique = 20;
   // More than 1: this many copies share one cell (med-patches, rations). Bulk and value count each copy.
   int32 stack = 21;
-  // Its own model (file name in Art/Models/Relics, built into the scene); empty: a placeholder block.
+  // Its own model, built into the scene: a relic's file name in Art/Models/Relics, a weapon's in Art/Models/Weapons
+  // (drawn into your hands while equipped). Empty: a placeholder block (and an equipped weapon fires from the hip).
   string model = 22;
   // Whose it was, when, and a line about them (named relics: shown when you pick it up).
   ItemLore lore = 23;
