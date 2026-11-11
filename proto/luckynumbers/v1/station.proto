@@ -147,6 +147,9 @@ enum StationRoomRole {
   // North of comms through a corridor: the shooting range, long north-south (door and bench at the south end,
   // targets at the north). StationScene.range sets it up.
   STATION_ROOM_ROLE_RANGE = 8;
+  // North of the docking bay through a corridor: the Flight Academy, its console to the Flight School (windows
+  // north, out over the bay's side of the station).
+  STATION_ROOM_ROLE_ACADEMY = 9;
 }
 
 message StationRoomRule {

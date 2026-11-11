@@ -2,7 +2,8 @@
 # proto-message: luckynumbers.v1.StationScene
 # The player's station, north (row 0) facing the planet it orbits. Rooms: observation gallery (north
 # windows), docking bay (west; the airlock E is your way out to the ship), central hub, comms (east),
-# three crew cabins (you start in the middle one, P), storage (south-west) and engineering (east).
+# three crew cabins (you start in the middle one, P), storage (south-west) and engineering (east). The seeded
+# layout (generator, below) adds the shooting range north of comms and the Flight Academy north of the bay.
 # Your ship is docked in the bay (dock below): board it to leave.
 # One character per 2 m cell; see StationScene in station.proto for the legend.
 
@@ -187,8 +188,16 @@ generator {
     items { piece: "barrel" u: 0.0 v: 1.25 yaw: 40 solid: true }
     items { piece: "crate_case" u: 1.25 v: 1.25 solid: true }
     items { piece: "crate_case" u: 1.25 v: 1.0 yaw: 12 solid: true }
-    # The Flight School: test-fly your ship on the training deck (you come back here).
+  }
+  rooms {
+    # North of the docking bay: the Flight Academy. Its console takes you to the Flight School's training deck to
+    # test-fly your ship (you come back beside it); seats facing it, windows north.
+    role: STATION_ROOM_ROLE_ACADEMY name: "Flight Academy" min_width: 9 max_width: 11 min_depth: 5 max_depth: 6 windows: true
     items { piece: "lab_bench" u: 0.5 v: -0.3 yaw: 180 action: STATION_ACTION_FLIGHT_SCHOOL prompt: "E: Flight School - test-fly your ship" }
+    items { piece: "chair_station" u: 0.3 v: 0.55 yaw: 180 solid: true }
+    items { piece: "chair_station" u: 0.5 v: 0.55 yaw: 180 solid: true }
+    items { piece: "chair_station" u: 0.7 v: 0.55 yaw: 180 solid: true }
+    items { piece: "crate_small" u: 1.25 v: 1.25 yaw: 15 solid: true }
   }
   rooms {
     role: STATION_ROOM_ROLE_COMMS name: "Comms" min_width: 6 max_width: 8 min_depth: 4 max_depth: 6 windows: true

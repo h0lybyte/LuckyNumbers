@@ -8,7 +8,8 @@ namespace LuckyNumbers.Station
 {
     /// <summary>
     /// Seeded station layouts (StationScene.generator): a hub in the middle, the gallery north of it (towards the
-    /// planet), the docking bay west, comms east (with the shooting range north of it), and a corridor south of it with
+    /// planet), the docking bay west (with the Flight Academy north of it), comms east (with the shooting range north
+    /// of it), and a corridor south of it with
     /// storage, the cabins and engineering hanging off it. Sizes, offsets and corridor lengths come from the lucky number; each room joins
     /// its corridor through a doorway; windows go on walls that face away from the hub. Every layout is checked
     /// (doorways between two opposite walkable cells, corridors touching rooms only through doorways, windows on a
@@ -112,16 +113,15 @@ namespace LuckyNumbers.Station
                 var x0 = dir < 0 ? door - size.width : door + 1;
                 return AddRoom(rule, rule.Name, new RectInt(x0, y0, size.width, size.height));
             }
-            Side(Rule(StationRoomRole.Bay), -1);
+            var bay = Side(Rule(StationRoomRole.Bay), -1);
             var comms = Side(Rule(StationRoomRole.Comms), +1);
 
-            // North of comms: the shooting range, long north-south, its door in comms' north wall through a corridor
-            // (door and bench at its south end, targets at the north).
-            var rangeRule = Rule(StationRoomRole.Range);
-            if (rangeRule != null && comms != null)
+            // A room north of `parent`, its door in the parent's north wall through a corridor.
+            void North(StationRoomRule rule, Room parent)
             {
-                var c = comms.Rect;
-                var size = Size(ref rng, rangeRule);
+                if (rule == null || parent == null) return;
+                var c = parent.Rect;
+                var size = Size(ref rng, rule);
                 var x = Between(ref rng, c.xMin + 1, c.xMax - 2);
                 var length = Between(ref rng, minC, maxC);
                 Paint(new Vector2Int(x, c.yMin - 1), 'D');
@@ -129,8 +129,12 @@ namespace LuckyNumbers.Station
                 var door = c.yMin - 2 - length;
                 Paint(new Vector2Int(x, door), 'D');
                 var x0 = x - Between(ref rng, 1, size.width - 2);
-                AddRoom(rangeRule, rangeRule.Name, new RectInt(x0, door - size.height, size.width, size.height));
+                AddRoom(rule, rule.Name, new RectInt(x0, door - size.height, size.width, size.height));
             }
+
+            // North of comms: the shooting range, long north-south (door and bench at its south end, targets at the
+            // north).
+            North(Rule(StationRoomRole.Range), comms);
 
             // South: a corridor down from the hub, then a spine running west-east with rooms hanging below it.
             var below = new List<(StationRoomRule rule, string name, bool yours)>();
@@ -185,6 +189,9 @@ namespace LuckyNumbers.Station
                 for (var cx = from; cx <= to; cx++) Paint(new Vector2Int(cx, spine), 'c');
             }
 
+            // North of the bay: the Flight Academy (rolled last, so every other room comes out as it did before it).
+            North(Rule(StationRoomRole.Academy), bay);
+
             // Windows on the walls facing away from the hub (every other cell; doors stay doors).
             foreach (var room in rooms)
             {
@@ -192,7 +199,7 @@ namespace LuckyNumbers.Station
                 var r = room.Rect;
                 IEnumerable<Vector2Int> Wall() => room.Rule.Role switch
                 {
-                    StationRoomRole.Gallery => Row(r.xMin, r.xMax, r.yMin - 1),
+                    StationRoomRole.Gallery or StationRoomRole.Academy => Row(r.xMin, r.xMax, r.yMin - 1),
                     StationRoomRole.Bay => Concat(Row(r.xMin, r.xMax, r.yMin - 1), Column(r.xMin - 1, r.yMin, r.yMax)),
                     StationRoomRole.Comms or StationRoomRole.Engineering => Column(r.xMax, r.yMin, r.yMax),
                     StationRoomRole.Cabin or StationRoomRole.Storage => Row(r.xMin, r.xMax, r.yMax),
