@@ -283,6 +283,11 @@ namespace LuckyNumbers.Model
                 Write(sink.BeginEvent("CharacterXpGained"), e);
                 sink.EndEvent();
             }));
+            d.Add(c.Resolve<ISubscriber<AttackRolled>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("AttackRolled"), e);
+                sink.EndEvent();
+            }));
             d.Add(c.Resolve<ISubscriber<SceneChangeRequested>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("SceneChangeRequested"), e);
@@ -1029,6 +1034,28 @@ namespace LuckyNumbers.Model
             Json.Num(b, e.Amount);
             b.Append(",\"source\":");
             Json.Str(b, e.Source);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, AttackRolled e)
+        {
+            b.Append('{');
+            b.Append("\"target\":");
+            Json.Str(b, e.Target);
+            b.Append(",\"roll\":");
+            Json.Num(b, e.Roll);
+            b.Append(",\"bonus\":");
+            Json.Num(b, e.Bonus);
+            b.Append(",\"total\":");
+            Json.Num(b, e.Total);
+            b.Append(",\"ac\":");
+            Json.Num(b, e.Ac);
+            b.Append(",\"hit\":");
+            b.Append(e.Hit ? "true" : "false");
+            b.Append(",\"title\":");
+            Json.Str(b, e.Title);
+            b.Append(",\"text\":");
+            Json.Str(b, e.Text);
             b.Append('}');
         }
 

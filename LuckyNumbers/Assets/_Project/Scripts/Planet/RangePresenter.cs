@@ -22,6 +22,9 @@ namespace LuckyNumbers.Planet
     /// It draws only the arms' layer, from beside the eyes, so walls never block it and it moves with your look.
     /// ?ln-bake picks up every gun and melee weapon in turn, solves each hand's grip live and logs it as a "[Bake]"
     /// JSON line: tools/ln.py bake-grasps runs that headless and writes the grips into weapons.json.
+    /// Every shot at a target board or crate is an attack roll: d20 + the sheet's ranged modifier (content/character.txtpb
+    /// ranged_ability) against the target's AC, which climbs with distance. A miss sends the bolt wide; the page's d20
+    /// shows the roll (AttackRolled). ?ln-range=rifle_block&ln-aim picks that gun up and aims at the middle board (tests).
     /// </summary>
     public sealed class RangePresenter : IStartable, IDisposable
     {
@@ -30,7 +33,10 @@ namespace LuckyNumbers.Planet
         readonly PlayerView _player;
         readonly ArmsView _arms;
         readonly ISubscriber<InputActionPerformed> _actions;
+        readonly CharacterSheet _sheet;
+        readonly IPublisher<AttackRolled> _rolled;
         IDisposable _subscription;
+        uint _shots;
         readonly CancellationTokenSource _cts = new();
         Camera _side;
         int _view;   // index into Views (0: off)
@@ -53,8 +59,10 @@ namespace LuckyNumbers.Planet
 
         [Inject]
         public RangePresenter(IFirstPerson firstPerson, PlanetView ui, PlayerView player, ArmsView arms,
-                              ISubscriber<InputActionPerformed> actions)
+                              ISubscriber<InputActionPerformed> actions, CharacterSheet sheet, IPublisher<AttackRolled> rolled)
         {
+            _sheet = sheet;
+            _rolled = rolled;
             _firstPerson = firstPerson;
             _ui = ui;
             _player = player;
@@ -67,6 +75,7 @@ namespace LuckyNumbers.Planet
             Time.timeScale = 1f;
             _subscription?.Dispose();
             _cts.Cancel();
+            _firstPerson.ShotCheck = null;
             ArmsView.UsePresets = true;
         }
 
@@ -84,10 +93,28 @@ namespace LuckyNumbers.Planet
             if (url.Contains("ln-slowmo")) Time.timeScale = 0.25f;
             var start = StartAt();
             if (start != null) Face(start);
+            _firstPerson.ShotCheck = AttackRoll;
             _firstPerson.Active = true;
             if (url.Contains("ln-bake")) Bake(_cts.Token).Forget();
+            else if (url.Contains("ln-aim") && start != null) Aim(start, _cts.Token).Forget();
             Debug.Log($"[Range] ready: {Object.FindObjectsByType<WeaponView>().Length} guns, " +
                       $"{Object.FindObjectsByType<MeleeView>().Length} melee{(start != null ? $", at {start.name}" : "")}"); // marker for ln.py webshot
+        }
+
+        /// <summary>Pick up the start item and look down the sights at the middle target board (?ln-aim).</summary>
+        async UniTaskVoid Aim(Transform item, CancellationToken ct)
+        {
+            await UniTask.Delay(400, cancellationToken: ct);
+            if (!_firstPerson.PickUp(item.GetComponent<Rigidbody>())) { Debug.LogWarning($"[Range] couldn't pick up {item.name}"); return; }
+            while (_firstPerson.Held == null) await UniTask.Yield(ct);
+            GameObject board = null;
+            foreach (var t in Object.FindObjectsByType<Transform>())
+                if (t.name == "Target" && (board == null || Mathf.Abs(t.position.x) < Mathf.Abs(board.transform.position.x))) board = t.gameObject;
+            if (board == null) return;
+            var eye = _player.Camera.transform.position;
+            var d = board.transform.position - eye;
+            _firstPerson.Look(Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg, -Mathf.Atan2(d.y, new Vector2(d.x, d.z).magnitude) * Mathf.Rad2Deg);
+            Debug.Log("[Range] aimed at the middle board");
         }
 
         [Serializable] sealed class BakeLine { public string item; public GraspData left, right; }
@@ -126,6 +153,42 @@ namespace LuckyNumbers.Planet
             }
             ArmsView.UsePresets = true;
             Debug.Log($"[Bake] done: {baked} of {items.Count}");
+        }
+
+        /// <summary>
+        /// A shot at what the crosshair is on: boards and crates roll d20 + the ranged modifier against AC 8 + a point
+        /// per 4 m (near crates 10, far crates 12, the boards 15). Naturals stand: 20 always hits, 1 always misses.
+        /// Anything else (walls, floor, the bench) isn't a target: the shot just flies.
+        /// </summary>
+        bool AttackRoll(Collider on, float distance)
+        {
+            var target = on.name.StartsWith("Target post") ? null
+                       : on.name.StartsWith("Target") ? "Target board"
+                       : on.name.StartsWith("Crate") ? "Crate" : null;
+            if (target == null) return true;
+            var rng = new Unity.Mathematics.Random((_sheet.Seed.Value ^ (0xA77Au * ++_shots)) | 1u);
+            var roll = rng.NextInt(1, 21);
+            var bonus = RangedBonus();
+            var total = roll + bonus;
+            var ac = 8 + Mathf.RoundToInt(distance / 4f);
+            var hit = roll == 20 || (roll != 1 && total >= ac);
+            var (title, text) = roll == 20 ? ("Critical hit", "Dead centre.")
+                              : roll == 1 ? ("Fumble", "The bolt goes nowhere near it.")
+                              : hit ? ("Hit", total - ac >= 5 ? "Clean hit." : "Just caught the edge.")
+                              : ("Miss", ac - total <= 2 ? "So close: it grazed past." : "Wide.");
+            _rolled.Publish(new AttackRolled(target, roll, bonus, total, ac, hit, title, text));
+            Debug.Log($"[Range] {target} at {distance:0.0} m: d20 {roll} + {bonus} = {total} vs AC {ac}: {title}");
+            return hit;
+        }
+
+        /// <summary>The sheet's modifier for content/character.txtpb ranged_ability (0 before a sheet is rolled).</summary>
+        int RangedBonus()
+        {
+            var abilities = GameContent.Character.Abilities;
+            for (var i = 0; i < abilities.Count; i++)
+                if (abilities[i].Id == GameContent.Character.RangedAbility)
+                    return i < _sheet.Mods.Count ? _sheet.Mods[i] : 0;
+            return 0;
         }
 
         static bool SideViewAtStart() => (Application.absoluteURL ?? "").Contains("ln-sideview");   // start with it on

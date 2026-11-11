@@ -312,6 +312,22 @@ export interface CharacterXpGained {
   source: string;
 }
 
+/**
+ * A shot at something (the range's targets and crates): the d20, the sheet's ranged modifier, the total against
+ * the target's AC (it gets harder with distance), and whether it hit. A natural 20 always hits, a natural 1 never.
+ */
+export interface AttackRolled {
+  target: string;
+  roll: number;
+  bonus: number;
+  total: number;
+  ac: number;
+  hit: boolean;
+  /** "Hit", "Miss", "Critical hit", "Fumble"; and a line about it. */
+  title: string;
+  text: string;
+}
+
 export interface SceneChangeRequested {
   target: GameScene;
 }
@@ -467,6 +483,7 @@ export interface WebEvents {
   CharacterOriginRequested: CharacterOriginRequested;
   CharacterResetRequested: CharacterResetRequested;
   CharacterXpGained: CharacterXpGained;
+  AttackRolled: AttackRolled;
   SceneChangeRequested: SceneChangeRequested;
   SceneEntered: SceneEntered;
   UniverseSeedChanged: UniverseSeedChanged;

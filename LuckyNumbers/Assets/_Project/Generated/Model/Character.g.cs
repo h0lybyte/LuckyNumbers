@@ -61,6 +61,10 @@ namespace LuckyNumbers.Model
         /// </summary>
         public int XpPerRelic { get; set; }
         public int XpPerArtifact { get; set; }
+        /// <summary>
+        /// This ability's modifier adds to every shot's attack roll (the range: d20 + it against the target's AC).
+        /// </summary>
+        public string RangedAbility { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public CharacterConfig Clone() => (CharacterConfig)MemberwiseClone();
@@ -316,6 +320,37 @@ namespace LuckyNumbers.Model
         {
             Amount = amount;
             Source = source;
+        }
+    }
+
+    /// <summary>
+    /// A shot at something (the range's targets and crates): the d20, the sheet's ranged modifier, the total against
+    /// the target's AC (it gets harder with distance), and whether it hit. A natural 20 always hits, a natural 1 never.
+    /// </summary>
+    public readonly struct AttackRolled
+    {
+        public readonly string Target;
+        public readonly int Roll;
+        public readonly int Bonus;
+        public readonly int Total;
+        public readonly int Ac;
+        public readonly bool Hit;
+        /// <summary>
+        /// "Hit", "Miss", "Critical hit", "Fumble"; and a line about it.
+        /// </summary>
+        public readonly string Title;
+        public readonly string Text;
+
+        public AttackRolled(string target, int roll, int bonus, int total, int ac, bool hit, string title, string text)
+        {
+            Target = target;
+            Roll = roll;
+            Bonus = bonus;
+            Total = total;
+            Ac = ac;
+            Hit = hit;
+            Title = title;
+            Text = text;
         }
     }
 }

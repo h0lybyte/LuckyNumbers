@@ -550,6 +550,7 @@ kbd {
 .d20-panel.crit .d20-title { color: var(--warn); text-shadow: 0 0 8px rgba(255, 176, 32, 0.6); }
 .d20-panel.fumble .d20-title { color: var(--bad); text-shadow: 0 0 8px rgba(255, 59, 92, 0.6); }
 .d20-line { margin-top: 2px; color: var(--fg); }
+.d20-panel.miss .d20-title { color: var(--muted); }
 
 /* ---- flight HUD (landing) ---- */
 

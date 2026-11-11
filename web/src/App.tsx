@@ -4,6 +4,7 @@ import { LN, useLNEvent, useLNReady, useLNState } from "./ln";
 import { installFreeMouseKey, usePointerLocked } from "./pointer";
 import { StationHud, StationTools } from "./station";
 import { RelicHud } from "./relics";
+import { RangeHud } from "./range";
 import { FlightHud } from "./flight";
 import { CharacterSheetGate } from "./sheet";
 import { HangarGate } from "./hangar";
@@ -48,6 +49,7 @@ export function App({ dock }: { dock: HTMLElement | null }) {
 function StationHudGate() {
   const flow = useLNState("FlowState");
   if (flow?.scene === "Station") return <StationHud />;
+  if (flow?.scene === "Range") return <RangeHud />;
   if (flow?.scene === "Planet")
     return (
       <>

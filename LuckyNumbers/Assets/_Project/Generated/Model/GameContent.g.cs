@@ -544,6 +544,7 @@ namespace LuckyNumbers.Model
             StaminaAbility = "con",
             XpPerRelic = 40,
             XpPerArtifact = 150,
+            RangedAbility = "dex",
         };
 
         /// <summary>From <c>content/credits.txtpb</c>.</summary>

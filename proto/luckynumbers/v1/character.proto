@@ -38,6 +38,8 @@ message CharacterConfig {
   // XP for picking up a relic, and for a named artifact.
   int32 xp_per_relic = 17;
   int32 xp_per_artifact = 18;
+  // This ability's modifier adds to every shot's attack roll (the range: d20 + it against the target's AC).
+  string ranged_ability = 19;
 }
 
 message AbilityDef {
@@ -180,4 +182,20 @@ message CharacterXpGained {
   option (ln.web) = true;
   int32 amount = 1;
   string source = 2;
+}
+
+// A shot at something (the range's targets and crates): the d20, the sheet's ranged modifier, the total against
+// the target's AC (it gets harder with distance), and whether it hit. A natural 20 always hits, a natural 1 never.
+message AttackRolled {
+  option (ln.event) = true;
+  option (ln.web) = true;
+  string target = 1;
+  int32 roll = 2;
+  int32 bonus = 3;
+  int32 total = 4;
+  int32 ac = 5;
+  bool hit = 6;
+  // "Hit", "Miss", "Critical hit", "Fumble"; and a line about it.
+  string title = 7;
+  string text = 8;
 }

@@ -96,6 +96,7 @@ trained_bonus: 3
 
 level_xp: [300, 900, 2700, 6500, 14000]
 relic_ability: "wis"
+ranged_ability: "dex"
 stamina_ability: "con"
 xp_per_relic: 40
 xp_per_artifact: 150

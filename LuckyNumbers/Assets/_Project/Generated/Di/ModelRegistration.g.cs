@@ -22,6 +22,7 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<CharacterOriginRequested>(options);
             builder.RegisterMessageBroker<CharacterResetRequested>(options);
             builder.RegisterMessageBroker<CharacterXpGained>(options);
+            builder.RegisterMessageBroker<AttackRolled>(options);
             builder.RegisterMessageBroker<SceneChangeRequested>(options);
             builder.RegisterMessageBroker<SceneEntered>(options);
             builder.RegisterMessageBroker<UniverseSeedChanged>(options);
