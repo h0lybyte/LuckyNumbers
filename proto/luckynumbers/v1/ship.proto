@@ -63,14 +63,9 @@ message ShipGun {
   string name = 2;
   // Seconds between shots from one barrel (the pair alternate, so the ship fires twice as often).
   float cooldown = 3;
-  // m/s, metres.
-  float speed = 4;
-  float range = 5;
   // Push on what it hits (N s).
   float impulse = 6;
-  // The bolt's size (metres).
-  float length = 7;
-  float width = 8;
-  // HDR: blooms.
-  Rgba color = 9;
+  // What it shoots.
+  Projectile bolt = 10;
+  reserved 4, 5, 7, 8, 9; // speed, range, length, width, color: in bolt
 }

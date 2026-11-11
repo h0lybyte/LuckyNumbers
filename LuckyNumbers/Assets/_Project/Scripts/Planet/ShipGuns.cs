@@ -40,8 +40,8 @@ namespace LuckyNumbers.Planet
         public ShipGuns(ShipView ship, Material material)
         {
             _ship = ship;
-            _capsules = new ShapePool(PrimitiveType.Capsule, material, "Laser", BaseColor, ColorId, prewarm: 8);
-            _flashes = new Flashes(new ShapePool(PrimitiveType.Sphere, material, "Laser flash", BaseColor, ColorId, prewarm: 8), ownsPool: true);
+            _capsules = new ShapePool(PrimitiveType.Capsule, material, "Laser", BaseColor, ColorId, prewarm: 0);   // Arm reserves per barrel
+            _flashes = new Flashes(new ShapePool(PrimitiveType.Sphere, material, "Laser flash", BaseColor, ColorId, prewarm: 0), ownsPool: true);
         }
 
         /// <summary>Mount the skin's guns, one per barrel (missing ids leave that barrel empty).</summary>
@@ -54,7 +54,13 @@ namespace LuckyNumbers.Planet
             {
                 _barrels[i] = PlayerShipStats.Gun(stats.Guns[i]);
                 if (_barrels[i] == null) Debug.LogWarning($"[Guns] no gun '{stats.Guns[i]}' (content/ships.txtpb guns)");
+                else if (_barrels[i].Bolt == null) { Debug.LogWarning($"[Guns] gun '{stats.Guns[i]}' has no bolt (content/ships.txtpb)"); _barrels[i] = null; }
             }
+            // Enough shapes for every barrel's bolts in flight (its bolt's prewarm, 4 if unset).
+            var prewarm = 0;
+            foreach (var g in _barrels) if (g != null) prewarm += g.Bolt.PrewarmOr(4);
+            _capsules.Reserve(prewarm);
+            _flashes.Reserve(prewarm);
             _firepower = Mathf.Max(0.1f, stats.Firepower);
             Debug.Log($"[Guns] {stats.Name}: {string.Join(", ", stats.Guns)} (firepower {_firepower:0.00})");
         }
@@ -75,9 +81,11 @@ namespace LuckyNumbers.Planet
                 if (other != i) _ready[other] = Mathf.Max(_ready[other], Time.time + Mathf.Max(0.02f, gun.Cooldown) / _firepower * 0.5f);
                 var from = _ship.Muzzle(i);
                 var dir = _ship.Pivot.forward;
-                var view = _capsules.Get(from, Quaternion.FromToRotation(Vector3.up, dir), new Vector3(gun.Width, gun.Length * 0.5f, gun.Width), Tint(gun));
-                _bolts.Add(new Bolt { View = view, Position = from, Direction = dir, Speed = gun.Speed + Mathf.Max(0f, carry), Left = gun.Range, Gun = gun });
-                _flashes.Add(from, gun.Width * 4f, 0.07f, Tint(gun));
+                var p = gun.Bolt;
+                var view = _capsules.Get(from, Quaternion.FromToRotation(Vector3.up, dir), new Vector3(p.Width, p.Length * 0.5f, p.Width), Tint(p));
+                _bolts.Add(new Bolt { View = view, Position = from, Direction = dir, Speed = p.Speed + Mathf.Max(0f, carry), Left = p.Range, Gun = gun });
+                var (size, life) = p.Muzzle.Of(p.Width, 4f, 0.07f);
+                _flashes.Add(from, size, life, Tint(p));
                 Shots++;
                 return true;
             }
@@ -95,14 +103,16 @@ namespace LuckyNumbers.Planet
                     hit.collider.GetComponentInParent<IDamageable>()?.Hit("ship", hit.point, b.Direction);
                     if (hit.rigidbody != null && !hit.rigidbody.isKinematic)
                         hit.rigidbody.AddForceAtPosition(b.Direction * b.Gun.Impulse, hit.point, ForceMode.Impulse);
-                    _flashes.Add(hit.point + hit.normal * 0.05f, b.Gun.Width * 10f, 0.25f, Tint(b.Gun));
-                    Debug.Log($"[Guns] bolt hit {hit.collider.name} after {b.Gun.Range - b.Left + hit.distance:0} m");
+                    var p = b.Gun.Bolt;
+                    var (size, life) = p.Impact.Of(p.Width, 10f, 0.25f);
+                    _flashes.Add(hit.point + hit.normal * 0.05f, size, life, Tint(p));
+                    Debug.Log($"[Guns] bolt hit {hit.collider.name} after {p.Range - b.Left + hit.distance:0} m");
                     Remove(i);
                     continue;
                 }
                 b.Position += b.Direction * step;
                 b.Left -= step;
-                b.View.Transform.position = b.Position - b.Direction * (b.Gun.Length * 0.5f);   // the tail trails the head
+                b.View.Transform.position = b.Position - b.Direction * (b.Gun.Bolt.Length * 0.5f);   // the tail trails the head
                 if (b.Left <= 0f) { Remove(i); continue; }
                 _bolts[i] = b;
             }
@@ -132,11 +142,7 @@ namespace LuckyNumbers.Planet
             return found;
         }
 
-        static Color Tint(ShipGun gun)
-        {
-            var g = gun.Color;
-            return g.R + g.G + g.B > 0f ? new Color(g.R, g.G, g.B, 1f) : new Color(2.6f, 0.35f, 0.3f);
-        }
+        static Color Tint(Projectile p) => p.Tint(new Color(2.6f, 0.35f, 0.3f));
 
         public void Dispose()
         {

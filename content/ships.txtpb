@@ -19,8 +19,9 @@ fuel {
 
 guns {
   id: "basic_laser" name: "Basic laser rifle"
-  cooldown: 0.28 speed: 150 range: 450 impulse: 40 length: 9 width: 0.5
-  color { r: 2.6 g: 0.35 b: 0.3 a: 1 }
+  cooldown: 0.28 impulse: 40
+  bolt { speed: 150 range: 450 length: 9 width: 0.5 color { r: 2.6 g: 0.35 b: 0.3 a: 1 }
+         muzzle { size: 4 life: 0.07 } impact { size: 10 life: 0.25 } prewarm: 4 }   # prewarm: per barrel
 }
 
 default_stats {

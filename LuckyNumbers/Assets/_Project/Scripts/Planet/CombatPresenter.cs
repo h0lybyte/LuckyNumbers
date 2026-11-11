@@ -347,10 +347,12 @@ namespace LuckyNumbers.Planet
             if (item == null) return;
             var w = Weapon(item.Id);
             _nextShot = Time.time + math.max(0.05f, w.Cooldown);
+            var bolt = CombatWeapons.Bolt(w);
+            var range = math.max(5f, bolt.Range);
             var eye = _player.Camera.transform;
             var from = eye.position + eye.right * 0.22f - eye.up * 0.18f + eye.forward * 0.4f;   // from the hip, right hand
-            var target = eye.position + eye.forward * math.max(5f, w.Range);
-            var hits = Physics.RaycastAll(eye.position, eye.forward, math.max(5f, w.Range), ~0, QueryTriggerInteraction.Ignore);
+            var target = eye.position + eye.forward * range;
+            var hits = Physics.RaycastAll(eye.position, eye.forward, range, ~0, QueryTriggerInteraction.Ignore);
             var best = float.MaxValue;
             RaycastHit aimed = default;
             foreach (var h in hits)
@@ -361,11 +363,9 @@ namespace LuckyNumbers.Planet
             // At a monster: roll now (the d20 shows as you fire); a miss goes wide, a hit's damage rides the bolt.
             var m = MonsterAt(aimed.collider);
             if (m != null && !ShootAt(m, item.Id, aimed))
-                target = eye.position + (Wide(aimed, eye) - eye.position).normalized * math.max(5f, w.Range);
+                target = eye.position + (Wide(aimed, eye) - eye.position).normalized * range;
             if (!_firedOnce) { _firedOnce = true; Debug.Log($"[Combat] firing {w.Name} ({item.Id}): d20 + {Mod(w.Ability)} {w.Ability}, {w.Damage}"); }
-            var c = w.Color;
-            _bolts.Fire(from, target, w.Speed, math.max(5f, w.Range), math.max(0.2f, w.Length), math.max(0.02f, w.Width),
-                        c.R + c.G + c.B > 0f ? new Color(c.R, c.G, c.B) : new Color(0.4f, 1.6f, 2.6f), item.Id);
+            _bolts.Fire(from, target, bolt, item.Id);
         }
 
         Monster MonsterAt(Collider c)

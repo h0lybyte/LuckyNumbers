@@ -16,8 +16,8 @@ namespace LuckyNumbers.Core
     }
 
     /// <summary>
-    /// Reused primitive renderers (bolts, muzzle flashes): no collider, no shadows, one material, tinted per Get with
-    /// a property block. Creating and destroying a GameObject per shot hitches the web build (GC + native churn);
+    /// Reused primitive renderers (bolts, muzzle flashes), on a <see cref="Pool{T}"/>: no collider, no shadows, one
+    /// material, tinted per Get with a property block. Creating and destroying a GameObject per shot hitches the web build (GC + native churn);
     /// here a released shape only has its renderer turned off and waits under the pool's root for the next Get.
     /// The root lives in the active scene, so a scene change takes everything with it (Get skips the dead).
     /// </summary>
@@ -27,7 +27,7 @@ namespace LuckyNumbers.Core
         readonly Material _material;
         readonly string _name;
         readonly int _colorA, _colorB;
-        readonly Stack<Shape> _free = new();
+        readonly Pool<Shape> _pool;
         readonly MaterialPropertyBlock _block = new();
         Transform _root;
 
@@ -40,8 +40,12 @@ namespace LuckyNumbers.Core
             _colorA = colorA;
             _colorB = colorB;
             _root = new GameObject($"[Pool] {name}").transform;
-            for (var i = 0; i < prewarm; i++) _free.Push(Create(false));
+            _pool = new Pool<Shape>(Create, onRelease: s => s.Renderer.enabled = false, alive: s => s.Alive);
+            _pool.Reserve(prewarm);
         }
+
+        /// <summary>Make enough up front that `count` shapes exist in all.</summary>
+        public void Reserve(int count) => _pool.Reserve(count);
 
         /// <summary>Alive: the scene that made this pool is still loaded (a static pool rebuilds when it isn't).</summary>
         public bool Alive => _root != null;
@@ -49,9 +53,7 @@ namespace LuckyNumbers.Core
         /// <summary>A shape at `at`, turned and scaled, tinted `color`, on `layer`.</summary>
         public Shape Get(Vector3 at, Quaternion rotation, Vector3 scale, Color color, int layer = 0)
         {
-            Shape s;
-            do s = _free.Count > 0 ? _free.Pop() : Create(true);
-            while (!s.Alive);
+            var s = _pool.Get();
             var t = s.Transform;
             t.SetPositionAndRotation(at, rotation);
             t.localScale = scale;
@@ -63,14 +65,10 @@ namespace LuckyNumbers.Core
             return s;
         }
 
-        public void Release(Shape s)
-        {
-            if (!s.Alive) return;
-            s.Renderer.enabled = false;
-            _free.Push(s);
-        }
+        public void Release(Shape s) => _pool.Release(s);
 
-        Shape Create(bool on)
+        /// <summary>A new shape, renderer off (Get turns it on once it's posed).</summary>
+        Shape Create()
         {
             var go = GameObject.CreatePrimitive(_type);
             go.name = _name;
@@ -80,13 +78,13 @@ namespace LuckyNumbers.Core
             r.shadowCastingMode = ShadowCastingMode.Off;
             r.receiveShadows = false;
             if (_material != null) r.sharedMaterial = _material;
-            r.enabled = on;
+            r.enabled = false;
             return new Shape(go.transform, r);
         }
 
         public void Dispose()
         {
-            _free.Clear();
+            _pool.Clear();
             if (_root != null) Object.Destroy(_root.gameObject);
             _root = null;
         }
@@ -109,6 +107,9 @@ namespace LuckyNumbers.Core
             _pool = spheres;
             _ownsPool = ownsPool;
         }
+
+        /// <summary>Make enough flash shapes up front that `count` exist in all.</summary>
+        public void Reserve(int count) => _pool.Reserve(count);
 
         public void Add(Vector3 at, float size, float life, Color color, int layer = 0) =>
             _live.Add(new Flash { Shape = _pool.Get(at, Quaternion.identity, Vector3.one * (size * 0.4f), color, layer),

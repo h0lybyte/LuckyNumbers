@@ -78,13 +78,10 @@ message CombatWeapon {
   // The ability whose modifier adds to the attack roll ("dex", "str").
   string ability = 3;
   string damage = 4;
-  // Hand weapons: seconds between shots, bolt speed (m/s), range (m), size, colour (HDR).
+  // Hand weapons: seconds between shots, and what they shoot.
   float cooldown = 5;
-  float speed = 6;
-  float range = 7;
-  float length = 8;
-  float width = 9;
-  Rgba color = 10;
+  Projectile bolt = 12;
+  reserved 6, 7, 8, 9, 10; // speed, range, length, width, color: in bolt
   // Gun models (Art/Models/Weapons names, e.g. "rifle_block") that shoot as this when held (the station range, a gun
   // picked up): their seconds between shots, damage dice and ability come from here. Unlisted models: "default".
   repeated string models = 11;

@@ -120,14 +120,10 @@ namespace LuckyNumbers.Model
         public string Ability { get; set; }
         public string Damage { get; set; }
         /// <summary>
-        /// Hand weapons: seconds between shots, bolt speed (m/s), range (m), size, colour (HDR).
+        /// Hand weapons: seconds between shots, and what they shoot.
         /// </summary>
         public float Cooldown { get; set; }
-        public float Speed { get; set; }
-        public float Range { get; set; }
-        public float Length { get; set; }
-        public float Width { get; set; }
-        public Rgba Color { get; set; }
+        public Projectile Bolt { get; set; }
         /// <summary>
         /// Gun models (Art/Models/Weapons names, e.g. "rifle_block") that shoot as this when held (the station range, a gun
         /// picked up): their seconds between shots, damage dice and ability come from here. Unlisted models: "default".
