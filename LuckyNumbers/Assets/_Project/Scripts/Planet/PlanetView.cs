@@ -68,6 +68,18 @@ namespace LuckyNumbers.Planet
             _crosshair.EnableInClassList("ln-hidden", readout != null);
         }
 
+        /// <summary>
+        /// Flight HUD readout from a span (a ZString builder's), no message: the label only gets a new string when the
+        /// text reads differently, so a frame whose rounded numbers didn't move allocates nothing.
+        /// </summary>
+        public void Flight(System.ReadOnlySpan<char> readout)
+        {
+            _flightHud.EnableInClassList("ln-hidden", false);
+            if (!System.MemoryExtensions.SequenceEqual(readout, System.MemoryExtensions.AsSpan(_flightReadout.text))) _flightReadout.text = readout.ToString();
+            if (_flightMessage.text.Length > 0) _flightMessage.text = "";
+            _crosshair.EnableInClassList("ln-hidden", true);
+        }
+
         public void Bind() => BindUi(document.rootVisualElement);
 
         public void Fade(float alpha) => _flash.style.opacity = Mathf.Clamp01(alpha);

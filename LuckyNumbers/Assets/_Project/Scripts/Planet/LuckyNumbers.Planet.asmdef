@@ -11,6 +11,7 @@
         "MessagePipe",
         "R3.Unity",
         "UniTask",
+        "ZString",
         "LuckyNumbers.Title",
         "Unity.Mathematics",
         "Unity.Burst",

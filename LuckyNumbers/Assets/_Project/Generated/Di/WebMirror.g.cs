@@ -200,6 +200,9 @@ namespace LuckyNumbers.Model
                 d.Add(s.Ready.Subscribe(_ => sink.MarkState(8)));
                 d.Add(s.ReadyName.Subscribe(_ => sink.MarkState(8)));
                 d.Add(s.Cooldown.Subscribe(_ => sink.MarkState(8)));
+                NotifyCollectionChangedEventHandler<string> hKinds = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(8);
+                s.Kinds.CollectionChanged += hKinds;
+                d.Add(Disposable.Create(() => s.Kinds.CollectionChanged -= hKinds));
                 sink.MarkState(8);
             }
             {
@@ -1029,6 +1032,18 @@ namespace LuckyNumbers.Model
             Json.Str(b, s.ReadyName.Value);
             b.Append(",\"cooldown\":");
             Json.Num(b, s.Cooldown.Value);
+            b.Append(",\"kinds\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Kinds)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Str(b, x);
+                }
+            }
+            b.Append(']');
             b.Append('}');
         }
 

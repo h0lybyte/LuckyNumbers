@@ -52,16 +52,30 @@ const turn = (cells: Shape): Shape => {
   return out;
 };
 
-function readItems(rows: string[]): Item[] {
+/** What each kind of item is (PlayerInventory.kinds, sent once), by index. */
+type Kind = Omit<Item, "uid" | "x" | "y" | "rot" | "equipped" | "count">;
+
+function readKinds(rows: string[]): Kind[] {
   return rows.map((row) => {
-    const [uid, id, name, kind, x, y, rot, shape, bulk, value, color, description, actions, slot, equipped, bonuses, count] = row.split("|");
+    const [id, name, kind, shape, bulk, value, color, description, actions, slot, bonuses] = row.split("|");
     const a = Number(actions);
     return {
-      uid: Number(uid), id, name, kind: Number(kind), x: Number(x), y: Number(y), rot: Number(rot),
-      shape: parse(shape), bulk: Number(bulk), value: Number(value), color, description,
+      id, name, kind: Number(kind), shape: parse(shape), bulk: Number(bulk), value: Number(value), color, description,
       canUse: (a & 1) !== 0, canDrop: (a & 2) !== 0, canEquip: (a & 4) !== 0,
-      slot: Number(slot ?? 0), equipped: Number(equipped ?? 0), bonuses: bonuses ?? "", count: Number(count ?? 1) || 1,
+      slot: Number(slot ?? 0), bonuses: bonuses ?? "",
     };
+  });
+}
+
+/** The pack's rows ("uid|kind|x|y|rot|equipped|count") joined to their kinds; shapes turned `rot` times here. */
+function readItems(rows: string[], kinds: Kind[]): Item[] {
+  return rows.flatMap((row) => {
+    const [uid, kind, x, y, rot, equipped, count] = row.split("|").map(Number);
+    const k = kinds[kind];
+    if (!k) return [];   // kinds not here yet (or content out of step): skip until they are
+    let shape = k.shape;
+    for (let t = 0; t < rot; t++) shape = turn(shape);
+    return [{ ...k, uid, x, y, rot, shape, equipped: equipped || 0, count: count || 1 }];
   });
 }
 
@@ -99,7 +113,8 @@ export function EquipmentTab() {
 
 function PackBoard({ equipment }: { equipment: boolean }) {
   const inv = useLNState("PlayerInventory");
-  const items = useMemo(() => readItems(inv?.items ?? []), [inv?.items]);
+  const kinds = useMemo(() => readKinds(inv?.kinds ?? []), [inv?.kinds]);
+  const items = useMemo(() => readItems(inv?.items ?? [], kinds), [inv?.items, kinds]);
   const packed = useMemo(() => items.filter((i) => i.equipped === 0), [items]);
   const [selected, setSelected] = useState<number | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
