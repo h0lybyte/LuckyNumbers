@@ -128,6 +128,7 @@ namespace LuckyNumbers.Station
 
             // Each piece's meshes with their transform inside the model (FBX parts: a doorway has 3, a viewport 5).
             var parts = new Dictionary<string, List<(Mesh mesh, Matrix4x4 local)>>();
+            var separated = new Dictionary<Mesh, Mesh>();
             foreach (var p in pieces)
             {
                 if (p.model == null) continue;
@@ -137,10 +138,16 @@ namespace LuckyNumbers.Station
                 foreach (var mf in p.model.GetComponentsInChildren<MeshFilter>(true))
                 {
                     if (mf.sharedMesh == null) continue;
-                    list.Add((mf.sharedMesh, root * mf.transform.localToWorldMatrix));
+                    // Flush panels in one mesh (the cryo pod's skin) z-fight: lift them off the face under them.
+                    if (!separated.TryGetValue(mf.sharedMesh, out var mesh))
+                    {
+                        separated[mf.sharedMesh] = mesh = CoplanarFix.Separate(mf.sharedMesh, out var lifted);
+                        if (lifted > 0) Debug.Log($"[Station] {p.name}/{mf.name}: lifted {lifted} flush triangles");
+                    }
+                    list.Add((mesh, root * mf.transform.localToWorldMatrix));
                     names.Add(mf.name);
                 }
-                LiftLids(list, names);
+                LiftLids(list, names);   // and lids, a separate mesh flush on their body
                 parts[p.name] = list;
             }
             var lean = Mathf.Clamp01(config.RoomLean);
