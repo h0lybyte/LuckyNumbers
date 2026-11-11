@@ -38,6 +38,8 @@ namespace LuckyNumbers.Core
             // Scoped: the root and each scene scope get their own AssetScope, released with that scope.
             builder.Register<AssetScope>(Lifetime.Scoped);
             builder.Register<WeaponRack>(Lifetime.Scoped);   // per scene too: weapon copies from Prefabs/Weapons
+            builder.Register<ShipYard>(Lifetime.Scoped);     // ship hulls from Prefabs/Ships
+            builder.Register<SceneCurtain>(Lifetime.Scoped); // when the scene may fade in
         }
     }
 }
