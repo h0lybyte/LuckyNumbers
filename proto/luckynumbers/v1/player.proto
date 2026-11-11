@@ -117,4 +117,6 @@ message PlayerVoyage {
   bool rescued = 5;
   // At the Flight School: back at the station you step out beside its console (not by your ship, no homecoming).
   bool training = 6;
+  // Docked again after flying round outside (GameScene.Orbit): you step off beside your ship (no homecoming).
+  bool docked = 7;
 }

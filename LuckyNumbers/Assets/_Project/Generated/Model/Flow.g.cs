@@ -26,6 +26,10 @@ namespace LuckyNumbers.Model
         /// The Flight School: a training deck in space to test-fly your ship (the station's Docking Bay console).
         /// </summary>
         FlightSchool = 6,
+        /// <summary>
+        /// Outside the station: launched from the Docking Bay, fly round it in your ship and dock again.
+        /// </summary>
+        Orbit = 7,
     }
 
     public sealed class FlowState : IDisposable

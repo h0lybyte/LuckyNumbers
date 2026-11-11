@@ -237,6 +237,8 @@ enum StationAction {
   STATION_ACTION_PSX = 3;
   // Go to the Flight School (test-fly your ship); you come back beside this console.
   STATION_ACTION_FLIGHT_SCHOOL = 4;
+  // Launch: take your ship out of the Docking Bay into space round the station (GameScene.Orbit); dock to come back.
+  STATION_ACTION_UNDOCK = 5;
 }
 
 message StationSwitch {

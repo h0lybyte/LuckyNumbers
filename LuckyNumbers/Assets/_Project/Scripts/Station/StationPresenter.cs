@@ -36,6 +36,8 @@ namespace LuckyNumbers.Station
     ///
     /// Flight School: a console in the Docking Bay (STATION_ACTION_FLIGHT_SCHOOL) takes you to the training deck
     /// (GameScene.FlightSchool) to test-fly your ship; back from it (PlayerVoyage.training) you step out beside it.
+    /// The Docking Bay's launch console takes your ship out round the station (GameScene.Orbit); docked again
+    /// (PlayerVoyage.docked) you step off beside it.
     /// </summary>
     [Presenter]
     public sealed class StationPresenter : IStartable, IPostLateTickable, IDisposable
@@ -61,7 +63,7 @@ namespace LuckyNumbers.Station
         readonly PlayerVoyage _voyage;
         readonly IInventory _pack;
         readonly IPublisher<CharacterXpGained> _xp;
-        bool _returning, _training;
+        bool _returning, _training, _docked;
         // Jobs: which call is ringing / playing, the board's offers, the body the station orbits.
         enum CallKind { Dispatch, Homecoming, Board }
         CallKind _ringKind, _activeKind;
@@ -153,6 +155,8 @@ namespace LuckyNumbers.Station
             _voyage.Returning.Value = false;
             _training = _voyage.Training.Value && !_returning;
             _voyage.Training.Value = false;
+            _docked = _voyage.Docked.Value && !_returning;
+            _voyage.Docked.Value = false;
             if (_returning && _voyage.Trips.Value == 0) _voyage.Trips.Value = 1;   // back from a planet: you've been down
             _state.Call.Value = CallPhase.None;
             _caller = _config.Call?.Caller ?? "";
@@ -189,6 +193,7 @@ namespace LuckyNumbers.Station
             DockShip();
             if (_returning) TeleportBesideShip();
             if (_training) TeleportBesideConsole(StationAction.FlightSchool);
+            if (_docked) TeleportBesideShip();
             _flow.Preload(NextScene);
             PlaceInSpace(_cts.Token).Forget();
         }
@@ -328,6 +333,7 @@ namespace LuckyNumbers.Station
                 DockShip();
                 if (_returning) TeleportBesideShip();
                 if (_training) TeleportBesideConsole(StationAction.FlightSchool);
+                if (_docked) TeleportBesideShip();
             }
             // The freighter of the job you're on (or were on, coming back): its site's own cargo manifest.
             var manifest = LuckyNumbers.Cargo.Manifest.Generate(GameContent.Cargo, Jobs.SiteSeed(_space.Seed, _job.Seed.Value));
@@ -460,6 +466,9 @@ namespace LuckyNumbers.Station
                 case StationAction.FlightSchool:
                     ToFlightSchool();
                     break;
+                case StationAction.Undock:
+                    Undock();
+                    break;
             }
         }
 
@@ -565,6 +574,18 @@ namespace LuckyNumbers.Station
             _firstPerson.Active = false;
             _state.Prompt.Value = "";
             Debug.Log("[Station] to the Flight School");
+            Leave(_cts.Token).Forget();
+        }
+
+        /// <summary>Launch: out of the bay into space round the station (GameScene.Orbit); docking brings you back beside the ship.</summary>
+        void Undock()
+        {
+            _next = GameScene.Orbit;
+            _leaving = true;
+            _firstPerson.Active = false;
+            _state.Prompt.Value = "";
+            PlayerShipStats.Refuel(_playerShip);   // docked: the station fills the tank
+            Debug.Log("[Station] launch: out of the bay");
             Leave(_cts.Token).Forget();
         }
 

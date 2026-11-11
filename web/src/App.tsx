@@ -19,12 +19,13 @@ export function App({ dock }: { dock: HTMLElement | null }) {
 
   // ?ln-range: straight to the station's shooting range once Unity is up (the station puts you at its firing line;
   // ?ln-range=knife faces that weapon, &ln-bake bakes every weapon's grips: tools/ln.py bake-grasps);
-  // ?ln-flight: straight to the Flight School (test-flying the ships, their jets).
+  // ?ln-flight: straight to the Flight School (test-flying the ships, their jets); ?ln-orbit: outside the station.
   useEffect(() => {
     if (!ready) return;
     const q = new URLSearchParams(location.search);
     if (q.has("ln-range")) LN.send("SceneChangeRequested", { target: "Station" });
     else if (q.has("ln-flight")) LN.send("SceneChangeRequested", { target: "FlightSchool" });
+    else if (q.has("ln-orbit")) LN.send("SceneChangeRequested", { target: "Orbit" });
   }, [ready]);
 
   // ` toggles the bridge inspector (capture phase: runs before Unity's keyboard handling).
@@ -244,7 +245,7 @@ function Inspector() {
       <section>
         <h3>Send</h3>
         <div className="row">
-          {(["Title", "Intro", "Planet", "Station", "FlightSchool"] as const).map((scene) => (
+          {(["Title", "Intro", "Planet", "Station", "FlightSchool", "Orbit"] as const).map((scene) => (
             <button key={scene} type="button" onClick={() => LN.send("SceneChangeRequested", { target: scene })}>
               {scene}
             </button>

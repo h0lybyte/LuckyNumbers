@@ -310,6 +310,7 @@ namespace LuckyNumbers.Model
                 d.Add(s.Trips.Subscribe(_ => sink.MarkState(17)));
                 d.Add(s.Rescued.Subscribe(_ => sink.MarkState(17)));
                 d.Add(s.Training.Subscribe(_ => sink.MarkState(17)));
+                d.Add(s.Docked.Subscribe(_ => sink.MarkState(17)));
                 sink.MarkState(17);
             }
             {
@@ -1233,6 +1234,8 @@ namespace LuckyNumbers.Model
             b.Append(s.Rescued.Value ? "true" : "false");
             b.Append(",\"training\":");
             b.Append(s.Training.Value ? "true" : "false");
+            b.Append(",\"docked\":");
+            b.Append(s.Docked.Value ? "true" : "false");
             b.Append('}');
         }
 
@@ -1674,6 +1677,7 @@ namespace LuckyNumbers.Model
                 case GameScene.Planet: return "Planet";
                 case GameScene.Station: return "Station";
                 case GameScene.FlightSchool: return "FlightSchool";
+                case GameScene.Orbit: return "Orbit";
                 default: return ((int)v).ToString(CultureInfo.InvariantCulture);
             }
         }
@@ -1689,6 +1693,7 @@ namespace LuckyNumbers.Model
                 case "Planet": return GameScene.Planet;
                 case "Station": return GameScene.Station;
                 case "FlightSchool": return GameScene.FlightSchool;
+                case "Orbit": return GameScene.Orbit;
                 default: return default;
             }
         }
