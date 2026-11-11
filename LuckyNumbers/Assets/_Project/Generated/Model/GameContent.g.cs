@@ -2358,6 +2358,24 @@ namespace LuckyNumbers.Model
             NoJobPrompt = "E: pick a job and leave",
         };
 
+        /// <summary>From <c>content/orbit.txtpb</c>.</summary>
+        public static readonly OrbitScene Orbit = new OrbitScene
+        {
+            Title = "OUTSIDE THE STATION",
+            Hint = "W/S thrust - A/D strafe - Space/C up, down - Q/E roll - Shift boost - X brake - click, then mouse to aim\nFly slowly into the docking beacon at the bay, then E to dock",
+            DockPrompt = "E: dock",
+            SlowPrompt = "Too fast to dock - brake (X)",
+            DockOffset = 0.8f,
+            DockRadius = 0.6f,
+            DockSpeed = 0.18f,
+            StartDistance = 2.5f,
+            HullHeight = 9.0f,
+            Range = 40.0f,
+            ChaseDistance = 1.45f,
+            ChaseHeight = 0.42f,
+            ReadoutSeconds = 0.15f,
+        };
+
         /// <summary>From <c>content/planet.txtpb</c>.</summary>
         public static readonly PlanetScene Planet = new PlanetScene
         {
@@ -4360,6 +4378,15 @@ namespace LuckyNumbers.Model
                                 V = 1.0f,
                                 Yaw = 12.0f,
                                 Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "lab_bench",
+                                U = 0.5f,
+                                V = -0.3f,
+                                Yaw = 180.0f,
+                                Action = StationAction.Undock,
+                                Prompt = "E: launch - fly out round the station",
                             },
                         },
                     },

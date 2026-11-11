@@ -47,7 +47,7 @@ namespace LuckyNumbers.Core
     /// seed), the pack (IPackSave), the ship's skin and fuel, credits and trips, and the job. Play on the title asks
     /// which slot (ISaveSlots); the run then saves to it before each scene change, on arriving, and every
     /// AutosaveSeconds. A continued run wakes at the station: back from a planet (PlayerVoyage.returning, so relics
-    /// sell and a finished job pays) or beside the Flight School console. Back on the title, nothing saves until a slot
+    /// sell and a finished job pays), beside the Flight School console, or (saved outside) beside your docked ship. Back on the title, nothing saves until a slot
     /// is picked again.
     /// </summary>
     [Presenter]
@@ -204,6 +204,7 @@ namespace LuckyNumbers.Core
             // You wake at the station: back from wherever the save was.
             _voyage.Returning.Value = save.scene == nameof(GameScene.Planet) || save.scene == nameof(GameScene.Intro);
             _voyage.Training.Value = save.scene == nameof(GameScene.FlightSchool);
+            _voyage.Docked.Value = save.scene == nameof(GameScene.Orbit);   // flying round outside: docked again
             RestoreJob(save.job);
 
             _state.Active.Value = index;
@@ -285,6 +286,7 @@ namespace LuckyNumbers.Core
                 var cls = GameContent.Character.Classes.Find(k => k.Id == c.classId)?.Name ?? c.classId;
                 var where = f.scene == nameof(GameScene.Planet) && !string.IsNullOrEmpty(f.job?.planet) ? f.job.planet
                     : f.scene == nameof(GameScene.FlightSchool) ? "Flight School"
+                    : f.scene == nameof(GameScene.Orbit) ? "Outside the station"
                     : f.scene == nameof(GameScene.Intro) ? "Planet" : f.scene;
                 rows.Add($"{c.callsign}|{cls}|{c.level}|{f.seed}|{f.played}|{where}|{f.credits}");
             }

@@ -39,6 +39,7 @@ namespace LuckyNumbers.Editor
             BuildPlanet(rig);
             BuildStation(rig);
             BuildFlightSchool(rig);
+            BuildOrbit(rig);
 
             EditorBuildSettings.scenes = new[]
             {
@@ -47,6 +48,7 @@ namespace LuckyNumbers.Editor
                 new EditorBuildSettingsScene($"{ScenesDir}/Planet.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/Station.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/FlightSchool.unity", true),
+                new EditorBuildSettingsScene($"{ScenesDir}/Orbit.unity", true),
             };
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>($"{ScenesDir}/SampleScene.unity") != null)
                 AssetDatabase.DeleteAsset($"{ScenesDir}/SampleScene.unity"); // URP template scene
@@ -54,7 +56,7 @@ namespace LuckyNumbers.Editor
             // The dev Range scene is gone: the range is a room in the station now (RangeRoom).
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>($"{ScenesDir}/Range.unity") != null)
                 AssetDatabase.DeleteAsset($"{ScenesDir}/Range.unity");
-            Debug.Log("[SceneBuilder] built Title, Intro, Planet, Station, FlightSchool; build settings = [Title, Intro, Planet, Station, FlightSchool]");
+            Debug.Log("[SceneBuilder] built Title, Intro, Planet, Station, FlightSchool, Orbit; build settings = [Title, Intro, Planet, Station, FlightSchool, Orbit]");
         }
 
         static void BuildTitle(Rig rig)
@@ -594,6 +596,49 @@ namespace LuckyNumbers.Editor
 
             Scopes<FlightSchoolScope>();
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/FlightSchool.unity");
+        }
+
+        /// <summary>
+        /// Outside the station (Station/OrbitPresenter): the universe (SpaceRig, its camera the base of the stack, as
+        /// in the station) with the flight camera drawn over it, your fighter, the crash site's overlay for the HUD,
+        /// and OrbitView (the hull's placeholder blocks and the docking beacon, built at runtime from the seeded plan).
+        /// </summary>
+        static void BuildOrbit(Rig rig)
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var ui = Document("UI", rig.Panel, "Planet");   // hint, flight HUD, fade
+            SpaceRig(rig, ui);
+            var spaceCam = Object.FindAnyObjectByType<UnityEngine.Camera>();
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.25f, 0.27f, 0.32f);
+            var view = new GameObject("PlanetView").AddComponent<PlanetView>();
+
+            var camGo = new GameObject("FlightCamera");
+            var cam = camGo.AddComponent<Camera>();
+            cam.fieldOfView = 65f;
+            cam.nearClipPlane = 0.3f;
+            cam.farClipPlane = 6000f;
+            var camData = cam.GetUniversalAdditionalCameraData();
+            camData.renderType = CameraRenderType.Overlay;
+            camData.renderPostProcessing = true;
+            spaceCam.GetUniversalAdditionalCameraData().cameraStack.Add(cam);
+            spaceCam.fieldOfView = cam.fieldOfView;
+            var volume = new GameObject("Glow").AddComponent<UnityEngine.Rendering.Volume>();
+            volume.isGlobal = true;
+            volume.sharedProfile = GlowProfile();
+
+            var fighter = ShipRig(name: "Fighter");
+            var freighter = FreighterRig();   // PlanetView wants one; hidden here
+            Assign(view, ("document", ui), ("fighter", fighter), ("wreck", freighter), ("flightCamera", cam));
+
+            var orbit = new GameObject("StationOutside").AddComponent<LuckyNumbers.Station.OrbitView>();
+            Assign(orbit,
+                   ("hull", Tint("OrbitHull", new Color(0.16f, 0.17f, 0.2f), new Color(0.42f, 0.44f, 0.48f), 0.15f, 0f)),
+                   ("trim", Tint("OrbitBayTrim", new Color(0.05f, 0.25f, 0.35f), new Color(0.3f, 0.85f, 1f), 1.4f, 0.2f)),
+                   ("beacon", Tint("OrbitBeacon", new Color(0.1f, 0.6f, 0.4f), new Color(0.5f, 1f, 0.7f), 2.2f, 0.6f)));
+
+            Scopes<LuckyNumbers.Station.OrbitScope>();
+            EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Orbit.unity");
         }
 
         const string WeaponsDir = "Assets/_Project/Art/Models/Weapons";

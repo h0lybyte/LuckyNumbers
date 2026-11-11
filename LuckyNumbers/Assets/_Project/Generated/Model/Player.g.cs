@@ -202,6 +202,10 @@ namespace LuckyNumbers.Model
         /// At the Flight School: back at the station you step out beside its console (not by your ship, no homecoming).
         /// </summary>
         public readonly ReactiveProperty<bool> Training = new ReactiveProperty<bool>();
+        /// <summary>
+        /// Docked again after flying round outside (GameScene.Orbit): you step off beside your ship (no homecoming).
+        /// </summary>
+        public readonly ReactiveProperty<bool> Docked = new ReactiveProperty<bool>();
 
         public void Dispose()
         {
@@ -211,6 +215,7 @@ namespace LuckyNumbers.Model
             Trips.Dispose();
             Rescued.Dispose();
             Training.Dispose();
+            Docked.Dispose();
         }
     }
 }

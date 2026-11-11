@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Outside the station (content/orbit.txtpb, Station/OrbitPresenter): the Docking Bay's launch console puts you in
+// your ship just off the bay's outer wall, in space round your station (your universe behind it, the planet it
+// orbits to the north). It flies like the Flight School (the planet's hover handling, no gravity, no fuel). Fly
+// back into the docking beacon slowly and E docks: you step off beside your ship in the bay.
+// The hull is the station's own seeded plan, one placeholder block per stretch of rooms and walls, scaled so your
+// fighter at its flying size fits the bay as the docked ship does inside.
+message OrbitScene {
+  option (ln.config) = true;
+  // Shown at the top, and the controls under it.
+  string title = 1;
+  string hint = 2;
+  // Inside the docking beacon and slow enough: what E does.
+  string dock_prompt = 3;
+  // Inside it but too fast.
+  string slow_prompt = 4;
+  // The beacon: how far off the bay's outer wall (ship lengths) and its radius (ship lengths).
+  float dock_offset = 5;
+  float dock_radius = 6;
+  // Slowest speed counted as stopped enough to dock, as a share of the ship's top speed.
+  float dock_speed = 7;
+  // Where you start: ship lengths out from the beacon, heading away from the station.
+  float start_distance = 8;
+  // Hull blocks' height (m, station scale before scaling) and how far the camera may be from the hull (ship lengths)
+  // before space is all there is: past `range` ship lengths from the station a hint says to turn back.
+  float hull_height = 9;
+  float range = 10;
+  // Chase camera (ship lengths), as the Flight School's.
+  float chase_distance = 11;
+  float chase_height = 12;
+  float readout_seconds = 13;
+}
