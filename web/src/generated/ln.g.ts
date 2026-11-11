@@ -8,8 +8,7 @@ export type GameScene =
   | "Title"
   | "Intro"
   | "Planet"
-  | "Station"
-  | "Range";
+  | "Station";
 
 /** Discrete actions (button presses). Bound to devices in the Input System asset. */
 export type InputAction =

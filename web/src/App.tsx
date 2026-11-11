@@ -14,9 +14,10 @@ export function App({ dock }: { dock: HTMLElement | null }) {
   const [inspector, setInspector] = useState(() => new URLSearchParams(location.search).has("ln-debug"));
   const ready = useLNReady();
 
-  // ?ln-range: straight to the dev shooting range once Unity is up (testing weapon holds and firing).
+  // ?ln-range: straight to the station's shooting range once Unity is up (the station puts you at its firing line;
+  // ?ln-range=knife faces that weapon, &ln-bake bakes every weapon's grips: tools/ln.py bake-grasps).
   useEffect(() => {
-    if (ready && new URLSearchParams(location.search).has("ln-range")) LN.send("SceneChangeRequested", { target: "Range" });
+    if (ready && new URLSearchParams(location.search).has("ln-range")) LN.send("SceneChangeRequested", { target: "Station" });
   }, [ready]);
 
   // ` toggles the bridge inspector (capture phase: runs before Unity's keyboard handling).
@@ -75,7 +76,7 @@ function Hud() {
   const mapOpen = useLNState("MapState")?.open ?? false;
   const locked = usePointerLocked();
   useEffect(installFreeMouseKey, []);
-  if (flow?.scene === "Station" || flow?.scene === "Range") return <PointerHint locked={locked} />;
+  if (flow?.scene === "Station") return <PointerHint locked={locked} />;
   if (flow?.scene !== "Planet") return null;
 
   return (
@@ -233,11 +234,14 @@ function Inspector() {
       <section>
         <h3>Send</h3>
         <div className="row">
-          {(["Title", "Intro", "Planet", "Range"] as const).map((scene) => (
+          {(["Title", "Intro", "Planet", "Station"] as const).map((scene) => (
             <button key={scene} type="button" onClick={() => LN.send("SceneChangeRequested", { target: scene })}>
               {scene}
             </button>
           ))}
+          <button type="button" title="Station: stand at the shooting range's firing line" onClick={() => LN.send("DevWarpRequested", { to: "range" })}>
+            Range
+          </button>
           <button type="button" onClick={() => LN.send("InputActionPerformed", { action: "Map" })}>
             Map
           </button>

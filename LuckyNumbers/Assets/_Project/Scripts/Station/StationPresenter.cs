@@ -109,7 +109,7 @@ namespace LuckyNumbers.Station
                                 ISubscriber<JobAcceptRequested> accepts, ArmsView arms, RangeState rangeState,
                                 ISubscriber<RangeResetRequested> rangeResets, ISubscriber<DevWarpRequested> rangeWarps)
         {
-            _range = new RangeRoom(station, player, arms, rangeState, rangeWarps, (at, yaw, pitch) => Teleport(at, yaw, pitch));
+            _range = new RangeRoom(station, player, arms, rangeState, rangeWarps, (at, yaw, pitch) => Teleport(at, yaw, pitch), firstPerson);
             _rangeResets = rangeResets;
             _job = job;
             _board = board;

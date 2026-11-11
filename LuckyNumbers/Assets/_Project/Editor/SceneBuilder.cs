@@ -38,7 +38,6 @@ namespace LuckyNumbers.Editor
             BuildIntro(rig);
             BuildPlanet(rig);
             BuildStation(rig);
-            BuildRange(rig);
 
             EditorBuildSettings.scenes = new[]
             {
@@ -46,12 +45,14 @@ namespace LuckyNumbers.Editor
                 new EditorBuildSettingsScene($"{ScenesDir}/Intro.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/Planet.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/Station.unity", true),
-                new EditorBuildSettingsScene($"{ScenesDir}/Range.unity", true),
             };
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>($"{ScenesDir}/SampleScene.unity") != null)
                 AssetDatabase.DeleteAsset($"{ScenesDir}/SampleScene.unity"); // URP template scene
             AssetDatabase.SaveAssets();
-            Debug.Log("[SceneBuilder] built Title, Intro, Planet, Station, Range; build settings = [Title, Intro, Planet, Station, Range]");
+            // The dev Range scene is gone: the range is a room in the station now (RangeRoom).
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>($"{ScenesDir}/Range.unity") != null)
+                AssetDatabase.DeleteAsset($"{ScenesDir}/Range.unity");
+            Debug.Log("[SceneBuilder] built Title, Intro, Planet, Station; build settings = [Title, Intro, Planet, Station]");
         }
 
         static void BuildTitle(Rig rig)
@@ -503,102 +504,6 @@ namespace LuckyNumbers.Editor
         static WeaponItem Weapon(string name) =>
             System.Array.Find(Weapons(), w => w.name == name) ?? throw new System.Exception($"{name} not in {WeaponsDir}/weapons.json");
 
-        const string RangeFirstGun = "rifle_block";   // the gun you spawn in front of
-
-        /// <summary>
-        /// Dev shooting range (GameScene.Range): a closed hall, every gun on a bench in front of you, the melee weapons
-        /// and loose mods on a table to your left, crates to knock over and target boards downrange (+Z).
-        /// RangePresenter runs it; the debug inspector or ?ln-range opens it.
-        /// </summary>
-        static void BuildRange(Rig rig)
-        {
-            // Guns in export order, but the one you spawn at moved to the middle of the bench.
-            var gunList = new System.Collections.Generic.List<WeaponItem>(System.Array.FindAll(Weapons(), w => w.kind == "gun"));
-            var firstGun = gunList.Find(w => w.name == RangeFirstGun);
-            if (firstGun != null) { gunList.Remove(firstGun); gunList.Insert(gunList.Count / 2, firstGun); }
-            var guns = gunList.ToArray();
-            var others = System.Array.FindAll(Weapons(), w => w.kind != "gun");
-            float GunX(int i) => (i - (guns.Length - 1) / 2f) * 1.12f;
-            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            var ui = Document("UI", rig.Panel, "Planet");   // hint, crosshair
-            var (eyes, _) = PlayerRig();
-            eyes.clearFlags = CameraClearFlags.SolidColor;
-            eyes.backgroundColor = new Color(0.03f, 0.035f, 0.045f);
-            eyes.farClipPlane = 120f;
-            var first = System.Math.Max(0, System.Array.FindIndex(guns, w => w.name == RangeFirstGun));
-            eyes.transform.root.position = new Vector3(GunX(first), 0f, -1.2f);   // behind the bench, facing downrange
-            var view = new GameObject("PlanetView").AddComponent<PlanetView>();
-            Assign(view, ("document", ui));
-
-            var floor = Tint("RangeFloor", new Color(0.16f, 0.17f, 0.19f), new Color(0.22f, 0.23f, 0.26f), 0f, 0f);
-            var wall = Tint("RangeWall", new Color(0.3f, 0.31f, 0.33f), new Color(0.55f, 0.56f, 0.58f), 0.05f, 0f);
-            var bench = Tint("RangeBench", new Color(0.25f, 0.18f, 0.12f), new Color(0.42f, 0.31f, 0.2f), 0f, 0f);
-            var crate = Tint("RangeCrate", new Color(0.55f, 0.36f, 0.12f), new Color(0.85f, 0.6f, 0.25f), 0.1f, 0f);
-            var board = Tint("RangeTarget", new Color(0.75f, 0.2f, 0.15f), new Color(0.95f, 0.9f, 0.85f), 0.2f, 0f);
-
-            var hall = new GameObject("Range").transform;
-            Transform Box(string name, Vector3 centre, Vector3 size, Material m)
-            {
-                var b = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                b.name = name;
-                b.transform.SetParent(hall, false);
-                b.transform.localPosition = centre;
-                b.transform.localScale = size;
-                var r = b.GetComponent<MeshRenderer>();
-                r.sharedMaterial = m;
-                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                return b.transform;
-            }
-            const float width = 12f, height = 4.5f, back = -4f, front = 32f;
-            var mid = (back + front) / 2f;
-            Box("Floor", new Vector3(0f, -0.25f, mid), new Vector3(width, 0.5f, front - back), floor);
-            Box("Ceiling", new Vector3(0f, height + 0.25f, mid), new Vector3(width, 0.5f, front - back), wall);
-            Box("Wall L", new Vector3(-width / 2f - 0.25f, height / 2f, mid), new Vector3(0.5f, height, front - back), wall);
-            Box("Wall R", new Vector3(width / 2f + 0.25f, height / 2f, mid), new Vector3(0.5f, height, front - back), wall);
-            Box("Wall back", new Vector3(0f, height / 2f, back - 0.25f), new Vector3(width, height, 0.5f), wall);
-            Box("Wall front", new Vector3(0f, height / 2f, front + 0.25f), new Vector3(width, height, 0.5f), wall);
-            Box("Bench", new Vector3(0f, 0.4f, 0.4f), new Vector3(11.5f, 0.8f, 0.7f), bench);
-
-            // Every gun on the bench, barrels downrange, dropped a hair above it (they settle with physics).
-            for (var i = 0; i < guns.Length; i++)
-            {
-                var gun = WeaponRig(guns[i].name);
-                gun.transform.position = new Vector3(GunX(i), 1.15f, 0.4f);
-                gun.gameObject.SetActive(true);
-            }
-            // Melee weapons and loose mods (carryable, no firing yet) on a table along the left wall.
-            Box("Table", new Vector3(-5.3f, 0.4f, -1.8f), new Vector3(0.8f, 0.8f, 3.6f), bench);
-            for (var i = 0; i < others.Length; i++)
-            {
-                var item = WeaponRig(others[i].name);
-                item.transform.SetPositionAndRotation(new Vector3(-5.3f, 1.1f, -3.3f + i * 0.5f), Quaternion.Euler(0f, 90f, 0f));
-                item.SetActive(true);
-            }
-
-            // Crates to knock about (loose: bolts push them), then fixed boards at the far end.
-            void Crate(Vector3 at, float size)
-            {
-                var c = Box("Crate", at, Vector3.one * size, crate);
-                var body = c.gameObject.AddComponent<Rigidbody>();
-                body.mass = 4f * size;
-                body.interpolation = RigidbodyInterpolation.Interpolate;
-            }
-            for (var i = 0; i < 3; i++)
-            {
-                Crate(new Vector3(-3f + i * 0.62f, 0.3f, 9f), 0.6f);
-                Crate(new Vector3(-2.7f + i * 0.62f, 0.9f, 9f), 0.6f);
-                Crate(new Vector3(2f + i * 0.45f, 0.22f, 15f), 0.44f);
-            }
-            for (var i = 0; i < 3; i++)
-            {
-                var x = (i - 1) * 3.5f;
-                Box("Target post", new Vector3(x, 0.6f, 28f), new Vector3(0.12f, 1.2f, 0.12f), wall);
-                Box("Target", new Vector3(x, 1.6f, 28f), new Vector3(1.2f, 1.2f, 0.08f), board);
-            }
-
-            Scopes<RangeScope>();
-            EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Range.unity");
-        }
 
         const string WeaponsDir = "Assets/_Project/Art/Models/Weapons";
         /// <summary>Which of Art/Models/Weapons lies in the station (any of the guns: their hold points are measured).</summary>
@@ -709,7 +614,7 @@ namespace LuckyNumbers.Editor
             var body = root.AddComponent<Rigidbody>();   // a rigidbody marks it as something you can carry
             body.mass = item.kind == "gun" ? 3.5f : item.kind == "melee" ? 1.5f : 0.4f;
             body.interpolation = RigidbodyInterpolation.Interpolate;
-            root.SetActive(false);   // placed by whoever builds the scene (StationPresenter, BuildRange)
+            root.SetActive(false);   // placed by whoever builds the scene (StationPresenter, RangeRoom)
             if (item.kind == "melee")
             {
                 // Handle down, blade / head up (+Y as exported). The fist closes a little way up the handle (above the

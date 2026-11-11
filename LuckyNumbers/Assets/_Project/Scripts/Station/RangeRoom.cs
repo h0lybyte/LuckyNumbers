@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using LuckyNumbers.Hands;
 using LuckyNumbers.Model;
 using LuckyNumbers.Planet;
 using UnityEngine;
@@ -15,6 +18,10 @@ namespace LuckyNumbers.Station
     /// shots and the hits on its targets (WeaponView.Fired / BoltHit); V cycles the hands side view. Crates and boards
     /// The bench, crates and boards are placeholder blocks (PLACEHOLDER_range_*) until they have models. The start of a
     /// practice mini-game.
+    /// Dev / tools (the page's URL): ?ln-range opens the station at the firing line (?ln-range=knife: facing that
+    /// weapon, ready to pick up); &amp;ln-slowmo plays at quarter speed (swings, recoil); &amp;ln-sideview starts with the
+    /// side view on; &amp;ln-bake picks up every gun and melee weapon in turn, solves each hand's grip live and logs it as
+    /// a "[Bake]" JSON line (tools/ln.py bake-grasps runs that headless and writes the grips into weapons.json).
     /// </summary>
     public sealed class RangeRoom : IDisposable
     {
@@ -30,10 +37,18 @@ namespace LuckyNumbers.Station
         bool _built;
         Action<Vector3, float, float> _teleport;
         IDisposable _warpSubscription;
+        readonly IFirstPerson _firstPerson;
+        readonly ArmsView _arms;
+        readonly CancellationTokenSource _cts = new();
+        float _builtAt = -1f;
+        bool _urlDone;
 
         public RangeRoom(StationView station, PlayerView player, ArmsView arms, RangeState state,
-                         MessagePipe.ISubscriber<DevWarpRequested> warps, Action<Vector3, float, float> teleport)
+                         MessagePipe.ISubscriber<DevWarpRequested> warps, Action<Vector3, float, float> teleport,
+                         IFirstPerson firstPerson)
         {
+            _firstPerson = firstPerson;
+            _arms = arms;
             _teleport = teleport;
             // Dev (the page's inspector): "range" stands you at the firing line facing downrange, looking down at the
             // bench; "range:aim" the same, looking level at the middle target.
@@ -107,6 +122,7 @@ namespace LuckyNumbers.Station
                 _targets.Add(board.GetComponent<Collider>());
             }
             _state.Hint.Value = config.Hint ?? "";
+            _builtAt = Time.time;   // the URL's range options run once the layout has settled (Tick)
             Debug.Log($"[Range] {room.Name}: {_area.width:0}x{_area.height:0} m, {count} targets, {config.Crates} crates"); // marker for ln.py webshot
         }
 
@@ -145,6 +161,7 @@ namespace LuckyNumbers.Station
         /// <summary>Inside the room? Entering starts the count again.</summary>
         public void Tick()
         {
+            if (!_urlDone && _built && _builtAt >= 0f && Time.time - _builtAt > 1.5f) FromUrl();
             if (!_built) { if (_state.Inside.Value) _state.Inside.Value = false; return; }
             var p = _player.Body.transform.position;
             var inside = _area.Contains(new Vector2(p.x, p.z));
@@ -178,6 +195,89 @@ namespace LuckyNumbers.Station
             Debug.Log($"[Range] hit {hit.collider.name} ({_state.Hits.Value}/{_state.Shots.Value})");
         }
 
+        // ---- dev / tools (URL) -------------------------------------------------------------------------------
+
+        static string Url => Application.absoluteURL ?? "";
+
+        /// <summary>?ln-range (and its options): to the firing line, or a weapon; slow motion, side view, bake.</summary>
+        void FromUrl()
+        {
+            _urlDone = true;
+            var url = Url;
+            if (!url.Contains("ln-range")) return;
+            if (url.Contains("ln-slowmo")) Time.timeScale = 0.25f;
+            var start = StartAt();
+            if (start != null) Face(start);
+            else _teleport?.Invoke(new Vector3(_area.center.x, _player.Body.transform.position.y, _area.yMin + 1.4f), 0f, 28f);
+            if (url.Contains("ln-sideview")) _side?.Cycle();
+            var root = GameObject.Find(WeaponsRoot)?.transform;
+            Debug.Log($"[Range] ready: {(root != null ? root.GetComponentsInChildren<WeaponView>(true).Length : 0)} guns, " +
+                      $"{(root != null ? root.GetComponentsInChildren<MeleeView>(true).Length : 0)} melee" +
+                      $"{(start != null ? $", at {start.name}" : "")}");   // marker for ln.py webshot / bake-grasps
+            if (url.Contains("ln-bake")) Bake(_cts.Token).Forget();
+        }
+
+        /// <summary>The weapon ?ln-range=name asks to start at (null: the firing line).</summary>
+        static Transform StartAt()
+        {
+            var url = Url;
+            var at = url.IndexOf("ln-range=", StringComparison.Ordinal);
+            if (at < 0) return null;
+            var name = Uri.UnescapeDataString(url.Substring(at + "ln-range=".Length).Split('&', '#')[0]);
+            var go = GameObject.Find($"{WeaponsRoot}/Weapon {name}");
+            if (go == null) Debug.LogWarning($"[Range] no weapon \"{name}\" to start at");
+            return go != null ? go.transform : null;
+        }
+
+        /// <summary>Behind the bench in arm's reach of it, looking down at it (pickup takes what's within 15 degrees).</summary>
+        void Face(Transform item)
+        {
+            var p = item.position;
+            var stand = new Vector3(p.x, _player.Body.transform.position.y, p.z - 1.2f);
+            var flat = new Vector2(p.x - stand.x, p.z - stand.z).magnitude;
+            _teleport?.Invoke(stand, 0f, Mathf.Atan2(1.65f - p.y, flat) * Mathf.Rad2Deg);
+        }
+
+        [Serializable] sealed class BakeLine { public string item; public GraspData left, right; }
+
+        /// <summary>Every range gun and melee weapon in turn: pick it up, wait for each hand's grip to settle, log it, put it down.</summary>
+        async UniTaskVoid Bake(CancellationToken ct)
+        {
+            var root = GameObject.Find(WeaponsRoot)?.transform;
+            if (root == null || _firstPerson == null || _arms == null) { Debug.LogWarning("[Bake] nothing to bake with"); return; }
+            ArmsView.UsePresets = false;   // solve each one fresh
+            ArmsView.ClearBakedGrasps();
+            var items = new List<(Rigidbody body, int[] hands)>();
+            foreach (var gun in root.GetComponentsInChildren<WeaponView>()) items.Add((gun.GetComponent<Rigidbody>(), new[] { 0, 1 }));
+            foreach (var blade in root.GetComponentsInChildren<MeleeView>()) items.Add((blade.GetComponent<Rigidbody>(), new[] { 1 }));
+            var baked = 0;
+            foreach (var (body, hands) in items)
+            {
+                var name = body.name.StartsWith("Weapon ") ? body.name.Substring("Weapon ".Length) : body.name;
+                Face(body.transform);
+                await UniTask.Delay(400, cancellationToken: ct);
+                if (!_firstPerson.PickUp(body)) { Debug.LogWarning($"[Bake] couldn't pick up {name}"); continue; }
+                var waited = 0f;
+                while (waited < 15f && (_firstPerson.Held != body || Array.Exists(hands, s => _arms.BakedGrip(s) == null)))
+                {
+                    await UniTask.Yield(ct);
+                    waited += Time.unscaledDeltaTime;
+                }
+                if (_firstPerson.Held == body && !Array.Exists(hands, s => _arms.BakedGrip(s) == null))
+                {
+                    var line = new BakeLine { item = name };
+                    foreach (var s in hands) if (s == 0) line.left = _arms.BakedGrip(0); else line.right = _arms.BakedGrip(1);
+                    Debug.Log("[Bake] " + JsonUtility.ToJson(line));
+                    baked++;
+                }
+                else Debug.LogWarning($"[Bake] {name}: the grip never settled (15 s)");
+                _firstPerson.Drop();
+                await UniTask.Delay(600, cancellationToken: ct);
+            }
+            ArmsView.UsePresets = true;
+            Debug.Log($"[Bake] done: {baked} of {items.Count}");
+        }
+
         void Clear()
         {
             _targets.Clear();
@@ -188,6 +288,10 @@ namespace LuckyNumbers.Station
 
         public void Dispose()
         {
+            _cts.Cancel();
+            _cts.Dispose();
+            Time.timeScale = 1f;
+            ArmsView.UsePresets = true;
             _warpSubscription?.Dispose();
             WeaponView.Fired -= OnFired;
             WeaponView.BoltHit -= OnBoltHit;

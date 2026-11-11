@@ -335,7 +335,7 @@ def compact_number_arrays(text: str) -> str:
 
 
 def cmd_bake_grasps(args) -> int:
-    """Bake every weapon's finger grips into weapons.json: the served Web build's range (?ln-range&ln-bake) picks
+    """Bake every weapon's finger grips into weapons.json: the served Web build's station range (?ln-range&ln-bake) picks
     each one up, solves both hands' grips live with the game's own code, and logs them; this writes them in.
     Build and serve first (build-web, serve); afterwards rebuild the scenes so the weapons carry them."""
     node = shutil.which("node")

@@ -1421,7 +1421,6 @@ namespace LuckyNumbers.Model
                 case GameScene.Intro: return "Intro";
                 case GameScene.Planet: return "Planet";
                 case GameScene.Station: return "Station";
-                case GameScene.Range: return "Range";
                 default: return ((int)v).ToString(CultureInfo.InvariantCulture);
             }
         }
@@ -1436,7 +1435,6 @@ namespace LuckyNumbers.Model
                 case "Intro": return GameScene.Intro;
                 case "Planet": return GameScene.Planet;
                 case "Station": return GameScene.Station;
-                case "Range": return GameScene.Range;
                 default: return default;
             }
         }
