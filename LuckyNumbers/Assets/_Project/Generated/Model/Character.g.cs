@@ -318,4 +318,17 @@ namespace LuckyNumbers.Model
             Source = source;
         }
     }
+
+    /// <summary>
+    /// The page's sheet: your name, while the character is being set up (trimmed, cut to 20; empty: the default).
+    /// </summary>
+    public readonly struct CharacterCallsignRequested
+    {
+        public readonly string Callsign;
+
+        public CharacterCallsignRequested(string callsign)
+        {
+            Callsign = callsign;
+        }
+    }
 }

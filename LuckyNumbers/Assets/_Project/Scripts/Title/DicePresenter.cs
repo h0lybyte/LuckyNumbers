@@ -4,6 +4,7 @@ using Cysharp.Threading.Tasks;
 using LuckyNumbers.Model;
 using LuckyNumbers.Space;
 using MessagePipe;
+using R3;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -26,6 +27,7 @@ namespace LuckyNumbers.Title
         DiceRoller _config;
         Random _rng;
         bool _disposed;
+        IDisposable _loaded;
         readonly System.Threading.CancellationTokenSource _cts = new();
 
         [Inject]
@@ -52,6 +54,13 @@ namespace LuckyNumbers.Title
                 _sides.Add(die.Sides);
                 _faces.Add(Mathf.Clamp(die.InitialFace, 1, die.Sides));
             }
+            // A save slot loaded (Core/SavePresenter sets the seed and faces): show its dice.
+            _loaded = _state.Seed.Skip(1).Subscribe(seed =>
+            {
+                if (_state.Rolling.Value || _state.Faces.Count != _faces.Count) return;
+                for (var i = 0; i < _faces.Count; i++) { _faces[i] = _state.Faces[i]; _view.ShowFace(i, _faces[i], 0f); }
+                _view.SetLuckyNumber(_config.SeedFormat.Replace("{0}", seed.ToString()));
+            });
             if (_state.Seed.Value != 0 && _state.Faces.Count == _faces.Count)
             {
                 // Back on the title (e.g. after the intro): keep the current universe, just show its dice.
@@ -127,6 +136,7 @@ namespace LuckyNumbers.Title
         public void Dispose()
         {
             _disposed = true;
+            _loaded?.Dispose();
             _cts.Cancel();
             _cts.Dispose();
         }

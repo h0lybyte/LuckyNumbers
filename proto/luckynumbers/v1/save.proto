@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Save slots (Core/SavePresenter). Play on the title opens the page's picker: an empty slot starts a new character
+// there (creation, the hangar, then the station), a filled one continues it (its universe, sheet, pack, ship, credits
+// and job come back and you wake at the station). The run then saves to its slot on every scene change and every
+// half minute. Kept in PlayerPrefs (the browser's IndexedDB on the web), one JSON record per slot.
+message SaveSlots {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  // The title's picker is up (Play was pressed).
+  bool open = 1;
+  // The slot this run saves to (-1: none, e.g. a dev warp or no page).
+  int32 active = 2;
+  // Each slot "callsign|class|level|seed|played|where|credits" (played: unix ms; where: the scene, or the job's
+  // planet); "" when empty.
+  repeated string slots = 3;
+}
+
+// The page has the slot picker (sent when it mounts): Play then asks which slot. Without it Play starts unsaved.
+message SaveSlotsReady {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  bool on = 1;
+}
+
+// The picker: slot `index` (empty: new character; filled: continue), or -1 to go back to the title.
+message SaveSlotPicked {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  int32 index = 1;
+}
+
+message SaveSlotDeleteRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  int32 index = 1;
+}

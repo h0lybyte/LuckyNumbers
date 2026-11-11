@@ -77,6 +77,10 @@ namespace LuckyNumbers.Model
         /// After character creation: the hangar where you pick your fighter's skin.
         /// </summary>
         public ShipHangar Hangar { get; set; }
+        /// <summary>
+        /// Continuing a save slot: seconds to watch its universe form again (the big bang) before the push to the station.
+        /// </summary>
+        public float ContinueSeconds { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public TitleScreen Clone() => (TitleScreen)MemberwiseClone();

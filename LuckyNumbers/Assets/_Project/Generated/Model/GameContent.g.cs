@@ -5109,6 +5109,7 @@ namespace LuckyNumbers.Model
                 TiltDegrees = 18.0f,
                 EnterSeconds = 0.6f,
             },
+            ContinueSeconds = 1.6f,
         };
     }
 }

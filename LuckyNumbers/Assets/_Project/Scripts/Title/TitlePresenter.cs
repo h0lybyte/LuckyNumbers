@@ -17,7 +17,8 @@ namespace LuckyNumbers.Title
     /// the universe behind it is SpacePresenter's. Preloads `next`; Play fades the UI, pushes the camera
     /// toward home and hands its pose to the next scene (CameraHandoff) so the switch has no visible cut. Before that,
     /// Play runs character creation (ICharacterSetup: the page's sheet, until Ready), then the hangar (IShipPicker:
-    /// your fighter's skin, until Launch).
+    /// your fighter's skin, until Launch). First of all Play asks which save slot (ISaveSlots): a filled one skips
+    /// creation and the hangar, loads, and leaves once its universe has formed again (title.continue_seconds).
     /// </summary>
     [Presenter]
     public sealed class TitlePresenter : IStartable, IDisposable
@@ -33,6 +34,7 @@ namespace LuckyNumbers.Title
         readonly CameraHandoff _handoff;
         readonly ICharacterSetup _character;
         readonly IShipPicker _hangar;
+        readonly ISaveSlots _saves;
         readonly CompositeDisposable _disposables = new();
         readonly System.Threading.CancellationTokenSource _cts = new();
         bool _settingsOpen, _leaving;
@@ -44,8 +46,9 @@ namespace LuckyNumbers.Title
                               IPublisher<MenuItemSelected> menuPublisher, ISubscriber<MenuItemSelected> menu,
                               IPublisher<SceneChangeRequested> sceneRequests,
                               ISpaceDirector space, CameraHandoff handoff, ICharacterSetup character,
-                              IShipPicker hangar)
+                              IShipPicker hangar, ISaveSlots saves)
         {
+            _saves = saves;
             _hangar = hangar;
             _character = character;
             _space = space;
@@ -114,10 +117,29 @@ namespace LuckyNumbers.Title
         async UniTaskVoid PlayAsync(GameScene next)
         {
             var ct = _cts.Token;
-            await _character.RunAsync(ct);                                          // character creation
-            var hangar = _hangar.RunAsync(ct);                                      // then your fighter's skin,
-            if (hangar.Status == UniTaskStatus.Pending) await FadeUiAsync(0f, 0.3f, ct);   // the title UI out of its way
-            await hangar;
+            // Which save slot (the page's picker; none without a page: an unsaved run).
+            var pick = _saves.PickAsync(ct);
+            if (pick.Status == UniTaskStatus.Pending) await FadeUiAsync(0f, 0.3f, ct);
+            var slot = await pick;
+            if (slot.Back)
+            {
+                await FadeUiAsync(1f, 0.3f, ct);
+                _leaving = false;
+                return;
+            }
+            if (slot.Continue)
+            {
+                _saves.Load(slot.Index);                                            // your universe forms again,
+                await UniTask.Delay(TimeSpan.FromSeconds(Mathf.Max(0f, GameContent.Title.ContinueSeconds)), cancellationToken: ct);
+            }
+            else
+            {
+                await _character.RunAsync(ct);                                      // character creation
+                var hangar = _hangar.RunAsync(ct);                                  // then your fighter's skin,
+                if (hangar.Status == UniTaskStatus.Pending) await FadeUiAsync(0f, 0.3f, ct);   // the title UI out of its way
+                await hangar;
+                _saves.Begin(slot.Index);
+            }
             await _loading.Ready.Where(ready => ready).FirstAsync(ct);              // waits for the preload if early
             LeaveAsync(next).Forget();
         }

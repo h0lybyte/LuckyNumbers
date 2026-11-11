@@ -82,6 +82,25 @@ export function CharacterSheetGate() {
   );
 }
 
+/** Your name, until you leave the station: it goes to Unity as you leave the field (Ready, a click away, or Esc).
+ *  keyboard.ts keeps the keys from the game while it has focus. */
+function CallsignInput({ callsign }: { callsign: string }) {
+  const [name, setName] = useState(callsign);
+  useEffect(() => setName(callsign), [callsign]);
+  return (
+    <input
+      className="sheet-callsign"
+      aria-label="Your name"
+      value={name}
+      maxLength={20}
+      spellCheck={false}
+      autoComplete="off"
+      onChange={(e) => setName(e.target.value.replace(/\|/g, ""))}
+      onBlur={(e) => LN.send("CharacterCallsignRequested", { callsign: e.currentTarget.value })}
+    />
+  );
+}
+
 function Sheet({ onClose, setup, tab, setTab }: { onClose: () => void; setup: boolean; tab: Tab; setTab: (t: Tab) => void }) {
   const s = useLNState("CharacterSheet");
   const hp = useLNState("PlayerHealth");
@@ -108,7 +127,7 @@ function Sheet({ onClose, setup, tab, setTab }: { onClose: () => void; setup: bo
       <header className="sheet-head">
         <div>
           <div className="sheet-kicker">{setup ? "Character creation" : "Personnel file"} // seed {s.seed}</div>
-          <h2>{s.callsign}</h2>
+          {editable ? <CallsignInput callsign={s.callsign} /> : <h2>{s.callsign}</h2>}
           <div className="sheet-sub">
             {cls?.name ?? s.classId} &middot; {origin?.name ?? s.originId} &middot; Level {s.level}
           </div>
