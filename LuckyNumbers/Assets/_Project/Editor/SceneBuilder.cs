@@ -224,7 +224,8 @@ namespace LuckyNumbers.Editor
             amulet.gameObject.SetActive(false);
             vase.gameObject.SetActive(false);
             relicBeam.gameObject.SetActive(false);
-            var artifacts = new[] { ArtifactModel(relicRoot, "water_amulet", 3f) };
+            // The vase is 1.98 m in the file: 0.35 makes it ~0.7 m, sitting on the ground at the relic's 0.35 m rest height.
+            var artifacts = new[] { ArtifactModel(relicRoot, "water_amulet", 3f), ArtifactModel(relicRoot, "roman_vase", 0.35f) };
             Assign(view, ("wreck", wreck), ("fighter", fighter), ("flightCamera", flightCam), ("wreckBeacon", beam.transform),
                    ("landingPad", pad.transform), ("amuletTemplate", amulet), ("vaseTemplate", vase), ("relicBeamTemplate", relicBeam));
             var vso = new SerializedObject(view);
@@ -530,6 +531,7 @@ namespace LuckyNumbers.Editor
             var gold = Mat("RelicGold", new Color(0.62f, 0.44f, 0.12f), new Color(0.95f, 0.78f, 0.35f), 0.35f);
             var gem = Mat("RelicWaterGem", new Color(0.08f, 0.32f, 0.62f), new Color(0.35f, 0.78f, 0.98f), 1.2f);
             var crest = Mat("RelicCrestGem", new Color(0.55f, 0.85f, 0.9f), new Color(0.9f, 1f, 1f), 0.9f);
+            var marble = Mat("RelicMarble", new Color(0.62f, 0.6f, 0.58f), new Color(0.9f, 0.88f, 0.82f), 0.3f);
             var root = new GameObject(name).transform;
             root.SetParent(parent, false);
             var model = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
@@ -539,7 +541,12 @@ namespace LuckyNumbers.Editor
             {
                 var count = r.GetComponent<MeshFilter>().sharedMesh.subMeshCount;
                 var mats = new Material[count];
-                for (var i = 0; i < count; i++) mats[i] = count == 1 ? gold : i == 0 ? gold : i == 1 ? gem : crest;
+                // Parts named by their export script (the vase: marble Body, gold PanelA/PanelB bands); otherwise
+                // by submesh (the amulet: gold, water gem, crest gem).
+                for (var i = 0; i < count; i++)
+                    mats[i] = r.name == "Body" ? marble
+                            : r.name.StartsWith("Panel") ? gold
+                            : count == 1 ? gold : i == 0 ? gold : i == 1 ? gem : crest;
                 r.sharedMaterials = mats;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }

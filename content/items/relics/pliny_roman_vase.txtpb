@@ -1,0 +1,52 @@
+# proto-file: luckynumbers/v1/inventory.proto
+# proto-message: luckynumbers.v1.ItemDef
+# Pliny the Elder (23/24-79 CE): Roman naturalist and admiral, author of the Natural History
+# (https://en.wikipedia.org/wiki/Pliny_the_Elder). He sailed toward Vesuvius as it erupted in 79 CE to watch it
+# and rescue friends, and died on the shore at Stabiae.
+
+id: "pliny_roman_vase"
+name: "Roman Vase"
+kind: ITEM_KIND_RELIC
+unique: true
+description: "Glazed marble-white, ringed in faded gold. A fine grey ash still clings inside."
+shape: "#/#"
+bulk: 1.2
+value: 6200
+color { r: 0.86 g: 0.84 b: 0.78 a: 1 }     # marble
+color_b { r: 0.95 g: 0.78 b: 0.35 a: 1 }   # gold
+lore {
+  figure: "Pliny the Elder"
+  era: "Roman Empire, 1st century CE"
+  text: "A vase from the villa where Pliny wrote his Natural History. He sailed toward the burning mountain to see it for himself, and never came home."
+}
+# Model: "ROMAN VASE" by RenderX (Sketchfab, CC BY 4.0), decimated to ~4k triangles (tools/blender/export_vase.py).
+model: "roman_vase"
+
+use {
+  cooldown_seconds: 14
+  rolls {
+    min: 1 max: 1 title: "Ash Fall"
+    text: "Grey ash pours from the vase and fills your lungs. You stagger on, slowed."
+    effects: [RELIC_EFFECT_SLOW] amount: 0.5 seconds: 8
+  }
+  rolls {
+    min: 2 max: 7 title: "Dregs"
+    text: "A mouthful of old wine at the bottom. Sour, but it warms you."
+    effects: [RELIC_EFFECT_HEAL] amount: 3
+  }
+  rolls {
+    min: 8 max: 14 title: "Falernian"
+    text: "The vase is full of the best Campanian wine. You feel much better."
+    effects: [RELIC_EFFECT_HEAL] amount: 8
+  }
+  rolls {
+    min: 15 max: 19 title: "Natural History"
+    text: "Pliny's notes, scratched in the glaze, describe where the next relic lies."
+    effects: [RELIC_EFFECT_REVEAL_NEAREST] seconds: 25
+  }
+  rolls {
+    min: 20 max: 20 title: "Vesuvius"
+    text: "The mountain lights the whole sky: you stand whole again, and every relic shines in its glow."
+    effects: [RELIC_EFFECT_FULL_HEAL, RELIC_EFFECT_REVEAL_ALL] seconds: 30
+  }
+}
