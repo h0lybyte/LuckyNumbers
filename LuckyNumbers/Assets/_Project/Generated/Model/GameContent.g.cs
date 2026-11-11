@@ -869,7 +869,7 @@ namespace LuckyNumbers.Model
                 {
                     Id = "cache",
                     Name = "Sealed supply cache",
-                    Text = "A crate thrown clear of the wreck, its lock still blinking.",
+                    Text = "A sealed supply crate half buried in the dirt, its lock still blinking.",
                     Skill = "engineering",
                     Dc = 11,
                     OpenLabel = "Bypass the lock",
@@ -1932,6 +1932,7 @@ namespace LuckyNumbers.Model
                             Amount = 1,
                         },
                     },
+                    Model = "PLACEHOLDER_sidearm",
                 },
                 new ItemDef
                 {

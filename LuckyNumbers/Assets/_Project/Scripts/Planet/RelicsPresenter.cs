@@ -321,9 +321,9 @@ namespace LuckyNumbers.Planet
             foreach (var l in _lying)
                 if (l.Beam != null) l.Beam.gameObject.SetActive(!l.Taken && (l.Target || on && (_revealAll || l == nearest)));
             var text = "";
-            // Nothing left lying out: the pearl points back to the wreck instead.
+            // Nothing left lying out: the pearl points back to the wreck instead (no wreck: the site's middle, the nest).
             var at = nearest != null ? nearest.Rest : _view.Wreck != null ? _view.Wreck.Pivot.position : me;
-            var label = nearest != null ? nearest.Relic.Name : "The wreck";
+            var label = nearest != null ? nearest.Relic.Name : _site.HasWreck ? "The wreck" : "The nest";
             if (on && (nearest != null || _view.Wreck != null))
             {
                 var to = at - me;

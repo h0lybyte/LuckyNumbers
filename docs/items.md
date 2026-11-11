@@ -91,7 +91,8 @@ Each step is its own PR. Do 3 after both branches land so nothing collides.
 - **The equipped weapon is in your hands.** A `WEAPON`-slot item with a `model` (a file in Art/Models/Weapons:
   carbine, salvage rifle) is drawn whenever your hands are free, and its hits roll with that item's stats
   (`combat.txtpb` `weapons`). E holsters it and E draws it again. Unequipping or dropping it puts it away.
-  A weapon without a model yet (the sidearm) fires from the hip, unseen.
+  The sidearm has no model yet: it is drawn as named placeholder blocks (`model: "PLACEHOLDER_sidearm"`).
+  A weapon with no `model` at all fires from the hip, unseen.
 
 ## Open questions
 

@@ -54,7 +54,7 @@ items {
 
 items {
   id: "sidearm" name: "Sidearm" kind: ITEM_KIND_WEAPON slot: EQUIP_SLOT_WEAPON
-  description: "Compact coil pistol. Every pilot has one." shape: "##/#." bulk: 1 value: 350
+  description: "Compact coil pistol. Every pilot has one." shape: "##/#." bulk: 1 value: 350 model: "PLACEHOLDER_sidearm"
   color { r: 0.6 g: 0.7 b: 0.8 a: 1 }
   skill_bonuses { skill: "intimidate" amount: 1 }
 }

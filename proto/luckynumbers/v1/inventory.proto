@@ -82,7 +82,8 @@ message ItemDef {
   // More than 1: this many copies share one cell (med-patches, rations). Bulk and value count each copy.
   int32 stack = 21;
   // Its own model, built into the scene: a relic's file name in Art/Models/Relics, a weapon's in Art/Models/Weapons
-  // (drawn into your hands while equipped). Empty: a placeholder block (and an equipped weapon fires from the hip).
+  // (drawn into your hands while equipped; "PLACEHOLDER_<id>": named blocks until it has one). Empty: a placeholder
+  // block on the ground (and an equipped weapon fires from the hip).
   string model = 22;
   // Whose it was, when, and a line about them (named relics: shown when you pick it up).
   ItemLore lore = 23;

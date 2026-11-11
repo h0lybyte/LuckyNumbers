@@ -105,7 +105,8 @@ namespace LuckyNumbers.Model
         public int Stack { get; set; }
         /// <summary>
         /// Its own model, built into the scene: a relic's file name in Art/Models/Relics, a weapon's in Art/Models/Weapons
-        /// (drawn into your hands while equipped). Empty: a placeholder block (and an equipped weapon fires from the hip).
+        /// (drawn into your hands while equipped; "PLACEHOLDER_&lt;id&gt;": named blocks until it has one). Empty: a placeholder
+        /// block on the ground (and an equipped weapon fires from the hip).
         /// </summary>
         public string Model { get; set; }
         /// <summary>
