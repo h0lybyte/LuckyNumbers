@@ -307,6 +307,7 @@ namespace LuckyNumbers.Station
             // Resting on its belly a little above the deck, nose along the dock's heading.
             _ship.Pose(_dockPosition + Vector3.up * (dock.Length * 0.16f), Quaternion.Euler(0f, dock.Yaw, 0f));
             _ship.EnginesOff(instant: true);   // docked: engines cold
+            _ship.GearDown(dock.Length * 0.16f, instant: true);   // standing on its legs on the deck
             _hull = _ship.Hull;                 // the hull only, not its (unlit) flames
             if (_hull.size == Vector3.zero) _hull = new Bounds(_dockPosition, Vector3.one * dock.Length);
         }

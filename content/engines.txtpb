@@ -93,6 +93,11 @@ ships {
   thrusters { gas: true name: "side_r" position { x: 0.104 y: -0.007 z: -0.13 } direction { x: 1 } radius: 0.0064 length: 0.126 }
   thrusters { gas: true name: "side_nose_l" position { x: -0.05 y: -0.007 z: 0.2 } direction { x: -1 } radius: 0.004 length: 0.101 }
   thrusters { gas: true name: "side_nose_r" position { x: 0.05 y: -0.007 z: 0.2 } direction { x: 1 } radius: 0.004 length: 0.101 }
+  # Landing legs: a tripod over the touchdown points (LandingPresenter's gear: the nose, the two rear corners),
+  # out of the belly clear of the lift jets; the rear pair lean out a little.
+  legs { name: "nose" position { x: 0 y: -0.024 z: 0.13 } radius: 0.0065 }
+  legs { name: "rear_l" position { x: -0.085 y: -0.032 z: -0.095 } radius: 0.0085 splay_degrees: 14 }
+  legs { name: "rear_r" position { x: 0.085 y: -0.032 z: -0.095 } radius: 0.0085 splay_degrees: 14 }
 }
 
 # The museum freighter (Art/Models/CargoShip, ~46 long): four big nozzles in a square at the stern, and the
