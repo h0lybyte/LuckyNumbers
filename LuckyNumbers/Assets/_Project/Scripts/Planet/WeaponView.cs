@@ -55,6 +55,8 @@ namespace LuckyNumbers.Planet
         public Vector3 ForeAlong => foreAlong;
         public Vector3 MuzzleWorld => transform.TransformPoint(muzzle);
         public float Recoil => recoil;
+        /// <summary>Off cooldown: the next TryFire shoots.</summary>
+        public bool Ready => Time.time >= _nextShot;
 
         sealed class Bolt { public Transform View; public Vector3 Position, Direction; public float Left; }
 

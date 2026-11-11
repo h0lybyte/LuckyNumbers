@@ -18,6 +18,9 @@ namespace LuckyNumbers.Station
     /// shots and the hits on its targets (WeaponView.Fired / BoltHit); V cycles the hands side view. Crates and boards
     /// The bench, crates and boards are placeholder blocks (PLACEHOLDER_range_*) until they have models. The start of a
     /// practice mini-game.
+    /// Every shot at a board or crate is an attack roll, as in a fight (CombatRoll, Dice.Attack): d20 + the range gun's
+    /// ability modifier (content/combat.txtpb, the "default" weapon) + attack_per_level x level, against an armour of
+    /// 8 + a point per 3 m. A miss sends the bolt wide (IFirstPerson.ShotCheck); the page's d20 shows each roll.
     /// Dev / tools (the page's URL): ?ln-range opens the station at the firing line (?ln-range=knife: facing that
     /// weapon, ready to pick up); &amp;ln-slowmo plays at quarter speed (swings, recoil); &amp;ln-sideview starts with the
     /// side view on; &amp;ln-bake picks up every gun and melee weapon in turn, solves each hand's grip live and logs it as
@@ -40,14 +43,21 @@ namespace LuckyNumbers.Station
         readonly IFirstPerson _firstPerson;
         readonly ArmsView _arms;
         readonly CancellationTokenSource _cts = new();
+        readonly CharacterSheet _sheet;
+        readonly MessagePipe.IPublisher<CombatRoll> _rolls;
+        readonly HashSet<Collider> _crates = new();
+        Unity.Mathematics.Random _rng = new(0xD20A77u);
         float _builtAt = -1f;
         bool _urlDone;
 
         public RangeRoom(StationView station, PlayerView player, ArmsView arms, RangeState state,
                          MessagePipe.ISubscriber<DevWarpRequested> warps, Action<Vector3, float, float> teleport,
-                         IFirstPerson firstPerson)
+                         IFirstPerson firstPerson, CharacterSheet sheet = null, MessagePipe.IPublisher<CombatRoll> rolls = null)
         {
             _firstPerson = firstPerson;
+            _sheet = sheet;
+            _rolls = rolls;
+            if (sheet != null) _rng = new Unity.Mathematics.Random((sheet.Seed.Value ^ 0xD20A77u) | 1u);
             _arms = arms;
             _teleport = teleport;
             // Dev (the page's inspector): "range" stands you at the firing line facing downrange, looking down at the
@@ -111,6 +121,7 @@ namespace LuckyNumbers.Station
                                   Vector3.one * size, new Color(0.62f, 0.42f, 0.16f));
                 var body = crate.AddComponent<Rigidbody>();
                 body.mass = 2f;
+                _crates.Add(crate.GetComponent<Collider>());
             }
             var count = Math.Max(1, config.Targets);
             for (var i = 0; i < count; i++)
@@ -167,6 +178,7 @@ namespace LuckyNumbers.Station
             var inside = _area.Contains(new Vector2(p.x, p.z));
             if (inside == _state.Inside.Value) return;
             _state.Inside.Value = inside;
+            if (_firstPerson != null) _firstPerson.ShotCheck = inside ? AttackRoll : null;
             if (inside) Reset();
             else _side?.Off();
         }
@@ -193,6 +205,40 @@ namespace LuckyNumbers.Station
             if (!_state.Inside.Value || hit.collider == null || !_targets.Contains(hit.collider)) return;
             _state.Hits.Value++;
             Debug.Log($"[Range] hit {hit.collider.name} ({_state.Hits.Value}/{_state.Shots.Value})");
+        }
+
+        /// <summary>A shot at a board or crate: roll to hit (false: it misses, the bolt goes wide). Anything else just flies.</summary>
+        bool AttackRoll(Collider on, float distance)
+        {
+            var target = _targets.Contains(on) ? "Target board" : _crates.Contains(on) ? "Crate" : null;
+            if (target == null) return true;
+            var w = RangeGun();
+            var bonus = Mod(w?.Ability ?? "dex") + (int)Mathf.Floor((GameContent.Combat?.AttackPerLevel ?? 0f) * Mathf.Max(1, _sheet?.Level.Value ?? 1));
+            var armor = 8 + Mathf.RoundToInt(distance / 3f);
+            var (d20, total, hit, crit, fumble) = Dice.Attack(bonus, armor, ref _rng);
+            var dice = w?.Damage ?? "1d6";
+            var damage = hit ? Dice.Roll(dice, ref _rng, crit) : 0;
+            _rolls?.Publish(new CombatRoll("You", target, d20, bonus, total, armor, hit, crit, fumble, damage, dice, true, w?.Name ?? "Gun"));
+            Debug.Log($"[Range] {target} at {distance:0.0} m: d20 {d20} + {bonus} = {total} vs {armor}: {(hit ? $"{(crit ? "CRIT " : "")}hit {damage}" : "miss")}");
+            return hit;
+        }
+
+        /// <summary>The range guns roll as content/combat.txtpb's "default" weapon.</summary>
+        static CombatWeapon RangeGun()
+        {
+            var weapons = GameContent.Combat?.Weapons;
+            if (weapons == null) return null;
+            foreach (var w in weapons) if (w.Source == "default") return w;
+            return null;
+        }
+
+        int Mod(string ability)
+        {
+            if (_sheet == null) return 0;
+            var abilities = GameContent.Character.Abilities;
+            for (var i = 0; i < abilities.Count && i < _sheet.Mods.Count; i++)
+                if (abilities[i].Id == ability) return _sheet.Mods[i];
+            return 0;
         }
 
         // ---- dev / tools (URL) -------------------------------------------------------------------------------
@@ -281,6 +327,7 @@ namespace LuckyNumbers.Station
         void Clear()
         {
             _targets.Clear();
+            _crates.Clear();
             if (_root != null) Object.Destroy(_root.gameObject);
             _root = null;
             _built = false;
@@ -296,6 +343,7 @@ namespace LuckyNumbers.Station
             WeaponView.Fired -= OnFired;
             WeaponView.BoltHit -= OnBoltHit;
             _side?.Off();
+            if (_firstPerson != null) _firstPerson.ShotCheck = null;
             _state.Inside.Value = false;
             Clear();
         }

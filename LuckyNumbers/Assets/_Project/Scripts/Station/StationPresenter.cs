@@ -111,9 +111,11 @@ namespace LuckyNumbers.Station
                                 ISubscriber<PsxModeRequested> psxRequests, PlayerVoyage voyage, IInventory pack,
                                 IPublisher<CharacterXpGained> xp, PlayerJob job, JobBoard board, LandingSite landing,
                                 ISubscriber<JobAcceptRequested> accepts, ISubscriber<DevWarpRequested> warps, ArmsView arms,
-                                RangeState rangeState, ISubscriber<RangeResetRequested> rangeResets)
+                                RangeState rangeState, ISubscriber<RangeResetRequested> rangeResets, CharacterSheet sheet,
+                                IPublisher<CombatRoll> rolls)
         {
-            _range = new RangeRoom(station, player, arms, rangeState, warps, (at, yaw, pitch) => Teleport(at, yaw, pitch), firstPerson);
+            _range = new RangeRoom(station, player, arms, rangeState, warps, (at, yaw, pitch) => Teleport(at, yaw, pitch), firstPerson,
+                                   sheet, rolls);
             _rangeResets = rangeResets;
             _job = job;
             _board = board;

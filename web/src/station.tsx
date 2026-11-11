@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LN, useLNState } from "./ln";
 import type { StationLightMode } from "./ln";
+import { AttackD20 } from "./relics";
 
 // ---- HUD (over the game) ------------------------------------------------------------------------
 
@@ -27,29 +28,32 @@ function RangeHud() {
   if (!range?.inside) return null;
   const accuracy = range.shots > 0 ? Math.round((100 * range.hits) / range.shots) : 0;
   return (
-    <div className="range-hud ui">
-      <div className="range-head">
-        <span className="range-title">Range</span>
-        <button type="button" className="sheet-btn" onClick={() => LN.send("RangeResetRequested", {})}>
-          Reset
-        </button>
+    <>
+      <AttackD20 />
+      <div className="range-hud ui">
+        <div className="range-head">
+          <span className="range-title">Range</span>
+          <button type="button" className="sheet-btn" onClick={() => LN.send("RangeResetRequested", {})}>
+            Reset
+          </button>
+        </div>
+        <div className="range-stats">
+          <div>
+            <b>{range.hits}</b>
+            <span>hits</span>
+          </div>
+          <div>
+            <b>{range.shots}</b>
+            <span>shots</span>
+          </div>
+          <div>
+            <b>{accuracy}%</b>
+            <span>accuracy</span>
+          </div>
+        </div>
+        {range.hint && <div className="range-hint">{range.hint}</div>}
       </div>
-      <div className="range-stats">
-        <div>
-          <b>{range.hits}</b>
-          <span>hits</span>
-        </div>
-        <div>
-          <b>{range.shots}</b>
-          <span>shots</span>
-        </div>
-        <div>
-          <b>{accuracy}%</b>
-          <span>accuracy</span>
-        </div>
-      </div>
-      {range.hint && <div className="range-hint">{range.hint}</div>}
-    </div>
+    </>
   );
 }
 

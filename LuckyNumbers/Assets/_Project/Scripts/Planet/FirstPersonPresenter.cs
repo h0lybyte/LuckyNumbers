@@ -22,6 +22,11 @@ namespace LuckyNumbers.Planet
         bool PickUp(Rigidbody thing);
         /// <summary>Put down what's held, as E does.</summary>
         void Drop();
+        /// <summary>
+        /// Asked as a held gun fires, with what the crosshair is on and how far (the station range's attack rolls).
+        /// False: the shot misses, so the bolt goes wide of it. Null: every shot flies true.
+        /// </summary>
+        Func<Collider, float, bool> ShotCheck { get; set; }
     }
 
     /// <summary>
@@ -71,6 +76,7 @@ namespace LuckyNumbers.Planet
 
         public bool Active { get; set; }
         public float SpeedScale { get; set; } = 1f;
+        public Func<Collider, float, bool> ShotCheck { get; set; }
 
         public Rigidbody Held => _held;
 
@@ -531,11 +537,20 @@ namespace LuckyNumbers.Planet
         {
             var target = eye.position + eye.forward * 80f;
             var best = float.MaxValue;
+            Collider on = null;
             var n = Physics.RaycastNonAlloc(eye.position, eye.forward, _hits, 80f, ~0, QueryTriggerInteraction.Ignore);
             for (var i = 0; i < n; i++)
             {
                 if (_hits[i].collider.transform.IsChildOf(_player.Body.transform)) continue;
-                if (_hits[i].distance < best) { best = _hits[i].distance; target = _hits[i].point; }
+                if (_hits[i].distance < best) { best = _hits[i].distance; target = _hits[i].point; on = _hits[i].collider; }
+            }
+            if (!_weapon.Ready) return;
+            if (on != null && ShotCheck != null && !ShotCheck(on, best))
+            {
+                // A miss: aim past its edge (a random side, across the line of sight) and on downrange.
+                var side = Quaternion.AngleAxis(UnityEngine.Random.Range(0f, 360f), eye.forward) * eye.up;
+                var past = on.bounds.extents.magnitude + 0.35f;
+                target = eye.position + (target + side * past - eye.position).normalized * 80f;
             }
             if (_weapon.TryFire(target, _player.Body.transform)) _kick += _weapon.Recoil;
         }
