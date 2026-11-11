@@ -185,7 +185,7 @@ export interface CombatState {
 }
 
 /**
- * The open card (mirrored to the page): its title and text, the choices as "id|label|skill name|bonus|dc" (no
+ * The open standoff card (mirrored to the page): its title and text, the choices as "id|label|skill name|bonus|dc" (no
  * skill: bonus and dc 0), and after a roll the result (rolled; d20, bonus, total, dc, success; the outcome text).
  */
 export interface EncounterState {
@@ -612,7 +612,7 @@ export interface PlayerDied {
   cause: string;
 }
 
-/** Something the player's hands picked up, dropped or threw (web: a toast, top right, for checking holds). */
+/** Something the player's hands picked up, dropped or threw, or a find opened on the planet (web: a toast, top right). */
 export interface ItemHandled {
   item: string;
   action: string;

@@ -30,7 +30,7 @@ namespace LuckyNumbers.Station
     /// </summary>
     public sealed class RangeRoom : IDisposable
     {
-        const string WeaponsRoot = "Range weapons";
+        const string WeaponsRoot = LuckyNumbers.Core.WeaponRack.RangeRoot;
 
         readonly StationView _station;
         readonly PlayerView _player;
@@ -51,12 +51,17 @@ namespace LuckyNumbers.Station
         readonly Marksman _marksman = new();
         Unity.Mathematics.Random _rng = new(0xD20A77u);
         float _builtAt = -1f;
+        readonly LuckyNumbers.Core.WeaponRack _rack;
+        int _builds;           // a rebuild while the weapons load: the older build doesn't lay them out
+        bool _weaponsLaid;
         bool _urlDone;
 
         public RangeRoom(StationView station, PlayerView player, ArmsView arms, RangeState state,
                          MessagePipe.ISubscriber<DevWarpRequested> warps, Action<Vector3, float, float> teleport,
-                         IFirstPerson firstPerson, CharacterSheet sheet = null, MessagePipe.IPublisher<CombatRoll> rolls = null)
+                         IFirstPerson firstPerson, CharacterSheet sheet = null, MessagePipe.IPublisher<CombatRoll> rolls = null,
+                         LuckyNumbers.Core.WeaponRack rack = null)
         {
+            _rack = rack;
             _firstPerson = firstPerson;
             _sheet = sheet;
             _rolls = rolls;
@@ -86,6 +91,8 @@ namespace LuckyNumbers.Station
         public void Build(Model.StationRange config, StationLayout layout)
         {
             Clear();
+            _builds++;
+            _weaponsLaid = false;
             if (config == null || string.IsNullOrEmpty(config.Room)) return;
             var room = layout.Rooms.Find(r => r.Name == config.Room);
             if (room == null) return;
@@ -130,7 +137,7 @@ namespace LuckyNumbers.Station
             var benchX = (west + east) / 2f;
             Block("PLACEHOLDER_range_bench", new Vector3(benchX, 0.42f, benchZ), new Vector3(benchWidth, 0.84f, BenchDepth),
                   new Color(0.32f, 0.24f, 0.16f));
-            LayWeapons(new Vector3(benchX, 0.84f, benchZ), benchWidth);
+            LayWeaponsAsync(new Vector3(benchX, 0.84f, benchZ), benchWidth).Forget();
             Debug.Log($"[Range] bench at {benchZ - _area.yMin:0.0} m in, {benchWidth:0.0} m wide; side doors at " +
                       (doors.Count == 0 ? "none" : string.Join(", ", doors.ConvertAll(d => $"{(d.side < 0 ? "W" : "E")} {d.z - _area.yMin:0.0} m"))));
 
@@ -177,9 +184,20 @@ namespace LuckyNumbers.Station
         }
 
         /// <summary>Every range weapon along the bench (top centre `bench`), barrels north (downrange), a hair above.</summary>
-        static void LayWeapons(Vector3 bench, float width)
+        async UniTaskVoid LayWeaponsAsync(Vector3 bench, float width)
         {
-            var root = GameObject.Find(WeaponsRoot)?.transform;
+            var build = _builds;
+            Transform root;
+            try { root = _rack != null ? await _rack.Range(_cts.Token) : GameObject.Find(WeaponsRoot)?.transform; }
+            catch (OperationCanceledException) { return; }
+            catch (Exception e) { Debug.LogWarning($"[Range] weapons didn't load: {e.Message}"); return; }
+            if (build != _builds) return;
+            LayWeapons(root, bench, width);
+            _weaponsLaid = true;
+        }
+
+        static void LayWeapons(Transform root, Vector3 bench, float width)
+        {
             if (root == null) { Debug.LogWarning("[Range] no range weapons in the scene (SceneBuilder)"); return; }
             var items = new List<Transform>();
             foreach (Transform t in root) items.Add(t);
@@ -211,7 +229,7 @@ namespace LuckyNumbers.Station
         /// <summary>Inside the room? Entering starts the count again.</summary>
         public void Tick()
         {
-            if (!_urlDone && _built && _builtAt >= 0f && Time.time - _builtAt > 1.5f) FromUrl();
+            if (!_urlDone && _built && _weaponsLaid && _builtAt >= 0f && Time.time - _builtAt > 1.5f) FromUrl();
             if (!_built) { if (_state.Inside.Value) _state.Inside.Value = false; return; }
             var p = _player.Body.transform.position;
             var inside = _area.Contains(new Vector2(p.x, p.z));

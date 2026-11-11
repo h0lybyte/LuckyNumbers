@@ -22,12 +22,14 @@ export function App({ dock }: { dock: HTMLElement | null }) {
   // ?ln-range=knife faces that weapon, &ln-bake bakes every weapon's grips: tools/ln.py bake-grasps);
   // ?ln-board: the station between jobs, beside your ship (E opens the job board);
   // ?ln-flight: straight to the Flight School (test-flying the ships, their jets); ?ln-orbit: outside the station.
+  // ?ln-planet: straight to the planet (you fly in and land at the crash site).
   useEffect(() => {
     if (!ready) return;
     const q = new URLSearchParams(location.search);
     if (q.has("ln-range") || q.has("ln-board")) LN.send("SceneChangeRequested", { target: "Station" });
     else if (q.has("ln-flight")) LN.send("SceneChangeRequested", { target: "FlightSchool" });
     else if (q.has("ln-orbit")) LN.send("SceneChangeRequested", { target: "Orbit" });
+    else if (q.has("ln-planet")) LN.send("SceneChangeRequested", { target: "Planet" });
   }, [ready]);
 
   // ` toggles the bridge inspector (capture phase: runs before Unity's keyboard handling).
@@ -180,7 +182,7 @@ function Toasts() {
   );
 }
 
-/** What the hands picked up, dropped or threw (ItemHandled), top right: for checking weapon holds. */
+/** What the hands picked up, dropped or threw, and finds opened (ItemHandled), top right. */
 function ItemToasts() {
   const [items, setItems] = useState<{ id: number; item: string; action: string; detail: string }[]>([]);
   useLNEvent("ItemHandled", (e) => {
@@ -191,7 +193,7 @@ function ItemToasts() {
   return (
     <div className="item-toasts" aria-live="polite">
       {items.map((t) => (
-        <div key={t.id} className={`toast item ${t.action === "dropped" || t.action === "threw" ? "" : "good"}`}>
+        <div key={t.id} className={`toast item ${t.action.startsWith("failed") ? "bad" : t.action === "dropped" || t.action === "threw" ? "" : "good"}`}>
           <div>
             {t.action} <strong>{t.item}</strong>
           </div>
