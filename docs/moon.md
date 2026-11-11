@@ -13,13 +13,17 @@ moon run web:dev             # rebuild the overlay on save
 moon run content:gen         # regenerate C# / TS / credits from proto/ + content/
 moon check --all             # every cacheable check
 moon tasks                   # list everything
+moon run game:worktree-new -- fix-thing     # .claude/worktrees/fix-thing on branch fix-thing, Library + art-src in
+moon run game:worktrees                     # which worktrees are done (merged, clean, idle 2 h+)
+moon run game:worktrees-prune               # remove those + their branches (local and origin, merged only)
+moon run game:worktrees-prune -- --min-idle 0   # ...including ones merged a minute ago
 ```
 
 | Project | Folder | Tasks |
 |---|---|---|
 | `content` | `content/` (+ `proto/`) | `validate` (protoc), `gen`, `check` (`gen --check`) |
 | `web` | `web/` | `typecheck`, `build`, `dev` |
-| `game` | `LuckyNumbers/` | `check`, `build-web`, `scenes`, `roslyn`, `serve`, `deploy` |
+| `game` | `LuckyNumbers/` | `check`, `build-web`, `scenes`, `roslyn`, `serve`, `deploy`, `worktrees`, `worktrees-prune`, `worktree-new` |
 
 - Config: `.moon/workspace.yml`, `.moon/toolchains.yml`, `<project>/moon.yml`. Cache in `.moon/cache` (gitignored).
 - Unity tasks share mutex `unity`, so moon never runs two at once (project lock).

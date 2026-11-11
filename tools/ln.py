@@ -823,7 +823,16 @@ def main(argv=None) -> int:
     s.add_argument("--base", default="origin/main", help="what 'merged' means (default origin/main)")
     s.add_argument("--min-idle", type=float, default=2.0, help="hours since last use before one counts as done (default 2)")
     s.add_argument("--no-fetch", action="store_true", help="don't fetch origin first")
+    s.add_argument("--remote", action="store_true", help="with --prune: delete the branches on origin too (merged only)")
     s.set_defaults(func=cmd_worktrees)
+
+    s = sub.add_parser("worktree-new", help="new worktree in .claude/worktrees/<name> with Library + art-src copied in")
+    s.add_argument("name", help="folder name, also the branch name unless --branch")
+    s.add_argument("--branch", help="branch to create (default: the name)")
+    s.add_argument("--base", default="origin/main", help="start point (default origin/main)")
+    s.add_argument("--no-library", action="store_true", help="don't copy the Unity Library")
+    s.add_argument("--no-fetch", action="store_true", help="don't fetch origin first")
+    s.set_defaults(func=cmd_worktree_new)
 
     s = sub.add_parser("doctor", help="show what the tools detected")
     s.set_defaults(func=cmd_doctor)
@@ -902,8 +911,66 @@ def cmd_worktrees(args) -> int:
         if branch:
             r = git("branch", "-d", branch)
             print(f"  deleted branch {branch}" if r.returncode == 0 else f"  kept branch {branch}: {r.stderr.strip()}")
+            if args.remote and r.returncode == 0:
+                prune_remote_branch(branch, args.base)
     git("worktree", "prune")
     return 1 if failed else 0
+
+
+def prune_remote_branch(branch: str, base: str) -> None:
+    """Delete origin/<branch> too, only if its tip is already in `base` (a merged PR's leftover)."""
+    tip = git("rev-parse", "--verify", "--quiet", f"refs/remotes/origin/{branch}").stdout.strip()
+    if not tip:
+        return
+    if git("merge-base", "--is-ancestor", tip, base).returncode != 0:
+        print(f"  kept origin/{branch}: it has commits not in {base}")
+        return
+    r = git("push", "--quiet", "origin", "--delete", branch)
+    print(f"  deleted origin/{branch}" if r.returncode == 0 else f"  kept origin/{branch}: {r.stderr.strip()}")
+
+
+def main_checkout() -> Path:
+    """The repo's main checkout (the first `git worktree list` entry), wherever this ln.py runs from."""
+    first = git("worktree", "list", "--porcelain").stdout.splitlines()[0]
+    return Path(first.partition(" ")[2])
+
+
+def clone_tree(src: Path, dst: Path) -> str:
+    """Copy a folder: an APFS clone on macOS (instant, no extra disk until files change), else a plain copy."""
+    if SYSTEM == "Darwin" and subprocess.run(["cp", "-Rc", str(src), str(dst)], capture_output=True).returncode == 0:
+        return "cloned"
+    shutil.copytree(src, dst / src.name, dirs_exist_ok=True)
+    return "copied"
+
+
+def cmd_worktree_new(args) -> int:
+    """A worktree for one piece of work: .claude/worktrees/<name> on a new branch from --base, with the main checkout's
+    Unity Library (no cold import) and art-src/ (the raw licensed packs the Blender bakes read, gitignored) copied in."""
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", args.name):
+        return fail("name: letters, digits, '.', '_' and '-' only")
+    main = main_checkout()
+    path = main / ".claude" / "worktrees" / args.name
+    branch = args.branch or args.name
+    if path.exists():
+        return fail(f"{path} already exists")
+    if not args.no_fetch:
+        git("fetch", "--quiet", "origin")
+    r = git("worktree", "add", "-b", branch, str(path), args.base)
+    if r.returncode != 0:
+        return fail(r.stderr.strip())
+    print(f"worktree: {path} on {branch} (from {args.base})")
+    library = main / "LuckyNumbers" / "Library"
+    if args.no_library:
+        print("library:  skipped (Unity imports cold on first open)")
+    elif library.is_dir():
+        print(f"library:  {clone_tree(library, path / 'LuckyNumbers')} from the main checkout")
+    else:
+        print("library:  none in the main checkout (Unity imports cold on first open)")
+    art = main / "art-src"
+    if art.is_dir():
+        print(f"art-src:  {clone_tree(art, path)}")
+    print(f"Next: cd {path}  (Unity Hub: Add project from disk -> {path / 'LuckyNumbers'})")
+    return 0
 
 
 def cmd_doctor(args) -> int:
