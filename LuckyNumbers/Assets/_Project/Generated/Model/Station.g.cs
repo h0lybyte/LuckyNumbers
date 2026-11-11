@@ -45,6 +45,11 @@ namespace LuckyNumbers.Model
         /// targets at the north). StationScene.range sets it up.
         /// </summary>
         Range = 8,
+        /// <summary>
+        /// North of the docking bay through a corridor: the Flight Academy, its console to the Flight School (windows
+        /// north, out over the bay's side of the station).
+        /// </summary>
+        Academy = 9,
     }
 
     public enum StationAction

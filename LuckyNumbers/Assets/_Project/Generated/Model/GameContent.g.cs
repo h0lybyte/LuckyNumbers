@@ -4360,6 +4360,19 @@ namespace LuckyNumbers.Model
                                 Yaw = 12.0f,
                                 Solid = true,
                             },
+                        },
+                    },
+                    new StationRoomRule
+                    {
+                        Role = StationRoomRole.Academy,
+                        Name = "Flight Academy",
+                        MinWidth = 9,
+                        MaxWidth = 11,
+                        MinDepth = 5,
+                        MaxDepth = 6,
+                        Windows = true,
+                        Items =
+                        {
                             new StationRoomItem
                             {
                                 Piece = "lab_bench",
@@ -4368,6 +4381,38 @@ namespace LuckyNumbers.Model
                                 Yaw = 180.0f,
                                 Action = StationAction.FlightSchool,
                                 Prompt = "E: Flight School - test-fly your ship",
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "chair_station",
+                                U = 0.3f,
+                                V = 0.55f,
+                                Yaw = 180.0f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "chair_station",
+                                U = 0.5f,
+                                V = 0.55f,
+                                Yaw = 180.0f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "chair_station",
+                                U = 0.7f,
+                                V = 0.55f,
+                                Yaw = 180.0f,
+                                Solid = true,
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "crate_small",
+                                U = 1.25f,
+                                V = 1.25f,
+                                Yaw = 15.0f,
+                                Solid = true,
                             },
                         },
                     },
