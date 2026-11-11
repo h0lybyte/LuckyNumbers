@@ -664,7 +664,7 @@ namespace LuckyNumbers.Model
                             License = "CC BY 4.0",
                             Url = "https://sketchfab.com/3d-models/roman-vase-e63cb75682d144cab9e7f88343efff2c",
                             LicenseUrl = "https://creativecommons.org/licenses/by/4.0/",
-                            Notes = "Changes: split into one part per material, decimated from 86k to about 4k triangles, textures dropped and recoloured with the relic shader (tools/blender/export_vase.py).",
+                            Notes = "Changes: split into one part per material, decimated from 86k to about 4k triangles, textures downsized to 512 px and painted through the relic shader (tools/blender/export_vase.py).",
                             Path = "LuckyNumbers/Assets/_Project/Art/Models/Relics/LICENSE-roman-vase.txt",
                         },
                         new Credit

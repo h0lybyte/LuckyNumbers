@@ -1,6 +1,7 @@
 """Export the Roman Vase (RenderX, Sketchfab, CC BY 4.0) to FBX for Art/Models/Relics: one part per material (Body,
 Trim, PanelA, PanelB: SceneBuilder dresses each by name), decimated from 86k triangles to a low-poly Web budget,
-centred, Unity axes. Usage: blender -b --python tools/blender/export_vase.py -- <ROMAN VASE.fbx> <out.fbx> [ratio]"""
+centred, Unity axes. No materials: SceneBuilder paints the parts with the vase's own textures
+(Art/Models/Relics/roman_vase_*.jpg, downsized from the download) through the Relic shader. Usage: blender -b --python tools/blender/export_vase.py -- <ROMAN VASE.fbx> <out.fbx> [ratio]"""
 
 import bpy, sys, mathutils
 

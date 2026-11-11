@@ -20,7 +20,7 @@ Lucky Numbers is made with the work of these people. Thank you.
   (`LuckyNumbers/Assets/_Project/Art/Models/Relics/LICENSE-blendswap-80554.html`)
 - **Roman Vase (Pliny the Elder's relic)**: "ROMAN VASE" by **RenderX** ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/))
   https://sketchfab.com/3d-models/roman-vase-e63cb75682d144cab9e7f88343efff2c
-  Changes: split into one part per material, decimated from 86k to about 4k triangles, textures dropped and recoloured with the relic shader (tools/blender/export_vase.py).
+  Changes: split into one part per material, decimated from 86k to about 4k triangles, textures downsized to 512 px and painted through the relic shader (tools/blender/export_vase.py).
   (`LuckyNumbers/Assets/_Project/Art/Models/Relics/LICENSE-roman-vase.txt`)
 - **Aberration (the limping creature you fight on planets: rig and 17 animations)**: "Aberration - PSX Horror Creature" by **Rafael Martins (Blackwood Asylum: The Rake)** (Use in games allowed; the asset files may not be redistributed)
   https://rafaelmarrtins.itch.io/aberration-psx-horror-creature
