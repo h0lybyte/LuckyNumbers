@@ -122,7 +122,7 @@ items {
 
 # ---- relics: one file each (lore, a d20 table, a model), unique ------------------------------------------------
 
-item_refs: ["items/relics/zhang_heng_water_amulet"]
+item_refs: ["items/relics/zhang_heng_water_amulet", "items/relics/pliny_roman_vase"]
 
 # ---- starting kits (CharacterClass.id): gear goes straight into its slot -------------------------------------------------------------------------
 

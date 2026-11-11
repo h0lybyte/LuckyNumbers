@@ -32,6 +32,7 @@ namespace LuckyNumbers.Model
             Relics =
             {
                 "zhang_heng_water_amulet",
+                "pliny_roman_vase",
             },
             LuckBonus = 3,
             ScatterMin = 10.0f,
@@ -654,6 +655,17 @@ namespace LuckyNumbers.Model
                             LicenseUrl = "https://creativecommons.org/licenses/by/3.0/",
                             Notes = "Changes: exported low-poly (chain subdivision off), modifiers baked, recoloured with the relic shader (tools/blender/export_relic.py).",
                             Path = "LuckyNumbers/Assets/_Project/Art/Models/Relics/LICENSE-blendswap-80554.html",
+                        },
+                        new Credit
+                        {
+                            What = "Roman Vase (Pliny the Elder's relic)",
+                            Title = "ROMAN VASE",
+                            Author = "RenderX",
+                            License = "CC BY 4.0",
+                            Url = "https://sketchfab.com/3d-models/roman-vase-e63cb75682d144cab9e7f88343efff2c",
+                            LicenseUrl = "https://creativecommons.org/licenses/by/4.0/",
+                            Notes = "Changes: split into one part per material, decimated from 86k to about 4k triangles, textures dropped and recoloured with the relic shader (tools/blender/export_vase.py).",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Models/Relics/LICENSE-roman-vase.txt",
                         },
                         new Credit
                         {
@@ -1899,6 +1911,95 @@ namespace LuckyNumbers.Model
                         },
                     },
                     ColorB = new Rgba(0.35f, 0.75f, 0.95f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "pliny_roman_vase",
+                    Name = "Roman Vase",
+                    Description = "Glazed marble-white, ringed in faded gold. A fine grey ash still clings inside.",
+                    Kind = ItemKind.Relic,
+                    Shape = "#/#",
+                    Bulk = 1.2f,
+                    Value = 6200,
+                    Color = new Rgba(0.86f, 0.84f, 0.78f, 1.0f),
+                    Unique = true,
+                    Model = "roman_vase",
+                    Lore = new ItemLore
+                    {
+                        Figure = "Pliny the Elder",
+                        Era = "Roman Empire, 1st century CE",
+                        Text = "A vase from the villa where Pliny wrote his Natural History. He sailed toward the burning mountain to see it for himself, and never came home.",
+                    },
+                    Use = new ItemUse
+                    {
+                        CooldownSeconds = 14.0f,
+                        Rolls =
+                        {
+                            new RelicRoll
+                            {
+                                Min = 1,
+                                Max = 1,
+                                Title = "Ash Fall",
+                                Text = "Grey ash pours from the vase and fills your lungs. You stagger on, slowed.",
+                                Effects =
+                                {
+                                    RelicEffect.Slow,
+                                },
+                                Amount = 0.5f,
+                                Seconds = 8.0f,
+                            },
+                            new RelicRoll
+                            {
+                                Min = 2,
+                                Max = 7,
+                                Title = "Dregs",
+                                Text = "A mouthful of old wine at the bottom. Sour, but it warms you.",
+                                Effects =
+                                {
+                                    RelicEffect.Heal,
+                                },
+                                Amount = 3.0f,
+                            },
+                            new RelicRoll
+                            {
+                                Min = 8,
+                                Max = 14,
+                                Title = "Falernian",
+                                Text = "The vase is full of the best Campanian wine. You feel much better.",
+                                Effects =
+                                {
+                                    RelicEffect.Heal,
+                                },
+                                Amount = 8.0f,
+                            },
+                            new RelicRoll
+                            {
+                                Min = 15,
+                                Max = 19,
+                                Title = "Natural History",
+                                Text = "Pliny's notes, scratched in the glaze, describe where the next relic lies.",
+                                Effects =
+                                {
+                                    RelicEffect.RevealNearest,
+                                },
+                                Seconds = 25.0f,
+                            },
+                            new RelicRoll
+                            {
+                                Min = 20,
+                                Max = 20,
+                                Title = "Vesuvius",
+                                Text = "The mountain lights the whole sky: you stand whole again, and every relic shines in its glow.",
+                                Effects =
+                                {
+                                    RelicEffect.FullHeal,
+                                    RelicEffect.RevealAll,
+                                },
+                                Seconds = 30.0f,
+                            },
+                        },
+                    },
+                    ColorB = new Rgba(0.95f, 0.78f, 0.35f, 1.0f),
                 },
                 new ItemDef
                 {

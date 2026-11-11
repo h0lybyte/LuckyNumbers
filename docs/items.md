@@ -9,7 +9,7 @@ built yet unless it says so.
 |---|---|---|
 | Item definitions, the grid pack, starting kits | `inventory.proto`, `content/items.txtpb` | `ItemDef` has kind, slot, shape, bulk, value, colour, use effects |
 | Equip / unequip, gear bonuses | `inventory.proto` (landed, #33) | `InventoryEquipRequested`, `InventoryUnequipRequested`; ability, skill, HP, Stamina, relic and bulk bonuses on `ItemDef` |
-| Named relics (lore, d20 table, model) | `ItemDef` `lore`, `use`, `model`, `unique`; `content/items/relics/<id>.txtpb` (via `item_refs`) | the Water Amulet. Landed (step 3) |
+| Named relics (lore, d20 table, model) | `ItemDef` `lore`, `use`, `model`, `unique`; `content/items/relics/<id>.txtpb` (via `item_refs`) | the Water Amulet, the Roman Vase. Landed (step 3) |
 | What's aboard the freighter | `cargo.txtpb` `relics` (item ids) | always all of them; generated relics (cultures, kinds) are gone |
 | Using a relic | `InventoryUseRequested` / R → `InventoryPresenter` rolls its d20 | `RelicRolled` for the page's d20; `RelicSite` for lying-out count and reveal bearing |
 | How guns and melee weapons are held and fired | `WeaponView` / `MeleeView` serialized fields (`feat/niko-weapons`) | stored on the prefab, not in content |
@@ -60,6 +60,7 @@ message ItemDef {
 | Item | Parts |
 |---|---|
 | Water Amulet | `unique`, `lore`, `use`, `model` (+ an equip slot if amulets become wearable) |
+| Roman Vase | `unique`, `lore`, `use`, `model` |
 | Salvage rifle | `slot: WEAPON`, gear bonuses, `hold`, `ranged`, `model` |
 | Plasma cutter | `slot: TOOL`, `hold`, `melee` |
 | Med-patch | `consumable`, `effects`, `stack: 10` |
