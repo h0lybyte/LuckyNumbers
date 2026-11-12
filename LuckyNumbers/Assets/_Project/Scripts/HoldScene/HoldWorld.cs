@@ -225,6 +225,10 @@ namespace LuckyNumbers.HoldScene
     /// <summary>Fallback spawn: a plain mine cell on region (0,0,0)'s top level, nearest its middle.</summary>
     public sealed class MinesSpawn : IHoldSpawn
     {
+        // Explicit [Inject] constructor: IL2CPP strips implicit ones and VContainer then can't build the type.
+        [Inject]
+        public MinesSpawn() { }
+
         public bool TrySpawn(HoldWorld world, out float3 position, out float yawDegrees)
         {
             yawDegrees = 0f;
