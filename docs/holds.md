@@ -51,3 +51,17 @@ Structures on and under dwarven worlds: a cell grid, meshed into chunks, skinned
   sealed. `MineGenerator.ShaftBelow(seed, (x, 1, z), ...)` says where region y 0's shaft up would meet the hold.
 - Check: `-executeMethod LuckyNumbers.Editor.MineCheck.Run` (seams, shafts, connectivity, determinism, timing);
   ASCII maps in `LuckyNumbers/Logs/mines-ascii.txt`.
+
+## Life (caches and creatures)
+
+- Schema: `proto/luckynumbers/v1/hold_life.proto` (`HoldConfig.life`); rules `content/holds/life/default.txtpb`.
+  Finds are items in `content/items/dwarven/` (Kind RELIC, so the museum buys them at the station).
+- `HoldLifePlan.Plan(seed, region, grid, life, ...)` (Scripts/HoldScene): from hash(seed, region) and the grid only.
+  Chambers = groups of mine cells whose 8 neighbours are open; dead ends = mine cells with one way out. Nothing on or
+  beside a shaft or within 2 cells of the region edge. Depth = -region.y; tier and creature weights grow with depth.
+- `RelicCaches`: a strongbox (PLACEHOLDER_dwarven_strongbox + lid + glint, one shared point light on the nearest);
+  E puts its find in the pack (`IInventory.TryAdd`). Opened caches stay open for the visit (by world cell).
+- `DeepCreatures`: combat.txtpb monsters, wandering / chasing on the cell graph of their own region (`CellPaths`, BFS),
+  noticing you by sight + a ray; the crash site's fight pieces (MonsterView/Brain, Marksman, Dice, Bolts, ShotCheck)
+  and its rescue when you're down. Despawn on RegionHidden.
+- Check: `-executeMethod LuckyNumbers.Editor.HoldLifeCheck.Run` (placement rules, determinism, counts by depth).
