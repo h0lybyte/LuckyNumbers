@@ -35,6 +35,8 @@ namespace LuckyNumbers.Model
             "RangeState",
             "StationState",
             "CombatState",
+            "DogfightState",
+            "DebtState",
             "EncounterState",
             "PlayerInventory",
             "JobBoard",
@@ -111,6 +113,8 @@ namespace LuckyNumbers.Model
                 NotifyCollectionChangedEventHandler<int> hGear = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(1);
                 s.Gear.CollectionChanged += hGear;
                 d.Add(Disposable.Create(() => s.Gear.CollectionChanged -= hGear));
+                d.Add(s.Heritage.Subscribe(_ => sink.MarkState(1)));
+                d.Add(s.HeritageBlurb.Subscribe(_ => sink.MarkState(1)));
                 sink.MarkState(1);
             }
             {
@@ -163,217 +167,257 @@ namespace LuckyNumbers.Model
                 sink.MarkState(6);
             }
             {
-                var s = c.Resolve<EncounterState>();
-                d.Add(s.Open.Subscribe(_ => sink.MarkState(7)));
-                d.Add(s.Kind.Subscribe(_ => sink.MarkState(7)));
-                d.Add(s.Title.Subscribe(_ => sink.MarkState(7)));
-                d.Add(s.Text.Subscribe(_ => sink.MarkState(7)));
-                NotifyCollectionChangedEventHandler<string> hOptions = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(7);
-                s.Options.CollectionChanged += hOptions;
-                d.Add(Disposable.Create(() => s.Options.CollectionChanged -= hOptions));
-                d.Add(s.Rolled.Subscribe(_ => sink.MarkState(7)));
-                d.Add(s.Skill.Subscribe(_ => sink.MarkState(7)));
-                d.Add(s.D20.Subscribe(_ => sink.MarkState(7)));
-                d.Add(s.Bonus.Subscribe(_ => sink.MarkState(7)));
-                d.Add(s.Total.Subscribe(_ => sink.MarkState(7)));
-                d.Add(s.Dc.Subscribe(_ => sink.MarkState(7)));
-                d.Add(s.Success.Subscribe(_ => sink.MarkState(7)));
-                d.Add(s.Result.Subscribe(_ => sink.MarkState(7)));
+                var s = c.Resolve<DogfightState>();
+                d.Add(s.Active.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Hull.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.HullMax.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Shield.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.ShieldMax.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Armor.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Evasion.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Gunnery.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Target.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Hostiles.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.UplinkJob.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Uplink.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.InRange.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.UplinkDone.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Objective.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Destroyed.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.DestroyedText.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.ShieldHit.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.HullHit.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.SatelliteDistance.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Wave.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Waves.Subscribe(_ => sink.MarkState(7)));
                 sink.MarkState(7);
             }
             {
-                var s = c.Resolve<PlayerInventory>();
-                d.Add(s.Width.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.Height.Subscribe(_ => sink.MarkState(8)));
-                NotifyCollectionChangedEventHandler<string> hItems = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(8);
-                s.Items.CollectionChanged += hItems;
-                d.Add(Disposable.Create(() => s.Items.CollectionChanged -= hItems));
-                d.Add(s.Bulk.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.BulkLimit.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.BulkMax.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.Load.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.Speed.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.Value.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.Message.Subscribe(_ => sink.MarkState(8)));
-                NotifyCollectionChangedEventHandler<string> hGearBonuses = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(8);
-                s.GearBonuses.CollectionChanged += hGearBonuses;
-                d.Add(Disposable.Create(() => s.GearBonuses.CollectionChanged -= hGearBonuses));
-                d.Add(s.CanDrop.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.Ready.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.ReadyName.Subscribe(_ => sink.MarkState(8)));
-                d.Add(s.Cooldown.Subscribe(_ => sink.MarkState(8)));
-                NotifyCollectionChangedEventHandler<string> hKinds = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(8);
-                s.Kinds.CollectionChanged += hKinds;
-                d.Add(Disposable.Create(() => s.Kinds.CollectionChanged -= hKinds));
+                var s = c.Resolve<DebtState>();
+                d.Add(s.Level.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.Collections.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.GameOver.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.Text.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.GameOverShown.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.GameOverTitle.Subscribe(_ => sink.MarkState(8)));
+                d.Add(s.GameOverText.Subscribe(_ => sink.MarkState(8)));
                 sink.MarkState(8);
             }
             {
-                var s = c.Resolve<JobBoard>();
+                var s = c.Resolve<EncounterState>();
                 d.Add(s.Open.Subscribe(_ => sink.MarkState(9)));
-                NotifyCollectionChangedEventHandler<string> hOffers = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(9);
-                s.Offers.CollectionChanged += hOffers;
-                d.Add(Disposable.Create(() => s.Offers.CollectionChanged -= hOffers));
+                d.Add(s.Kind.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.Title.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.Text.Subscribe(_ => sink.MarkState(9)));
+                NotifyCollectionChangedEventHandler<string> hOptions = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(9);
+                s.Options.CollectionChanged += hOptions;
+                d.Add(Disposable.Create(() => s.Options.CollectionChanged -= hOptions));
+                d.Add(s.Rolled.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.Skill.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.D20.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.Bonus.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.Total.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.Dc.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.Success.Subscribe(_ => sink.MarkState(9)));
+                d.Add(s.Result.Subscribe(_ => sink.MarkState(9)));
                 sink.MarkState(9);
             }
             {
-                var s = c.Resolve<PlayerJob>();
-                d.Add(s.Active.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Kind.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Title.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Objective.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Client.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Body.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Planet.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Danger.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Pay.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Seed.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Target.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Count.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Goal.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Done.Subscribe(_ => sink.MarkState(10)));
-                d.Add(s.Completed.Subscribe(_ => sink.MarkState(10)));
-                NotifyCollectionChangedEventHandler<string> hRecentTargets = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(10);
-                s.RecentTargets.CollectionChanged += hRecentTargets;
-                d.Add(Disposable.Create(() => s.RecentTargets.CollectionChanged -= hRecentTargets));
+                var s = c.Resolve<PlayerInventory>();
+                d.Add(s.Width.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Height.Subscribe(_ => sink.MarkState(10)));
+                NotifyCollectionChangedEventHandler<string> hItems = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(10);
+                s.Items.CollectionChanged += hItems;
+                d.Add(Disposable.Create(() => s.Items.CollectionChanged -= hItems));
+                d.Add(s.Bulk.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.BulkLimit.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.BulkMax.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Load.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Speed.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Value.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Message.Subscribe(_ => sink.MarkState(10)));
+                NotifyCollectionChangedEventHandler<string> hGearBonuses = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(10);
+                s.GearBonuses.CollectionChanged += hGearBonuses;
+                d.Add(Disposable.Create(() => s.GearBonuses.CollectionChanged -= hGearBonuses));
+                d.Add(s.CanDrop.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Ready.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.ReadyName.Subscribe(_ => sink.MarkState(10)));
+                d.Add(s.Cooldown.Subscribe(_ => sink.MarkState(10)));
+                NotifyCollectionChangedEventHandler<string> hKinds = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(10);
+                s.Kinds.CollectionChanged += hKinds;
+                d.Add(Disposable.Create(() => s.Kinds.CollectionChanged -= hKinds));
                 sink.MarkState(10);
             }
             {
-                var s = c.Resolve<FlightState>();
-                d.Add(s.Flying.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Crashed.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Landed.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Altitude.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Climb.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Speed.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.SetSpeed.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Hovering.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Boost.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.PadDistance.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.PadBearing.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Descent.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Drift.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Tilt.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.MaxDescent.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.MaxDrift.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.MaxTilt.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.CrashReason.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Assisted.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.HoverShip.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Roaming.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.OrbitAltitude.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.CanLeave.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.FuelMax.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.FuelLow.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.FuelEmpty.Subscribe(_ => sink.MarkState(11)));
-                d.Add(s.Shots.Subscribe(_ => sink.MarkState(11)));
+                var s = c.Resolve<JobBoard>();
+                d.Add(s.Open.Subscribe(_ => sink.MarkState(11)));
+                NotifyCollectionChangedEventHandler<string> hOffers = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(11);
+                s.Offers.CollectionChanged += hOffers;
+                d.Add(Disposable.Create(() => s.Offers.CollectionChanged -= hOffers));
                 sink.MarkState(11);
             }
             {
-                var s = c.Resolve<MapState>();
-                d.Add(s.Open.Subscribe(_ => sink.MarkState(12)));
+                var s = c.Resolve<PlayerJob>();
+                d.Add(s.Active.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Kind.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Title.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Objective.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Client.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Body.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Planet.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Danger.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Pay.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Seed.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Target.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Count.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Goal.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Done.Subscribe(_ => sink.MarkState(12)));
+                d.Add(s.Completed.Subscribe(_ => sink.MarkState(12)));
+                NotifyCollectionChangedEventHandler<string> hRecentTargets = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(12);
+                s.RecentTargets.CollectionChanged += hRecentTargets;
+                d.Add(Disposable.Create(() => s.RecentTargets.CollectionChanged -= hRecentTargets));
                 sink.MarkState(12);
             }
             {
-                var s = c.Resolve<LandingSite>();
-                d.Add(s.Valid.Subscribe(_ => sink.MarkState(13)));
-                d.Add(s.Body.Subscribe(_ => sink.MarkState(13)));
+                var s = c.Resolve<FlightState>();
+                d.Add(s.Flying.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Crashed.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Landed.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Altitude.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Climb.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Speed.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.SetSpeed.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Hovering.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Boost.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.PadDistance.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.PadBearing.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Descent.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Drift.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Tilt.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.MaxDescent.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.MaxDrift.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.MaxTilt.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.CrashReason.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Assisted.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.HoverShip.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Roaming.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.OrbitAltitude.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.CanLeave.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.FuelMax.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.FuelLow.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.FuelEmpty.Subscribe(_ => sink.MarkState(13)));
+                d.Add(s.Shots.Subscribe(_ => sink.MarkState(13)));
                 sink.MarkState(13);
             }
             {
-                var s = c.Resolve<PlayerShip>();
-                d.Add(s.Skin.Subscribe(_ => sink.MarkState(14)));
-                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(14)));
-                d.Add(s.FuelMax.Subscribe(_ => sink.MarkState(14)));
-                NotifyCollectionChangedEventHandler<string> hUpgrades = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(14);
-                s.Upgrades.CollectionChanged += hUpgrades;
-                d.Add(Disposable.Create(() => s.Upgrades.CollectionChanged -= hUpgrades));
-                d.Add(s.Dice.Subscribe(_ => sink.MarkState(14)));
+                var s = c.Resolve<MapState>();
+                d.Add(s.Open.Subscribe(_ => sink.MarkState(14)));
                 sink.MarkState(14);
             }
             {
-                var s = c.Resolve<PlayerHealth>();
-                d.Add(s.Current.Subscribe(_ => sink.MarkState(15)));
-                d.Add(s.Max.Subscribe(_ => sink.MarkState(15)));
+                var s = c.Resolve<LandingSite>();
+                d.Add(s.Valid.Subscribe(_ => sink.MarkState(15)));
+                d.Add(s.Body.Subscribe(_ => sink.MarkState(15)));
                 sink.MarkState(15);
             }
             {
-                var s = c.Resolve<PlayerControl>();
-                d.Add(s.Locks.Subscribe(_ => sink.MarkState(16)));
+                var s = c.Resolve<PlayerShip>();
+                d.Add(s.Skin.Subscribe(_ => sink.MarkState(16)));
+                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(16)));
+                d.Add(s.FuelMax.Subscribe(_ => sink.MarkState(16)));
+                NotifyCollectionChangedEventHandler<string> hUpgrades = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(16);
+                s.Upgrades.CollectionChanged += hUpgrades;
+                d.Add(Disposable.Create(() => s.Upgrades.CollectionChanged -= hUpgrades));
+                d.Add(s.Dice.Subscribe(_ => sink.MarkState(16)));
                 sink.MarkState(16);
             }
             {
-                var s = c.Resolve<ShipPicker>();
-                d.Add(s.Open.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.Skin.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.Index.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.Count.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.Name.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.Role.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.Description.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.Speed.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.Agility.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.Efficiency.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.Toughness.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.Firepower.Subscribe(_ => sink.MarkState(17)));
-                d.Add(s.Guns.Subscribe(_ => sink.MarkState(17)));
+                var s = c.Resolve<PlayerHealth>();
+                d.Add(s.Current.Subscribe(_ => sink.MarkState(17)));
+                d.Add(s.Max.Subscribe(_ => sink.MarkState(17)));
                 sink.MarkState(17);
             }
             {
-                var s = c.Resolve<PlayerVoyage>();
-                d.Add(s.Arrival.Subscribe(_ => sink.MarkState(18)));
-                d.Add(s.Credits.Subscribe(_ => sink.MarkState(18)));
-                d.Add(s.LastPayout.Subscribe(_ => sink.MarkState(18)));
-                d.Add(s.Trips.Subscribe(_ => sink.MarkState(18)));
-                d.Add(s.Rescued.Subscribe(_ => sink.MarkState(18)));
+                var s = c.Resolve<PlayerControl>();
+                d.Add(s.Locks.Subscribe(_ => sink.MarkState(18)));
                 sink.MarkState(18);
             }
             {
-                var s = c.Resolve<SaveSlots>();
+                var s = c.Resolve<ShipPicker>();
                 d.Add(s.Open.Subscribe(_ => sink.MarkState(19)));
-                d.Add(s.Active.Subscribe(_ => sink.MarkState(19)));
-                NotifyCollectionChangedEventHandler<string> hSlots = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(19);
-                s.Slots.CollectionChanged += hSlots;
-                d.Add(Disposable.Create(() => s.Slots.CollectionChanged -= hSlots));
+                d.Add(s.Skin.Subscribe(_ => sink.MarkState(19)));
+                d.Add(s.Index.Subscribe(_ => sink.MarkState(19)));
+                d.Add(s.Count.Subscribe(_ => sink.MarkState(19)));
+                d.Add(s.Name.Subscribe(_ => sink.MarkState(19)));
+                d.Add(s.Role.Subscribe(_ => sink.MarkState(19)));
+                d.Add(s.Description.Subscribe(_ => sink.MarkState(19)));
+                d.Add(s.Speed.Subscribe(_ => sink.MarkState(19)));
+                d.Add(s.Agility.Subscribe(_ => sink.MarkState(19)));
+                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(19)));
+                d.Add(s.Efficiency.Subscribe(_ => sink.MarkState(19)));
+                d.Add(s.Toughness.Subscribe(_ => sink.MarkState(19)));
+                d.Add(s.Firepower.Subscribe(_ => sink.MarkState(19)));
+                d.Add(s.Guns.Subscribe(_ => sink.MarkState(19)));
                 sink.MarkState(19);
             }
             {
-                var s = c.Resolve<DiceState>();
-                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(20);
-                s.Faces.CollectionChanged += hFaces;
-                d.Add(Disposable.Create(() => s.Faces.CollectionChanged -= hFaces));
-                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(20)));
-                d.Add(s.Seed.Subscribe(_ => sink.MarkState(20)));
+                var s = c.Resolve<PlayerVoyage>();
+                d.Add(s.Arrival.Subscribe(_ => sink.MarkState(20)));
+                d.Add(s.Credits.Subscribe(_ => sink.MarkState(20)));
+                d.Add(s.LastPayout.Subscribe(_ => sink.MarkState(20)));
+                d.Add(s.Trips.Subscribe(_ => sink.MarkState(20)));
+                d.Add(s.Rescued.Subscribe(_ => sink.MarkState(20)));
+                d.Add(s.RestoreBill.Subscribe(_ => sink.MarkState(20)));
                 sink.MarkState(20);
             }
             {
-                var s = c.Resolve<UniverseState>();
-                d.Add(s.Id.Subscribe(_ => sink.MarkState(21)));
-                d.Add(s.Name.Subscribe(_ => sink.MarkState(21)));
-                d.Add(s.Holds.Subscribe(_ => sink.MarkState(21)));
+                var s = c.Resolve<SaveSlots>();
+                d.Add(s.Open.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Active.Subscribe(_ => sink.MarkState(21)));
+                NotifyCollectionChangedEventHandler<string> hSlots = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(21);
+                s.Slots.CollectionChanged += hSlots;
+                d.Add(Disposable.Create(() => s.Slots.CollectionChanged -= hSlots));
                 sink.MarkState(21);
             }
             {
+                var s = c.Resolve<DiceState>();
+                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(22);
+                s.Faces.CollectionChanged += hFaces;
+                d.Add(Disposable.Create(() => s.Faces.CollectionChanged -= hFaces));
+                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(22)));
+                d.Add(s.Seed.Subscribe(_ => sink.MarkState(22)));
+                sink.MarkState(22);
+            }
+            {
+                var s = c.Resolve<UniverseState>();
+                d.Add(s.Id.Subscribe(_ => sink.MarkState(23)));
+                d.Add(s.Name.Subscribe(_ => sink.MarkState(23)));
+                d.Add(s.Holds.Subscribe(_ => sink.MarkState(23)));
+                sink.MarkState(23);
+            }
+            {
                 var s = c.Resolve<Outfitter>();
-                d.Add(s.Open.Subscribe(_ => sink.MarkState(22)));
-                NotifyCollectionChangedEventHandler<string> hItems = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(22);
+                d.Add(s.Open.Subscribe(_ => sink.MarkState(24)));
+                NotifyCollectionChangedEventHandler<string> hItems = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(24);
                 s.Items.CollectionChanged += hItems;
                 d.Add(Disposable.Create(() => s.Items.CollectionChanged -= hItems));
-                d.Add(s.CommonTitle.Subscribe(_ => sink.MarkState(22)));
-                d.Add(s.CommonBlurb.Subscribe(_ => sink.MarkState(22)));
-                d.Add(s.ExoticTitle.Subscribe(_ => sink.MarkState(22)));
-                d.Add(s.ExoticBlurb.Subscribe(_ => sink.MarkState(22)));
-                d.Add(s.Ship.Subscribe(_ => sink.MarkState(22)));
-                d.Add(s.Speed.Subscribe(_ => sink.MarkState(22)));
-                d.Add(s.Agility.Subscribe(_ => sink.MarkState(22)));
-                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(22)));
-                d.Add(s.Efficiency.Subscribe(_ => sink.MarkState(22)));
-                d.Add(s.Toughness.Subscribe(_ => sink.MarkState(22)));
-                d.Add(s.Firepower.Subscribe(_ => sink.MarkState(22)));
-                d.Add(s.Payout.Subscribe(_ => sink.MarkState(22)));
-                d.Add(s.Guns.Subscribe(_ => sink.MarkState(22)));
-                sink.MarkState(22);
+                d.Add(s.CommonTitle.Subscribe(_ => sink.MarkState(24)));
+                d.Add(s.CommonBlurb.Subscribe(_ => sink.MarkState(24)));
+                d.Add(s.ExoticTitle.Subscribe(_ => sink.MarkState(24)));
+                d.Add(s.ExoticBlurb.Subscribe(_ => sink.MarkState(24)));
+                d.Add(s.Ship.Subscribe(_ => sink.MarkState(24)));
+                d.Add(s.Speed.Subscribe(_ => sink.MarkState(24)));
+                d.Add(s.Agility.Subscribe(_ => sink.MarkState(24)));
+                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(24)));
+                d.Add(s.Efficiency.Subscribe(_ => sink.MarkState(24)));
+                d.Add(s.Toughness.Subscribe(_ => sink.MarkState(24)));
+                d.Add(s.Firepower.Subscribe(_ => sink.MarkState(24)));
+                d.Add(s.Payout.Subscribe(_ => sink.MarkState(24)));
+                d.Add(s.Guns.Subscribe(_ => sink.MarkState(24)));
+                d.Add(s.Shield.Subscribe(_ => sink.MarkState(24)));
+                d.Add(s.Armor.Subscribe(_ => sink.MarkState(24)));
+                sink.MarkState(24);
             }
             d.Add(c.Resolve<ISubscriber<RelicRolled>>().Subscribe(e =>
             {
@@ -478,6 +522,11 @@ namespace LuckyNumbers.Model
             d.Add(c.Resolve<ISubscriber<CutsceneFinished>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("CutsceneFinished"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<RunEnded>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("RunEnded"), e);
                 sink.EndEvent();
             }));
             d.Add(c.Resolve<ISubscriber<EncounterChoice>>().Subscribe(e =>
@@ -620,22 +669,24 @@ namespace LuckyNumbers.Model
                 case 4: Write(b, c.Resolve<RangeState>()); break;
                 case 5: Write(b, c.Resolve<StationState>()); break;
                 case 6: Write(b, c.Resolve<CombatState>()); break;
-                case 7: Write(b, c.Resolve<EncounterState>()); break;
-                case 8: Write(b, c.Resolve<PlayerInventory>()); break;
-                case 9: Write(b, c.Resolve<JobBoard>()); break;
-                case 10: Write(b, c.Resolve<PlayerJob>()); break;
-                case 11: Write(b, c.Resolve<FlightState>()); break;
-                case 12: Write(b, c.Resolve<MapState>()); break;
-                case 13: Write(b, c.Resolve<LandingSite>()); break;
-                case 14: Write(b, c.Resolve<PlayerShip>()); break;
-                case 15: Write(b, c.Resolve<PlayerHealth>()); break;
-                case 16: Write(b, c.Resolve<PlayerControl>()); break;
-                case 17: Write(b, c.Resolve<ShipPicker>()); break;
-                case 18: Write(b, c.Resolve<PlayerVoyage>()); break;
-                case 19: Write(b, c.Resolve<SaveSlots>()); break;
-                case 20: Write(b, c.Resolve<DiceState>()); break;
-                case 21: Write(b, c.Resolve<UniverseState>()); break;
-                case 22: Write(b, c.Resolve<Outfitter>()); break;
+                case 7: Write(b, c.Resolve<DogfightState>()); break;
+                case 8: Write(b, c.Resolve<DebtState>()); break;
+                case 9: Write(b, c.Resolve<EncounterState>()); break;
+                case 10: Write(b, c.Resolve<PlayerInventory>()); break;
+                case 11: Write(b, c.Resolve<JobBoard>()); break;
+                case 12: Write(b, c.Resolve<PlayerJob>()); break;
+                case 13: Write(b, c.Resolve<FlightState>()); break;
+                case 14: Write(b, c.Resolve<MapState>()); break;
+                case 15: Write(b, c.Resolve<LandingSite>()); break;
+                case 16: Write(b, c.Resolve<PlayerShip>()); break;
+                case 17: Write(b, c.Resolve<PlayerHealth>()); break;
+                case 18: Write(b, c.Resolve<PlayerControl>()); break;
+                case 19: Write(b, c.Resolve<ShipPicker>()); break;
+                case 20: Write(b, c.Resolve<PlayerVoyage>()); break;
+                case 21: Write(b, c.Resolve<SaveSlots>()); break;
+                case 22: Write(b, c.Resolve<DiceState>()); break;
+                case 23: Write(b, c.Resolve<UniverseState>()); break;
+                case 24: Write(b, c.Resolve<Outfitter>()); break;
             }
         }
 
@@ -913,6 +964,10 @@ namespace LuckyNumbers.Model
                 }
             }
             b.Append(']');
+            b.Append(",\"heritage\":");
+            Json.Str(b, s.Heritage.Value);
+            b.Append(",\"heritageBlurb\":");
+            Json.Str(b, s.HeritageBlurb.Value);
             b.Append('}');
         }
 
@@ -1007,6 +1062,76 @@ namespace LuckyNumbers.Model
             b.Append(s.Downed.Value ? "true" : "false");
             b.Append(",\"armor\":");
             Json.Num(b, s.Armor.Value);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, DogfightState s)
+        {
+            b.Append('{');
+            b.Append("\"active\":");
+            b.Append(s.Active.Value ? "true" : "false");
+            b.Append(",\"hull\":");
+            Json.Num(b, s.Hull.Value);
+            b.Append(",\"hullMax\":");
+            Json.Num(b, s.HullMax.Value);
+            b.Append(",\"shield\":");
+            Json.Num(b, s.Shield.Value);
+            b.Append(",\"shieldMax\":");
+            Json.Num(b, s.ShieldMax.Value);
+            b.Append(",\"armor\":");
+            Json.Num(b, s.Armor.Value);
+            b.Append(",\"evasion\":");
+            Json.Num(b, s.Evasion.Value);
+            b.Append(",\"gunnery\":");
+            Json.Num(b, s.Gunnery.Value);
+            b.Append(",\"target\":");
+            Json.Str(b, s.Target.Value);
+            b.Append(",\"hostiles\":");
+            Json.Num(b, s.Hostiles.Value);
+            b.Append(",\"uplinkJob\":");
+            b.Append(s.UplinkJob.Value ? "true" : "false");
+            b.Append(",\"uplink\":");
+            Json.Num(b, s.Uplink.Value);
+            b.Append(",\"inRange\":");
+            b.Append(s.InRange.Value ? "true" : "false");
+            b.Append(",\"uplinkDone\":");
+            b.Append(s.UplinkDone.Value ? "true" : "false");
+            b.Append(",\"objective\":");
+            Json.Str(b, s.Objective.Value);
+            b.Append(",\"destroyed\":");
+            b.Append(s.Destroyed.Value ? "true" : "false");
+            b.Append(",\"destroyedText\":");
+            Json.Str(b, s.DestroyedText.Value);
+            b.Append(",\"shieldHit\":");
+            b.Append(s.ShieldHit.Value ? "true" : "false");
+            b.Append(",\"hullHit\":");
+            b.Append(s.HullHit.Value ? "true" : "false");
+            b.Append(",\"satelliteDistance\":");
+            Json.Num(b, s.SatelliteDistance.Value);
+            b.Append(",\"wave\":");
+            Json.Num(b, s.Wave.Value);
+            b.Append(",\"waves\":");
+            Json.Num(b, s.Waves.Value);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, DebtState s)
+        {
+            b.Append('{');
+            b.Append("\"level\":");
+            Json.Num(b, s.Level.Value);
+            b.Append(",\"collections\":");
+            Json.Num(b, s.Collections.Value);
+            b.Append(",\"gameOver\":");
+            Json.Num(b, s.GameOver.Value);
+            b.Append(",\"text\":");
+            Json.Str(b, s.Text.Value);
+            b.Append(",\"gameOverShown\":");
+            b.Append(s.GameOverShown.Value ? "true" : "false");
+            b.Append(",\"gameOverTitle\":");
+            Json.Str(b, s.GameOverTitle.Value);
+            b.Append(",\"gameOverText\":");
+            Json.Str(b, s.GameOverText.Value);
             b.Append('}');
         }
 
@@ -1359,6 +1484,8 @@ namespace LuckyNumbers.Model
             Json.Num(b, s.Trips.Value);
             b.Append(",\"rescued\":");
             b.Append(s.Rescued.Value ? "true" : "false");
+            b.Append(",\"restoreBill\":");
+            Json.Num(b, s.RestoreBill.Value);
             b.Append('}');
         }
 
@@ -1461,6 +1588,10 @@ namespace LuckyNumbers.Model
             Json.Num(b, s.Payout.Value);
             b.Append(",\"guns\":");
             Json.Str(b, s.Guns.Value);
+            b.Append(",\"shield\":");
+            Json.Num(b, s.Shield.Value);
+            b.Append(",\"armor\":");
+            Json.Num(b, s.Armor.Value);
             b.Append('}');
         }
 
@@ -1675,6 +1806,14 @@ namespace LuckyNumbers.Model
             b.Append('{');
             b.Append("\"cutsceneId\":");
             Json.Str(b, e.CutsceneId);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, RunEnded e)
+        {
+            b.Append('{');
+            b.Append("\"reason\":");
+            Json.Str(b, e.Reason);
             b.Append('}');
         }
 
@@ -2038,6 +2177,7 @@ namespace LuckyNumbers.Model
                 case JobKind.Salvage: return "Salvage";
                 case JobKind.Clear: return "Clear";
                 case JobKind.Retrieve: return "Retrieve";
+                case JobKind.Uplink: return "Uplink";
                 default: return ((int)v).ToString(CultureInfo.InvariantCulture);
             }
         }
@@ -2051,6 +2191,7 @@ namespace LuckyNumbers.Model
                 case "Salvage": return JobKind.Salvage;
                 case "Clear": return JobKind.Clear;
                 case "Retrieve": return JobKind.Retrieve;
+                case "Uplink": return JobKind.Uplink;
                 default: return default;
             }
         }
@@ -2106,6 +2247,7 @@ namespace LuckyNumbers.Model
                 case StationArrival.Planet: return "Planet";
                 case StationArrival.FlightSchool: return "FlightSchool";
                 case StationArrival.Orbit: return "Orbit";
+                case StationArrival.Restored: return "Restored";
                 default: return ((int)v).ToString(CultureInfo.InvariantCulture);
             }
         }
@@ -2119,6 +2261,7 @@ namespace LuckyNumbers.Model
                 case "Planet": return StationArrival.Planet;
                 case "FlightSchool": return StationArrival.FlightSchool;
                 case "Orbit": return StationArrival.Orbit;
+                case "Restored": return StationArrival.Restored;
                 default: return default;
             }
         }

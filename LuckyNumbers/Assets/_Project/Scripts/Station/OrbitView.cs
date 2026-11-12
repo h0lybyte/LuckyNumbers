@@ -59,6 +59,44 @@ namespace LuckyNumbers.Station
             if (_beacon != null) _beacon.localScale = Vector3.one * scale;
         }
 
+        /// <summary>
+        /// A satellite job's relay (PLACEHOLDER_satellite: plain blocks to swap for a model): a body, two solar wings and
+        /// a lit dish, `size` m across, with a ring of lit markers `radius` m out round it (the uplink range, in its
+        /// plane). Returns the root, so the caller can turn it.
+        /// </summary>
+        public Transform Satellite(Vector3 position, float size, float radius)
+        {
+            var root = new GameObject("PLACEHOLDER_satellite").transform;
+            root.SetParent(transform, false);
+            root.position = position;
+            void Part(string name, Transform parent, Vector3 at, Vector3 scale, Material m)
+            {
+                var g = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                g.name = name;
+                Destroy(g.GetComponent<Collider>());
+                g.transform.SetParent(parent, false);
+                g.transform.localPosition = at;
+                g.transform.localScale = scale;
+                var r = g.GetComponent<MeshRenderer>();
+                r.sharedMaterial = m;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            Part("Body", root, Vector3.zero, new Vector3(0.35f, 0.35f, 0.5f) * size, hull);
+            Part("Wing left", root, new Vector3(-0.6f * size, 0f, 0f), new Vector3(0.8f, 0.04f, 0.35f) * size, trim);
+            Part("Wing right", root, new Vector3(0.6f * size, 0f, 0f), new Vector3(0.8f, 0.04f, 0.35f) * size, trim);
+            Part("Dish", root, new Vector3(0f, 0f, 0.32f * size), new Vector3(0.3f, 0.3f, 0.06f) * size, beacon);
+            var ring = new GameObject("Uplink range").transform;
+            ring.SetParent(root, false);
+            const int Markers = 32;
+            for (var i = 0; i < Markers; i++)
+            {
+                var a = i * Mathf.PI * 2f / Markers;
+                Part($"Marker {i}", ring, new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * radius, Vector3.one * (size * 0.12f), beacon);
+            }
+            _built.Add(root.gameObject);
+            return root;
+        }
+
         void Block(string name, Bounds b, Material m)
         {
             var g = GameObject.CreatePrimitive(PrimitiveType.Cube);

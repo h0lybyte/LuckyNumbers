@@ -38,6 +38,9 @@ message CharacterConfig {
   // XP for picking up a relic, and for a named artifact.
   int32 xp_per_relic = 17;
   int32 xp_per_artifact = 18;
+  // What every pilot is (the story: half human, half cyborg; the memory chip brings you back), shown on the sheet.
+  string heritage = 19;
+  string heritage_blurb = 20;
 }
 
 message AbilityDef {
@@ -131,6 +134,9 @@ message CharacterSheet {
   bool setup = 25;
   // Per ability, what equipped gear adds (already in `scores`).
   repeated int32 gear = 26;
+  // CharacterConfig.heritage and its blurb.
+  string heritage = 27;
+  string heritage_blurb = 28;
 }
 
 // The page has a character sheet (sent when it mounts): Play then waits for character creation.

@@ -70,6 +70,11 @@ namespace LuckyNumbers.Model
         /// One ShipGun id per barrel (left, right). Empty: default_stats' guns.
         /// </summary>
         public List<string> Guns { get; } = new List<string>();
+        /// <summary>
+        /// In space combat (content/dogfight.txtpb defense): shield points and armour multiply by these (toughness: the hull).
+        /// </summary>
+        public float Shield { get; set; }
+        public float Armor { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public ShipStats Clone() => (ShipStats)MemberwiseClone();
@@ -119,6 +124,10 @@ namespace LuckyNumbers.Model
         /// What it shoots.
         /// </summary>
         public Projectile Bolt { get; set; }
+        /// <summary>
+        /// Damage dice on a hit in space combat ("1d4", "2d8"; empty: DogfightConfig.gunnery.default_damage).
+        /// </summary>
+        public string Damage { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public ShipGun Clone() => (ShipGun)MemberwiseClone();

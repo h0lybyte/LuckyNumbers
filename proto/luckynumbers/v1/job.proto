@@ -16,6 +16,8 @@ enum JobKind {
   JOB_KIND_CLEAR = 2;
   // Bring back one named relic from the wreck's cargo.
   JOB_KIND_RETRIEVE = 3;
+  // Out round the station (GameScene.Orbit): upload a satellite's data while rogue ships attack (content/dogfight.txtpb).
+  JOB_KIND_UPLINK = 4;
 }
 
 // Work from Dispatch (content/jobs.txtpb). Your first job is the museum freighter's mayday (the station's own call
@@ -62,6 +64,11 @@ message JobType {
   // Clear: monsters to kill, base plus per danger.
   int32 target = 10;
   int32 target_per_danger = 11;
+  // Uplink: upload seconds (0: DogfightConfig.satellite.seconds), plus per danger; waves of rogues (0: the
+  // satellite's), plus one more every two danger levels. `target` / `target_per_danger`: rogues per wave.
+  float uplink_seconds = 12;
+  float uplink_seconds_per_danger = 13;
+  int32 waves = 14;
 }
 
 // The board, while Dispatch has offers up (mirrored to the page). Each offer is

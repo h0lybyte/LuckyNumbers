@@ -84,8 +84,12 @@ namespace LuckyNumbers.Station
         List<Jobs.Offer> _offers = new();
         string _orbitBody = "";
         static JobConfig J => GameContent.Jobs;
-        // The first trip plays the intro cutscene (StationScene.next); later ones fly straight down.
-        GameScene NextScene => _voyage.Trips.Value == 0 ? _config.Next : GameScene.Planet;
+        // The first trip plays the intro cutscene (StationScene.next); later ones fly straight down, or (a satellite
+        // job) out round the station.
+        GameScene NextScene => _voyage.Trips.Value == 0 ? _config.Next : OnUplink ? GameScene.Orbit : GameScene.Planet;
+        bool OnUplink => _job.Active.Value && _job.Kind.Value == JobKind.Uplink;
+        readonly DebtState _debt;
+        readonly IPublisher<RunEnded> _runEnded;
         // Later trips need a job from the board first.
         bool NeedsJob => !_job.Active.Value && _voyage.Trips.Value > 0;
         /// <summary>Dev (the page's URL): ?ln-board starts you beside the ship between jobs, to try the job board.</summary>
@@ -134,8 +138,10 @@ namespace LuckyNumbers.Station
                                 ISubscriber<JobAcceptRequested> accepts, ISubscriber<DevWarpRequested> warps, ArmsView arms,
                                 RangeState rangeState, ISubscriber<RangeResetRequested> rangeResets, CharacterSheet sheet,
                                 IPublisher<CombatRoll> rolls, WeaponRack rack, IBufferedSubscriber<UniverseSeedChanged> seeds,
-                                Outfitter outfitter)
+                                Outfitter outfitter, DebtState debt, IPublisher<RunEnded> runEnded)
         {
+            _debt = debt;
+            _runEnded = runEnded;
             _outfitter = outfitter;
             _seeds = seeds;
             _rack = rack;
@@ -387,7 +393,9 @@ namespace LuckyNumbers.Station
             _stationInSpace = Quaternion.LookRotation((Vector3)(at - (float3)_orbitPosition), Vector3.up);
             _space.Camera.nearClipPlane = math.max(0.001f, diameter * 0.01f);
             _inSpace = true;
-            if (_arrival == StationArrival.Planet) Homecoming();
+            // Back from a planet, or docked from a satellite job: Dispatch settles it. Destroyed: the memory restore.
+            if (_arrival == StationArrival.Planet || _arrival == StationArrival.Orbit && OnUplink) Homecoming();
+            else if (_arrival == StationArrival.Restored) Restored();
             Debug.Log($"[Station] ready: orbiting {target} \"{_planet}\" (seed {_space.Seed})"); // marker for ln.py webshot
         }
 
@@ -583,6 +591,13 @@ namespace LuckyNumbers.Station
             _state.Caller.Value = _caller;
             Debug.Log($"[Station] back from the planet: {sold.Count} relic(s) sold for {total} cr ({_voyage.Credits.Value} cr total)");
             var lines = new List<StationCallLine>(sold.Count > 0 ? home.PaidLines : home.EmptyLines);
+            if (sold.Count == 0 && OnUplink)
+            {
+                // A satellite job: nothing for the museum, Dispatch settles the job.
+                lines.Clear();
+                _caller = "Dispatch";
+                _state.Caller.Value = _caller;
+            }
             if (_voyage.Rescued.Value)
             {
                 // The rescue drone brought you back (content/combat.txtpb rescue): Dispatch, not the museum.
@@ -618,6 +633,52 @@ namespace LuckyNumbers.Station
             }
             StartCall(lines, home.CharsPerSecond, home.Objective, CallKind.Homecoming);
             foreach (var line in _callLines) Debug.Log($"[Station] {Fill(line.Speaker)}: {Fill(line.Text)}");
+        }
+
+        /// <summary>
+        /// Your ship was destroyed outside: you wake in a new body beside the rebuilt ship, and Dispatch calls with the
+        /// bill (content/dogfight.txtpb restore; OrbitPresenter took it). A satellite job you were on is failed.
+        /// </summary>
+        void Restored()
+        {
+            var r = GameContent.Dogfight?.Restore;
+            _caller = "Dispatch";
+            _state.Caller.Value = _caller;
+            var lines = new List<StationCallLine>();
+            if (r != null)
+                foreach (var l in r.Lines)
+                    lines.Add(new StationCallLine
+                    {
+                        Speaker = l.Speaker, Seconds = l.Seconds,
+                        Text = (l.Text ?? "").Replace("{bill}", _voyage.RestoreBill.Value.ToString("N0"))
+                                             .Replace("{credits}", _voyage.Credits.Value.ToString("N0")),
+                    });
+            if (OnUplink)
+            {
+                lines.AddRange(J.FailedLines);
+                Debug.Log($"[Station] job \"{_job.Title.Value}\" failed: ship destroyed");
+                _job.Active.Value = false;
+            }
+            Debug.Log($"[Station] memory restore: billed {_voyage.RestoreBill.Value} cr, {_voyage.Credits.Value} cr now");
+            StartCall(lines, _config.Homecoming?.CharsPerSecond ?? 36f, _config.Homecoming?.Objective ?? "", CallKind.Homecoming);
+        }
+
+        /// <summary>
+        /// Too deep in debt (DebtState game over): the creditors take your chip. The page shows the card and reloads to
+        /// the title; the save slot goes (RunEnded, SavePresenter). With no page, back to the title after a while.
+        /// </summary>
+        async UniTaskVoid GameOver(CancellationToken ct)
+        {
+            Debug.Log($"[Station] game over: {_voyage.Credits.Value} cr (limit {_debt.GameOver.Value})");
+            _firstPerson.Lock(ControlLock.Leaving);
+            _state.Prompt.Value = "";
+            _state.Objective.Value = "";
+            PointerLock.Release();
+            _debt.GameOverShown.Value = true;
+            _runEnded.Publish(new RunEnded("debt"));
+            await UniTask.Delay(TimeSpan.FromSeconds(20), cancellationToken: ct);
+            _debt.GameOverShown.Value = false;
+            _scenes.Publish(new SceneChangeRequested(GameScene.Title));
         }
 
         /// <summary>To the Flight School's training deck (fade out); it sends you back here, beside the console.</summary>
@@ -716,6 +777,11 @@ namespace LuckyNumbers.Station
 
         void CallEnded(CallKind kind)
         {
+            if (kind == CallKind.Homecoming && _debt.Level.Value >= DebtWatch.GameOver)
+            {
+                GameOver(_cts.Token).Forget();
+                return;
+            }
             switch (kind)
             {
                 case CallKind.Dispatch: TakeFirstJob(); break;

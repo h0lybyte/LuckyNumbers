@@ -40,6 +40,9 @@ message ShipStats {
   float firepower = 10;
   // One ShipGun id per barrel (left, right). Empty: default_stats' guns.
   repeated string guns = 11;
+  // In space combat (content/dogfight.txtpb defense): shield points and armour multiply by these (toughness: the hull).
+  float shield = 12;
+  float armor = 13;
 }
 
 // Fuel, in units. Flying burns it (holding in the air a little, thrust a lot more, boost more again); with the tank
@@ -67,5 +70,7 @@ message ShipGun {
   float impulse = 6;
   // What it shoots.
   Projectile bolt = 10;
+  // Damage dice on a hit in space combat ("1d4", "2d8"; empty: DogfightConfig.gunnery.default_damage).
+  string damage = 11;
   reserved 4, 5, 7, 8, 9; // speed, range, length, width, color: in bolt
 }

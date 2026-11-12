@@ -556,7 +556,7 @@ namespace LuckyNumbers.Planet
             _view.Fade(1f);
             // The haul stays on the planet; the drone costs you; you're patched up.
             var lost = _pack.TakeRelics();
-            var fee = math.min(math.max(0, _voyage.Credits.Value), r?.Fee ?? 0);
+            var fee = math.max(0, r?.Fee ?? 0);   // into debt if need be (Core/DebtWatch)
             _voyage.Credits.Value -= fee;
             _job.Done.Value = false;
             _health.Current.Value = _health.Max.Value;

@@ -79,6 +79,12 @@ origins {
 }
 default_origin: "freighter"
 
+# Every pilot: half human, half cyborg. The memory chip keeps a backup of you (made at each dock), so a destroyed
+# ship isn't the end: you wake in a new body at the station and pay for the rebuild (content/dogfight.txtpb restore).
+heritage: "Half human, half cyborg"
+heritage_blurb: "Organic and machine. A memory chip backs you up at every dock; the targeting implant steadies your guns (+1 gunnery)."
+
+
 skills { id: "athletics"   name: "Athletics"   ability: "str" }
 skills { id: "acrobatics"  name: "Acrobatics"  ability: "dex" }
 skills { id: "piloting"    name: "Piloting"    ability: "dex" }

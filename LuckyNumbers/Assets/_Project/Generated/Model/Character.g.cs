@@ -61,6 +61,11 @@ namespace LuckyNumbers.Model
         /// </summary>
         public int XpPerRelic { get; set; }
         public int XpPerArtifact { get; set; }
+        /// <summary>
+        /// What every pilot is (the story: half human, half cyborg; the memory chip brings you back), shown on the sheet.
+        /// </summary>
+        public string Heritage { get; set; }
+        public string HeritageBlurb { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public CharacterConfig Clone() => (CharacterConfig)MemberwiseClone();
@@ -216,6 +221,11 @@ namespace LuckyNumbers.Model
         /// Per ability, what equipped gear adds (already in `scores`).
         /// </summary>
         public readonly ObservableList<int> Gear = new ObservableList<int>();
+        /// <summary>
+        /// CharacterConfig.heritage and its blurb.
+        /// </summary>
+        public readonly ReactiveProperty<string> Heritage = new ReactiveProperty<string>();
+        public readonly ReactiveProperty<string> HeritageBlurb = new ReactiveProperty<string>();
 
         public void Dispose()
         {
@@ -235,6 +245,8 @@ namespace LuckyNumbers.Model
             XpLevelStart.Dispose();
             RelicAbility.Dispose();
             Setup.Dispose();
+            Heritage.Dispose();
+            HeritageBlurb.Dispose();
         }
     }
 

@@ -67,6 +67,7 @@ namespace LuckyNumbers.Core
                 Skin = stock.Skin, Name = stock.Name, Role = stock.Role, Description = stock.Description,
                 Speed = stock.Speed, Agility = stock.Agility, Fuel = stock.Fuel,
                 Efficiency = stock.Efficiency, Toughness = stock.Toughness, Firepower = stock.Firepower,
+                Shield = stock.Shield > 0f ? stock.Shield : 1f, Armor = stock.Armor > 0f ? stock.Armor : 1f,
             };
             s.Guns.AddRange(stock.Guns);
             foreach (var (u, level) in Owned(ship))
@@ -77,6 +78,8 @@ namespace LuckyNumbers.Core
                 s.Efficiency *= Per(u.Efficiency, level);
                 s.Toughness *= Per(u.Toughness, level);
                 s.Firepower *= Per(u.Firepower, level);
+                s.Shield *= Per(u.Shield, level);
+                s.Armor *= Per(u.Armor, level);
                 if (u.Guns.Count > 0)
                 {
                     s.Guns.Clear();
@@ -97,6 +100,15 @@ namespace LuckyNumbers.Core
                 }
             }
             return s;
+        }
+
+        /// <summary>What you've paid for the upgrades you own (every level bought), for the rebuild bill.</summary>
+        public static int Spent(PlayerShip ship)
+        {
+            var total = 0;
+            foreach (var (u, level) in Owned(ship))
+                for (var i = 0; i < level && i < u.Costs.Count; i++) total += Mathf.Max(0, u.Costs[i]);
+            return total;
         }
 
         /// <summary>What you're paid back at the station multiplies by this (1: no upgrades for it).</summary>

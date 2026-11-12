@@ -1,0 +1,89 @@
+# proto-file: luckynumbers/v1/dogfight.proto
+# proto-message: luckynumbers.v1.DogfightConfig
+# Space combat outside the station (GameScene.Orbit). Bolts fly for real: aim is what hits. A bolt that connects rolls
+# d20 + gunnery vs the target's evasion: nat 1 or under by more than 2 grazes (half), under hits, 5 over is strong
+# (an extra die, never under the dice's best), nat 20 crits (the best plus another roll). Damage: shield first, then
+# armour cuts each hit, then the hull. Rogue evasion sits above a typical gunnery (+5..+9: Piloting, luck, implant)
+# so the grades spread out; their attack is set against your evasion (12 at agility 1).
+# Placeholder values; tune with gameplay (docs/dogfight.md has the targets).
+
+defense {
+  hull: 40            # x toughness
+  shield: 30          # x ShipStats.shield
+  armor: 2            # x ShipStats.armor, rounded; cut off each hit once the shield is down
+  armor_floor: 0      # 0: a 1d3 repeater bolt can bounce off armour
+  shield_delay: 3     # s without a hit, then
+  shield_regen: 6     # points / s
+  evasion: 12         # at agility 1
+  evasion_per_agility: 5
+}
+
+gunnery {
+  skill: "piloting"   # the sheet's Piloting bonus (DEX, +trained)
+  luck_max: 2         # + 0..2 from your lucky number
+  implant: 1          # the cyborg targeting implant
+  default_damage: "1d4"
+}
+
+rogues {
+  id: "scout" name: "Rogue Scout" skin: "krulspeld1" length: 20
+  hull: 18 shield: 10 armor: 0 evasion: 19
+  speed: 44 turn_rate: 120 close: 70 pass: 25
+  attack: 4 damage: "1d4" cooldown: 0.7 fire_range: 260 fire_cone: 9
+  xp: 15 bounty: 60 danger_min: 1
+  bolt { speed: 150 range: 320 length: 6 width: 0.45 color { r: 0.4 g: 2.6 b: 0.6 a: 1 }
+         muzzle { size: 3 life: 0.07 } impact { size: 8 life: 0.2 } prewarm: 6 }
+}
+rogues {
+  id: "raider" name: "Rogue Raider" skin: "lordshadow" length: 24
+  hull: 40 shield: 30 armor: 1 evasion: 17
+  speed: 34 turn_rate: 85 close: 90 pass: 30
+  attack: 5 damage: "1d6" cooldown: 0.85 fire_range: 300 fire_cone: 8
+  xp: 30 bounty: 120 danger_min: 1
+  bolt { speed: 140 range: 350 length: 7 width: 0.6 color { r: 3 g: 1.2 b: 0.2 a: 1 }
+         muzzle { size: 4 life: 0.08 } impact { size: 10 life: 0.25 } prewarm: 6 }
+}
+rogues {
+  id: "gunship" name: "Rogue Gunship" skin: "snaz12" length: 32
+  hull: 80 shield: 40 armor: 3 evasion: 14
+  speed: 24 turn_rate: 50 close: 140 pass: 45
+  attack: 6 damage: "2d6" cooldown: 1.4 fire_range: 360 fire_cone: 11
+  xp: 60 bounty: 260 danger_min: 3
+  bolt { speed: 120 range: 400 length: 8 width: 1.4 color { r: 3.2 g: 0.3 b: 1.6 a: 1 }
+         muzzle { size: 6 life: 0.1 } impact { size: 14 life: 0.35 } prewarm: 6 }
+}
+
+satellite {
+  distance: 16        # ship lengths out from the docking beacon
+  radius: 5           # ship lengths: stay this close while it uploads
+  seconds: 30
+  size: 14
+  waves: 2
+  wave_seconds: 16
+  first_wave: 4
+  approach: "Fly out to the satellite: get inside its ring of lights"
+  uplinking: "Uplink: hold close to the satellite"
+  out_of_range: "Out of range: get back to the satellite"
+  done: "Data's in. Dock at the station to get paid"
+}
+
+restore {
+  rebuild_share: 0.4  # of the ship's worth (hull_value + what its upgrades cost)
+  hull_value: 2000
+  fee: 150            # the body
+  destroyed_text: "HULL BREACH. Memory chip uplinking to the station..."
+  seconds: 4
+  lines { speaker: "Dispatch" text: "Easy, pilot. You're in a fresh body; the chip had you as of your last dock." seconds: 4 }
+  lines { speaker: "Dispatch" text: "The yard rebuilt your ship. Rebuild and restore came to {bill} credits: you're at {credits}." seconds: 5 }
+}
+
+debt {
+  collections: 500    # credits below -this (+ per_level x your level): the outfitter won't sell to you
+  game_over: 1000     # below -this (+ per_level x level): the creditors take your chip
+  per_level: 250
+  debt_text: "In debt: jobs pay it down"
+  collections_text: "Collections: the outfitter won't sell to you until you're back above {limit} cr"
+  game_over_title: "Repossessed"
+  game_over_text: "Your debts came due. The creditors took your ship, your body and your memory chip, and sold the lot at auction. This run is over."
+  outfitter_locked: "Collections hold: no sales until you pay your debt down"
+}

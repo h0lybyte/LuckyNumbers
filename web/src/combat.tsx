@@ -10,18 +10,6 @@ type Line = CombatRoll & { id: number; at: number };
 
 export function CombatHud() {
   const combat = useLNState("CombatState");
-  const [lines, setLines] = useState<Line[]>([]);
-  const next = useRef(0);
-  useLNEvent("CombatRoll", (e) => {
-    const line = { ...e, id: next.current++, at: Date.now() };
-    setLines((old) => [...old.slice(-4), line]);
-  });
-  // Lines fade out after a few seconds.
-  useEffect(() => {
-    if (lines.length === 0) return;
-    const t = setTimeout(() => setLines((old) => old.filter((l) => Date.now() - l.at < 5000)), 1000);
-    return () => clearTimeout(t);
-  }, [lines]);
   const [name, hp, max] = (combat?.target ?? "").split("|");
   return (
     <>
@@ -34,28 +22,46 @@ export function CombatHud() {
           </div>
         </div>
       )}
-      {lines.length > 0 && (
-        <ol className="combat-feed" aria-live="polite">
-          {lines.map((l) => (
-            <li key={l.id} className={`${l.player ? "mine" : "theirs"} ${l.hit ? "hit" : "miss"}${l.crit ? " crit" : ""}`}>
-              <span className="who">
-                {l.attacker} → {l.target}
-              </span>
-              <span className="die">d20 {l.d20}</span>
-              <span className="sum">
-                {l.bonus >= 0 ? "+" : ""}
-                {l.bonus} = {l.total} vs {l.armor}
-              </span>
-              <b>
-                {l.crit ? `CRIT ${l.damage}` : l.fumble ? "FUMBLE" : l.strong ? `STRONG ${l.damage}`
-                  : l.graze ? `GRAZE ${l.damage}` : l.hit ? `HIT ${l.damage}` : "MISS"}
-              </b>
-              {l.hit && <small>{grade(l).dice}</small>}
-            </li>
-          ))}
-        </ol>
-      )}
+      <CombatFeed />
       {combat?.downed && <div className="combat-down">Down. Rescue drone inbound…</div>}
     </>
+  );
+}
+
+/** The last few rolls (CombatRoll), newest at the bottom; each fades after a few seconds. Space combat shares it. */
+export function CombatFeed() {
+  const [lines, setLines] = useState<Line[]>([]);
+  const next = useRef(0);
+  useLNEvent("CombatRoll", (e) => {
+    const line = { ...e, id: next.current++, at: Date.now() };
+    setLines((old) => [...old.slice(-4), line]);
+  });
+  // Lines fade out after a few seconds.
+  useEffect(() => {
+    if (lines.length === 0) return;
+    const t = setTimeout(() => setLines((old) => old.filter((l) => Date.now() - l.at < 5000)), 1000);
+    return () => clearTimeout(t);
+  }, [lines]);
+  if (lines.length === 0) return null;
+  return (
+    <ol className="combat-feed" aria-live="polite">
+      {lines.map((l) => (
+        <li key={l.id} className={`${l.player ? "mine" : "theirs"} ${l.hit ? "hit" : "miss"}${l.crit ? " crit" : ""}`}>
+          <span className="who">
+            {l.attacker} → {l.target}
+          </span>
+          <span className="die">d20 {l.d20}</span>
+          <span className="sum">
+            {l.bonus >= 0 ? "+" : ""}
+            {l.bonus} = {l.total} vs {l.armor}
+          </span>
+          <b>
+            {l.crit ? `CRIT ${l.damage}` : l.fumble && !l.hit ? "FUMBLE" : l.strong ? `STRONG ${l.damage}`
+              : l.graze ? `GRAZE ${l.damage}` : l.hit ? `HIT ${l.damage}` : "MISS"}
+          </b>
+          {l.hit && <small>{grade(l).dice}</small>}
+        </li>
+      ))}
+    </ol>
   );
 }

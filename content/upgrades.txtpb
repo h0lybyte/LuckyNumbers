@@ -36,8 +36,20 @@ upgrades {
 upgrades {
   id: "gear" name: "Reinforced Gear" tier: UPGRADE_TIER_COMMON
   description: "Heavier struts, softer dampers."
-  effect: "+15% landing toughness per level"
+  effect: "+15% landing toughness and hull per level"
   costs: [300, 700, 1200] toughness: 1.15
+}
+upgrades {
+  id: "plating" name: "Heavy Plating" tier: UPGRADE_TIER_COMMON
+  description: "Bolted-on ablative plates. Shrugs off small hits; the ship feels every kilo."
+  effect: "+30% armour per level - but -5% speed and agility per level"
+  costs: [450, 1000, 1800] armor: 1.3 speed: 0.95 agility: 0.95
+}
+upgrades {
+  id: "shield_cap" name: "Shield Capacitor" tier: UPGRADE_TIER_COMMON
+  description: "A bigger buffer for the deflector. It drinks from the same tank as the engines."
+  effect: "+25% shield per level - but -6% fuel efficiency per level"
+  costs: [500, 1100, 2000] shield: 1.25 efficiency: 0.94
 }
 upgrades {
   id: "capacitors" name: "Capacitor Banks" tier: UPGRADE_TIER_COMMON
@@ -94,4 +106,10 @@ upgrades {
   description: "Collectors trust a pilot who flies in solid gold. So does gravity."
   effect: "x1.5 credits paid, x1.3 toughness - but x0.85 speed and agility"
   costs: [12000] payout: 1.5 toughness: 1.3 speed: 0.85 agility: 0.85
+}
+upgrades {
+  id: "aegis" name: "Aegis Projector" tier: UPGRADE_TIER_EXOTIC tag: "Military surplus"
+  description: "A frigate's deflector, crammed into a fighter. Nothing gets through. Nothing turns quickly either."
+  effect: "x2 shield, x1.3 armour - but x0.8 speed, x0.75 agility"
+  costs: [8000] shield: 2 armor: 1.3 speed: 0.8 agility: 0.75
 }
