@@ -11,11 +11,95 @@ namespace LuckyNumbers.Model
 {
     /// <summary>
     /// The bounded hold at the top of the deep: the gate on the cliff, the great hall, rooms, the stair down to the mines.
+    /// One region (region y 1, x z 0) laid out by HallGenerator from the lucky number: a gate on the region's edge, a
+    /// two-storey gate passage, the great hall (a tall nave between two pillar rows, low aisles outside them), side rooms
+    /// round it joined by doors and corridors, and the stair room whose shaft drops onto mine region (0,0,0)'s entrance.
+    /// Sizes are in cells (2 m); every range is inclusive.
     /// </summary>
     public sealed class HallRules
     {
+        /// <summary>
+        /// Gate: cells across (on the region edge, open to the outside) and the passage's depth from the edge to the hall.
+        /// </summary>
+        public int GateWidth { get; set; }
+        public int PassageMin { get; set; }
+        public int PassageMax { get; set; }
+        /// <summary>
+        /// The great hall: width across (aisle + pillar row + nave + pillar row + aisle) and length from the gate inward.
+        /// </summary>
+        public int HallWidthMin { get; set; }
+        public int HallWidthMax { get; set; }
+        public int HallLengthMin { get; set; }
+        public int HallLengthMax { get; set; }
+        /// <summary>
+        /// Low aisle width either side of the pillar rows (the nave between them is two storeys tall).
+        /// </summary>
+        public int AisleWidth { get; set; }
+        /// <summary>
+        /// Cells between pillars along a pillar row (2 = every other cell).
+        /// </summary>
+        public int PillarSpacing { get; set; }
+        /// <summary>
+        /// Lanterns along the nave (hung from the high ceiling) and the aisles: one every this many cells.
+        /// </summary>
+        public int LanternSpacing { get; set; }
+        /// <summary>
+        /// Palettes (HoldTextures.palettes) for the gate, passage and hall, and for corridors.
+        /// </summary>
+        public string HallPalette { get; set; }
+        public string CorridorPalette { get; set; }
+        /// <summary>
+        /// The side rooms: kinds, counts, sizes, palettes. The stair room (stair = true) is placed first, round the shaft.
+        /// </summary>
+        public List<HallRoom> Rooms { get; } = new List<HallRoom>();
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public HallRules Clone() => (HallRules)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// One kind of side room.
+    /// </summary>
+    public sealed class HallRoom
+    {
+        /// <summary>
+        /// Name, for logs and the ASCII map (first letter).
+        /// </summary>
+        public string Name { get; set; }
+        /// <summary>
+        /// Palette name (HoldTextures.palettes).
+        /// </summary>
+        public string Palette { get; set; }
+        /// <summary>
+        /// How many (a room that finds no space is dropped once count_min are in).
+        /// </summary>
+        public int CountMin { get; set; }
+        public int CountMax { get; set; }
+        /// <summary>
+        /// Floor size range (cells).
+        /// </summary>
+        public int WidthMin { get; set; }
+        public int WidthMax { get; set; }
+        public int DepthMin { get; set; }
+        public int DepthMax { get; set; }
+        /// <summary>
+        /// Two storeys (open above, lanterns hung from the high ceiling).
+        /// </summary>
+        public bool Tall { get; set; }
+        /// <summary>
+        /// Pillars (in the palette's pillar layer) on a 2-cell grid inside rooms at least 5 x 5.
+        /// </summary>
+        public bool Pillars { get; set; }
+        /// <summary>
+        /// About one lantern per this many floor cells (at least one).
+        /// </summary>
+        public int CellsPerLantern { get; set; }
+        /// <summary>
+        /// The stair room: holds the shaft down into the mines.
+        /// </summary>
+        public bool Stair { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public HallRoom Clone() => (HallRoom)MemberwiseClone();
     }
 }

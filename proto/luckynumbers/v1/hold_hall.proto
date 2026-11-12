@@ -5,5 +5,53 @@ package luckynumbers.v1;
 option csharp_namespace = "LuckyNumbers.Model";
 
 // The bounded hold at the top of the deep: the gate on the cliff, the great hall, rooms, the stair down to the mines.
+// One region (region y 1, x z 0) laid out by HallGenerator from the lucky number: a gate on the region's edge, a
+// two-storey gate passage, the great hall (a tall nave between two pillar rows, low aisles outside them), side rooms
+// round it joined by doors and corridors, and the stair room whose shaft drops onto mine region (0,0,0)'s entrance.
+// Sizes are in cells (2 m); every range is inclusive.
 message HallRules {
+  // Gate: cells across (on the region edge, open to the outside) and the passage's depth from the edge to the hall.
+  int32 gate_width = 1;
+  int32 passage_min = 2;
+  int32 passage_max = 3;
+  // The great hall: width across (aisle + pillar row + nave + pillar row + aisle) and length from the gate inward.
+  int32 hall_width_min = 4;
+  int32 hall_width_max = 5;
+  int32 hall_length_min = 6;
+  int32 hall_length_max = 7;
+  // Low aisle width either side of the pillar rows (the nave between them is two storeys tall).
+  int32 aisle_width = 8;
+  // Cells between pillars along a pillar row (2 = every other cell).
+  int32 pillar_spacing = 9;
+  // Lanterns along the nave (hung from the high ceiling) and the aisles: one every this many cells.
+  int32 lantern_spacing = 10;
+  // Palettes (HoldTextures.palettes) for the gate, passage and hall, and for corridors.
+  string hall_palette = 11;
+  string corridor_palette = 12;
+  // The side rooms: kinds, counts, sizes, palettes. The stair room (stair = true) is placed first, round the shaft.
+  repeated HallRoom rooms = 13;
+}
+
+// One kind of side room.
+message HallRoom {
+  // Name, for logs and the ASCII map (first letter).
+  string name = 1;
+  // Palette name (HoldTextures.palettes).
+  string palette = 2;
+  // How many (a room that finds no space is dropped once count_min are in).
+  int32 count_min = 3;
+  int32 count_max = 4;
+  // Floor size range (cells).
+  int32 width_min = 5;
+  int32 width_max = 6;
+  int32 depth_min = 7;
+  int32 depth_max = 8;
+  // Two storeys (open above, lanterns hung from the high ceiling).
+  bool tall = 9;
+  // Pillars (in the palette's pillar layer) on a 2-cell grid inside rooms at least 5 x 5.
+  bool pillars = 10;
+  // About one lantern per this many floor cells (at least one).
+  int32 cells_per_lantern = 11;
+  // The stair room: holds the shaft down into the mines.
+  bool stair = 12;
 }
