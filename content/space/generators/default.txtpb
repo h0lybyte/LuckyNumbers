@@ -10,6 +10,8 @@ moon_refs: ["space/looks/planets/moon"]
 galaxy_refs: ["space/looks/galaxies/spiral_blue", "space/looks/galaxies/spiral_gold", "space/looks/galaxies/elliptical"]
 sky_refs: ["space/skies/default", "space/skies/emerald", "space/skies/ember", "space/skies/deep"]
 disk_refs: ["space/looks/disks/dusty", "space/looks/disks/icy"]
+# How its planets' ground is shaped when you walk on them.
+ground_ref: "space/grounds/rolling"
 
 min_planets: 3
 max_planets: 6

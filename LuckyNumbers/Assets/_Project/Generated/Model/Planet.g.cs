@@ -19,11 +19,6 @@ namespace LuckyNumbers.Model
         /// </summary>
         public SpaceBackdrop Backdrop { get; set; }
         /// <summary>
-        /// Endless ground: hill height and noise scale (bigger = busier), the same function everywhere so chunks meet.
-        /// </summary>
-        public float GroundHeight { get; set; }
-        public float GroundNoiseScale { get; set; }
-        /// <summary>
         /// Chunks around the player: size (metres), vertices per side, and how many chunks out in each direction.
         /// </summary>
         public float ChunkSize { get; set; }
@@ -36,17 +31,6 @@ namespace LuckyNumbers.Model
         public int FarChunkScale { get; set; }
         public int FarResolution { get; set; }
         public int FarViewChunks { get; set; }
-        /// <summary>
-        /// Near the crash site: the share of the hills kept (0 = dead flat, 1 = no flattening), and a big slow octave
-        /// (rolling hills on the horizon): its height and how much bigger than the main hills it is.
-        /// </summary>
-        public float SiteRelief { get; set; }
-        public float SwellHeight { get; set; }
-        public float SwellScale { get; set; }
-        /// <summary>
-        /// Surface colour noise scale (detail on the ground texture).
-        /// </summary>
-        public float SurfaceNoiseScale { get; set; }
         /// <summary>
         /// Walking (metres, seconds).
         /// </summary>

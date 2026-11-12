@@ -143,6 +143,8 @@ namespace LuckyNumbers.Planet
             Look = planet?.Planet;
             Bodies = bodies;
             var rng = new Random(Seed | 1u);
+            // Terrain shape: the planet's ground profile (its universe's), else the generator's, else dead flat (all zero).
+            var land = planet?.Ground ?? rules.Ground ?? new GroundProfile();
 
             // Ground: the planet's colours and noise, at walking scale.
             var look = planet?.Planet;
@@ -159,17 +161,17 @@ namespace LuckyNumbers.Planet
             // kept near white so a vivid atmosphere tints the hull without dyeing it.
             Shader.SetGlobalVector(SkyColor, AmbientTint(look?.AtmosphereColor.ToColor() ?? Color.gray, 0.45f, 1.15f));
             Shader.SetGlobalVector(GroundColor, AmbientTint(look?.PlanetColor.ToColor() ?? Color.gray, 0.55f, 0.55f));
-            m.SetFloat("_SurfaceScale", _config.SurfaceNoiseScale);
+            m.SetFloat("_SurfaceScale", land.SurfaceNoiseScale);
             m.SetFloat("_Haze", _config.Haze);
             m.SetFloat("_HazeDistance", _config.ChunkSize * math.max(1, _config.ViewChunks) * 1.1f);   // thick before the last chunks
-            _ground.Configure(_config.ChunkSize, _config.ChunkResolution, _config.ViewChunks, _config.GroundHeight,
-                              _config.GroundNoiseScale, rng.NextFloat2(0f, 100f), _config.WreckDistance + _config.WreckLength * 0.6f);   // flat out past the wreck
+            _ground.Configure(_config.ChunkSize, _config.ChunkResolution, _config.ViewChunks, land.Height,
+                              land.NoiseScale, rng.NextFloat2(0f, 100f), _config.WreckDistance + _config.WreckLength * 0.6f);   // flat out past the wreck
             // The far material is a copy of the near one: set everything they share first.
             var far = math.max(0, _config.FarViewChunks);
             var reach = far > 0 ? (far + 0.5f) * _config.ChunkSize * math.max(2, _config.FarChunkScale) : 0f;
             _ground.Material.SetFloat("_HazeHorizon", reach);
             _ground.ConfigureFar(_config.FarChunkScale, _config.FarResolution, _config.FarViewChunks,
-                                 _config.SiteRelief, _config.SwellHeight, _config.SwellScale);
+                                 land.SiteRelief, land.SwellHeight, land.SwellScale);
             _ground.Stream(Vector3.zero, int.MaxValue);   // everything around the spawn, now
 
             // Boulders: squashed, tilted spheres half sunk into the ground; the first right beside your path.

@@ -149,9 +149,40 @@ namespace LuckyNumbers.Model
         /// Empty space between neighbouring orbits (inner apoapsis + moons .. outer periapsis - moons), world units.
         /// </summary>
         public float MinOrbitGap { get; set; }
+        /// <summary>
+        /// How this universe's ground is shaped when you walk on a planet (each generated planet and moon gets it).
+        /// </summary>
+        public GroundProfile Ground { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public SystemGenerator Clone() => (SystemGenerator)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// Terrain rules for walking on a planet (the crash site's endless ground). One universe's worlds share a profile,
+    /// so each universe can have its own kind of land.
+    /// </summary>
+    public sealed class GroundProfile
+    {
+        /// <summary>
+        /// Hill height (metres) and noise scale (bigger = busier), the same function everywhere so chunks meet.
+        /// </summary>
+        public float Height { get; set; }
+        public float NoiseScale { get; set; }
+        /// <summary>
+        /// Near the crash site: the share of the hills kept (0 = dead flat, 1 = no flattening), and a big slow octave
+        /// (rolling hills on the horizon): its height and how much bigger than the main hills it is.
+        /// </summary>
+        public float SiteRelief { get; set; }
+        public float SwellHeight { get; set; }
+        public float SwellScale { get; set; }
+        /// <summary>
+        /// Surface colour noise scale (detail on the ground texture).
+        /// </summary>
+        public float SurfaceNoiseScale { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public GroundProfile Clone() => (GroundProfile)MemberwiseClone();
     }
 
     /// <summary>
@@ -178,6 +209,10 @@ namespace LuckyNumbers.Model
         /// Optional: orbit another body (listed earlier). radius 0 = static at `position`.
         /// </summary>
         public Orbit Orbit { get; set; }
+        /// <summary>
+        /// Walking terrain on this body (generated bodies get their generator's profile; shared, don't modify).
+        /// </summary>
+        public GroundProfile Ground { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public CelestialBody Clone() => (CelestialBody)MemberwiseClone();

@@ -1,0 +1,11 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.GroundProfile
+# The home universe's land: soft hills under big rolling swells.
+
+height: 14
+noise_scale: 0.016
+# Gentle dunes round the wreck (a third of the hills), big rolling swells further out.
+site_relief: 0.35
+swell_height: 22
+swell_scale: 0.22
+surface_noise_scale: 0.12

@@ -67,6 +67,7 @@ namespace LuckyNumbers.Space
                         Position = new Vec3(0, 0, 0),
                         Scale = moonScale,
                         Planet = Vary(Pick(rules.Moons, ref rng), ref rng),
+                        Ground = rules.Ground,
                         Orbit = new Orbit
                         {
                             Around = id,
@@ -95,6 +96,7 @@ namespace LuckyNumbers.Space
                     Position = new Vec3(0, 0, 0),
                     Scale = scale,
                     Planet = Vary(Pick(rules.Planets, ref rng), ref rng),
+                    Ground = rules.Ground,   // the universe's land (no rng: same seed, same system as before)
                     Orbit = orbit,
                 });
                 bodies.AddRange(moons);
