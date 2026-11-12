@@ -118,6 +118,8 @@ namespace LuckyNumbers.Station
         bool _inSpace;
         bool Leaving => (_firstPerson.Locks & ControlLock.Leaving) != 0;   // fading out to the next scene
         Vector3 _orbitPosition, _dockPosition;
+        // The station orbits with its planet: the camera keeps this offset from the body as it moves round the sun.
+        Vector3 _orbitOffset;
         Bounds _hull;   // the docked ship's world bounds (boarding is measured from it)
         Quaternion _stationInSpace = Quaternion.identity;
         float _fade = 1f, _hintAlpha;
@@ -391,6 +393,7 @@ namespace LuckyNumbers.Station
             var away = math.normalize(toSun * 0.6f + side * 0.75f + new float3(0, 0.2f, 0));
             _orbitPosition = (Vector3)(at + away * diameter * math.max(0.6f, _config.OrbitDiameters));
             _stationInSpace = Quaternion.LookRotation((Vector3)(at - (float3)_orbitPosition), Vector3.up);
+            _orbitOffset = _orbitPosition - (Vector3)at;
             _space.Camera.nearClipPlane = math.max(0.001f, diameter * 0.01f);
             _inSpace = true;
             // Back from a planet, or docked from a satellite job: Dispatch settles it. Destroyed: the memory restore.
@@ -408,6 +411,7 @@ namespace LuckyNumbers.Station
             {
                 // The universe seen from the station's point in orbit, turned as the player's head turns.
                 var cam = _space.Camera;
+                if (_space.TryGetBody(_orbitBody, out var body, out _)) _orbitPosition = (Vector3)body + _orbitOffset;
                 cam.transform.SetPositionAndRotation(_orbitPosition, _stationInSpace * eyes.transform.rotation);
                 cam.fieldOfView = eyes.fieldOfView;
                 if (!Leaving) _fade = Mathf.MoveTowards(_fade, 0f, dt / 0.8f);

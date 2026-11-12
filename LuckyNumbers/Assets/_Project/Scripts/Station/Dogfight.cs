@@ -162,6 +162,16 @@ namespace LuckyNumbers.Station
                       $"{_waves} wave(s) of {_perWave}, danger {_danger}");
         }
 
+        /// <summary>Dev: the upload's done at once (the job too, if it's for one).</summary>
+        public void FinishUplink()
+        {
+            if (!_uplink || _done) return;
+            _uploaded = _seconds;
+            _done = true;
+            if (_forJob && _job.Active.Value) _job.Done.Value = true;
+            Debug.Log($"[Dogfight] dev: uplink done (job: {_forJob})");
+        }
+
         /// <summary>`count` rogues (kinds by `danger`) `near`..`far` metres out from `around`, turned to face you.</summary>
         public void SpawnWave(int count, int danger, Vector3 around, float near = 300f, float far = 420f)
         {
@@ -392,7 +402,9 @@ namespace LuckyNumbers.Station
             }
             _state.Uplink.Value = math.saturate(_uploaded / _seconds);
             _state.UplinkDone.Value = _done;
-            _state.Objective.Value = s == null ? "" : _done ? s.Done : inRange ? s.Uplinking : _uploaded > 0f ? s.OutOfRange : s.Approach;
+            var line = s == null ? "" : _done ? s.Done : inRange ? s.Uplinking : _uploaded > 0f ? s.OutOfRange : s.Approach;
+            // Not a job (?ln-dogfight): say so, so nobody waits on pay that isn't coming (bounties still pay).
+            _state.Objective.Value = _forJob ? line : _done ? "PRACTICE done: no job, no pay (bounties still count)" : "PRACTICE (no job): " + line;
         }
 
         // ---- hits ------------------------------------------------------------------------------------------------

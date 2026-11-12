@@ -63,6 +63,9 @@ namespace LuckyNumbers.Station
         float _fade = 1f, _readoutAt, _scale = 1f, _pulse;
         Vector3 _camPos, _beacon, _out, _centre;
         Vector3 _orbitPosition;
+        // The station orbits with its planet: the camera keeps this offset from the body (`_orbitBody`) as it moves.
+        Vector3 _orbitOffset;
+        string _orbitBody = "";
         Quaternion _stationInSpace = Quaternion.identity;
 
         static OrbitScene O => GameContent.Orbit;
@@ -117,11 +120,14 @@ namespace LuckyNumbers.Station
             Layers.Set(_ship.gameObject, Layers.Local);   // the flight camera's only (PlaceInSpace)
             _guns = new ShipGuns(_ship) { Layer = Layers.Local };
             _guns.Arm(_stats);
-            // Dev (the page's inspector): "rogues" sends one at you, dead ahead (so you can try your guns at once).
+            // Dev (the page's inspector): "rogues" sends one at you, dead ahead (so you can try your guns at once);
+            // "uplink" finishes the satellite's upload; "dock" docks at once (for trying a job's payout).
             _subscriptions.Add(_warps.Subscribe(e =>
             {
                 if (e.To == "rogues" && _fight != null && !_fight.Destroyed)
                     _fight.SpawnWave(1, 2, _flight.Position + _flight.Rotation * Vector3.forward * 320f, 0f, 30f);
+                if (e.To == "uplink") _fight?.FinishUplink();                          // the satellite's upload, done
+                if (e.To == "dock" && _ready && !_leaving && !_destroyed) Dock().Forget();   // straight back in
             }));
             _view.FlightCamera.gameObject.SetActive(true);
             SetUp(_cts.Token).Forget();
@@ -245,6 +251,8 @@ namespace LuckyNumbers.Station
             var away = math.normalize(toSun * 0.6f + side * 0.75f + new float3(0, 0.2f, 0));
             _orbitPosition = (Vector3)(at + away * diameter * math.max(0.6f, _config.OrbitDiameters));
             _stationInSpace = Quaternion.LookRotation((Vector3)(at - (float3)_orbitPosition), Vector3.up);
+            _orbitOffset = _orbitPosition - (Vector3)at;
+            _orbitBody = target;
             _space.Camera.nearClipPlane = math.max(0.001f, diameter * 0.01f);
             _inSpace = true;
         }
@@ -340,6 +348,7 @@ namespace LuckyNumbers.Station
             if (_inSpace)
             {
                 var space = _space.Camera;
+                if (_space.TryGetBody(_orbitBody, out var body, out _)) _orbitPosition = (Vector3)body + _orbitOffset;
                 space.transform.SetPositionAndRotation(_orbitPosition, _stationInSpace * cam.rotation);
                 space.fieldOfView = _view.FlightCamera.fieldOfView;
             }
