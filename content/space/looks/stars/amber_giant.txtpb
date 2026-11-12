@@ -1,0 +1,13 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.StarLook
+# Swollen amber giant near the end of its life: wide, soft, not bright.
+
+core_color { r: 1 g: 0.62 b: 0.3 a: 1 }
+corona_color { r: 0.9 g: 0.38 b: 0.14 a: 1 }
+light_color { r: 1 g: 0.8 b: 0.6 a: 1 }
+intensity: 1.35
+corona_size: 2
+corona_power: 4
+corona_intensity: 1.3
+noise_scale: 2.4
+boil_speed: 0.02

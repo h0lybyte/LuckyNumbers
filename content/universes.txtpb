@@ -1,0 +1,20 @@
+# proto-file: luckynumbers/v1/universe.proto
+# proto-message: luckynumbers.v1.UniverseCatalog
+# The universes. The first is the default; ids are saved with the slot, so never rename one.
+
+universes {
+  id: "home"
+  name: "Home"
+  blurb: "Bright young stars, gas giants, living worlds."
+  generator_ref: "space/generators/default"
+  holds: false
+}
+
+universes {
+  id: "emberdeep"
+  name: "The Emberdeep"
+  blurb: "Old dim suns over iron and basalt worlds, terraced and quarried by the Varrun; their holds run under every one."
+  generator_ref: "space/generators/emberdeep"
+  holds: true
+  people: "Varrun"
+}

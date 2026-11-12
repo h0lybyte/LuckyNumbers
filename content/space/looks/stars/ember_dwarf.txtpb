@@ -1,0 +1,13 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.StarLook
+# Old dim ember star: deep red, a low smouldering corona.
+
+core_color { r: 0.85 g: 0.26 b: 0.12 a: 1 }
+corona_color { r: 0.7 g: 0.12 b: 0.05 a: 1 }
+light_color { r: 1 g: 0.55 b: 0.38 a: 1 }
+intensity: 1.1
+corona_size: 1.4
+corona_power: 5.5
+corona_intensity: 1.2
+noise_scale: 4
+boil_speed: 0.025

@@ -188,6 +188,29 @@ namespace LuckyNumbers.Planet
             await _done.Task.AttachExternalCancellation(ct);
         }
 
+        /// <summary>
+        /// Back out of the hold: the ship stands on its pad as you left it (gear down, engines cold), you're on foot. No
+        /// flight, no landing lines.
+        /// </summary>
+        public void Park(ICrashSite site)
+        {
+            _site = site;
+            Ship.Show(PlayerShipSkin.Current(_playerShip), L.ShipLength);
+            _ownColliders = Ship.Pivot.GetComponentsInChildren<Collider>(true);
+            _stats = PlayerShipStats.Of(_playerShip);
+            PlayerShipStats.EnsureFuel(_playerShip);
+            _guns?.Dispose();
+            _guns = new ShipGuns(Ship);
+            _guns.Arm(_stats);
+            Pad();
+            _position = _pad;
+            var toWreck = Vector3.ProjectOnPlane(Wreck - _pad, Vector3.up);
+            _rotation = Quaternion.LookRotation(toWreck.sqrMagnitude > 1e-3f ? toWreck.normalized : Vector3.forward, Vector3.up);
+            _landings = 1;   // the first landing's lines were said before you went down
+            Settle(_ground.NormalAt(_pad));
+            Debug.Log("[Landing] parked on the pad (back from the hold)");
+        }
+
         /// <summary>Back to the start: up high, some way off, heading for the wreck (seeded bearing).</summary>
         void Restart()
         {
@@ -473,6 +496,10 @@ namespace LuckyNumbers.Planet
                 for (var a = 0; a < 360; a += 15)
                 {
                     var p = Wreck + Quaternion.Euler(0f, a, 0f) * Vector3.forward * r;
+                    // Not on the hold gate's flat pad (flat, so it would win), nor so near that the hull hides it.
+                    if (_site != null && _site.Gate.Exists &&
+                        Vector2.Distance(new Vector2(p.x, p.z), new Vector2(_site.Gate.Position.x, _site.Gate.Position.z)) <
+                        _config.Gate.PadRadius * 2f + L.ShipLength) continue;
                     var slope = Vector3.Angle(_ground.NormalAt(p), Vector3.up);
                     // The flattest, and of those the nearest the wreck.
                     var score = slope + r * 0.02f;
@@ -682,6 +709,15 @@ namespace LuckyNumbers.Planet
 
         void Land(Vector3 normal)
         {
+            Settle(normal);
+            Debug.Log($"[Landing] landed {Vector3.Distance(_position, Wreck):0} m from the wreck, " +
+                      $"{Vector3.Distance(new Vector3(_position.x, 0, _position.z), new Vector3(_pad.x, 0, _pad.z)):0} m from the pad");
+            StepOutAsync().Forget();
+        }
+
+        /// <summary>On the ground: upright along the slope, standing on its legs, engines off, solid.</summary>
+        void Settle(Vector3 normal)
+        {
             _phase = Phase.Landed;
             _flight &= ~Flight.Clearing;   // still roaming if you were: board again to fly on
             _state.CanLeave.Value = false;
@@ -700,9 +736,6 @@ namespace LuckyNumbers.Planet
             _parked = _position;
             if (_beacon != null) _beacon.gameObject.SetActive(false);
             if (_padMarker != null) _padMarker.gameObject.SetActive(false);
-            Debug.Log($"[Landing] landed {Vector3.Distance(_position, Wreck):0} m from the wreck, " +
-                      $"{Vector3.Distance(new Vector3(_position.x, 0, _position.z), new Vector3(_pad.x, 0, _pad.z)):0} m from the pad");
-            StepOutAsync().Forget();
         }
 
         /// <summary>Fade, then you stand beside your ship facing the wreck, on foot.</summary>

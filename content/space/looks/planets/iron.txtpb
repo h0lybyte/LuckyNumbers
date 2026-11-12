@@ -1,0 +1,13 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.PlanetLook
+# proto-extends: space/looks/planet_base
+# Iron world: rust-dark plates under a thin brown haze.
+
+planet_color { r: 0.38 g: 0.16 b: 0.08 a: 1 }
+atmosphere_color { r: 0.75 g: 0.38 b: 0.18 a: 1 }
+light_intensity: 0.2
+noise_scale: 2.6
+atmosphere_thickness: 0.04
+atmosphere_intensity: 0.6
+atmosphere_power: 3.5
+light_color { r: 0.9 g: 0.45 b: 0.25 a: 1 }

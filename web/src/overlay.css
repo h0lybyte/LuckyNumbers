@@ -756,6 +756,14 @@ kbd {
 }
 .sheet-chips .chip { height: 36px; }
 
+/* The title's universe switch: bottom-left, out of the menu's way. */
+.universe-switch {
+  position: absolute;
+  left: max(var(--gap), env(safe-area-inset-left));
+  bottom: max(var(--gap), env(safe-area-inset-bottom));
+}
+.universe-switch .chip { height: 32px; }
+
 .sheet {
   position: absolute;
   inset: 6% max(var(--gap), 8%);

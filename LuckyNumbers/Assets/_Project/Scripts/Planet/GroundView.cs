@@ -18,6 +18,7 @@ namespace LuckyNumbers.Planet
     public sealed class GroundView : MonoBehaviour
     {
         [SerializeField] Material material;   // LuckyNumbers/Ground (instanced once, shared by every chunk)
+        [SerializeField] Material holdKit;    // LuckyNumbers/HoldKit, for the surface gate (SurfaceGatePresenter)
 
         static readonly int NearCentreId = Shader.PropertyToID("_NearCentre");
         static readonly int SinkId = Shader.PropertyToID("_Sink");
@@ -75,6 +76,33 @@ namespace LuckyNumbers.Planet
                 _farMaterial.SetFloat(SinkId, 8f);   // under the detailed chunks: never pokes through them
             }
         }
+
+        /// <summary>Terraces and ridges from the universe's profile (all zero: smooth land). Before Stream.</summary>
+        public void ConfigureRelief(float terraceHeight, float terraceSharpness, float terraceBreakScale, float cliffHeight, float cliffScale)
+        {
+            _shape.TerraceHeight = math.max(0f, terraceHeight);
+            _shape.TerraceSharpness = terraceSharpness;
+            _shape.TerraceBreakScale = terraceBreakScale;
+            _shape.CliffHeight = math.max(0f, cliffHeight);
+            _shape.CliffScale = cliffScale > 0f ? cliffScale : 1f;
+        }
+
+        /// <summary>
+        /// A second flat pad (the hold's gate): flat at the ground's own height at `centre` within `radius`, eased back
+        /// over as far again. Returns that height. radius 0 removes it. Before Stream (chunks already built keep theirs).
+        /// </summary>
+        public float Pad(float2 centre, float radius)
+        {
+            _shape.PadRadius = 0f;
+            var h = _shape.HeightAt(centre);
+            _shape.PadCentre = centre;
+            _shape.PadHeight = h;
+            _shape.PadRadius = math.max(0f, radius);
+            return h;
+        }
+
+        /// <summary>HoldKit (Art/Materials/HoldKit.mat): the dwarven stone the surface gate is built from.</summary>
+        public Material HoldKit => holdKit;
 
         /// <summary>How far the horizon ring reaches from its centre (metres; the near ring's if there is no far ring).</summary>
         public float Reach => _far.Radius > 0 ? (_far.Radius + 0.5f) * _far.Size : (_near.Radius + 0.5f) * _near.Size;

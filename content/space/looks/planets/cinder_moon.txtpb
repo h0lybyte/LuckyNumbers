@@ -1,0 +1,14 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.PlanetLook
+# proto-extends: space/looks/planet_base
+# Cinder moon: dark ash grey, almost no halo.
+
+planet_color { r: 0.22 g: 0.2 b: 0.19 a: 1 }
+atmosphere_color { r: 0.4 g: 0.32 b: 0.28 a: 1 }
+light_intensity: 0.18
+noise_scale: 2.8
+rotation_speed: 0.02
+atmosphere_thickness: 0.02
+atmosphere_intensity: 0.3
+atmosphere_power: 5
+light_color { r: 0.7 g: 0.6 b: 0.55 a: 1 }

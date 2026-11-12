@@ -135,9 +135,62 @@ namespace LuckyNumbers.Model
         /// On a touch screen (PointerLock.Touch), in place of the keyboard / mouse line above; empty: that one.
         /// </summary>
         public string TouchHint { get; set; }
+        /// <summary>
+        /// In universes with holds (Universe.holds): the surface gate into the hold, near where you land.
+        /// </summary>
+        public SurfaceGate Gate { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public PlanetScene Clone() => (PlanetScene)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// A hold's gate set into the ground (Planet/SurfaceGatePresenter): a stone facade with a dark doorway, two lanterns and
+    /// a stepped approach on a flattened pad. Placed from the site seed, distance_min..max metres from the site's middle,
+    /// on the side away from the wreck. Metres.
+    /// </summary>
+    public sealed class SurfaceGate
+    {
+        public float DistanceMin { get; set; }
+        public float DistanceMax { get; set; }
+        /// <summary>
+        /// The facade: width, height, and how deep the stone block runs back into the ground.
+        /// </summary>
+        public float Width { get; set; }
+        public float Height { get; set; }
+        public float Depth { get; set; }
+        /// <summary>
+        /// The doorway in it: width and height.
+        /// </summary>
+        public float DoorWidth { get; set; }
+        public float DoorHeight { get; set; }
+        /// <summary>
+        /// The approach: how many steps up to the door, each this tall and deep.
+        /// </summary>
+        public int Steps { get; set; }
+        public float StepRise { get; set; }
+        public float StepDepth { get; set; }
+        /// <summary>
+        /// The flattened pad around it (the ground eases back to its own shape over the same distance again).
+        /// </summary>
+        public float PadRadius { get; set; }
+        /// <summary>
+        /// Walk this close to the doorway for the prompt; walk this far into it and you're in.
+        /// </summary>
+        public float PromptDistance { get; set; }
+        public float WalkInDepth { get; set; }
+        public string Prompt { get; set; }
+        /// <summary>
+        /// Lanterns either side of the door: light colour, intensity and range.
+        /// </summary>
+        public float LanternR { get; set; }
+        public float LanternG { get; set; }
+        public float LanternB { get; set; }
+        public float LanternIntensity { get; set; }
+        public float LanternRange { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public SurfaceGate Clone() => (SurfaceGate)MemberwiseClone();
     }
 
     /// <summary>

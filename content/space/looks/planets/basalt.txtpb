@@ -1,0 +1,13 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.PlanetLook
+# proto-extends: space/looks/planet_base
+# Basalt world: near-black rock, a cold grey veil.
+
+planet_color { r: 0.13 g: 0.13 b: 0.15 a: 1 }
+atmosphere_color { r: 0.4 g: 0.42 b: 0.5 a: 1 }
+light_intensity: 0.14
+noise_scale: 3.2
+atmosphere_thickness: 0.035
+atmosphere_intensity: 0.5
+atmosphere_power: 4
+light_color { r: 0.55 g: 0.5 b: 0.5 a: 1 }

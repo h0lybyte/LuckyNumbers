@@ -56,6 +56,7 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<SaveSlotPicked>(options);
             builder.RegisterMessageBroker<SaveSlotDeleteRequested>(options);
             builder.RegisterMessageBroker<MenuItemSelected>(options);
+            builder.RegisterMessageBroker<UniverseSelected>(options);
             builder.RegisterMessageBroker<UpgradeBuyRequested>(options);
             builder.RegisterMessageBroker<OutfitterCloseRequested>(options);
             builder.RegisterMessageBroker<UpgradeBought>(options);
@@ -88,6 +89,7 @@ namespace LuckyNumbers.Model
             builder.Register<PlayerVoyage>(Lifetime.Singleton);
             builder.Register<SaveSlots>(Lifetime.Singleton);
             builder.Register<DiceState>(Lifetime.Singleton);
+            builder.Register<UniverseState>(Lifetime.Singleton);
             builder.Register<Outfitter>(Lifetime.Singleton);
         }
     }

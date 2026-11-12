@@ -12,6 +12,7 @@
         "LuckyNumbers.Hands",
         "Unity.RenderPipelines.Universal.Runtime",
         "LuckyNumbers.Model",
+        "LuckyNumbers.Model.Unity",
         "LuckyNumbers.Station",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.Addressables",
