@@ -425,20 +425,22 @@ namespace LuckyNumbers.HoldScene
             var before = c.Position;
             var level = LevelOf(c);
             var radius = math.min(0.45f, math.max(c.Size.x, c.Size.z) * 0.5f);
-            foreach (var axis in new[] { new Vector3(step.x, 0f, 0f), new Vector3(0f, 0f, step.z) })
-            {
-                var p = c.Position + axis;
-                if (Inside(c.Grid, level, p, radius)) c.Position = p;
-            }
+            // x, then z (slides along walls); no array per creature per frame.
+            var px = c.Position + new Vector3(step.x, 0f, 0f);
+            if (Inside(c.Grid, level, px, radius)) c.Position = px;
+            var pz = c.Position + new Vector3(0f, 0f, step.z);
+            if (Inside(c.Grid, level, pz, radius)) c.Position = pz;
             return (c.Position - before).magnitude / dt;
         }
 
         /// <summary>`p` (with `radius` round it) is on passable cells: its own cell, and any neighbour it pokes into.</summary>
         bool Inside(HoldGrid g, int level, Vector3 p, float radius)
         {
-            foreach (var o in new[] { Vector3.zero, new Vector3(radius, 0, 0), new Vector3(-radius, 0, 0), new Vector3(0, 0, radius), new Vector3(0, 0, -radius) })
-                if (!PassableLocal(g, level, LocalXZ(p + o, g))) return false;
-            return true;
+            return PassableLocal(g, level, LocalXZ(p, g)) &&
+                   PassableLocal(g, level, LocalXZ(p + new Vector3(radius, 0, 0), g)) &&
+                   PassableLocal(g, level, LocalXZ(p + new Vector3(-radius, 0, 0), g)) &&
+                   PassableLocal(g, level, LocalXZ(p + new Vector3(0, 0, radius), g)) &&
+                   PassableLocal(g, level, LocalXZ(p + new Vector3(0, 0, -radius), g));
         }
 
         void Place(Creature c)
