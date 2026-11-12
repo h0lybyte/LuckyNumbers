@@ -21,12 +21,15 @@ namespace LuckyNumbers.Core
         /// <summary>The level you own of upgrade `id` (0: not bought).</summary>
         public static int Level(PlayerShip ship, string id)
         {
-            foreach (var entry in ship.Upgrades)
+            // Read every frame (RechargeTo): spans, no substrings.
+            var upgrades = ship.Upgrades;
+            for (var i = 0; i < upgrades.Count; i++)
             {
+                var entry = upgrades[i];
                 var bar = entry.IndexOf('|');
-                var key = bar < 0 ? entry : entry.Substring(0, bar);
-                if (key != id) continue;
-                return bar < 0 ? 1 : int.TryParse(entry.Substring(bar + 1), out var n) ? n : 1;
+                var key = bar < 0 ? System.MemoryExtensions.AsSpan(entry) : System.MemoryExtensions.AsSpan(entry, 0, bar);
+                if (!System.MemoryExtensions.SequenceEqual(key, System.MemoryExtensions.AsSpan(id))) continue;
+                return bar < 0 ? 1 : int.TryParse(System.MemoryExtensions.AsSpan(entry, bar + 1), out var n) ? n : 1;
             }
             return 0;
         }
@@ -122,8 +125,11 @@ namespace LuckyNumbers.Core
         /// <summary>Landed, the solar cells top the tank up to at least this share (`basis`: ShipFuel.recharge_to).</summary>
         public static float RechargeTo(PlayerShip ship, float basis)
         {
+            // Every frame on the planet (LandingPresenter.Recharge): a plain loop, not the Owned iterator.
             var to = basis;
-            foreach (var (u, _) in Owned(ship)) to = Mathf.Max(to, u.RechargeTo);
+            if (Config != null)
+                foreach (var u in Config.Upgrades)
+                    if (Mathf.Min(Level(ship, u.Id), u.Costs.Count) > 0) to = Mathf.Max(to, u.RechargeTo);   // as Owned
             return Mathf.Clamp01(to);
         }
 

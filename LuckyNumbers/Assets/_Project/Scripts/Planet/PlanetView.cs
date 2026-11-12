@@ -65,7 +65,12 @@ namespace LuckyNumbers.Planet
             _crosshair.EnableInClassList("ln-hidden", true);
         }
 
-        public void Bind() => BindUi(document.rootVisualElement);
+        public void Bind()
+        {
+            BindUi(document.rootVisualElement);
+            _hintText = null;   // a fresh label: the next Hint writes it
+            _hintAlpha = -1f;
+        }
 
         public void Fade(float alpha) => _flash.style.opacity = Mathf.Clamp01(alpha);
 
@@ -86,10 +91,18 @@ namespace LuckyNumbers.Planet
             _hint.EnableInClassList("ln-hidden", text != null);
         }
 
+        /// <summary>The hint line; presenters re-send it every frame, so only a change reaches the label and its style.</summary>
         public void Hint(string text, float alpha)
         {
+            alpha = Mathf.Clamp01(alpha);
+            if (ReferenceEquals(text, _hintText) && alpha == _hintAlpha) return;
+            _hintText = text;
+            _hintAlpha = alpha;
             _hint.text = Controls.Prompt(text);
-            _hint.style.opacity = Mathf.Clamp01(alpha);
+            _hint.style.opacity = alpha;
         }
+
+        string _hintText;
+        float _hintAlpha = -1f;
     }
 }

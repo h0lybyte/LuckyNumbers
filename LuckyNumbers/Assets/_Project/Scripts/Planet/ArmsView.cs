@@ -102,6 +102,7 @@ namespace LuckyNumbers.Planet
         public bool Init(HandRig rig)
         {
             _rig = rig;
+            _clipCache.Clear();   // "{side}" names resolve against this rig
             // Measure in the bind pose (symmetric, unlike whatever the clip shows now); the next frame re-poses.
             foreach (var (bone, rotation) in _bind) bone.localRotation = rotation;
             _arms = HandRigMap.Resolve(rig, animator.transform, out var missing);
@@ -137,14 +138,21 @@ namespace LuckyNumbers.Planet
             return mask;
         }
 
+        /// <summary>Clips by (name, side) once resolved: Play asks every frame, and each clip's name is a fresh string.</summary>
+        readonly System.Collections.Generic.Dictionary<(string, int), AnimationClip> _clipCache = new();
+
         AnimationClip Clip(string name, int side = -1)
         {
             if (string.IsNullOrEmpty(name)) return null;
+            if (_clipCache.TryGetValue((name, side), out var cached)) return cached;
+            var key = name;
             if (side >= 0 && _rig != null && side < _rig.Sides.Count) name = name.Replace("{side}", _rig.Sides[side]);
+            AnimationClip found = null;
             foreach (var c in clips)
-                if (c.name == name || c.name.EndsWith("|" + name)) return c;
-            Debug.LogWarning($"[Arms] no clip {name}");
-            return null;
+                if (c.name == name || c.name.EndsWith("|" + name)) { found = c; break; }
+            if (found == null) Debug.LogWarning($"[Arms] no clip {name}");   // once: a miss is remembered too
+            _clipCache[(key, side)] = found;
+            return found;
         }
 
         /// <summary>Base layer, both arms: crossfade to a clip played back and forth (they aren't authored to loop).</summary>

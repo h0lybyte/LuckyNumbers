@@ -523,7 +523,12 @@ namespace LuckyNumbers.Core
             }
         }
 
-        Item SlotItem(EquipSlot slot) => slot == EquipSlot.None ? null : _items.Find(i => i.Equipped == slot);
+        Item SlotItem(EquipSlot slot)
+        {
+            if (slot == EquipSlot.None) return null;
+            for (var i = 0; i < _items.Count; i++) if (_items[i].Equipped == slot) return _items[i];   // every frame: no closure
+            return null;
+        }
 
         /// <summary>Into its slot; what was there goes back into the pack (or the swap doesn't happen).</summary>
         void Equip(int uid)

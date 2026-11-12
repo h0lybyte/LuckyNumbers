@@ -33,10 +33,24 @@ namespace LuckyNumbers.Planet
             public readonly Dictionary<int2, Chunk> Chunks = new();
             public readonly Stack<Chunk> Pool = new();
             public readonly List<int2> Wanted = new();
+            public readonly List<int2> Drop = new();
+            public readonly NearestFirst Order = new();
+            /// <summary>The centre and radius Wanted was laid out for, and whether every chunk in it is built: then a
+            /// frame in the same chunk has nothing to do (no re-sort, no scan).</summary>
+            public int2 WantedCentre;
+            public int WantedRadius = -1;
+            public bool Complete;
             public float Size;
             public int Resolution, Radius;
             public bool Collide;
             public int[] Triangles;   // the same for every chunk in the layer
+        }
+
+        /// <summary>Chunk keys nearest a centre first (one instance per layer: no closure per sort).</summary>
+        sealed class NearestFirst : IComparer<int2>
+        {
+            public int2 Centre;
+            public int Compare(int2 a, int2 b) => math.lengthsq(a - Centre).CompareTo(math.lengthsq(b - Centre));
         }
 
         sealed class Chunk
@@ -125,32 +139,44 @@ namespace LuckyNumbers.Planet
             var size = layer.Size;
             var centre = new int2((int)math.floor(focus.x / size + 0.5f), (int)math.floor(focus.z / size + 0.5f));
             var radius = layer.Radius;
-            layer.Wanted.Clear();
-            for (var dz = -radius; dz <= radius; dz++)
-            for (var dx = -radius; dx <= radius; dx++)
-                layer.Wanted.Add(centre + new int2(dx, dz));
-            layer.Wanted.Sort((a, b) => math.lengthsq(a - centre).CompareTo(math.lengthsq(b - centre)));   // nearest first
-
-            // Recycle chunks that are out of range.
-            var drop = new List<int2>();
-            foreach (var kv in layer.Chunks)
-                if (math.any(math.abs(kv.Key - centre) > radius)) drop.Add(kv.Key);
-            foreach (var key in drop)
+            // Same chunk as last frame, everything around it built: nothing to recycle or build (most frames).
+            if (layer.Complete && radius == layer.WantedRadius && centre.Equals(layer.WantedCentre)) return centre;
+            if (radius != layer.WantedRadius || !centre.Equals(layer.WantedCentre))
             {
-                var c = layer.Chunks[key];
-                c.Go.SetActive(false);
-                layer.Pool.Push(c);
-                layer.Chunks.Remove(key);
+                layer.WantedCentre = centre;
+                layer.WantedRadius = radius;
+                layer.Wanted.Clear();
+                for (var dz = -radius; dz <= radius; dz++)
+                for (var dx = -radius; dx <= radius; dx++)
+                    layer.Wanted.Add(centre + new int2(dx, dz));
+                layer.Order.Centre = centre;
+                layer.Wanted.Sort(layer.Order);   // nearest first
+
+                // Recycle chunks that are out of range.
+                var drop = layer.Drop;
+                drop.Clear();
+                foreach (var kv in layer.Chunks)
+                    if (math.any(math.abs(kv.Key - centre) > radius)) drop.Add(kv.Key);
+                foreach (var key in drop)
+                {
+                    var c = layer.Chunks[key];
+                    c.Go.SetActive(false);
+                    layer.Pool.Push(c);
+                    layer.Chunks.Remove(key);
+                }
             }
 
             _pending.Clear();
+            var missing = 0;
             foreach (var key in layer.Wanted)
             {
-                if (budget <= 0) break;
                 if (layer.Chunks.ContainsKey(key)) continue;
+                missing++;
+                if (budget <= 0) continue;
                 _pending.Add(key);
                 budget--;
             }
+            layer.Complete = missing == _pending.Count;   // this frame builds the last of them
             if (_pending.Count > 0) Build(layer, _pending);
             return centre;
         }
@@ -266,6 +292,16 @@ namespace LuckyNumbers.Planet
         {
             var h = HeightAt(world);
             var from = new Vector3(world.x, h + 40f, world.z);
+            // The near chunk under the point, on its own: one heightfield collider, one hit (a neighbour on a shared
+            // edge gives the same height), and no scene query through every monster, ship and prop. It runs per
+            // monster per frame, so this is most of what placing them costs. A miss (edge rounding) asks the scene.
+            if (_near.Size > 0f)
+            {
+                var key = new int2((int)math.floor(world.x / _near.Size + 0.5f), (int)math.floor(world.z / _near.Size + 0.5f));
+                if (_near.Chunks.TryGetValue(key, out var chunk) && chunk.Collider != null &&
+                    chunk.Collider.Raycast(new Ray(from, Vector3.down), out var hit, 80f))
+                    return hit.point.y;
+            }
             // Every hit (unordered), as RaycastAll gave: a full buffer may have dropped some, so it grows and retries.
             int count;
             while ((count = Physics.RaycastNonAlloc(from, Vector3.down, _hits, 80f, ~0, QueryTriggerInteraction.Ignore)) == _hits.Length)
