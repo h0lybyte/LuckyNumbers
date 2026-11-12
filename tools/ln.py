@@ -2,6 +2,7 @@
 """LuckyNumbers dev tasks. Standard library only, works on macOS / Windows / Linux.
 
     python3 tools/ln.py check         headless compile, report C# errors
+    python3 tools/ln.py tests         run the EditMode tests (Assets/_Project/Tests), print pass/fail
     python3 tools/ln.py build-web     headless Web build -> LuckyNumbers/Builds/WebGL
     python3 tools/ln.py serve         serve the Web build with COOP/COEP headers
     python3 tools/ln.py assets        apply Addressables groups/addresses, regenerate AssetKeys.g.cs
@@ -124,14 +125,14 @@ def editor_is_open() -> bool:
         return True
 
 
-def run_unity(extra: list[str], log_name: str, force: bool, graphics: bool = False) -> tuple[int, Path]:
+def run_unity(extra: list[str], log_name: str, force: bool, graphics: bool = False, quit: bool = True) -> tuple[int, Path]:
     if editor_is_open() and not force:
         raise RuntimeError("Unity has this project open. Close the editor first "
                            "(or pass --force if the lockfile is stale after a crash).")
     unity = find_unity()
     LOGS.mkdir(parents=True, exist_ok=True)
     log = LOGS / log_name
-    cmd = [str(unity), "-batchmode", "-quit", *([] if graphics else ["-nographics"]),
+    cmd = [str(unity), "-batchmode", *(["-quit"] if quit else []), *([] if graphics else ["-nographics"]),
            "-projectPath", str(PROJECT), "-logFile", str(log), *extra]
     print(f"Unity {unity_version()}: {' '.join(extra) or 'compile'}")
     print(f"  log: {log}")
@@ -189,6 +190,32 @@ def cmd_check(args) -> int:
     code, log = run_unity(["-accept-apiupdate"], "ln-check.log", args.force)
     errors = summarize_log(log)
     return 0 if code == 0 and errors == 0 else 1
+
+
+def cmd_tests(args) -> int:
+    """The EditMode tests (Unity Test Framework): -runTests quits by itself (-quit would cut it short), its NUnit XML
+    is read back for the counts and each failure's message."""
+    import xml.etree.ElementTree as ET
+    results = LOGS / "ln-tests.xml"
+    results.unlink(missing_ok=True)
+    extra = ["-runTests", "-testPlatform", "EditMode", "-testResults", str(results)]
+    if args.filter:
+        extra += ["-testFilter", args.filter]
+    code, log = run_unity(extra, "ln-tests.log", args.force, quit=False)
+    if summarize_log(log):
+        return fail("tests didn't compile, see above")
+    if not results.is_file():
+        return fail(f"no test results written (exit {code}), see {log}")
+    run = ET.parse(results).getroot()
+    for case in run.iter("test-case"):
+        if case.get("result") != "Passed" and case.get("result") != "Skipped":
+            message = (case.findtext("failure/message") or "").strip()
+            print(f"  FAIL {case.get('fullname')}")
+            for line in message.splitlines()[:6]:
+                print(f"       {line}")
+    total, passed, failed, skipped = (int(run.get(k, "0")) for k in ("total", "passed", "failed", "skipped"))
+    print(f"  {passed}/{total} passed, {failed} failed, {skipped} skipped  ({results})")
+    return 0 if failed == 0 and total > 0 and run.get("result", "").startswith("Passed") else 1
 
 
 CHANGELOG = ROOT / "CHANGELOG.md"
@@ -890,6 +917,11 @@ def main(argv=None) -> int:
     s = sub.add_parser("check", help="headless compile, report C# errors")
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
     s.set_defaults(func=cmd_check)
+
+    s = sub.add_parser("tests", aliases=["test"], help="run the EditMode tests headless, print pass/fail")
+    s.add_argument("filter", nargs="?", help="only tests matching this (-testFilter: a name, namespace or regex)")
+    s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
+    s.set_defaults(func=cmd_tests)
 
     s = sub.add_parser("build-web", help="headless Web build")
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")

@@ -32,6 +32,15 @@ tasks:
       mutex: "unity"
       runInCI: false # needs a Unity license; web.yml builds with game-ci
 
+  test:
+    description: "EditMode tests (Assets/_Project/Tests): MonsterBrain, Ballistic; prints pass/fail (editor closed)."
+    command: "python3 tools/ln.py tests"
+    deps: ["content:check"]
+    inputs: ["@group(unity)", "/tools/ln.py"]
+    options:
+      mutex: "unity"
+      runInCI: false # needs a Unity license, like check
+
   build-web:
     type: "build"
     description: "Headless Web build (WebGPU + WebGL 2) + overlay -> Builds/WebGL (editor closed)."
