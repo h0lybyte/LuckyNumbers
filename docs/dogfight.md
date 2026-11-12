@@ -80,6 +80,20 @@ Each rogue runs a small state machine. Every frame it picks a goal, a speed and 
 - **Attack tokens:** only `attackers` rogues (default 2) may make a run at once. The rest flank and wait their
   turn, so a wave comes at you from several sides instead of in one line.
 
+### Flying (`Station/RogueFlight.cs`)
+
+Rogues fly like fighters, not turrets:
+
+- **Bank and pull:** for a big turn a rogue rolls until the goal is "overhead", then pulls its nose up into it,
+  with a little rudder. Small corrections just nudge the nose and level the wings.
+- **Eased rates:** pitch, yaw and roll each build up and die away at a limited angular acceleration, so turns start
+  and stop smoothly.
+- **Energy:** hard turns bleed speed, and the speed itself changes at a limited rate.
+- **Slide:** the velocity swings round after the nose, so a hard turn carries a little drift.
+- **Weave:** on the way in for an attack run, a rogue weaves side to side and up and down, then steadies to shoot
+  as it closes.
+- **Break off:** usually a climb up and over (sometimes a dive under) and out to one side, flown as an arc.
+
 ### Pathfinding (`Station/SpaceNav.cs`)
 
 Space is empty except for the station's hull blocks, so two things are enough:
@@ -102,8 +116,9 @@ The HUD target card shows the state of the rogue you're on (for example "FLANK")
 
 1. The relay sits `satellite.distance` ship lengths out from the docking bay. A ring of lit markers shows its range.
 2. Stay inside the ring while it uploads. Leaving the ring pauses the upload.
-3. Rogue waves arrive as the upload runs. Each wave has `target` + `target_per_danger` x danger rogues, and there
-   are `waves` + danger / 2 waves.
+3. Rogue waves arrive as the upload runs, and they ramp up so the start isn't overwhelming: the first wave is a
+   single rogue, and each wave after it brings one more, up to `target` + `target_per_danger` x danger. There are
+   `waves` + danger / 2 waves.
 4. Upload done: dock, and Dispatch pays the job.
 
 The relay is a placeholder (`PLACEHOLDER_satellite`, plain blocks) until it has a model.
@@ -149,6 +164,12 @@ behind 1 armour, so it lasts about 4 seconds at full accuracy, or about 8 at 50%
 | `Station/Dogfight.cs` | the fight: rolls, layers, rogue flying, waves, upload |
 | `Station/RogueBrain.cs` | the rogues' pilot state machine and attack tokens |
 | `Station/SpaceNav.cs` | routing round the station, hull avoidance, line of sight |
+| `Station/RogueFlight.cs` | the rogues' flight model: bank and pull, eased rates, energy |
+
+## Later
+
+- Squadrons on both sides: wingmen flying with you against enemy squads. The attack tokens and flanking already
+  give enemy groups some shape.
 | `Station/OrbitPresenter.cs` | guns, the satellite, the memory restore |
 | `Station/StationPresenter.cs` | uplink launch, the payout on docking, the restore call, game over |
 | `Core/DebtWatch.cs` | debt tiers |
