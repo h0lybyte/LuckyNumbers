@@ -19,7 +19,7 @@ tiers { name: "rare"     weight: 0.5 weight_per_depth: 0.6 min_depth: 1 items: [
 tiers { name: "legendary" weight: 0 weight_per_depth: 0.25 min_depth: 3 items: ["deep_king_crown"] }
 
 # ---- creatures: roaming the chambers, more of them deeper ----
-creatures { monster: "aberration" weight: 3 weight_per_depth: 0.5 min_depth: 1 }
+creatures { monster: "aberration" weight: 3 weight_per_depth: 0.5 min_depth: 3 }
 creatures { monster: "skitter"    weight: 2 weight_per_depth: 0 }
 creatures { monster: "lurker"     weight: 1 weight_per_depth: 0.4 min_depth: 2 }
 creatures { monster: "brute"      weight: 0 weight_per_depth: 0.3 min_depth: 4 }
@@ -32,3 +32,8 @@ sight: 14
 path_cells: 600
 wander_steps: 6
 grace_seconds: 4
+# Early depths survivable (two aberration bites downed a fresh character at depth 2): bites at depth 1 do 55% damage,
+# depth 2 70%, full from depth 4; attack bonus -2 at depth 1, -1 at depth 2. Aberrations from depth 3 (was 1).
+bite_scale: 0.4
+bite_scale_per_depth: 0.15
+attack_shallow: 3

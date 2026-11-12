@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Getting between depths: stairs between storeys, great shafts through many regions, their hoists
+// (MinePasses.Vertical.cs; docs/holds.md, "Stairs, great shafts, hoists").
+message VerticalRules {
+  // ---- stairs: flights of steps cut through the rock between a region's two storeys ----
+  // Chance a storey pair in a region gets flights at all, and at most how many.
+  float stair_chance = 1;
+  int32 stairs_max = 2;
+  // Flight length in cells (each rises one storey; clamped to 3..6). 4 treads per cell.
+  int32 flight_min = 3;
+  int32 flight_max = 4;
+  // Chance a flight replaces one of that storey pair's internal shafts (kept if the region would split).
+  float replace_shaft_chance = 5;
+  // Chance a flight is timber treads (else carved stone).
+  float timber_chance = 6;
+
+  // ---- great shafts: a column open through many regions, with landings and a hoist ----
+  // One candidate per great_spacing x great_spacing regions and per depth band of great_band regions (all from a
+  // hash of that group and band, so every region it passes agrees).
+  int32 great_spacing = 7;
+  float great_chance = 8;
+  int32 great_band = 9;
+  // Regions it spans (inclusive range, at most great_band).
+  int32 great_regions_min = 10;
+  int32 great_regions_max = 11;
+  // Cells per side of the shaft (2 or 3).
+  int32 great_size = 12;
+  // A landing (gallery round the shaft, tunnel to the mines) every this many storeys from the top; the bottom
+  // always has one, and so does any storey the mines already touched.
+  int32 landing_every = 13;
+
+  // ---- the hoist cage ----
+  // Metres per second.
+  float hoist_speed = 14;
+  // Reach to call it at a landing (metres from the shaft's side).
+  float hoist_call_distance = 15;
+  // Prompts: standing on the cage, riding it, at a landing with the cage elsewhere.
+  string hoist_board_prompt = 16;
+  string hoist_ride_prompt = 17;
+  string hoist_call_prompt = 18;
+}

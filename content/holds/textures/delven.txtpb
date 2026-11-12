@@ -13,7 +13,10 @@ layers: [
   "Surfaces/dlv_stonegrb1a", "Surfaces/dlv_stonegrb2a",
   "Surfaces/dlv_ground1a", "Surfaces/dlv_ground2a",
   "Surfaces/dlv_wood1a", "Surfaces/dlv_wood5a", "Surfaces/dlv_woodgen1",
-  "Surfaces/dlv_metalpan1a", "Surfaces/dlv_metaltrm1a", "Surfaces/dlv_metalpip1a", "Surfaces/dlv_metalstr1a"
+  "Surfaces/dlv_metalpan1a", "Surfaces/dlv_metaltrm1a", "Surfaces/dlv_metalpip1a", "Surfaces/dlv_metalstr1a",
+  # Fixtures and vertical kit (wave 3): doors, keys, stair treads, hoist ironwork, seal doors.
+  "Surfaces/dlv_door1a", "Surfaces/dlv_door2a", "Surfaces/dlv_door3a", "Surfaces/dlv_keys1",
+  "Surfaces/dlv_stonestp1a", "Surfaces/dlv_woodstp1a", "Surfaces/dlv_metalstr2a", "Surfaces/dlv_metalpan3a"
 ]
 
 palettes { name: "hall"  floor: "Surfaces/dlv_slateflr1a" wall: "Surfaces/dlv_stonebrk1a" ceiling: "Surfaces/dlv_stonegen1" trim: "Surfaces/dlv_stonetrm1a" pillar: "Surfaces/dlv_stonetrm2a" }

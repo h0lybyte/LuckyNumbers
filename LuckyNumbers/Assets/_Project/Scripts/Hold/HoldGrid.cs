@@ -22,6 +22,21 @@ namespace LuckyNumbers.Hold
         ShaftUp,
         /// <summary>Mine tunnel or chamber: rough walls, timber supports.</summary>
         Mine,
+        /// <summary>
+        /// A flight of steps climbing one storey: its cells on the lower storey are steps (with OpenAbove), the cells
+        /// over them the open well. HoldCell.Reserved (StairCell in MinePasses.Vertical.cs): bits 0-1 direction up the
+        /// flight (0 +x, 1 -x, 2 +z, 3 -z), bits 2-4 the cell's index from the bottom, bit 5 timber (else stone),
+        /// bit 7 well. You walk on from the cell before index 0 and off onto the upper-storey cell past the last (HoldNav).
+        /// </summary>
+        Stair,
+        /// <summary>
+        /// A great shaft: open through many storeys and regions (no floors, no ceilings), with a hoist. HoldCell.Reserved
+        /// (GreatShaftCell): bit 0 floor (bottom storey), bit 1 ceiling (top), bits 2-3 dock side, bits 4-5 / 6-7 x / z
+        /// index in the footprint.
+        /// </summary>
+        GreatShaft,
+        /// <summary>A collapse: blocks the way like rock, but drawn as a rubble heap from the cells beside it.</summary>
+        Rubble,
     }
 
     [Flags]
@@ -45,8 +60,45 @@ namespace LuckyNumbers.Hold
         public CellFlags Flags;
         public byte Reserved;
 
-        public bool Walkable => Kind != CellKind.Solid;
+        /// <summary>Open space you can be in (Rubble blocks like rock).</summary>
+        public bool Walkable => Kind != CellKind.Solid && Kind != CellKind.Rubble;
         public static readonly HoldCell Solid = default;
+    }
+
+    /// <summary>Things placed on cells that aren't cell geometry: built at runtime by the scene's presenters.</summary>
+    public enum FixtureKind : byte
+    {
+        None = 0,
+        /// <summary>A locked door across a Door cell; opened by the Key with the same Link.</summary>
+        LockedDoor,
+        /// <summary>A key (lies on the floor); Link names the door it opens.</summary>
+        Key,
+        /// <summary>A portcullis across a cell; raised by the Lever with the same Link.</summary>
+        Portcullis,
+        /// <summary>A lever on a wall (Dir: the wall it's on).</summary>
+        Lever,
+        /// <summary>A hoist (lift cage) in a great shaft, one per region it passes, on the footprint's low corner at the
+        /// region's top level (Dir: dock side); Data: bits 0-15 how many storeys it serves below this cell, bits 16+
+        /// which of this region's levels have a landing.</summary>
+        Hoist,
+        /// <summary>A depth seal: a great door closing the way deeper until its band's seal key is found.</summary>
+        Seal,
+        /// <summary>The seal key of a depth band.</summary>
+        SealKey,
+        /// <summary>The lip of a drop shaft (one-way down, a long fall).</summary>
+        DropLip,
+    }
+
+    /// <summary>One fixture: what, where (local cell), facing, which other fixture it pairs with, and kind data.</summary>
+    public struct HoldFixture
+    {
+        public FixtureKind Kind;
+        public int3 Cell;
+        /// <summary>Direction index (0 +x, 1 -x, 2 +z, 3 -z), where it matters.</summary>
+        public byte Dir;
+        /// <summary>Pairs a key with its door, a lever with its gate (unique within a region).</summary>
+        public ushort Link;
+        public int Data;
     }
 
     /// <summary>
@@ -60,12 +112,16 @@ namespace LuckyNumbers.Hold
         public int3 Size;
         public int3 Origin;
         public NativeArray<HoldCell> Cells;
+        /// <summary>Doors, keys, levers, hoists, seals... (not meshed; presenters build them). Not created on grids
+        /// made only for meshing jobs.</summary>
+        public NativeList<HoldFixture> Fixtures;
 
         public HoldGrid(int3 size, int3 origin, Allocator allocator)
         {
             Size = size;
             Origin = origin;
             Cells = new NativeArray<HoldCell>(size.x * size.y * size.z, allocator, NativeArrayOptions.ClearMemory);
+            Fixtures = new NativeList<HoldFixture>(8, allocator);
         }
 
         public readonly bool IsCreated => Cells.IsCreated;
@@ -77,7 +133,11 @@ namespace LuckyNumbers.Hold
         /// <summary>World cell coordinates (for hashing, matching neighbours) of a local cell.</summary>
         public readonly int3 ToWorld(int3 local) => Origin + local;
 
-        public void Dispose() { if (Cells.IsCreated) Cells.Dispose(); }
+        public void Dispose()
+        {
+            if (Cells.IsCreated) Cells.Dispose();
+            if (Fixtures.IsCreated) Fixtures.Dispose();
+        }
     }
 
     /// <summary>A palette resolved to texture-array slices (HoldTextures.layers indices); -1 = layer missing.</summary>
@@ -97,12 +157,16 @@ namespace LuckyNumbers.Hold
             return 0;
         }
 
+        /// <summary>A layer's slice by name (e.g. "Surfaces/dlv_door1a"), or -1 if it isn't in the array.</summary>
+        public static int Layer(HoldTextures textures, string name) => textures.Layers.IndexOf(name);
+
         /// <summary>Every palette's layers as slice indices, in palette order (for the mesher job).</summary>
         public static NativeArray<PaletteLayers> Resolve(HoldTextures textures, Allocator allocator)
         {
             var slice = new Dictionary<string, int>();
             for (var i = 0; i < textures.Layers.Count; i++) slice[textures.Layers[i]] = i;
             int Of(string layer) => !string.IsNullOrEmpty(layer) && slice.TryGetValue(layer, out var s) ? s : -1;
+            VerticalKit.Configure(textures);   // stair treads and hoist ironwork slices for the mesher jobs
             var result = new NativeArray<PaletteLayers>(math.max(1, textures.Palettes.Count), allocator);
             for (var i = 0; i < textures.Palettes.Count; i++)
             {

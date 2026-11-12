@@ -58,6 +58,18 @@ namespace LuckyNumbers.Model
         /// Climbing shafts (metres per second).
         /// </summary>
         public float ClimbSpeed { get; set; }
+        /// <summary>
+        /// Stairs, great shafts, hoists (hold_vertical.proto).
+        /// </summary>
+        public VerticalRules Vertical { get; set; }
+        /// <summary>
+        /// Locked doors + keys, portcullises + levers (hold_puzzles.proto).
+        /// </summary>
+        public PuzzleRules Puzzles { get; set; }
+        /// <summary>
+        /// Depth seals, drop shafts, collapses, falling (hold_depth.proto).
+        /// </summary>
+        public DepthRules Depth { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public HoldConfig Clone() => (HoldConfig)MemberwiseClone();

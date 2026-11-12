@@ -45,6 +45,11 @@ message HoldLife {
   int32 wander_steps = 18;
   // Seconds in the deep before anything comes for you (like the planet's grace on foot).
   float grace_seconds = 19;
+  // Softer near the top: a bite's damage x min(1, bite_scale + bite_scale_per_depth * depth) (rounded, at least 1;
+  // bite_scale 0: full damage everywhere), and its attack bonus less max(0, attack_shallow - depth).
+  float bite_scale = 20;
+  float bite_scale_per_depth = 21;
+  int32 attack_shallow = 22;
 }
 
 // One rarity of find. Weight at depth d = max(0, weight + weight_per_depth * d), and 0 above min_depth.

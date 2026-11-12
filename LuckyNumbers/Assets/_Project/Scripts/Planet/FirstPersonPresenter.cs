@@ -121,6 +121,11 @@ namespace LuckyNumbers.Planet
         /// CharacterController itself. Look, head and hands carry on. False everywhere else.
         /// </summary>
         public bool Climbing { get; set; }
+        /// <summary>
+        /// Touched down after falling (not off a ladder): the downward speed at impact, m/s. Nobody listens outside the
+        /// Hold scene (its DepthPresenter turns long falls into damage).
+        /// </summary>
+        public event Action<float> Landed;
 
         public Rigidbody Held => _held;
 
@@ -228,9 +233,14 @@ namespace LuckyNumbers.Planet
                 _vertical -= _config.Gravity * dt;
                 body.Move((wish * speed + Vector3.up * _vertical) * dt);
             }
+            var falling = -_vertical;   // the speed down this frame moved at (the next frame's landing resets it)
             body.transform.rotation = yawRot;
 
-            if (!_wasGrounded && body.isGrounded) _landDip = 1f;              // landing thump
+            if (!_wasGrounded && body.isGrounded)
+            {
+                _landDip = 1f;                                                 // landing thump
+                if (!Climbing && falling > 0f) Landed?.Invoke(falling);
+            }
             _wasGrounded = body.isGrounded;
             _landDip = math.max(0f, _landDip - dt * 3f);
 

@@ -5,6 +5,9 @@ package luckynumbers.v1;
 import "ln/options.proto";
 import "luckynumbers/v1/hold_hall.proto";
 import "luckynumbers/v1/hold_life.proto";
+import "luckynumbers/v1/hold_vertical.proto";
+import "luckynumbers/v1/hold_puzzles.proto";
+import "luckynumbers/v1/hold_depth.proto";
 
 option csharp_namespace = "LuckyNumbers.Model";
 
@@ -41,6 +44,15 @@ message HoldConfig {
   string life_ref = 18 [(ln.ref) = "life"];
   // Climbing shafts (metres per second).
   float climb_speed = 19;
+  // Stairs, great shafts, hoists (hold_vertical.proto).
+  VerticalRules vertical = 20;
+  string vertical_ref = 21 [(ln.ref) = "vertical"];
+  // Locked doors + keys, portcullises + levers (hold_puzzles.proto).
+  PuzzleRules puzzles = 22;
+  string puzzles_ref = 23 [(ln.ref) = "puzzles"];
+  // Depth seals, drop shafts, collapses, falling (hold_depth.proto).
+  DepthRules depth = 24;
+  string depth_ref = 25 [(ln.ref) = "depth"];
 }
 
 // Travel between a dwarven planet's surface and its hold (Planet <-> Hold scenes).

@@ -1428,6 +1428,14 @@ namespace LuckyNumbers.Model
                     "Surfaces/dlv_metaltrm1a",
                     "Surfaces/dlv_metalpip1a",
                     "Surfaces/dlv_metalstr1a",
+                    "Surfaces/dlv_door1a",
+                    "Surfaces/dlv_door2a",
+                    "Surfaces/dlv_door3a",
+                    "Surfaces/dlv_keys1",
+                    "Surfaces/dlv_stonestp1a",
+                    "Surfaces/dlv_woodstp1a",
+                    "Surfaces/dlv_metalstr2a",
+                    "Surfaces/dlv_metalpan3a",
                 },
                 Palettes =
                 {
@@ -1637,7 +1645,7 @@ namespace LuckyNumbers.Model
                         Monster = "aberration",
                         Weight = 3.0f,
                         WeightPerDepth = 0.5f,
-                        MinDepth = 1,
+                        MinDepth = 3,
                     },
                     new HoldCreature
                     {
@@ -1667,8 +1675,108 @@ namespace LuckyNumbers.Model
                 PathCells = 600,
                 WanderSteps = 6,
                 GraceSeconds = 4.0f,
+                BiteScale = 0.4f,
+                BiteScalePerDepth = 0.15f,
+                AttackShallow = 3,
             },
             ClimbSpeed = 2.2f,
+            Vertical = new VerticalRules
+            {
+                StairChance = 0.6f,
+                StairsMax = 2,
+                FlightMin = 3,
+                FlightMax = 4,
+                ReplaceShaftChance = 0.35f,
+                TimberChance = 0.5f,
+                GreatSpacing = 3,
+                GreatChance = 0.7f,
+                GreatBand = 6,
+                GreatRegionsMin = 2,
+                GreatRegionsMax = 5,
+                GreatSize = 3,
+                LandingEvery = 2,
+                HoistSpeed = 3.0f,
+                HoistCallDistance = 3.5f,
+                HoistBoardPrompt = "E  hoist down · Shift+E up",
+                HoistRidePrompt = "W/S up/down · E next landing down · Shift+E up",
+                HoistCallPrompt = "E  call the hoist",
+            },
+            Puzzles = new PuzzleRules
+            {
+                DoorChance = 0.35f,
+                DoorChancePerDepth = 0.06f,
+                DoorChanceMax = 0.8f,
+                DoorsMax = 2,
+                GateChance = 0.3f,
+                GateChancePerDepth = 0.05f,
+                GateChanceMax = 0.7f,
+                GatesMax = 1,
+                BehindMinCells = 3,
+                BehindMaxCells = 90,
+                KeyMinCells = 10,
+                KeyMaxCells = 36,
+                LeverMinCells = 4,
+                LeverMaxCells = 16,
+                RewardDepthBonus = 3,
+                Reach = 1.7f,
+                KeyName = "iron key",
+                PickupPrompt = "E  pick up the key",
+                PickupText = "An old dwarven key, cold and heavy. It fits a door somewhere in these tunnels. Keys carried: {count}.",
+                UnlockPrompt = "E  unlock the door",
+                LockedText = "Locked: the key is somewhere in these tunnels",
+                LeverPrompt = "E  pull the lever",
+                GateText = "A portcullis: there's a lever somewhere near",
+                DoorSwingSeconds = 0.9f,
+                GateRaiseSeconds = 1.6f,
+            },
+            Depth = new DepthRules
+            {
+                SafeFall = 4.2f,
+                FallDamagePerMetre = 3.0f,
+                FallSource = "a long fall",
+                DropChance = 0.4f,
+                DropsFromDepth = 1,
+                DropPrompt = "A long drop. No ladder: no way back up here.",
+                CollapsesMin = 1,
+                CollapsesMax = 3,
+                SealEvery = 6,
+                KeysPerBand = 3,
+                KeyArea = 2,
+                Bands =
+                {
+                    new DepthBand
+                    {
+                        Name = "the Upper Workings",
+                        Blurb = "Worked out long ago. The ladders still hold.",
+                    },
+                    new DepthBand
+                    {
+                        Name = "the Old Works",
+                        Blurb = "The clans dug here before the hall was cut. Mind the shafts.",
+                    },
+                    new DepthBand
+                    {
+                        Name = "the Hollow Seams",
+                        Blurb = "Galleries that ring when you walk them. Something lives in the echoes.",
+                    },
+                    new DepthBand
+                    {
+                        Name = "the Ember Roads",
+                        Blurb = "Warm stone, iron rails, and nobody left to ride them.",
+                    },
+                    new DepthBand
+                    {
+                        Name = "the Nameless Deep {n}",
+                        Blurb = "No dwarf wrote down what they found this far down.",
+                    },
+                },
+                BandTitle = "Depth {depth}: {name}",
+                SealLocked = "Sealed. The key of {name} lies somewhere in these depths.",
+                SealPrompt = "E  unseal the way down",
+                KeyPrompt = "E  take the seal key of {name}",
+                KeyText = "The seal key of {name}. It opens the great hatches at depth {depth}.",
+                UseDistance = 1.9f,
+            },
         };
 
         /// <summary>From <c>content/intro.txtpb</c>.</summary>
