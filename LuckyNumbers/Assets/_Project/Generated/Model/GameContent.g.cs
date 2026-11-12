@@ -1462,7 +1462,7 @@ namespace LuckyNumbers.Model
                     {
                         Name = "mine",
                         Floor = "Surfaces/dlv_ground1a",
-                        Wall = "Surfaces/dlv_stonegrb1a",
+                        Wall = "Surfaces/dlv_stonegen2",
                         Ceiling = "Surfaces/dlv_ground2a",
                         Trim = "Surfaces/dlv_wood1a",
                         Pillar = "Surfaces/dlv_wood5a",
@@ -1488,7 +1488,7 @@ namespace LuckyNumbers.Model
             LanternR = 1.0f,
             LanternG = 0.72f,
             LanternB = 0.42f,
-            Ambient = 0.12f,
+            Ambient = 0.18f,
         };
 
         /// <summary>From <c>content/intro.txtpb</c>.</summary>

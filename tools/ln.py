@@ -298,7 +298,8 @@ def cmd_preview(args) -> int:
                    "station": ("RenderStation", "preview-station.png"),
                    "monster": ("RenderMonster", "preview-monster.png"),
                    "relics": ("RenderRelics", "preview-relics.png"),
-                   "exhaust": ("RenderExhaust", "preview-exhaust.png"), "legs": ("RenderLegs", "preview-legs.png")}.get(
+                   "exhaust": ("RenderExhaust", "preview-exhaust.png"), "legs": ("RenderLegs", "preview-legs.png"),
+                   "hold": ("RenderHold", "preview-hold.png")}.get(
         args.what, ("RenderSpace", "preview-space.png"))
     code, log = run_unity(["-executeMethod", f"LuckyNumbers.Editor.ShaderPreview.{method}"],
                           "ln-preview.log", args.force, graphics=True)
@@ -861,7 +862,7 @@ def main(argv=None) -> int:
     s.add_argument("name", nargs="?", default="roman_vase")
     s.set_defaults(func=cmd_relic)
     s = sub.add_parser("preview", help="render shaders to LuckyNumbers/Logs/preview-<what>.png")
-    s.add_argument("what", nargs="?", choices=["space", "ship", "arms", "station", "exhaust", "legs", "monster", "relics"], default="space")
+    s.add_argument("what", nargs="?", choices=["space", "ship", "arms", "station", "exhaust", "legs", "monster", "relics", "hold"], default="space")
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
     s.set_defaults(func=cmd_preview)
 
