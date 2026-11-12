@@ -67,7 +67,7 @@ satellite {
   size: 14
   waves: 2
   wave_seconds: 16
-  first_wave: 4
+  first_wave: 8        # s into the upload before the first rogue: time to settle in
   approach: "Fly out to the satellite: get inside its ring of lights"
   uplinking: "Uplink: hold close to the satellite"
   out_of_range: "Out of range: get back to the satellite"

@@ -1146,7 +1146,7 @@ namespace LuckyNumbers.Model
                 Size = 14.0f,
                 Waves = 2,
                 WaveSeconds = 16.0f,
-                FirstWave = 4.0f,
+                FirstWave = 8.0f,
                 Approach = "Fly out to the satellite: get inside its ring of lights",
                 Uplinking = "Uplink: hold close to the satellite",
                 OutOfRange = "Out of range: get back to the satellite",
