@@ -164,7 +164,7 @@ def summarize_log(log: Path) -> int:
     for line in shader_errors[:20]:
         print(f"  {line}")
     errors += shader_errors
-    for line in re.findall(r"^\[(?:WebBuild|ShaderPreview|SceneBuilder|FontSetup)\].*$", text, re.M):
+    for line in re.findall(r"^\[(?:WebBuild|ShaderPreview|SceneBuilder|FontSetup|HoldTextures|HoldKitPreview)\].*$", text, re.M):
         print(f"  {line}")
     for marker in ("Scripts have compiler errors.", "Aborting batchmode due to failure:"):
         if marker in text:
@@ -329,6 +329,22 @@ def cmd_scenes(args) -> int:
                           "ln-scenes.log", args.force)
     errors = summarize_log(log)
     return 0 if code == 0 and not errors else fail("scene build failed, see log above")
+
+
+def cmd_hold_textures(args) -> int:
+    code, log = run_unity(["-executeMethod", "LuckyNumbers.Editor.HoldTextureBuilder.Build"],
+                          "ln-hold-textures.log", args.force)
+    if summarize_log(log) or code != 0:
+        return fail("hold texture array build failed, see log above")
+    if not args.preview:
+        return 0
+    code, log = run_unity(["-executeMethod", "LuckyNumbers.Editor.HoldKitPreview.Render"],
+                          "ln-preview.log", args.force, graphics=True)
+    out = PROJECT / "Logs" / "preview-holdkit.png"
+    if summarize_log(log) or code != 0 or not out.is_file():
+        return fail("preview failed, see log above")
+    print(f"Preview: {out}")
+    return 0
 
 
 def cmd_assets(args) -> int:
@@ -813,6 +829,11 @@ def main(argv=None) -> int:
     s = sub.add_parser("scenes", help="rebuild game scenes from code (Editor/SceneBuilder.cs)")
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
     s.set_defaults(func=cmd_scenes)
+
+    s = sub.add_parser("hold-textures", help="build the holds' Texture2DArray + HoldKit.mat (Editor/HoldTextureBuilder.cs)")
+    s.add_argument("--preview", action="store_true", help="then render LuckyNumbers/Logs/preview-holdkit.png")
+    s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
+    s.set_defaults(func=cmd_hold_textures)
 
     s = sub.add_parser("assets", help="apply Addressables groups/addresses and regenerate AssetKeys.g.cs (Editor/AddressablesSetup.cs)")
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
