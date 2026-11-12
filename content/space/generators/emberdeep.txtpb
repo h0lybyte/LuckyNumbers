@@ -1,0 +1,45 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.SystemGenerator
+# The Emberdeep: old, dim suns; dense rocky iron, basalt and forge worlds (no gas giants); few moons; ember skies.
+
+# Cool -> warm: the red die picks along this list.
+star_refs: ["space/looks/stars/ember_dwarf", "space/looks/stars/cinder_orange", "space/looks/stars/amber_giant"]
+planet_refs: ["space/looks/planets/iron", "space/looks/planets/basalt", "space/looks/planets/forge",
+              "space/looks/planets/slag", "space/looks/planets/iron", "space/looks/planets/basalt"]
+moon_refs: ["space/looks/planets/cinder_moon"]
+galaxy_refs: ["space/looks/galaxies/spiral_gold", "space/looks/galaxies/elliptical"]
+sky_refs: ["space/skies/ember", "space/skies/smoulder", "space/skies/deep"]
+disk_refs: ["space/looks/disks/ashen", "space/looks/disks/dusty"]
+ground_ref: "space/grounds/terraced"
+
+# Rocky worlds packed close round a small star.
+min_planets: 4
+max_planets: 7
+first_orbit_radius: 130
+orbit_spacing_min: 1.3
+orbit_spacing_max: 1.6
+min_orbit_gap: 18
+planet_scale_min: 1.4
+planet_scale_max: 3.4
+star_scale_min: 6
+star_scale_max: 11
+planet_star_density_ratio: 6
+
+moon_chance: 0.3
+max_moons: 1
+moon_scale_ratio: 0.24
+moon_orbit_min: 3
+moon_orbit_max: 5
+moon_hill_fraction: 0.5
+
+seconds_per_orbit_unit: 0.45
+max_eccentricity: 0.08
+max_inclination_degrees: 5
+
+galaxy_count: 3
+galaxy_distance: 2000
+galaxy_scale_min: 50
+galaxy_scale_max: 130
+
+collapse_seconds: 0.8
+expand_seconds: 4

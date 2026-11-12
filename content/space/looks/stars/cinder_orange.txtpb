@@ -1,0 +1,13 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.StarLook
+# Ageing orange star, dimmer than a sun.
+
+core_color { r: 1 g: 0.5 b: 0.2 a: 1 }
+corona_color { r: 0.85 g: 0.3 b: 0.1 a: 1 }
+light_color { r: 1 g: 0.72 b: 0.5 a: 1 }
+intensity: 1.25
+corona_size: 1.6
+corona_power: 5
+corona_intensity: 1.4
+noise_scale: 3.5
+boil_speed: 0.03

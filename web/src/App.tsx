@@ -27,9 +27,12 @@ export function App({ dock }: { dock: HTMLElement | null }) {
   // ?ln-outfitter: the station's outfitter, open, with test credits if you have none;
   // ?ln-flight: straight to the Flight School (test-flying the ships, their jets); ?ln-orbit: outside the station.
   // ?ln-planet: straight to the planet (you fly in and land at the crash site); ?ln-hold: the mines under a dwarven hold.
+  // ?ln-universe=<id> (content/universes.txtpb, e.g. emberdeep): that universe first, then any of the above.
   useEffect(() => {
     if (!ready) return;
     const q = new URLSearchParams(location.search);
+    const universe = q.get("ln-universe");
+    if (universe) LN.send("UniverseSelected", { id: universe, step: 0 });
     if (q.has("ln-range") || q.has("ln-board") || q.has("ln-outfitter")) LN.send("SceneChangeRequested", { target: "Station" });
     else if (q.has("ln-flight")) LN.send("SceneChangeRequested", { target: "FlightSchool" });
     else if (q.has("ln-orbit")) LN.send("SceneChangeRequested", { target: "Orbit" });
@@ -58,6 +61,7 @@ export function App({ dock }: { dock: HTMLElement | null }) {
       <CharacterSheetGate />
       <HangarGate />
       <SaveSlotsGate />
+      <UniverseSwitch />
       <Toasts />
       <PayoutBanner />
       <ItemToasts />
@@ -66,6 +70,28 @@ export function App({ dock }: { dock: HTMLElement | null }) {
       <FpsMeter />
       {inspector && dock && createPortal(<Inspector />, dock)}
     </>
+  );
+}
+
+/** On the title, before Play: which universe the dice roll in (UniverseState); a click steps to the next. */
+function UniverseSwitch() {
+  const flow = useLNState("FlowState");
+  const universe = useLNState("UniverseState");
+  const slots = useLNState("SaveSlots")?.open ?? false;
+  const picker = useLNState("ShipPicker")?.open ?? false;
+  const setup = useLNState("CharacterSheet")?.setup ?? false;
+  if (flow?.scene !== "Title" || !universe?.name || slots || picker || setup) return null;
+  return (
+    <div className="universe-switch">
+      <button
+        type="button"
+        className="ui chip"
+        title="The universe your dice roll a system in. Click for the next one."
+        onClick={() => LN.send("UniverseSelected", { id: "", step: 1 })}
+      >
+        Universe: {universe.name}
+      </button>
+    </div>
   );
 }
 
@@ -243,7 +269,7 @@ function SendForm() {
   );
 }
 
-const INBOUND: InboundEvent[] = ["SceneChangeRequested", "InputActionPerformed", "MenuItemSelected"];
+const INBOUND: InboundEvent[] = ["SceneChangeRequested", "InputActionPerformed", "MenuItemSelected", "UniverseSelected"];
 
 type LoggedEvent = { at: number; name: keyof WebEvents; payload: unknown };
 
@@ -285,6 +311,9 @@ function Inspector() {
           </button>
           <button type="button" title="Planet: set the ship down on the pad" onClick={() => LN.send("DevWarpRequested", { to: "land" })}>
             Skip landing
+          </button>
+          <button type="button" title="Next universe (content/universes.txtpb)" onClick={() => LN.send("UniverseSelected", { id: "", step: 1 })}>
+            Universe: {states.UniverseState?.id || "home"}
           </button>
         </div>
         <SendForm />

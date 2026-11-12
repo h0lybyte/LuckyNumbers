@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using LuckyNumbers.Model;
 using MessagePipe;
+using R3;
 using Unity.Mathematics;
 using UnityEngine;
 using VContainer;
@@ -30,7 +31,10 @@ namespace LuckyNumbers.Space
         readonly SpaceBackdrop _backdrop;
         readonly PlayerInput _input;
         readonly IBufferedSubscriber<UniverseSeedChanged> _seeds;
-        IDisposable _subscription;
+        readonly UniverseState _universe;
+        IDisposable _subscription, _universeSubscription;
+        UniverseSeedChanged? _lastRoll;
+        string _builtUniverse;
 
         SpaceWorld _world;
         Transform[] _bodies = Array.Empty<Transform>();
@@ -95,8 +99,9 @@ namespace LuckyNumbers.Space
 
         [Inject]
         public SpacePresenter(SpaceView view, SpaceBackdrop backdrop, PlayerInput input,
-                              IBufferedSubscriber<UniverseSeedChanged> seeds)
+                              IBufferedSubscriber<UniverseSeedChanged> seeds, UniverseState universe)
         {
+            _universe = universe;
             _view = view;
             _backdrop = backdrop;
             _input = input;
@@ -114,7 +119,25 @@ namespace LuckyNumbers.Space
 
             Build(_backdrop.Bodies);
             if (_backdrop.Generator != null)
+            {
                 _subscription = _seeds.Subscribe(OnSeed); // buffered: also delivers the latest roll
+                // Another universe picked (the title's switch, a dev switch): the same roll re-forms there.
+                _universeSubscription = _universe.Id.Subscribe(_ => OnUniverse());
+            }
+        }
+
+        /// <summary>The run's universe's generator (Multiverse), else the backdrop's own; null: hand-placed bodies only.</summary>
+        SystemGenerator Rules => _backdrop.Generator == null ? null : Multiverse.Generator(_universe.Id.Value, _backdrop.Generator);
+
+        void OnUniverse()
+        {
+            if (_world == null || _world.Count == 0 || _lastRoll == null) return;   // not formed yet: Expand reads it
+            if (Multiverse.Find(_universe.Id.Value)?.Id == _builtUniverse) return;
+            Debug.Log($"[Space] universe {_universe.Id.Value}: re-forming lucky number {_lastRoll.Value.Seed}");
+            _pendingRoll ??= _lastRoll;
+            if (_phase == Phase.Collapsing) return;
+            _phase = Phase.Collapsing;
+            _phaseTime = 0f;
         }
 
         void OnSeed(UniverseSeedChanged roll)
@@ -122,6 +145,7 @@ namespace LuckyNumbers.Space
             if (roll.Seed == 0) return; // buffered default before the first roll; lucky numbers are never 0
             Debug.Log($"[Space] lucky number {roll.Seed} (star {roll.Star:0.##}, worlds {roll.Worlds:0.##}, luck {roll.Luck:0.##}, moons {roll.Moons:0.##})");
             _pendingRoll = roll;
+            _lastRoll = roll;
             if (_backdrop.Instant && (_world == null || _world.Count == 0))
             {
                 Expand();
@@ -138,11 +162,13 @@ namespace LuckyNumbers.Space
         {
             var roll = _pendingRoll ?? new UniverseSeedChanged(1u, -1f, -1f, -1f, -1f);
             _seed = roll.Seed;
-            var bodies = UniverseGenerator.Generate(_backdrop.Generator, roll);
+            var rules = Rules;
+            _builtUniverse = Multiverse.Find(_universe.Id.Value)?.Id;
+            var bodies = UniverseGenerator.Generate(rules, roll);
             Build(bodies);
-            var sky = UniverseGenerator.Sky(_backdrop.Generator, roll);
+            var sky = UniverseGenerator.Sky(rules, roll);
             if (sky != null && _view.SkyboxMaterial != null) sky.ApplyTo(_view.SkyboxMaterial);
-            SetupDisk(UniverseGenerator.Disk(_backdrop.Generator, roll), bodies);
+            SetupDisk(UniverseGenerator.Disk(rules, roll), bodies);
             var layout = new System.Text.StringBuilder();
             foreach (var b in bodies)
                 if (b.Orbit != null) layout.Append($" {b.Id}@{b.Orbit.Radius:0.#}(d{b.Scale:0.#})");
@@ -219,7 +245,7 @@ namespace LuckyNumbers.Space
         {
             var disk = _view.Disk;
             if (disk == null) return;
-            var g = _backdrop.Generator;
+            var g = Rules;
             var e = _phase == Phase.Expanding && g != null ? math.saturate(_phaseTime / math.max(0.01f, g.ExpandSeconds)) : 1f;
             var fade = _diskRadius > 0f && _phase == Phase.Expanding ? math.smoothstep(0f, 0.06f, e) * math.pow(1f - e, 1.4f) : 0f;
             disk.gameObject.SetActive(fade > 0.001f);
@@ -236,7 +262,7 @@ namespace LuckyNumbers.Space
         /// <summary>0 = follow the target, 1 = overview: eases out during collapse, holds, eases back late in expand.</summary>
         float OverviewWeight()
         {
-            var g = _backdrop.Generator;
+            var g = Rules;
             if (g == null || _phase == Phase.Idle) return 0f;
             if (_phase == Phase.Collapsing) return math.smoothstep(0f, 1f, math.saturate(_phaseTime / math.max(0.01f, g.CollapseSeconds)));
             var e = math.saturate(_phaseTime / math.max(0.01f, g.ExpandSeconds));
@@ -264,7 +290,7 @@ namespace LuckyNumbers.Space
 
         float BigBang(float dt)
         {
-            var g = _backdrop.Generator;
+            var g = Rules;
             if (_phase == Phase.Idle || g == null) return 1f;
             _phaseTime += dt;
             if (_phase == Phase.Collapsing)
@@ -331,6 +357,10 @@ namespace LuckyNumbers.Space
             t.SetPositionAndRotation(position, rotation);
         }
 
-        public void Dispose() => _subscription?.Dispose();
+        public void Dispose()
+        {
+            _subscription?.Dispose();
+            _universeSubscription?.Dispose();
+        }
     }
 }

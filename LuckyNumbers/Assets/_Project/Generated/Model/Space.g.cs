@@ -180,6 +180,19 @@ namespace LuckyNumbers.Model
         /// Surface colour noise scale (detail on the ground texture).
         /// </summary>
         public float SurfaceNoiseScale { get; set; }
+        /// <summary>
+        /// Terraces (0 = none, the land stays smooth): the hills are cut into steps this many metres tall. Sharpness 0..1:
+        /// how much of each step is cliff (0 = a smooth ramp, 1 = a sheer wall between flat plateaus). A slow noise of
+        /// terrace_break_scale softens the cliffs into ramps in places (0 = none), so the land is never sealed.
+        /// </summary>
+        public float TerraceHeight { get; set; }
+        public float TerraceSharpness { get; set; }
+        public float TerraceBreakScale { get; set; }
+        /// <summary>
+        /// Sharp ridges (0 = none): ridged noise, cliff_height metres tall, cliff_scale x the hills' frequency; terraced too.
+        /// </summary>
+        public float CliffHeight { get; set; }
+        public float CliffScale { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public GroundProfile Clone() => (GroundProfile)MemberwiseClone();

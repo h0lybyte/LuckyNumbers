@@ -427,6 +427,16 @@ export interface DiceState {
 }
 
 /**
+ * The universe this run is in: saved with the slot, read by every scene that builds a system (Space, Planet).
+ * Empty id = the catalog's first.
+ */
+export interface UniverseState {
+  id: string;
+  name: string;
+  holds: boolean;
+}
+
+/**
  * The outfitter while it's open (mirrored to the page). Each item is
  * "id|tier|name|tag|description|effect|level|levels|cost" (tier: Common / Exotic; cost: the next level's, 0 once
  * maxed). The ship's stats now (multipliers, 1 = baseline, upgrades in), as the hangar shows them, plus the payout.
@@ -707,6 +717,15 @@ export interface MenuItemSelected {
   action: MenuAction;
 }
 
+/**
+ * Switch universe (the title's switch, ?ln-universe=<id>, the dev menu): by id, or with an empty id `step` places
+ * along the catalog (1 = next, wrapping; 0 = the default, the first). The title's system re-forms in it.
+ */
+export interface UniverseSelected {
+  id: string;
+  step: number;
+}
+
 /** The page: buy the next level of upgrade `id`. */
 export interface UpgradeBuyRequested {
   id: string;
@@ -747,6 +766,7 @@ export interface WebStates {
   PlayerVoyage: PlayerVoyage;
   SaveSlots: SaveSlots;
   DiceState: DiceState;
+  UniverseState: UniverseState;
   Outfitter: Outfitter;
 }
 
@@ -794,12 +814,13 @@ export interface WebEvents {
   SaveSlotPicked: SaveSlotPicked;
   SaveSlotDeleteRequested: SaveSlotDeleteRequested;
   MenuItemSelected: MenuItemSelected;
+  UniverseSelected: UniverseSelected;
   UpgradeBuyRequested: UpgradeBuyRequested;
   OutfitterCloseRequested: OutfitterCloseRequested;
   UpgradeBought: UpgradeBought;
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "CharacterCallsignRequested" | "SceneChangeRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "SaveSlotsReady" | "SaveSlotPicked" | "SaveSlotDeleteRequested" | "MenuItemSelected" | "UpgradeBuyRequested" | "OutfitterCloseRequested";
+export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "CharacterCallsignRequested" | "SceneChangeRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "SaveSlotsReady" | "SaveSlotPicked" | "SaveSlotDeleteRequested" | "MenuItemSelected" | "UniverseSelected" | "UpgradeBuyRequested" | "OutfitterCloseRequested";
 
-export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "CombatState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "PlayerControl", "ShipPicker", "PlayerVoyage", "SaveSlots", "DiceState", "Outfitter"] as const;
+export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "CombatState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "PlayerControl", "ShipPicker", "PlayerVoyage", "SaveSlots", "DiceState", "UniverseState", "Outfitter"] as const;

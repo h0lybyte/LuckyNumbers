@@ -1,0 +1,18 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.GroundProfile
+# The Emberdeep's land: stepped plateaus, cliffs and sharp ridges, as if the whole world had been quarried.
+
+height: 22
+noise_scale: 0.011
+# Round the wreck the land shrinks to under a third (a few low steps, eased into ramps); out past it, full cliffs.
+site_relief: 0.3
+swell_height: 30
+swell_scale: 0.3
+surface_noise_scale: 0.16
+# 4.5 m steps, mostly sheer; slow ramps break the cliffs every few hundred metres.
+terrace_height: 4.5
+terrace_sharpness: 0.85
+terrace_break_scale: 0.25
+# Knife ridges on top, terraced with the rest.
+cliff_height: 16
+cliff_scale: 1.7

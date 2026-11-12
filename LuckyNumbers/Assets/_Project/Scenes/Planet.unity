@@ -1334,6 +1334,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: LuckyNumbers.Planet::LuckyNumbers.Planet.GroundView
   material: {fileID: 2100000, guid: 82f637dfe69ce4a00a0af46f1fbc0751, type: 2}
+  holdKit: {fileID: 2100000, guid: 6997c0749388642609bdda581b2d9997, type: 2}
 --- !u!4 &734112689
 Transform:
   m_ObjectHideFlags: 0

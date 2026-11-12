@@ -107,7 +107,8 @@ namespace LuckyNumbers.Editor
 
             // Ground: endless chunks streamed at runtime.
             var ground = new GameObject("Ground").AddComponent<GroundView>();
-            Assign(ground, ("material", MaterialAsset("Ground", "LuckyNumbers/Ground")));
+            Assign(ground, ("material", MaterialAsset("Ground", "LuckyNumbers/Ground")),
+                   ("holdKit", AssetDatabase.LoadAssetAtPath<Material>($"{MaterialsDir}/HoldKit.mat")));   // the surface gate's stone
 
             var (cam, _) = PlayerRig();   // the gun in your weapon slot comes from WeaponRack (Addressables)
 

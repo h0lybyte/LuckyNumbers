@@ -188,3 +188,26 @@ landing {
   crashed_text: "Too hard. Try again."
   landed_lines { speaker: "You" text: "Down in one piece. Now, where's that cargo?" duration_seconds: 3.5 chars_per_second: 30 }
 }
+
+# The hold's gate (only in universes with holds): 40-80 m from the site's middle, away from the wreck.
+gate {
+  distance_min: 45
+  distance_max: 75
+  width: 16
+  height: 13
+  depth: 14
+  door_width: 4.4
+  door_height: 6.5
+  steps: 5
+  step_rise: 0.22
+  step_depth: 1.1
+  pad_radius: 16
+  prompt_distance: 4
+  walk_in_depth: 1.2
+  prompt: "E  enter the hold"
+  lantern_r: 1
+  lantern_g: 0.62
+  lantern_b: 0.3
+  lantern_intensity: 6
+  lantern_range: 14
+}

@@ -1,0 +1,14 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.DiskLook
+# Ashen dusty disk: dull orange inside, soot-brown outside, heavy clumps.
+
+inner_color { r: 0.85 g: 0.5 b: 0.25 a: 1 }
+outer_color { r: 0.3 g: 0.17 b: 0.1 a: 1 }
+brightness: 0.9
+inner_radius: 0.04
+clump_scale: 9
+clumpiness: 0.85
+spin_speed: 0.2
+gap_depth: 0.9
+gap_width: 0.03
+seed: 3

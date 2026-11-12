@@ -49,6 +49,7 @@ namespace LuckyNumbers.Model
             "PlayerVoyage",
             "SaveSlots",
             "DiceState",
+            "UniverseState",
             "Outfitter",
         };
 
@@ -347,25 +348,32 @@ namespace LuckyNumbers.Model
                 sink.MarkState(20);
             }
             {
+                var s = c.Resolve<UniverseState>();
+                d.Add(s.Id.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Name.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Holds.Subscribe(_ => sink.MarkState(21)));
+                sink.MarkState(21);
+            }
+            {
                 var s = c.Resolve<Outfitter>();
-                d.Add(s.Open.Subscribe(_ => sink.MarkState(21)));
-                NotifyCollectionChangedEventHandler<string> hItems = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(21);
+                d.Add(s.Open.Subscribe(_ => sink.MarkState(22)));
+                NotifyCollectionChangedEventHandler<string> hItems = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(22);
                 s.Items.CollectionChanged += hItems;
                 d.Add(Disposable.Create(() => s.Items.CollectionChanged -= hItems));
-                d.Add(s.CommonTitle.Subscribe(_ => sink.MarkState(21)));
-                d.Add(s.CommonBlurb.Subscribe(_ => sink.MarkState(21)));
-                d.Add(s.ExoticTitle.Subscribe(_ => sink.MarkState(21)));
-                d.Add(s.ExoticBlurb.Subscribe(_ => sink.MarkState(21)));
-                d.Add(s.Ship.Subscribe(_ => sink.MarkState(21)));
-                d.Add(s.Speed.Subscribe(_ => sink.MarkState(21)));
-                d.Add(s.Agility.Subscribe(_ => sink.MarkState(21)));
-                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(21)));
-                d.Add(s.Efficiency.Subscribe(_ => sink.MarkState(21)));
-                d.Add(s.Toughness.Subscribe(_ => sink.MarkState(21)));
-                d.Add(s.Firepower.Subscribe(_ => sink.MarkState(21)));
-                d.Add(s.Payout.Subscribe(_ => sink.MarkState(21)));
-                d.Add(s.Guns.Subscribe(_ => sink.MarkState(21)));
-                sink.MarkState(21);
+                d.Add(s.CommonTitle.Subscribe(_ => sink.MarkState(22)));
+                d.Add(s.CommonBlurb.Subscribe(_ => sink.MarkState(22)));
+                d.Add(s.ExoticTitle.Subscribe(_ => sink.MarkState(22)));
+                d.Add(s.ExoticBlurb.Subscribe(_ => sink.MarkState(22)));
+                d.Add(s.Ship.Subscribe(_ => sink.MarkState(22)));
+                d.Add(s.Speed.Subscribe(_ => sink.MarkState(22)));
+                d.Add(s.Agility.Subscribe(_ => sink.MarkState(22)));
+                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(22)));
+                d.Add(s.Efficiency.Subscribe(_ => sink.MarkState(22)));
+                d.Add(s.Toughness.Subscribe(_ => sink.MarkState(22)));
+                d.Add(s.Firepower.Subscribe(_ => sink.MarkState(22)));
+                d.Add(s.Payout.Subscribe(_ => sink.MarkState(22)));
+                d.Add(s.Guns.Subscribe(_ => sink.MarkState(22)));
+                sink.MarkState(22);
             }
             d.Add(c.Resolve<ISubscriber<RelicRolled>>().Subscribe(e =>
             {
@@ -577,6 +585,11 @@ namespace LuckyNumbers.Model
                 Write(sink.BeginEvent("MenuItemSelected"), e);
                 sink.EndEvent();
             }));
+            d.Add(c.Resolve<ISubscriber<UniverseSelected>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("UniverseSelected"), e);
+                sink.EndEvent();
+            }));
             d.Add(c.Resolve<ISubscriber<UpgradeBuyRequested>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("UpgradeBuyRequested"), e);
@@ -621,7 +634,8 @@ namespace LuckyNumbers.Model
                 case 18: Write(b, c.Resolve<PlayerVoyage>()); break;
                 case 19: Write(b, c.Resolve<SaveSlots>()); break;
                 case 20: Write(b, c.Resolve<DiceState>()); break;
-                case 21: Write(b, c.Resolve<Outfitter>()); break;
+                case 21: Write(b, c.Resolve<UniverseState>()); break;
+                case 22: Write(b, c.Resolve<Outfitter>()); break;
             }
         }
 
@@ -719,6 +733,9 @@ namespace LuckyNumbers.Model
                     return true;
                 case "MenuItemSelected":
                     c.Resolve<IPublisher<MenuItemSelected>>().Publish(new MenuItemSelected(MenuActionParse(Json.Get(o, "action"))));
+                    return true;
+                case "UniverseSelected":
+                    c.Resolve<IPublisher<UniverseSelected>>().Publish(new UniverseSelected(Json.Get(o, "id") as string ?? "", (int)Json.Number(Json.Get(o, "step"))));
                     return true;
                 case "UpgradeBuyRequested":
                     c.Resolve<IPublisher<UpgradeBuyRequested>>().Publish(new UpgradeBuyRequested(Json.Get(o, "id") as string ?? ""));
@@ -1389,6 +1406,18 @@ namespace LuckyNumbers.Model
             b.Append('}');
         }
 
+        static void Write(StringBuilder b, UniverseState s)
+        {
+            b.Append('{');
+            b.Append("\"id\":");
+            Json.Str(b, s.Id.Value);
+            b.Append(",\"name\":");
+            Json.Str(b, s.Name.Value);
+            b.Append(",\"holds\":");
+            b.Append(s.Holds.Value ? "true" : "false");
+            b.Append('}');
+        }
+
         static void Write(StringBuilder b, Outfitter s)
         {
             b.Append('{');
@@ -1838,6 +1867,16 @@ namespace LuckyNumbers.Model
             b.Append('{');
             b.Append("\"action\":");
             Json.Str(b, MenuActionName(e.Action));
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, UniverseSelected e)
+        {
+            b.Append('{');
+            b.Append("\"id\":");
+            Json.Str(b, e.Id);
+            b.Append(",\"step\":");
+            Json.Num(b, e.Step);
             b.Append('}');
         }
 

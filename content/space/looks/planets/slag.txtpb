@@ -1,0 +1,13 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.PlanetLook
+# proto-extends: space/looks/planet_base
+# Slag world: brown-grey tailings and quarry scars, dusty amber haze.
+
+planet_color { r: 0.28 g: 0.22 b: 0.17 a: 1 }
+atmosphere_color { r: 0.7 g: 0.5 b: 0.3 a: 1 }
+light_intensity: 0.16
+noise_scale: 2.1
+atmosphere_thickness: 0.05
+atmosphere_intensity: 0.7
+atmosphere_power: 3
+light_color { r: 0.75 g: 0.55 b: 0.4 a: 1 }
