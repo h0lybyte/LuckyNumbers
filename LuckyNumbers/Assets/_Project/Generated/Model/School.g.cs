@@ -52,6 +52,10 @@ namespace LuckyNumbers.Model
         /// How often the jets readout refreshes (seconds).
         /// </summary>
         public float ReadoutSeconds { get; set; }
+        /// <summary>
+        /// On a touch screen (PointerLock.Touch), in place of the keyboard / mouse line above; empty: that one.
+        /// </summary>
+        public string TouchHint { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public FlightSchoolScene Clone() => (FlightSchoolScene)MemberwiseClone();

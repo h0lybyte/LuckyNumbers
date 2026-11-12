@@ -210,6 +210,10 @@ namespace LuckyNumbers.Model
         /// The shooting range room (generator role RANGE): weapons on its bench, crates and targets downrange.
         /// </summary>
         public StationRange Range { get; set; }
+        /// <summary>
+        /// On a touch screen (PointerLock.Touch), in place of the keyboard / mouse line above; empty: that one.
+        /// </summary>
+        public string TouchHint { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public StationScene Clone() => (StationScene)MemberwiseClone();
@@ -235,6 +239,10 @@ namespace LuckyNumbers.Model
         /// Shown on the page while you're in it.
         /// </summary>
         public string Hint { get; set; }
+        /// <summary>
+        /// On a touch screen (PointerLock.Touch), in place of the keyboard / mouse line above; empty: that one.
+        /// </summary>
+        public string TouchHint { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public StationRange Clone() => (StationRange)MemberwiseClone();

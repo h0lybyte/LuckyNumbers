@@ -5,27 +5,31 @@
 import { useEffect } from "react";
 import { LN, useLNState } from "./ln";
 import type { FlightState } from "./ln";
+import { touchDevice } from "./touch";
+
+/** On a touch screen the keys read as the on-screen sticks and buttons (touch.tsx). */
+const T = touchDevice;
 
 // Six-axis controls (hover ship): aim, thrust, stop over the pad, let it down.
 const HOVER_STEPS = [
-  { title: "Fly to the green pad", how: "Aim with the mouse, W to thrust" },
-  { title: "Stop over the pad", how: "Let go of W, or tap X to brake" },
-  { title: "Descend", how: "Hold C: the ship eases down and levels itself" },
-  { title: "Touch down", how: "Keep holding C, hands off the mouse" },
+  { title: "Fly to the green pad", how: T ? "Right stick to aim, left stick to thrust" : "Aim with the mouse, W to thrust" },
+  { title: "Stop over the pad", how: T ? "Let go of the left stick, or tap Brake" : "Let go of W, or tap X to brake" },
+  { title: "Descend", how: T ? "Hold Down: the ship eases down and levels itself" : "Hold C: the ship eases down and levels itself" },
+  { title: "Touch down", how: T ? "Keep holding Down, thumbs off the sticks" : "Keep holding C, hands off the mouse" },
 ];
 
 // Flying about (boarded after landing): lift off, fly anywhere and land, or climb high and break orbit (E).
 const ROAM_STEPS = [
-  { title: "Lift off", how: "Hold SPACE to rise off the ground" },
-  { title: "Fly anywhere", how: "Land with C wherever it's flat, or climb above orbit height to leave" },
-  { title: "Break orbit", how: "Press E to fly back to the station" },
+  { title: "Lift off", how: T ? "Hold Lift to rise off the ground" : "Hold SPACE to rise off the ground" },
+  { title: "Fly anywhere", how: T ? "Land with Down wherever it's flat, or climb above orbit height to leave" : "Land with C wherever it's flat, or climb above orbit height to leave" },
+  { title: "Break orbit", how: T ? "Press Use to fly back to the station" : "Press E to fly back to the station" },
 ];
 
 const STEPS = [
-  { title: "Fly to the green pad", how: "Mouse to steer, W / S to set your speed" },
-  { title: "Slow down", how: "Tap S until SET reads 0" },
-  { title: "Hover down", how: "Hold SPACE: the ship descends and levels itself" },
-  { title: "Touch down", how: "Keep holding SPACE until the gauges are green" },
+  { title: "Fly to the green pad", how: T ? "Right stick to steer, left stick to set your speed" : "Mouse to steer, W / S to set your speed" },
+  { title: "Slow down", how: T ? "Pull the left stick back until SET reads 0" : "Tap S until SET reads 0" },
+  { title: "Hover down", how: T ? "Hold Lift: the ship descends and levels itself" : "Hold SPACE: the ship descends and levels itself" },
+  { title: "Touch down", how: T ? "Keep holding Lift until the gauges are green" : "Keep holding SPACE until the gauges are green" },
 ];
 
 export function FlightHud() {
@@ -114,13 +118,13 @@ export function FlightHud() {
 
       {low && (
         <div className="flight-gauges">
-          <Gauge label="Descent" value={f.descent} limit={f.maxDescent} unit="m/s" fix="hold SPACE" />
-          <Gauge label="Drift" value={f.drift} limit={f.maxDrift} unit="m/s" fix="tap S" />
-          <Gauge label="Tilt" value={f.tilt} limit={f.maxTilt} unit="°" fix="hold SPACE to level" />
+          <Gauge label="Descent" value={f.descent} limit={f.maxDescent} unit="m/s" fix={T ? "hold Lift" : "hold SPACE"} />
+          <Gauge label="Drift" value={f.drift} limit={f.maxDrift} unit="m/s" fix={T ? "pull back" : "tap S"} />
+          <Gauge label="Tilt" value={f.tilt} limit={f.maxTilt} unit="°" fix={T ? "hold Lift to level" : "hold SPACE to level"} />
         </div>
       )}
 
-      <div className="flight-keys">
+      {!T && <div className="flight-keys">
         {keys.map(([k, what]) => (
           <div key={k}>
             {k.split(" ").map((x) => (
@@ -129,7 +133,7 @@ export function FlightHud() {
             {what}
           </div>
         ))}
-      </div>
+      </div>}
     </div>
   );
 }
@@ -137,14 +141,14 @@ export function FlightHud() {
 function warn(f: FlightState): string[] {
   const out: string[] = [];
   if (f.hoverShip) {
-    if (f.drift > f.maxDrift) out.push("Still moving: let go of W, or tap X");
-    if (f.descent > f.maxDescent) out.push("Coming down too fast: let go and hold C");
-    if (f.tilt > f.maxTilt) out.push("Tilted: let go of the mouse and it levels itself");
+    if (f.drift > f.maxDrift) out.push(T ? "Still moving: let go of the stick, or tap Brake" : "Still moving: let go of W, or tap X");
+    if (f.descent > f.maxDescent) out.push(T ? "Coming down too fast: let go and hold Down" : "Coming down too fast: let go and hold C");
+    if (f.tilt > f.maxTilt) out.push(T ? "Tilted: let go of the right stick and it levels itself" : "Tilted: let go of the mouse and it levels itself");
     return out;
   }
-  if (f.drift > f.maxDrift) out.push("Too fast to land: tap S");
-  if (f.descent > f.maxDescent) out.push("Coming down too fast: hold SPACE");
-  if (f.tilt > f.maxTilt) out.push("Tilted: hold SPACE to level out");
+  if (f.drift > f.maxDrift) out.push(T ? "Too fast to land: pull the left stick back" : "Too fast to land: tap S");
+  if (f.descent > f.maxDescent) out.push(T ? "Coming down too fast: hold Lift" : "Coming down too fast: hold SPACE");
+  if (f.tilt > f.maxTilt) out.push(T ? "Tilted: hold Lift to level out" : "Tilted: hold SPACE to level out");
   return out;
 }
 

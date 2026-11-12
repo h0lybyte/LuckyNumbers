@@ -75,6 +75,8 @@ message StationScene {
   StationReturn homecoming = 27;
   // The shooting range room (generator role RANGE): weapons on its bench, crates and targets downrange.
   StationRange range = 28;
+  // On a touch screen (PointerLock.Touch), in place of the keyboard / mouse line above; empty: that one.
+  string touch_hint = 29;
 }
 
 // A practice range inside the station (the start of a mini-game): the room the generator lays out for role RANGE,
@@ -88,6 +90,8 @@ message StationRange {
   int32 crates = 3;
   // Shown on the page while you're in it.
   string hint = 4;
+  // On a touch screen (PointerLock.Touch), in place of the keyboard / mouse line above; empty: that one.
+  string touch_hint = 5;
 }
 
 // You in the range: whether you're in the room, and your shots and hits (on its targets) since you walked in or reset.

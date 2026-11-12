@@ -203,7 +203,7 @@ namespace LuckyNumbers.Station
             _ui.Dialogue(null, null, 0);
             _ui.MapHint(null);
             _hintAlpha = 1f;
-            _ui.Hint(_config.Hint, _hintAlpha);
+            _ui.Hint(Controls.Pick(_config.Hint, _config.TouchHint), _hintAlpha);
             DockShip();
             if (DevBoard && _voyage.Trips.Value == 0 && !_job.Active.Value)
             {
@@ -463,7 +463,7 @@ namespace LuckyNumbers.Station
             _hintAlpha = Mathf.MoveTowards(_hintAlpha, 0f, dt / 8f);
             if (prompt != "") _ui.Hint(prompt, 1f);
             else if (_state.Objective.Value != "") _ui.Hint(_state.Objective.Value, 0.8f);
-            else _ui.Hint(_config.Hint, Mathf.Clamp01(_hintAlpha * 2f));
+            else _ui.Hint(Controls.Pick(_config.Hint, _config.TouchHint), Mathf.Clamp01(_hintAlpha * 2f));
         }
 
         bool NearShip(Vector3 position)

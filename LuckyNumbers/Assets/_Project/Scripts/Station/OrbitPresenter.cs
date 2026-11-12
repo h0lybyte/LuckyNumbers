@@ -72,7 +72,7 @@ namespace LuckyNumbers.Station
             _view.Fade(1f);
             _view.Dialogue(null, null, 0);
             _view.MapHint(null);
-            _view.Hint(O.Hint, 1f);
+            _view.Hint(Controls.Pick(O.Hint, O.TouchHint), 1f);
             _view.Wreck.Hide();
             _subscriptions.Add(_actions.Subscribe(e =>
             {

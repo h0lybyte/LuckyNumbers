@@ -1,3 +1,4 @@
+using LuckyNumbers.Core;
 using System;
 using LuckyNumbers.Model;
 using MessagePipe;
@@ -91,7 +92,7 @@ namespace LuckyNumbers.Planet
                     _t = math.min(1f, _t + dt / math.max(0.05f, config.OpenSeconds));
                     var e = 1f - math.pow(1f - _t, 3f);                       // rise fast off your tile, settle in orbit
                     _distance = math.lerp(config.ZoomFrom, config.Distance, e);
-                    if (_t >= 1f) { _phase = Phase.Open; _view.MapHint(config.Hint); }
+                    if (_t >= 1f) { _phase = Phase.Open; _view.MapHint(Controls.Pick(config.Hint, config.TouchHint)); }
                     break;
                 }
                 case Phase.Open:

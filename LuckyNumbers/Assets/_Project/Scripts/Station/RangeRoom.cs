@@ -1,3 +1,4 @@
+using LuckyNumbers.Core;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -164,7 +165,7 @@ namespace LuckyNumbers.Station
                 var board = Block("PLACEHOLDER_range_target", new Vector3(x, 1.6f, z), new Vector3(1.1f, 1.1f, 0.08f), new Color(0.85f, 0.22f, 0.16f));
                 _targets.Add(board.GetComponent<Collider>());
             }
-            _state.Hint.Value = config.Hint ?? "";
+            _state.Hint.Value = Controls.Pick(config.Hint, config.TouchHint);
             _builtAt = Time.time;   // the URL's range options run once the layout has settled (Tick)
             Debug.Log($"[Range] {room.Name}: {_area.width:0}x{_area.height:0} m, {count} targets, {config.Crates} crates"); // marker for ln.py webshot
         }

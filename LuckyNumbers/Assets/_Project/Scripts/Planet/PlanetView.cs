@@ -1,3 +1,4 @@
+using LuckyNumbers.Core;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -48,7 +49,7 @@ namespace LuckyNumbers.Planet
         {
             _flightHud.EnableInClassList("ln-hidden", readout == null);
             _flightReadout.text = readout ?? "";
-            _flightMessage.text = message ?? "";
+            _flightMessage.text = Controls.Prompt(message) ?? "";
             _crosshair.EnableInClassList("ln-hidden", readout != null);
         }
 
@@ -79,7 +80,7 @@ namespace LuckyNumbers.Planet
         /// <summary>Map controls line (null = map closed: hide it, show the crosshair).</summary>
         public void MapHint(string text)
         {
-            _mapHint.text = text ?? "";
+            _mapHint.text = Controls.Prompt(text) ?? "";
             _mapHint.EnableInClassList("ln-hidden", text == null);
             _crosshair.EnableInClassList("ln-hidden", text != null);
             _hint.EnableInClassList("ln-hidden", text != null);
@@ -87,7 +88,7 @@ namespace LuckyNumbers.Planet
 
         public void Hint(string text, float alpha)
         {
-            _hint.text = text;
+            _hint.text = Controls.Prompt(text);
             _hint.style.opacity = Mathf.Clamp01(alpha);
         }
     }

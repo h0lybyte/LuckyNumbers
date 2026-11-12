@@ -36,4 +36,6 @@ message OrbitScene {
   float chase_distance = 11;
   float chase_height = 12;
   float readout_seconds = 13;
+  // On a touch screen (PointerLock.Touch), in place of the keyboard / mouse line above; empty: that one.
+  string touch_hint = 14;
 }
