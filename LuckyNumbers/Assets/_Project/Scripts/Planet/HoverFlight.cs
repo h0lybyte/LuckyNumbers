@@ -21,6 +21,9 @@ namespace LuckyNumbers.Planet
         public bool BarrelStarted { get; private set; }
         public float BarrelDirection => _barrel.Direction;
 
+        /// <summary>How to pose the hull: Rotation with the barrel roll's spin on it. Cameras follow Rotation (steady).</summary>
+        public Quaternion Pose => Rotation * _barrel.Offset;
+
         static FlightLanding L => GameContent.Planet.Landing;
         static FlightHover H => L.Hover;
 
@@ -60,7 +63,7 @@ namespace LuckyNumbers.Planet
                                    -roll * H.RollRate * ag);
             _spin = Vector3.Lerp(_spin, want, settle);
             Rotation = Rotation * Quaternion.Euler(_spin * dt);
-            _barrel.Step(dt, ref Rotation, ref Position, ref Velocity);
+            _barrel.Step(dt, ref Position, ref Velocity);
             var turning = math.abs(look.x) + math.abs(look.y) > 0.5f || math.abs(roll) > 0.1f || barreling;
             if (!turning && level)
             {
@@ -83,7 +86,7 @@ namespace LuckyNumbers.Planet
 
             // Jets, as on the planet: this frame's change of velocity, plus holding the ship up and its speed.
             ship.SetHeat(0f, 0.6f + 0.9f * (Velocity.magnitude / math.max(1f, H.MaxSpeed * sp)) * boost + (pushing ? 0.5f : 0.2f));
-            var toShip = Quaternion.Inverse(Rotation);
+            var toShip = Quaternion.Inverse(Pose);   // the jets are on the hull, rolling with it
             var ask = toShip * (change / math.max(rate, 1e-4f));
             var hold = toShip * (Vector3.up * 0.3f + Velocity / math.max(1f, H.MaxSpeed * sp) * 0.5f);
             ship.SetThrust(ask + hold, JetTurn(dt, H.TurnRate * ag), boost);
