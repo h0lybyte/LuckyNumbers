@@ -29,8 +29,8 @@ namespace LuckyNumbers.Core
         {
             _state.LookSensitivity.Value = Mathf.Clamp(PlayerPrefs.GetFloat(Key + "look", 1f), MinSensitivity, MaxSensitivity);
             _state.InvertY.Value = PlayerPrefs.GetInt(Key + "invert_y", 0) != 0;
-            var q = (RenderQuality)PlayerPrefs.GetInt(Key + "quality", (int)RenderQuality.Medium);
-            _state.Quality.Value = q is RenderQuality.Low or RenderQuality.Medium or RenderQuality.High ? q : RenderQuality.Medium;
+            var q = (RenderQuality)PlayerPrefs.GetInt(Key + "quality", (int)DefaultQuality);
+            _state.Quality.Value = q is RenderQuality.Low or RenderQuality.Medium or RenderQuality.High ? q : DefaultQuality;
             _state.ShowFps.Value = PlayerPrefs.GetInt(Key + "show_fps", 0) != 0;
             Debug.Log($"[Settings] look x{_state.LookSensitivity.Value:0.00}, invert {_state.InvertY.Value}, " +
                       $"quality {_state.Quality.Value}, fps {_state.ShowFps.Value}");
@@ -50,9 +50,12 @@ namespace LuckyNumbers.Core
         {
             s.LookSensitivity.Value = 1f;
             s.InvertY.Value = false;
-            s.Quality.Value = RenderQuality.Medium;
+            s.Quality.Value = DefaultQuality;
             s.ShowFps.Value = false;
         }
+
+        /// <summary>Until the player picks one: Medium (720p), or Low (540p) on the low-end tier (LowEnd).</summary>
+        public static RenderQuality DefaultQuality => LowEnd.Active ? RenderQuality.Low : RenderQuality.Medium;
 
         /// <summary>The render target's height cap for a quality (16:9 sets the width).</summary>
         public static int MaxHeight(RenderQuality q) => q switch

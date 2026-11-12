@@ -80,6 +80,14 @@ namespace LuckyNumbers.Editor
             // refused pointer lock from stopping the game.
             PlayerSettings.WebGL.template = "PROJECT:LuckyNumbers";
 
+            // Memory: with threads the heap is a SharedArrayBuffer, which can't move, so the browser reserves the whole
+            // maximum up front. 2 GB of address space fails on phones and 32-bit browsers before the game starts; the
+            // heap peaks near 260 MB (planet, then back to the station; the hold stays flat region after region), so
+            // 1 GB is ~4x headroom. Start at 32 MB and grow geometrically (Unity's defaults).
+            PlayerSettings.WebGL.initialMemorySize = 32;
+            PlayerSettings.WebGL.maximumMemorySize = 1024;
+            PlayerSettings.WebGL.memoryGrowthMode = WebGLMemoryGrowthMode.Geometric;
+
             // No Unity splash (allowed on every license since Unity 6): its logo texture was the build's single
             // biggest asset (2.7 MB uncompressed), and the title screen already covers the load.
             PlayerSettings.SplashScreen.show = false;
@@ -89,7 +97,7 @@ namespace LuckyNumbers.Editor
             PlayerSettings.SetGraphicsAPIs(BuildTarget.WebGL, ApisFor(gfx));
 
             AssetDatabase.SaveAssets();
-            Debug.Log($"[WebBuild] Settings applied: threads=on, gzip + decompression fallback, 1280x720, no splash, strip=Medium, wasm=DiskSizeLTO, " +
+            Debug.Log($"[WebBuild] Settings applied: threads=on, gzip + decompression fallback, 1280x720, no splash, strip=Medium, wasm=DiskSizeLTO, heap 32-1024 MB, " +
                       $"graphics={string.Join("+", ApisFor(gfx))}");
         }
 

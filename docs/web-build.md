@@ -8,6 +8,7 @@ Set by `Assets/_Project/Editor/WebBuild.cs` (applied on every build):
 | Multithreading | on |
 | Compression | Gzip + decompression fallback (itch.io sends no `Content-Encoding`) |
 | Canvas | 1280×720 |
+| Memory | Heap starts at 32 MB, grows geometrically, capped at 1 GB (threads reserve the whole cap up front; peak use is ~260 MB) |
 | Size | Managed stripping Medium, IL2CPP OptimizeSize, wasm DiskSizeLTO (~10 MB). `Assets/_Project/link.xml` keeps our assemblies, VContainer and MessagePipe whole (built by reflection) |
 | Template | `Assets/WebGLTemplates/LuckyNumbers`: Unity's Default + an `errorHandler` that keeps a refused pointer lock from stopping the game |
 | Model import | `Editor/ArtImport.cs`: anything in `Art/Models/` imports as a static mesh (no rig, animation or materials), skins capped at 512 px and crunched |
@@ -36,6 +37,14 @@ the console logs `[web] textures: ...`.
 
 - **Frame rate on screen:** add `?ln-fps` to the URL. It shows the average fps, the median and 95th-percentile frame
   time, and the texture format the page picked.
+- **Low-end tier:** `Rendering/LowEnd.cs` turns off post-processing (bloom) and the HDR colour buffer, and makes Low
+  (540p) the default render quality until the player picks one. It's on when the browser reports 4 GB of memory or less
+  (`navigator.deviceMemory`), or for a phone or tablet on WebGL 2. `?ln-low` forces it on and `?ln-low=0` forces it
+  off. The console logs `[LowEnd] on (...)`.
+- **Frame time, garbage and memory in the console:** add `?ln-perf`. Every 5 s it logs
+  `[perf] <scene>: frame ms median / p95 | gc alloc/frame | GCs | mono used/heap | total used/reserved`.
+  `webshot` steps `{"throttle":4}` (Chrome's CPU slowdown), `{"mem":1}` (wasm and JS heap) and
+  `{"profile":[6,"out.cpuprofile"]}` (a CPU profile) go with it for low-end runs.
 - **Android, with threads:**
   1. Connect the phone by USB.
   2. Run `adb reverse tcp:8080 tcp:8080`.
