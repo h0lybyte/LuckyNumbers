@@ -201,6 +201,33 @@
       var dprCap = matchMedia("(pointer: coarse)").matches ? 1.25 : 2;
       config.devicePixelRatio = dprQuery > 0 ? dprQuery : Math.min(window.devicePixelRatio || 1, dprCap);
 
+      // Texture format. The build's data and bundles use DXT (desktop GPUs); WebBuild.cs adds an ASTC copy of both
+      // (and flips lnAstc). A GPU with ASTC and no DXT (phones, tablets) loads that one, so its textures stay
+      // compressed instead of Unity unpacking each on the CPU into 4-8x the memory. ?ln-tex=astc|dxt forces one.
+      var lnAstc = false;
+      var texQuery = new URLSearchParams(location.search).get("ln-tex");
+      var useAstc = lnAstc && (texQuery ? texQuery === "astc" : (function () {
+        try {
+          var gl = document.createElement("canvas").getContext("webgl2");
+          if (!gl) return false;
+          var astc = !gl.getExtension("WEBGL_compressed_texture_s3tc") && !!gl.getExtension("WEBGL_compressed_texture_astc");
+          var lose = gl.getExtension("WEBGL_lose_context");
+          if (lose) lose.loseContext();
+          return astc;
+        } catch (e) {
+          return false;
+        }
+      })());
+#if PROGRESSIVE_ASSET_LOADING
+#else
+      if (useAstc) {
+        config.dataUrl = config.dataUrl.replace(/\/([^/.]+)(\.data[^/]*)$/, "/$1-astc$2");
+        config.streamingAssetsUrl = "StreamingAssets-astc";
+      }
+#endif
+      window.lnTextures = useAstc ? "ASTC" : "DXT"; // the ?ln-fps meter shows it
+      console.log("[web] textures: " + (useAstc ? "ASTC" : "DXT") + (lnAstc ? "" : " (no ASTC copy in this build)"));
+
       // If you would like all file writes inside Unity Application.persistentDataPath
       // to persist across visits, uncomment:
       // config.autoSyncPersistentDataPath = true;
