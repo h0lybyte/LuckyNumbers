@@ -4,6 +4,30 @@ Releases are driven by this file: the **top `## x.y.z` entry is the game version
 Bumping it on `main` builds the Web player, uploads it to itch.io with that version,
 and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version does not rebuild.
 
+## 0.3.4 (2026-11-11)
+
+- perf(planet): build ground chunks in Burst jobs, cook colliders off main thread
+- perf: pool bolt and flash shapes (no GameObject churn per shot)
+- refactor: [Flags] bytes for input latches and monster state
+- refactor: generic Pool<T> + shared Projectile message for gun bolts
+- perf: one BoltField for all bolts (Burst rays, batched raycasts)
+- fix: allow boarding the ship on Clear jobs
+- build: turn off the Unity splash screen on Web
+- feat: Addressables foundation; scene preload no longer holds loads
+- perf: GPU-instanced bolts and flashes (no GameObjects)
+- fix(spike): LibsSmokeTest passes on Web again
+- feat: weapons load from Addressables instead of the scenes
+- feat(planet): finds auto-roll and loot into the pack, no card
+- feat(web): touch controls (dual sticks + buttons) via a virtual gamepad
+- perf: cut per-frame and per-item string allocations (ZString)
+- feat(jobs): no back-to-back Retrieve jobs for the same relic
+- feat(relics): the Roman Vase (Pliny the Elder)
+- Freighter hull via Addressables, behind a scene curtain
+- feat(relics): ln.py preview relics
+- Finds tumble a d20 before they open
+- feat(relics): relic models as addressable prefabs; ln.py relic
+- feat(relics): paint the Roman Vase with its own textures
+
 ## 0.3.3 (2026-11-11)
 
 - feat(combat): per-gun fire rates and dice; strong/crit damage floors
