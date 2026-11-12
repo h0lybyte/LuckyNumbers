@@ -91,6 +91,8 @@ namespace LuckyNumbers.Station
         string _callObjective, _caller = "", _relics = "", _payout = "0";
         int _relicCount;
         readonly ISubscriber<DevWarpRequested> _warps;
+        readonly IBufferedSubscriber<UniverseSeedChanged> _seeds;
+        uint _layoutSeed;   // the lucky number the generated layout was built from (0: content's plan)
         readonly CancellationTokenSource _cts = new();
         readonly List<IDisposable> _subscriptions = new();
         static readonly int Psx = Shader.PropertyToID("_LnPsx");
@@ -123,8 +125,9 @@ namespace LuckyNumbers.Station
                                 IPublisher<CharacterXpGained> xp, PlayerJob job, JobBoard board, LandingSite landing,
                                 ISubscriber<JobAcceptRequested> accepts, ISubscriber<DevWarpRequested> warps, ArmsView arms,
                                 RangeState rangeState, ISubscriber<RangeResetRequested> rangeResets, CharacterSheet sheet,
-                                IPublisher<CombatRoll> rolls, WeaponRack rack)
+                                IPublisher<CombatRoll> rolls, WeaponRack rack, IBufferedSubscriber<UniverseSeedChanged> seeds)
         {
+            _seeds = seeds;
             _rack = rack;
             _range = new RangeRoom(station, player, arms, rangeState, warps, (at, yaw, pitch) => Teleport(at, yaw, pitch), firstPerson,
                                    sheet, rolls, rack);
@@ -157,7 +160,12 @@ namespace LuckyNumbers.Station
 
         public void Start()
         {
-            Build(StationLayout.FromContent(_config));
+            // Your station from your lucky number, built once: the roll is buffered (the title made it), so it's here
+            // now. No roll yet (the scene run on its own): content's plan, rebuilt once the universe has a seed.
+            var seed = 0u;
+            using (_seeds.Subscribe(e => seed = e.Seed)) { }
+            if (seed != 0 && Generated) Build(LayoutGenerator.Generate(_config, _layoutSeed = seed));
+            else Build(StationLayout.FromContent(_config));
             SetLights(StationLightMode.On);
             SetGlow(_config.Glow);
             SetPsx(false);
@@ -206,6 +214,8 @@ namespace LuckyNumbers.Station
             _flow.Preload(NextScene);
             PlaceInSpace(_cts.Token).Forget();
         }
+
+        bool Generated => _config.Generator != null && _config.Generator.Enabled;
 
         void Build(StationLayout layout)
         {
@@ -343,10 +353,10 @@ namespace LuckyNumbers.Station
             var index = 0;
             for (var i = 0; i < worlds.Count; i++) if (worlds[i] == target) index = i;
             _planet = BodyNames.Planet(_space.Seed, index);
-            if (_config.Generator != null && _config.Generator.Enabled)
+            if (Generated && (_layoutSeed == 0 || _layoutSeed != _space.Seed))
             {
-                // Your station, from your lucky number: built while the screen is still black.
-                Build(LayoutGenerator.Generate(_config, _space.Seed));
+                // Your station, from your lucky number (Start had no roll): built while the screen is still black.
+                Build(LayoutGenerator.Generate(_config, _layoutSeed = _space.Seed));
                 SetLights(_state.Lights.Value);
                 Teleport(StationPlan.Centre(_station.Plan.Spawn), _config.SpawnYaw);
                 PlaceWeapon(StationPlan.Centre(_station.Plan.Spawn), _config.SpawnYaw);   // the new spawn's
