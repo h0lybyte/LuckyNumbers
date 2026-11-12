@@ -18,6 +18,7 @@
         "Unity.Addressables.Editor",
         "Unity.ResourceManager",
         "LuckyNumbers.Hold",
+        "LuckyNumbers.HoldScene",
         "Unity.Mathematics",
         "Unity.Collections"
     ],

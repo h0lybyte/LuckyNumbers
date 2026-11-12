@@ -45,6 +45,7 @@ namespace LuckyNumbers.Editor
             BuildStation(rig);
             BuildFlightSchool(rig);
             BuildOrbit(rig);
+            BuildHold(rig);
 
             EditorBuildSettings.scenes = new[]
             {
@@ -54,6 +55,7 @@ namespace LuckyNumbers.Editor
                 new EditorBuildSettingsScene($"{ScenesDir}/Station.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/FlightSchool.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/Orbit.unity", true),
+                new EditorBuildSettingsScene($"{ScenesDir}/Hold.unity", true),
             };
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>($"{ScenesDir}/SampleScene.unity") != null)
                 AssetDatabase.DeleteAsset($"{ScenesDir}/SampleScene.unity"); // URP template scene
@@ -61,7 +63,7 @@ namespace LuckyNumbers.Editor
             // The dev Range scene is gone: the range is a room in the station now (RangeRoom).
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>($"{ScenesDir}/Range.unity") != null)
                 AssetDatabase.DeleteAsset($"{ScenesDir}/Range.unity");
-            Debug.Log("[SceneBuilder] built Title, Intro, Planet, Station, FlightSchool, Orbit; build settings = [Title, Intro, Planet, Station, FlightSchool, Orbit]");
+            Debug.Log("[SceneBuilder] built Title, Intro, Planet, Station, FlightSchool, Orbit, Hold; build settings = [Title, Intro, Planet, Station, FlightSchool, Orbit, Hold]");
         }
 
         static void BuildTitle(Rig rig)
@@ -325,6 +327,34 @@ namespace LuckyNumbers.Editor
         /// station + first-person player drawn over it by overlay cameras (eyes, then arms). StationPresenter turns
         /// the space camera with the player's head, so windows look out at the real system.
         /// </summary>
+        /// <summary>
+        /// Under a dwarven hold (HoldScene/HoldPresenter): the first-person rig in the dark, the overlay UI, and the
+        /// hold's chunk meshes (HoldView, one HoldKit material). No sky: the camera clears to the haze colour.
+        /// </summary>
+        static void BuildHold(Rig rig)
+        {
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var ui = Document("UI", rig.Panel, "Planet");   // fade, hint, crosshair
+            var (eyes, _) = PlayerRig();
+            eyes.clearFlags = CameraClearFlags.SolidColor;
+            eyes.backgroundColor = new Color(0.035f, 0.05f, 0.05f);
+            eyes.farClipPlane = 140f;
+            eyes.nearClipPlane = 0.05f;
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.08f, 0.09f, 0.09f);
+            RenderSettings.skybox = null;
+
+            var view = new GameObject("PlanetView").AddComponent<PlanetView>();
+            Assign(view, ("document", ui));
+            var hold = new GameObject("Hold").AddComponent<LuckyNumbers.HoldScene.HoldView>();
+            hold.Init(AssetDatabase.LoadAssetAtPath<Material>($"{MaterialsDir}/HoldKit.mat")
+                      ?? throw new System.Exception("HoldKit.mat missing: build the hold texture array first"));
+            EditorUtility.SetDirty(hold);
+
+            Scopes<LuckyNumbers.HoldScene.HoldScope>();
+            EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Hold.unity");
+        }
+
         static void BuildStation(Rig rig)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
