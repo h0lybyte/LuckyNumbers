@@ -23,11 +23,20 @@ namespace LuckyNumbers.Planet
 
         float _heat, _heatAt;
 
+        /// <summary>How a shot went, one byte: Crit and Strong / Graze come with Hit; Fumble never does.</summary>
+        [System.Flags]
+        public enum Grade : byte { None = 0, Hit = 1, Crit = 2, Fumble = 4, Graze = 8, Strong = 16 }
+
         public struct Shot
         {
             public int D20, Bonus, Total, Armor, Damage;
-            public bool Hit, Crit, Fumble, Graze, Strong;
+            public Grade Grade;
             public string Mods;
+            public readonly bool Hit => (Grade & Grade.Hit) != 0;
+            public readonly bool Crit => (Grade & Grade.Crit) != 0;
+            public readonly bool Fumble => (Grade & Grade.Fumble) != 0;
+            public readonly bool Graze => (Grade & Grade.Graze) != 0;
+            public readonly bool Strong => (Grade & Grade.Strong) != 0;
         }
 
         /// <summary>Roll a shot at `hit` (what the crosshair is on) from `eye`, by `body` (null: no stance).</summary>
@@ -54,12 +63,12 @@ namespace LuckyNumbers.Planet
             var s = new Shot { Bonus = bonus, Armor = Mathf.Max(1, armor), Mods = mods.ToString() };
             s.D20 = rng.NextInt(1, 21);
             s.Total = s.D20 + bonus;
-            s.Crit = s.D20 == 20;
-            s.Fumble = s.D20 == 1;
             var margin = s.Total - s.Armor;
-            if (s.Fumble) s.Hit = false;
-            else if (s.Crit || margin >= 0) { s.Hit = true; s.Strong = !s.Crit && margin >= StrongBy; }
-            else if (margin >= -GrazeBy) { s.Hit = true; s.Graze = true; }
+            if (s.D20 == 1) s.Grade = Grade.Fumble;
+            else if (s.D20 == 20) s.Grade = Grade.Hit | Grade.Crit;
+            else if (margin >= StrongBy) s.Grade = Grade.Hit | Grade.Strong;
+            else if (margin >= 0) s.Grade = Grade.Hit;
+            else if (margin >= -GrazeBy) s.Grade = Grade.Hit | Grade.Graze;
             s.Damage = s.Hit ? Dice.Damage(dice, ref rng, s.Crit, s.Strong, s.Graze) : 0;
             return s;
         }

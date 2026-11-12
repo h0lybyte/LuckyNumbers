@@ -106,7 +106,7 @@ namespace LuckyNumbers.Planet
         {
             _view.Bind();
             _view.Fade(1f);
-            _view.Hint(_config.Hint, 0f);
+            _view.Hint(Controls.Pick(_config.Hint, _config.TouchHint), 0f);
             _subscription = _seeds.Subscribe(roll =>
             {
                 if (_built) return;
@@ -289,7 +289,7 @@ namespace LuckyNumbers.Planet
             await talking;   // the hint waits for the lines
             for (var t = 0f; t < 7f; t += Time.deltaTime)
             {
-                _view.Hint(_config.Hint, math.smoothstep(0f, 0.5f, t) * (1f - math.smoothstep(5.5f, 7f, t)));
+                _view.Hint(Controls.Pick(_config.Hint, _config.TouchHint), math.smoothstep(0f, 0.5f, t) * (1f - math.smoothstep(5.5f, 7f, t)));
                 await UniTask.Yield(ct);
             }
         }

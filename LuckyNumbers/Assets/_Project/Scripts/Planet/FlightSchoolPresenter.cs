@@ -79,7 +79,7 @@ namespace LuckyNumbers.Planet
             _view.Fade(1f);
             _view.Dialogue(null, null, 0);
             _view.MapHint(null);
-            _view.Hint(S.Hint, 1f);
+            _view.Hint(Controls.Pick(S.Hint, S.TouchHint), 1f);
             _subscriptions.Add(_actions.Subscribe(e =>
             {
                 switch (e.Action)

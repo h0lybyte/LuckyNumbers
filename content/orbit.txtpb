@@ -5,6 +5,7 @@
 
 title: "OUTSIDE THE STATION"
 hint: "W/S thrust - A/D strafe - Space/C up, down - Q/E roll (Shift: barrel roll) - Shift boost - X brake - click, then mouse to aim\nFly slowly into the docking beacon at the bay, then E to dock"
+touch_hint: "Left stick: thrust and strafe - right stick: aim - Lift / Down - Roll ◀ ▶ - Boost - Brake\nFly slowly into the docking beacon at the bay, then Use to dock"
 dock_prompt: "E: dock"
 slow_prompt: "Too fast to dock - brake (X)"
 

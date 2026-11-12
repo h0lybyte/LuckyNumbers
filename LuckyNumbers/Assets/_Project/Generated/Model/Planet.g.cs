@@ -131,6 +131,10 @@ namespace LuckyNumbers.Model
         /// arrival (waking up beside the wreck).
         /// </summary>
         public FlightLanding Landing { get; set; }
+        /// <summary>
+        /// On a touch screen (PointerLock.Touch), in place of the keyboard / mouse line above; empty: that one.
+        /// </summary>
+        public string TouchHint { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public PlanetScene Clone() => (PlanetScene)MemberwiseClone();
@@ -213,6 +217,11 @@ namespace LuckyNumbers.Model
         public string TakeoffHint { get; set; }
         public string LeavePrompt { get; set; }
         public float Ceiling { get; set; }
+        /// <summary>
+        /// On a touch screen (PointerLock.Touch), in place of the keyboard / mouse line above; empty: that one.
+        /// </summary>
+        public string TouchHint { get; set; }
+        public string TouchTakeoffHint { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public FlightLanding Clone() => (FlightLanding)MemberwiseClone();
@@ -477,6 +486,10 @@ namespace LuckyNumbers.Model
         /// Your landed ship's marker (the crash marker only shows where there's a wreck).
         /// </summary>
         public Rgba ShipColor { get; set; }
+        /// <summary>
+        /// On a touch screen (PointerLock.Touch), in place of the keyboard / mouse line above; empty: that one.
+        /// </summary>
+        public string TouchHint { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public PlanetMap Clone() => (PlanetMap)MemberwiseClone();

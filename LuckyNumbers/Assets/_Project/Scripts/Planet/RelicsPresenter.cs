@@ -373,10 +373,11 @@ namespace LuckyNumbers.Planet
             if (_relicSite.Reveal.Value != text) _relicSite.Reveal.Value = text;
         }
 
-        /// <summary>Dev: on foot beside the nearest named relic ("artifact"), any relic, the wreck, or your ship.</summary>
+        /// <summary>Dev: on foot beside the nearest named relic ("artifact"), any relic, the wreck, or your ship ("find", "standoff", "monster" are CombatPresenter's).</summary>
         void Warp(string to)
         {
             if (!_spawned || !_firstPerson.Active) return;
+            if (to is "find" or "standoff" || to?.StartsWith("monster") == true) return;   // CombatPresenter's: spawns / aims where you stand
             var me = _player.Body.transform.position;
             Vector3? target = null;
             var best = float.MaxValue;
