@@ -66,6 +66,12 @@ export type StationArrival =
   | "FlightSchool"
   | "Orbit";
 
+export type RenderQuality =
+  | "Unspecified"
+  | "Low"
+  | "Medium"
+  | "High";
+
 export type MenuAction =
   | "Unspecified"
   | "Play"
@@ -420,6 +426,22 @@ export interface SaveSlots {
   slots: string[];
 }
 
+/**
+ * The player's settings (Core/SettingsPresenter): changed on the title's Settings panel, kept in PlayerPrefs (the
+ * browser's IndexedDB on the web) and applied everywhere: look speed and invert in InputBridge, the render cap in
+ * Rendering/RenderResolutionCap, the frame-rate readout on the page.
+ */
+export interface GameSettings {
+  /** Look speed (mouse, touch pad and right stick), x the scene's own (1 = as authored; 0.25..3). */
+  lookSensitivity: number;
+  /** Look up/down reversed (pushing the mouse forward looks down). */
+  invertY: boolean;
+  /** The 3D view's resolution cap (the UI stays sharp at any setting). */
+  quality: RenderQuality;
+  /** The page's frame-rate readout (top centre), as with ?ln-fps. */
+  showFps: boolean;
+}
+
 export interface DiceState {
   faces: number[];
   rolling: boolean;
@@ -765,6 +787,7 @@ export interface WebStates {
   ShipPicker: ShipPicker;
   PlayerVoyage: PlayerVoyage;
   SaveSlots: SaveSlots;
+  GameSettings: GameSettings;
   DiceState: DiceState;
   UniverseState: UniverseState;
   Outfitter: Outfitter;
@@ -823,4 +846,4 @@ export interface WebEvents {
 /** Events the page may publish into the game. */
 export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "CharacterCallsignRequested" | "SceneChangeRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "SaveSlotsReady" | "SaveSlotPicked" | "SaveSlotDeleteRequested" | "MenuItemSelected" | "UniverseSelected" | "UpgradeBuyRequested" | "OutfitterCloseRequested";
 
-export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "CombatState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "PlayerControl", "ShipPicker", "PlayerVoyage", "SaveSlots", "DiceState", "UniverseState", "Outfitter"] as const;
+export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "CombatState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "PlayerControl", "ShipPicker", "PlayerVoyage", "SaveSlots", "GameSettings", "DiceState", "UniverseState", "Outfitter"] as const;

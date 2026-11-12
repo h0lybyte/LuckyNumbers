@@ -180,13 +180,30 @@ namespace LuckyNumbers.Model
     }
 
     /// <summary>
-    /// Placeholder until settings exist.
+    /// The title's Settings panel (labels; the values are GameSettings, see settings.proto).
     /// </summary>
     public sealed class SettingsPanel
     {
         public string Title { get; set; }
+        /// <summary>
+        /// A line under the title ("" for none).
+        /// </summary>
         public string Body { get; set; }
         public string BackLabel { get; set; }
+        public string SensitivityLabel { get; set; }
+        public string InvertLabel { get; set; }
+        public string QualityLabel { get; set; }
+        /// <summary>
+        /// Low, Medium, High (the RenderQuality order).
+        /// </summary>
+        public List<string> QualityNames { get; } = new List<string>();
+        public string FpsLabel { get; set; }
+        public string ResetLabel { get; set; }
+        /// <summary>
+        /// On / off, for the toggles.
+        /// </summary>
+        public string OnLabel { get; set; }
+        public string OffLabel { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public SettingsPanel Clone() => (SettingsPanel)MemberwiseClone();

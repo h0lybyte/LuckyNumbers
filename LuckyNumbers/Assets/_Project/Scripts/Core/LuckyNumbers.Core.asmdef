@@ -6,6 +6,7 @@
         "LuckyNumbers.Model",
         "LuckyNumbers.Model.Di",
         "LuckyNumbers.Model.Unity",
+        "LuckyNumbers.Rendering",
         "VContainer",
         "MessagePipe",
         "MessagePipe.VContainer",

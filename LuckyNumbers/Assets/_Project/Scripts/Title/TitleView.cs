@@ -17,6 +17,13 @@ namespace LuckyNumbers.Title
         [Ui("settings-title")] Label _settingsTitle;
         [Ui("settings-body")] Label _settingsBody;
         [Ui("settings-back")] Button _settingsBack;
+        [Ui("settings-reset")] Button _settingsReset;
+        [Ui("settings-rows")] VisualElement _settingsRows;
+        Slider _sensitivity;
+        Label _sensitivityValue;
+        Button _invert, _fps;
+        Button[] _quality = Array.Empty<Button>();
+        string _on = "On", _off = "Off";
         [Ui("credits")] VisualElement _credits;
         [Ui("credits-title")] Label _creditsTitle;
         [Ui("credits-intro")] Label _creditsIntro;
@@ -70,18 +77,101 @@ namespace LuckyNumbers.Title
             _menu.Add(button);
         }
 
-        public void SetSettings(string heading, string body, string back, Action onBack)
+        /// <summary>
+        /// Build the Settings panel: a look-speed slider, invert and frame-rate toggles, a render-quality choice, then
+        /// Defaults and Back. Each control reports through its callback; ShowSettingsValues shows the values.
+        /// </summary>
+        public void SetSettings(Model.SettingsPanel labels, float minSensitivity, float maxSensitivity,
+                                Action<float> onSensitivity, Action onInvert, Action<int> onQuality, Action onFps,
+                                Action onReset, Action onBack)
         {
-            _settingsTitle.text = heading;
-            _settingsBody.text = body;
-            _settingsBack.text = back;
+            _settingsTitle.text = labels.Title;
+            _settingsBody.text = labels.Body;
+            _settingsBody.EnableInClassList("ln-hidden", string.IsNullOrEmpty(labels.Body));
+            _settingsBack.text = labels.BackLabel;
             _settingsBack.clicked += onBack;
+            _settingsReset.text = labels.ResetLabel;
+            _settingsReset.clicked += onReset;
+            if (!string.IsNullOrEmpty(labels.OnLabel)) _on = labels.OnLabel;
+            if (!string.IsNullOrEmpty(labels.OffLabel)) _off = labels.OffLabel;
+            _settingsRows.Clear();
+
+            var look = Row(labels.SensitivityLabel);
+            _sensitivity = new Slider(minSensitivity, maxSensitivity);
+            _sensitivity.AddToClassList("ln-settings-slider");
+            _sensitivity.RegisterValueChangedCallback(e => onSensitivity(e.newValue));
+            look.Add(_sensitivity);
+            _sensitivityValue = new Label { pickingMode = PickingMode.Ignore };
+            _sensitivityValue.AddToClassList("ln-settings-value");
+            look.Add(_sensitivityValue);
+
+            _invert = Toggle(Row(labels.InvertLabel), onInvert);
+
+            var quality = Row(labels.QualityLabel);
+            var choices = new VisualElement { pickingMode = PickingMode.Ignore };
+            choices.AddToClassList("ln-settings-choices");
+            quality.Add(choices);
+            _quality = new Button[labels.QualityNames.Count];
+            for (var i = 0; i < _quality.Length; i++)
+            {
+                var index = i;
+                var b = new Button(() => onQuality(index)) { text = labels.QualityNames[i] };
+                b.AddToClassList("ln-button");
+                b.AddToClassList("ln-button--small");
+                b.AddToClassList("ln-settings-choice");
+                choices.Add(b);
+                _quality[i] = b;
+            }
+
+            _fps = Toggle(Row(labels.FpsLabel), onFps);
+
+            VisualElement Row(string label)
+            {
+                var row = new VisualElement { pickingMode = PickingMode.Ignore };
+                row.AddToClassList("ln-settings-row");
+                var name = new Label(label) { pickingMode = PickingMode.Ignore };
+                name.AddToClassList("ln-settings-label");
+                row.Add(name);
+                _settingsRows.Add(row);
+                return row;
+            }
+
+            static Button Toggle(VisualElement row, Action onClick)
+            {
+                var b = new Button(onClick);
+                b.AddToClassList("ln-button");
+                b.AddToClassList("ln-button--small");
+                b.AddToClassList("ln-settings-toggle");
+                row.Add(b);
+                return b;
+            }
+        }
+
+        /// <summary>Show the current values (quality: index into the panel's quality names).</summary>
+        public void ShowSettingsValues(float sensitivity, bool invert, int quality, bool fps)
+        {
+            if (_sensitivity == null) return;
+            _sensitivity.SetValueWithoutNotify(sensitivity);
+            _sensitivityValue.text = $"{sensitivity:0.00}x";
+            SetToggle(_invert, invert);
+            SetToggle(_fps, fps);
+            for (var i = 0; i < _quality.Length; i++) _quality[i].EnableInClassList("ln-selected", i == quality);
+
+            void SetToggle(Button b, bool on)
+            {
+                b.text = on ? _on : _off;
+                b.EnableInClassList("ln-selected", on);
+            }
         }
 
         public void ShowSettings(bool visible)
         {
             _settings.EnableInClassList("ln-hidden", !visible);
             _menu.EnableInClassList("ln-hidden", visible);
+            _title.EnableInClassList("ln-hidden", visible);        // the panel is tall: nothing behind it
+            _prompt.EnableInClassList("ln-hidden", visible);
+            _dicePanel.EnableInClassList("ln-hidden", visible);
+            if (visible) _settingsBack.Focus();                    // keyboard / gamepad start on the panel
         }
 
         /// <summary>Fill the Credits panel: a heading per section, then each credit (click to open its link).</summary>

@@ -32,6 +32,7 @@ namespace LuckyNumbers.Core
 
         readonly IPublisher<InputActionPerformed> _publisher;
         readonly ModelPlayerInput _input;
+        readonly GameSettings _settings;
         readonly List<IDisposable> _subscriptions = new();
         UnityEngine.InputSystem.InputAction _move, _look, _sprint, _jump, _crouch, _roll, _brake, _attack;
 
@@ -39,8 +40,9 @@ namespace LuckyNumbers.Core
         const float StickLookPixelsPerSecond = 900f;
 
         [Inject]
-        public InputBridge(IPublisher<InputActionPerformed> publisher, ModelPlayerInput input)
+        public InputBridge(IPublisher<InputActionPerformed> publisher, ModelPlayerInput input, GameSettings settings)
         {
+            _settings = settings;
             _publisher = publisher;
             _input = input;
         }
@@ -98,6 +100,9 @@ namespace LuckyNumbers.Core
             if (stick.sqrMagnitude < 0.01f) stick = UnityEngine.Vector2.zero;   // dead zone
             PointerLock.StickLook = stick != UnityEngine.Vector2.zero;
             look += stick * (StickLookPixelsPerSecond * UnityEngine.Time.unscaledDeltaTime);
+            // The player's look speed and invert (GameSettings): every scene reads Look, so they apply everywhere.
+            look *= _settings.LookSensitivity.Value > 0f ? _settings.LookSensitivity.Value : 1f;
+            if (_settings.InvertY.Value) look.y = -look.y;
             _input.Look.Value = new Vec2(look.x, look.y);
 
             var pointer = Pointer.current; // mouse, pen or touch

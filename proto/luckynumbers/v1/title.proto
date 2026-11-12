@@ -109,11 +109,22 @@ message MenuItem {
   MenuAction action = 2;
 }
 
-// Placeholder until settings exist.
+// The title's Settings panel (labels; the values are GameSettings, see settings.proto).
 message SettingsPanel {
   string title = 1;
+  // A line under the title ("" for none).
   string body = 2;
   string back_label = 3;
+  string sensitivity_label = 4;
+  string invert_label = 5;
+  string quality_label = 6;
+  // Low, Medium, High (the RenderQuality order).
+  repeated string quality_names = 7;
+  string fps_label = 8;
+  string reset_label = 9;
+  // On / off, for the toggles.
+  string on_label = 10;
+  string off_label = 11;
 }
 
 message MenuItemSelected {
