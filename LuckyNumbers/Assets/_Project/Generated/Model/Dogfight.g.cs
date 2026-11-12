@@ -27,6 +27,15 @@ namespace LuckyNumbers.Model
         public Satellite Satellite { get; set; }
         public MemoryRestore Restore { get; set; }
         public DebtRules Debt { get; set; }
+        /// <summary>
+        /// How many rogues may make an attack run at once; the rest flank and wait their turn (a token each run).
+        /// </summary>
+        public int Attackers { get; set; }
+        /// <summary>
+        /// Steering: seconds of travel a rogue looks ahead for the station's hull, and the clearance it keeps (m).
+        /// </summary>
+        public float Lookahead { get; set; }
+        public float Clearance { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public DogfightConfig Clone() => (DogfightConfig)MemberwiseClone();
@@ -132,6 +141,17 @@ namespace LuckyNumbers.Model
         /// </summary>
         public float Close { get; set; }
         public float Pass { get; set; }
+        /// <summary>
+        /// Its pilot (Station/RogueBrain). Within `aggro_range` (m) of you, or once shot, it hunts you; else it patrols
+        /// round where it came in. An attack run lasts up to `attack_seconds`. `aggression` 0..1: the chance it goes
+        /// straight back in after a run rather than flanking round first. Hit while its shield is down, below
+        /// `evade_hull` (share of its hull) it jinks; below `retreat_hull` it runs to recharge its shield (0: never).
+        /// </summary>
+        public float AggroRange { get; set; }
+        public float AttackSeconds { get; set; }
+        public float Aggression { get; set; }
+        public float EvadeHull { get; set; }
+        public float RetreatHull { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public RogueShip Clone() => (RogueShip)MemberwiseClone();
@@ -222,7 +242,7 @@ namespace LuckyNumbers.Model
 
     /// <summary>
     /// The fight, for the page's HUD (OrbitPresenter / Station.Dogfight). `target`: the rogue you last hit or are aimed at,
-    /// "name|hull|hullMax|shield|shieldMax|metres" ("" none).
+    /// "name|hull|hullMax|shield|shieldMax|metres|state" ("" none; state: what its pilot is doing, e.g. "Flank").
     /// </summary>
     public sealed class DogfightState : IDisposable
     {

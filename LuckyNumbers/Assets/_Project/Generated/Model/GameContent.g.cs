@@ -1001,6 +1001,11 @@ namespace LuckyNumbers.Model
                     DangerMin = 1,
                     Close = 70.0f,
                     Pass = 25.0f,
+                    AggroRange = 700.0f,
+                    AttackSeconds = 3.0f,
+                    Aggression = 0.7f,
+                    EvadeHull = 0.6f,
+                    RetreatHull = 0.25f,
                 },
                 new RogueShip
                 {
@@ -1043,6 +1048,10 @@ namespace LuckyNumbers.Model
                     DangerMin = 1,
                     Close = 90.0f,
                     Pass = 30.0f,
+                    AggroRange = 800.0f,
+                    AttackSeconds = 4.0f,
+                    Aggression = 0.5f,
+                    EvadeHull = 0.4f,
                 },
                 new RogueShip
                 {
@@ -1085,6 +1094,9 @@ namespace LuckyNumbers.Model
                     DangerMin = 3,
                     Close = 140.0f,
                     Pass = 45.0f,
+                    AggroRange = 900.0f,
+                    AttackSeconds = 6.0f,
+                    Aggression = 0.85f,
                 },
             },
             Satellite = new Satellite
@@ -1135,6 +1147,9 @@ namespace LuckyNumbers.Model
                 GameOverText = "Your debts came due. The creditors took your ship, your body and your memory chip, and sold the lot at auction. This run is over.",
                 OutfitterLocked = "Collections hold: no sales until you pay your debt down",
             },
+            Attackers = 2,
+            Lookahead = 1.6f,
+            Clearance = 18.0f,
         };
 
         /// <summary>From <c>content/encounters.txtpb</c>.</summary>

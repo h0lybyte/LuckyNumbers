@@ -51,18 +51,50 @@ The three guns naturally counter each other:
 
 ## Rogues
 
-Rogue ships are copies of the fighter in their own skins. Each one:
-
-- chases you and leads its shots, with a few degrees of spread, so dodging pays
-- breaks off when it gets inside `pass` metres, then comes round again
+Rogue ships are copies of the fighter in their own skins:
 
 | Rogue | Role | Joins from |
 |---|---|---|
-| Scout | fast, fragile | danger 1 |
+| Scout | fast, fragile, jinks when hurt and runs to recharge | danger 1 |
 | Raider | standard | danger 1 |
-| Gunship | slow, armoured, hits hard | danger 3 |
+| Gunship | slow, armoured, hits hard, stays on you | danger 3 |
 
 A kill pays `xp` and a `bounty` in credits straight away.
+
+### Pilot AI (`Station/RogueBrain.cs`)
+
+Each rogue runs a small state machine. Every frame it picks a goal, a speed and whether it may fire.
+
+| State | What it does | Leaves when |
+|---|---|---|
+| Patrol | circles where it came in | you come within `aggro_range`, or you shoot it |
+| Approach | closes on you | in range: it attacks if an attack token is free, else it flanks |
+| Attack | flies at where you'll be (its lead) and fires | inside `pass` metres, or after `attack_seconds`: break off |
+| Break off | overshoots out to one side, then switches sides for next time | after 1.5 to 2.6 s: attack again (chance: `aggression`), else flank |
+| Flank | swings round to your side and behind you, following as you turn | it gets there: attack if a token is free, else flank the other side |
+| Evade | jinks to a new heading every half second, away from your nose | after about 2 s: flank |
+| Retreat | runs out to recharge its shield | its shield is full, or after 8 s: approach |
+
+- **Evade** starts when it's hit with its shield down and its hull below `evade_hull`.
+- **Retreat** starts when its hull is below `retreat_hull` with its shield down. 0 means never.
+- **Attack tokens:** only `attackers` rogues (default 2) may make a run at once. The rest flank and wait their
+  turn, so a wave comes at you from several sides instead of in one line.
+
+### Pathfinding (`Station/SpaceNav.cs`)
+
+Space is empty except for the station's hull blocks, so two things are enough:
+
+- **Detours:** if the straight line to the goal crosses the hull, the rogue flies to the best detour point instead.
+  Detour points are the corners and faces of a box round the whole station, pushed out by `clearance`. It picks
+  the one it can see whose two legs are shortest. This runs every frame, so the detour moves on as it rounds the
+  hull.
+- **Steering:** a ray `lookahead` seconds down its velocity. If the ray hits a hull block, the rogue is pushed
+  mostly along that face (to keep going round) and partly out from it.
+- **Spacing:** a soft push keeps rogues apart and off your nose when they aren't attacking. A hard push-out stops
+  any ship from passing through yours, or rogues through each other.
+- **Line of sight:** a rogue never fires through the station.
+
+The HUD target card shows the state of the rogue you're on (for example "FLANK").
 
 ## Satellite uplink job
 
@@ -114,7 +146,9 @@ behind 1 armour, so it lasts about 4 seconds at full accuracy, or about 8 at 50%
 
 | File | What it does |
 |---|---|
-| `Station/Dogfight.cs` | the fight: rolls, layers, rogue AI, waves, upload |
+| `Station/Dogfight.cs` | the fight: rolls, layers, rogue flying, waves, upload |
+| `Station/RogueBrain.cs` | the rogues' pilot state machine and attack tokens |
+| `Station/SpaceNav.cs` | routing round the station, hull avoidance, line of sight |
 | `Station/OrbitPresenter.cs` | guns, the satellite, the memory restore |
 | `Station/StationPresenter.cs` | uplink launch, the payout on docking, the restore call, game over |
 | `Core/DebtWatch.cs` | debt tiers |

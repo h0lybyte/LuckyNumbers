@@ -112,8 +112,10 @@ namespace LuckyNumbers.Station
             _rogueTemplate = Object.Instantiate(_ship.gameObject);
             _rogueTemplate.name = "Rogue template";
             _rogueTemplate.SetActive(false);
+            Layers.Set(_rogueTemplate, Layers.Local);
             _ship.Show(skin, Length);
-            _guns = new ShipGuns(_ship);
+            Layers.Set(_ship.gameObject, Layers.Local);   // the flight camera's only (PlaceInSpace)
+            _guns = new ShipGuns(_ship) { Layer = Layers.Local };
             _guns.Arm(_stats);
             // Dev (the page's inspector): "rogues" sends a wave at you, dead ahead (so you can try your guns at once).
             _subscriptions.Add(_warps.Subscribe(e =>
@@ -133,6 +135,7 @@ namespace LuckyNumbers.Station
                 ? LayoutGenerator.Generate(_config, _space.Seed)
                 : StationLayout.FromContent(_config);
             BuildHull(layout);
+            Layers.Set(_orbit.gameObject, Layers.Local);
             PlaceInSpace(ct).Forget();
 
             // Backed out of the bay: a little way off the beacon, nose to the station (you see it, and where to come back).
@@ -235,6 +238,8 @@ namespace LuckyNumbers.Station
             float diameter;
             while (!_space.TryGetBody(target, out at, out diameter)) await UniTask.Yield(ct);
             _space.TakeCamera();
+            // The universe only: the hull, ships and bolts near the origin are the flight camera's (Layers.Local).
+            _space.Camera.cullingMask &= ~(1 << Layers.Local);
             var toSun = _space.TryGetBody("sun", out var sun, out _) ? math.normalizesafe(sun - at, new float3(1, 0, 0)) : new float3(1, 0, 0);
             var side = math.normalizesafe(math.cross(new float3(0, 1, 0), toSun), new float3(0, 0, 1));
             var away = math.normalize(toSun * 0.6f + side * 0.75f + new float3(0, 0.2f, 0));
@@ -364,7 +369,7 @@ namespace LuckyNumbers.Station
             if (GameContent.Dogfight == null) return;
             var seed = _space.Seed ^ (_job.Seed.Value * 0x9E3779B9u) ^ (uint)_voyage.Trips.Value;
             _fight = new Dogfight(_ship, _rogueTemplate, _stats, _sheet, _space.Seed, Length, _dogfight, _job, _voyage, _rolls, _xp,
-                                  (p, r) => { var none = Vector3.zero; return OutOfHull(p, r, ref none); }, seed);
+                                  (p, r) => { var none = Vector3.zero; return OutOfHull(p, r, ref none); }, seed, _hull);
             _fight.Arm(_guns);
             var onJob = _job.Active.Value && _job.Kind.Value == JobKind.Uplink;
             if (!onJob && !DevDogfight) return;
@@ -376,6 +381,7 @@ namespace LuckyNumbers.Station
             var at = _beacon + dir * (Length * math.max(4f, s.Distance));
             var radius = Length * math.max(1f, s.Radius);
             var view = _orbit.Satellite(at, math.max(2f, s.Size), radius);
+            Layers.Set(view.gameObject, Layers.Local);
             var type = UplinkType();
             var danger = onJob ? math.max(1, _job.Danger.Value) : 2;
             var seconds = (type != null && type.UplinkSeconds > 0f ? type.UplinkSeconds : s.Seconds) + (type?.UplinkSecondsPerDanger ?? 0f) * danger;

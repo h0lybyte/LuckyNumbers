@@ -22,6 +22,11 @@ message DogfightConfig {
   Satellite satellite = 4;
   MemoryRestore restore = 5;
   DebtRules debt = 6;
+  // How many rogues may make an attack run at once; the rest flank and wait their turn (a token each run).
+  int32 attackers = 7;
+  // Steering: seconds of travel a rogue looks ahead for the station's hull, and the clearance it keeps (m).
+  float lookahead = 8;
+  float clearance = 9;
 }
 
 // Your fighter's defences at baseline; the skin and upgrades multiply them (ShipStats toughness / shield / armor).
@@ -83,6 +88,15 @@ message RogueShip {
   // How far it keeps (m) while strafing: it closes to `close`, breaks off past `pass`.
   float close = 20;
   float pass = 21;
+  // Its pilot (Station/RogueBrain). Within `aggro_range` (m) of you, or once shot, it hunts you; else it patrols
+  // round where it came in. An attack run lasts up to `attack_seconds`. `aggression` 0..1: the chance it goes
+  // straight back in after a run rather than flanking round first. Hit while its shield is down, below
+  // `evade_hull` (share of its hull) it jinks; below `retreat_hull` it runs to recharge its shield (0: never).
+  float aggro_range = 22;
+  float attack_seconds = 23;
+  float aggression = 24;
+  float evade_hull = 25;
+  float retreat_hull = 26;
 }
 
 // A satellite job (JobKind.UPLINK): a data satellite out from the station; stay within `radius` of it for the job's
@@ -135,7 +149,7 @@ message DebtRules {
 }
 
 // The fight, for the page's HUD (OrbitPresenter / Station.Dogfight). `target`: the rogue you last hit or are aimed at,
-// "name|hull|hullMax|shield|shieldMax|metres" ("" none).
+// "name|hull|hullMax|shield|shieldMax|metres|state" ("" none; state: what its pilot is doing, e.g. "Flank").
 message DogfightState {
   option (ln.state) = true;
   option (ln.web) = true;
