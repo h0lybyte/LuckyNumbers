@@ -7,6 +7,10 @@
 # so the grades spread out; their attack is set against your evasion (12 at agility 1).
 # Placeholder values; tune with gameplay (docs/dogfight.md has the targets).
 
+attackers: 2          # rogues on an attack run at once; the rest flank
+lookahead: 1.6        # s of travel a rogue looks ahead for the hull
+clearance: 18         # m it keeps off the hull
+
 defense {
   hull: 40            # x toughness
   shield: 30          # x ShipStats.shield
@@ -31,6 +35,7 @@ rogues {
   speed: 44 turn_rate: 120 close: 70 pass: 25
   attack: 4 damage: "1d4" cooldown: 0.7 fire_range: 260 fire_cone: 9
   xp: 15 bounty: 60 danger_min: 1
+  aggro_range: 700 attack_seconds: 3 aggression: 0.7 evade_hull: 0.6 retreat_hull: 0.25   # darts in, jinks, bolts
   bolt { speed: 150 range: 320 length: 6 width: 0.45 color { r: 0.4 g: 2.6 b: 0.6 a: 1 }
          muzzle { size: 3 life: 0.07 } impact { size: 8 life: 0.2 } prewarm: 6 }
 }
@@ -40,6 +45,7 @@ rogues {
   speed: 34 turn_rate: 85 close: 90 pass: 30
   attack: 5 damage: "1d6" cooldown: 0.85 fire_range: 300 fire_cone: 8
   xp: 30 bounty: 120 danger_min: 1
+  aggro_range: 800 attack_seconds: 4 aggression: 0.5 evade_hull: 0.4 retreat_hull: 0
   bolt { speed: 140 range: 350 length: 7 width: 0.6 color { r: 3 g: 1.2 b: 0.2 a: 1 }
          muzzle { size: 4 life: 0.08 } impact { size: 10 life: 0.25 } prewarm: 6 }
 }
@@ -49,6 +55,7 @@ rogues {
   speed: 24 turn_rate: 50 close: 140 pass: 45
   attack: 6 damage: "2d6" cooldown: 1.4 fire_range: 360 fire_cone: 11
   xp: 60 bounty: 260 danger_min: 3
+  aggro_range: 900 attack_seconds: 6 aggression: 0.85 evade_hull: 0 retreat_hull: 0   # a brawler: stays on you
   bolt { speed: 120 range: 400 length: 8 width: 1.4 color { r: 3.2 g: 0.3 b: 1.6 a: 1 }
          muzzle { size: 6 life: 0.1 } impact { size: 14 life: 0.35 } prewarm: 6 }
 }

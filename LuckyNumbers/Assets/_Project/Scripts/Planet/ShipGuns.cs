@@ -87,6 +87,9 @@ namespace LuckyNumbers.Planet
 
         public void Tick(float dt) => _field.Tick(dt);
 
+        /// <summary>The layer the lasers draw on (outside the station: Layers.Local, so the space camera skips them).</summary>
+        public int Layer { set => _field.Layer = value; }
+
         void IBoltSink.OnBoltHit(in BoltShot shot, in RaycastHit hit, IDamageable target, float travelled)
         {
             if (Hit != null && shot.Tag is ShipGun gun) Hit(gun, hit, target);

@@ -198,7 +198,7 @@ export interface CombatState {
 
 /**
  * The fight, for the page's HUD (OrbitPresenter / Station.Dogfight). `target`: the rogue you last hit or are aimed at,
- * "name|hull|hullMax|shield|shieldMax|metres" ("" none).
+ * "name|hull|hullMax|shield|shieldMax|metres|state" ("" none; state: what its pilot is doing, e.g. "Flank").
  */
 export interface DogfightState {
   active: boolean;
