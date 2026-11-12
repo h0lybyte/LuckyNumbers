@@ -1377,6 +1377,103 @@ namespace LuckyNumbers.Model
             GasRepeat = 0.4f,
         };
 
+        /// <summary>From <c>content/hold.txtpb</c>.</summary>
+        public static readonly HoldConfig Hold = new HoldConfig
+        {
+            CellSize = 2.0f,
+            StoreyHeight = 3.0f,
+            ChunkCells = 8,
+            Textures = new HoldTextures
+            {
+                Source = "Delven",
+                Size = 128,
+                Layers =
+                {
+                    "Surfaces/dlv_stonebrk1a",
+                    "Surfaces/dlv_stonebrk2a",
+                    "Surfaces/dlv_stonebrk4a",
+                    "Surfaces/dlv_stoneflr1a",
+                    "Surfaces/dlv_stoneflr2a",
+                    "Surfaces/dlv_slateflr1a",
+                    "Surfaces/dlv_slategen1",
+                    "Surfaces/dlv_stonegen1",
+                    "Surfaces/dlv_stonegen2",
+                    "Surfaces/dlv_stonetrm1a",
+                    "Surfaces/dlv_stonetrm2a",
+                    "Surfaces/dlv_stonegrb1a",
+                    "Surfaces/dlv_stonegrb2a",
+                    "Surfaces/dlv_ground1a",
+                    "Surfaces/dlv_ground2a",
+                    "Surfaces/dlv_wood1a",
+                    "Surfaces/dlv_wood5a",
+                    "Surfaces/dlv_woodgen1",
+                    "Surfaces/dlv_metalpan1a",
+                    "Surfaces/dlv_metaltrm1a",
+                    "Surfaces/dlv_metalpip1a",
+                    "Surfaces/dlv_metalstr1a",
+                },
+                Palettes =
+                {
+                    new HoldPalette
+                    {
+                        Name = "hall",
+                        Floor = "Surfaces/dlv_slateflr1a",
+                        Wall = "Surfaces/dlv_stonebrk1a",
+                        Ceiling = "Surfaces/dlv_stonegen1",
+                        Trim = "Surfaces/dlv_stonetrm1a",
+                        Pillar = "Surfaces/dlv_stonetrm2a",
+                    },
+                    new HoldPalette
+                    {
+                        Name = "room",
+                        Floor = "Surfaces/dlv_stoneflr1a",
+                        Wall = "Surfaces/dlv_stonebrk2a",
+                        Ceiling = "Surfaces/dlv_stonegen2",
+                        Trim = "Surfaces/dlv_stonetrm1a",
+                        Pillar = "Surfaces/dlv_woodgen1",
+                    },
+                    new HoldPalette
+                    {
+                        Name = "forge",
+                        Floor = "Surfaces/dlv_stoneflr2a",
+                        Wall = "Surfaces/dlv_metalpan1a",
+                        Ceiling = "Surfaces/dlv_metalpip1a",
+                        Trim = "Surfaces/dlv_metaltrm1a",
+                        Pillar = "Surfaces/dlv_metalstr1a",
+                    },
+                    new HoldPalette
+                    {
+                        Name = "mine",
+                        Floor = "Surfaces/dlv_ground1a",
+                        Wall = "Surfaces/dlv_stonegrb1a",
+                        Ceiling = "Surfaces/dlv_ground2a",
+                        Trim = "Surfaces/dlv_wood1a",
+                        Pillar = "Surfaces/dlv_wood5a",
+                    },
+                },
+            },
+            RegionCells = 32,
+            RegionLevels = 2,
+            Mines = new MineRules
+            {
+                OpeningsMin = 1,
+                OpeningsMax = 2,
+                ShaftChance = 0.35f,
+                TurnChance = 0.18f,
+                ChambersMin = 1,
+                ChambersMax = 3,
+                ChamberSizeMin = 3,
+                ChamberSizeMax = 6,
+                CellsPerLantern = 24,
+                Palette = "mine",
+            },
+            LanternRadius = 9.0f,
+            LanternR = 1.0f,
+            LanternG = 0.72f,
+            LanternB = 0.42f,
+            Ambient = 0.12f,
+        };
+
         /// <summary>From <c>content/intro.txtpb</c>.</summary>
         public static readonly Cutscene Intro = new Cutscene
         {

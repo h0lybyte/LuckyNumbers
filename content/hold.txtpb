@@ -1,0 +1,20 @@
+# proto-file: luckynumbers/v1/hold.proto
+# proto-message: luckynumbers.v1.HoldConfig
+# Dwarven holds: the cell grid, its textures, and how the endless mines are dug.
+
+cell_size: 2
+storey_height: 3
+chunk_cells: 8
+textures_ref: "holds/textures/delven"
+
+# The deep: regions of 32 x 32 cells, two storeys each.
+region_cells: 32
+region_levels: 2
+mines_ref: "holds/mines/deep"
+
+# Warm lantern light baked into the vertex colours; ambient keeps unlit stone just readable.
+lantern_radius: 9
+lantern_r: 1
+lantern_g: 0.72
+lantern_b: 0.42
+ambient: 0.12
