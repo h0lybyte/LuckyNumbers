@@ -1,0 +1,97 @@
+# proto-file: luckynumbers/v1/upgrades.proto
+# proto-message: luckynumbers.v1.UpgradeConfig
+# Ship upgrades, bought with credits at the Outfitter console in the Docking Bay. Standard parts are cheap plain
+# stat bumps with several levels (costs: one per level; stats multiply per level, compounding). Exotics are one-off
+# black-market fits that each bend a rule, usually at a price. Placeholder prices; tune with gameplay.
+common_title: "Station Outfitter"
+common_blurb: "Certified parts, fitted while you wait."
+exotic_title: "Black Market"
+exotic_blurb: "No warranty. No refunds. No questions."
+
+# ---- Standard parts ----
+upgrades {
+  id: "thrusters" name: "Thruster Tuning" tier: UPGRADE_TIER_COMMON
+  description: "Clean nozzles, sharper burn maps."
+  effect: "+8% top speed per level"
+  costs: [400, 900, 1600, 2600] speed: 1.08
+}
+upgrades {
+  id: "gyros" name: "Gyro Stabilisers" tier: UPGRADE_TIER_COMMON
+  description: "Faster spin-up on the attitude gyros."
+  effect: "+8% agility per level"
+  costs: [400, 900, 1600, 2600] agility: 1.08
+}
+upgrades {
+  id: "tanks" name: "Extended Tanks" tier: UPGRADE_TIER_COMMON
+  description: "Bolt-on bladders in the wing roots."
+  effect: "+15% tank size per level"
+  costs: [350, 800, 1400, 2200] fuel: 1.15
+}
+upgrades {
+  id: "injectors" name: "Injector Refit" tier: UPGRADE_TIER_COMMON
+  description: "Finer spray, fuller burn, less waste."
+  effect: "+10% fuel efficiency per level"
+  costs: [350, 800, 1400, 2200] efficiency: 1.1
+}
+upgrades {
+  id: "gear" name: "Reinforced Gear" tier: UPGRADE_TIER_COMMON
+  description: "Heavier struts, softer dampers."
+  effect: "+15% landing toughness per level"
+  costs: [300, 700, 1200] toughness: 1.15
+}
+upgrades {
+  id: "capacitors" name: "Capacitor Banks" tier: UPGRADE_TIER_COMMON
+  description: "The guns recharge between shots faster."
+  effect: "+10% fire rate per level"
+  costs: [500, 1100, 1900, 3000] firepower: 1.1
+}
+upgrades {
+  id: "broker" name: "Salvage Broker Licence" tier: UPGRADE_TIER_COMMON
+  description: "Paperwork that makes buyers pay what things are worth."
+  effect: "+6% credits paid per level"
+  costs: [800, 1800, 3200] payout: 1.06
+}
+
+# ---- Exotics ----
+upgrades {
+  id: "dice_drive" name: "Dice Drive" tier: UPGRADE_TIER_EXOTIC tag: "Unstable"
+  description: "A probability engine wired into every system. Nobody knows what it'll do. Not even it."
+  effect: "Every launch rerolls all six stats x0.6 to x1.8"
+  costs: [4000] dice_min: 0.6 dice_max: 1.8
+}
+upgrades {
+  id: "overclock" name: "Overclocked Reactor" tier: UPGRADE_TIER_EXOTIC tag: "Hot"
+  description: "Every safety limiter removed and sold separately."
+  effect: "x1.5 speed, x1.15 agility - but burns fuel like it's free (x0.55 efficiency)"
+  costs: [6000] speed: 1.5 agility: 1.15 efficiency: 0.55
+}
+upgrades {
+  id: "sun_cell" name: "Perpetual Sun Cell" tier: UPGRADE_TIER_EXOTIC tag: "Prototype"
+  description: "A star in a jar. Allegedly."
+  effect: "Landed, the tank refills all the way"
+  costs: [5000] recharge_to: 1
+}
+upgrades {
+  id: "gyroscope" name: "Neutron Gyroscope" tier: UPGRADE_TIER_EXOTIC tag: "Twitchy"
+  description: "A spinning neutron-star shard. Turns on a dime, rattles your bones."
+  effect: "x1.8 agility, x0.7 landing toughness"
+  costs: [5500] agility: 1.8 toughness: 0.7
+}
+upgrades {
+  id: "plasma_lance" name: "Plasma Lance" tier: UPGRADE_TIER_EXOTIC tag: "Contraband"
+  description: "Mining-grade plasma cutters, re-pointed forwards. Hits like a freight train."
+  effect: "Swaps both guns for slow, huge plasma bolts"
+  costs: [7500] guns: ["plasma_lance", "plasma_lance"]
+}
+upgrades {
+  id: "prism" name: "Prism Repeater" tier: UPGRADE_TIER_EXOTIC tag: "Black market"
+  description: "A cracked military repeater with a crystal where the regulator was."
+  effect: "Swaps both guns for a violet storm, x1.5 fire rate"
+  costs: [9000] guns: ["prism_repeater", "prism_repeater"] firepower: 1.5
+}
+upgrades {
+  id: "gold_hull" name: "Solid Gold Hull" tier: UPGRADE_TIER_EXOTIC tag: "Gaudy"
+  description: "Collectors trust a pilot who flies in solid gold. So does gravity."
+  effect: "x1.5 credits paid, x1.3 toughness - but x0.85 speed and agility"
+  costs: [12000] payout: 1.5 toughness: 1.3 speed: 0.85 agility: 0.85
+}

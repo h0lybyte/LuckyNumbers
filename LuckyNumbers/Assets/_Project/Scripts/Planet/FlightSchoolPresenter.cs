@@ -122,7 +122,8 @@ namespace LuckyNumbers.Planet
             _ship?.Hide();
             _freighter = freighter;
             _ship = freighter ? _view.Wreck : _view.Fighter;
-            _stats = PlayerShipStats.Of(SkinName);
+            // Your own ship flies with your upgrades; the others as they come.
+            _stats = SkinName == PlayerShipSkin.Current(_playerShip) ? PlayerShipStats.Of(_playerShip) : PlayerShipStats.Of(SkinName);
             _ship.Show(freighter ? null : SkinName, Length);
             _ship.Pose(_position, _rotation);
             _flight.Stop();
@@ -150,7 +151,7 @@ namespace LuckyNumbers.Planet
                 _fade = Mathf.MoveTowards(_fade, _leaving ? 1f : 0f, dt / (_leaving ? 0.5f : 0.8f));
             _view.Fade(_fade);
             if (!_leaving) Fly(dt);
-            _ship.Pose(_position, _rotation);
+            _ship.Pose(_position, _flight.Pose);   // the hull rolls (barrel roll); the cameras don't
             Aim(dt);
 
             if (Time.time >= _readoutAt)

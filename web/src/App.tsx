@@ -6,6 +6,8 @@ import { StationHud, StationTools } from "./station";
 import { RelicHud } from "./relics";
 import { FlightHud } from "./flight";
 import { JobBoardPanel, JobLine } from "./jobs";
+import { OutfitterPanel } from "./outfitter";
+import { PayoutBanner } from "./counter";
 import { CombatHud } from "./combat";
 import { EncounterCard } from "./encounter";
 import { CharacterSheetGate } from "./sheet";
@@ -21,12 +23,13 @@ export function App({ dock }: { dock: HTMLElement | null }) {
   // ?ln-range: straight to the station's shooting range once Unity is up (the station puts you at its firing line;
   // ?ln-range=knife faces that weapon, &ln-bake bakes every weapon's grips: tools/ln.py bake-grasps);
   // ?ln-board: the station between jobs, beside your ship (E opens the job board);
+  // ?ln-outfitter: the station's outfitter, open, with test credits if you have none;
   // ?ln-flight: straight to the Flight School (test-flying the ships, their jets); ?ln-orbit: outside the station.
   // ?ln-planet: straight to the planet (you fly in and land at the crash site).
   useEffect(() => {
     if (!ready) return;
     const q = new URLSearchParams(location.search);
-    if (q.has("ln-range") || q.has("ln-board")) LN.send("SceneChangeRequested", { target: "Station" });
+    if (q.has("ln-range") || q.has("ln-board") || q.has("ln-outfitter")) LN.send("SceneChangeRequested", { target: "Station" });
     else if (q.has("ln-flight")) LN.send("SceneChangeRequested", { target: "FlightSchool" });
     else if (q.has("ln-orbit")) LN.send("SceneChangeRequested", { target: "Orbit" });
     else if (q.has("ln-planet")) LN.send("SceneChangeRequested", { target: "Planet" });
@@ -54,6 +57,7 @@ export function App({ dock }: { dock: HTMLElement | null }) {
       <HangarGate />
       <SaveSlotsGate />
       <Toasts />
+      <PayoutBanner />
       <ItemToasts />
       <TouchControls />
       {inspector && dock && createPortal(<Inspector />, dock)}
@@ -68,6 +72,7 @@ function StationHudGate() {
       <>
         <StationHud />
         <JobBoardPanel />
+        <OutfitterPanel />
       </>
     );
   if (flow?.scene === "Planet")

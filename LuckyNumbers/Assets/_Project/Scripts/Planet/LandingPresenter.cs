@@ -194,7 +194,7 @@ namespace LuckyNumbers.Planet
             if (Is(Flight.Roaming))
             {
                 // Crashed flying about: hovering above where you last parked, enough fuel to set down again.
-                if (F != null) _playerShip.Fuel.Value = math.max(_playerShip.Fuel.Value, _playerShip.FuelMax.Value * F.RechargeTo);
+                if (F != null) _playerShip.Fuel.Value = math.max(_playerShip.Fuel.Value, _playerShip.FuelMax.Value * ShipUpgrades.RechargeTo(_playerShip, F.RechargeTo));
                 _position = _parked + Vector3.up * 40f;
                 _velocity = Vector3.zero;
                 _spin = _jetSpin = Vector3.zero;
@@ -240,7 +240,7 @@ namespace LuckyNumbers.Planet
             _phaseTime += dt;
             if (_phase == Phase.Flying) Fly(dt);
             else if (_phase == Phase.Crashed && _phaseTime > 2.2f) Restart();
-            Ship.Pose(_position, _rotation);
+            Ship.Pose(_position, _rotation * _barrel.Offset);   // the hull rolls; the camera and steering don't
             Chase(dt);
         }
 
@@ -521,7 +521,7 @@ namespace LuckyNumbers.Planet
                                    -roll * H.RollRate * ag);
             _spin = Vector3.Lerp(_spin, want, settle);
             _rotation = _rotation * Quaternion.Euler(_spin * dt);
-            _barrel.Step(dt, ref _rotation, ref _position, ref _velocity);
+            _barrel.Step(dt, ref _position, ref _velocity);
             var altitude = _position.y - _ground.HeightAt(_position);
             var steering = math.abs(look.x) + math.abs(look.y) > 0.5f || math.abs(roll) > 0.1f || barreling;
             if (!steering && altitude < H.LevelHeight)
@@ -561,7 +561,7 @@ namespace LuckyNumbers.Planet
             Ship.SetHeat(0f, _dry ? 0.1f : 0.6f + 0.9f * (_velocity.magnitude / math.max(1f, H.MaxSpeed * sp)) * boost + (pushing ? 0.5f : 0.2f));
             // Jets, in the ship's frame: this frame's change of velocity (its share of what the assist can do in a
             // frame, so a hard push or brake burns full), plus holding the ship up and its speed against the air.
-            var toShip = Quaternion.Inverse(_rotation);
+            var toShip = Quaternion.Inverse(_rotation * _barrel.Offset);   // the jets are on the hull, rolling with it
             var ask = toShip * (change / math.max(rate, 1e-4f));
             var hold = toShip * (Vector3.up * 0.3f + _velocity / math.max(1f, H.MaxSpeed * sp) * 0.5f);
             if (_dry) Ship.EnginesOff();   // out of fuel: the flames die, the reserve cells let you down
@@ -692,7 +692,7 @@ namespace LuckyNumbers.Planet
             var forward = Vector3.ProjectOnPlane(_rotation * Vector3.forward, normal).normalized;
             _rotation = Quaternion.LookRotation(forward, normal);
             _position.y = _ground.SurfaceAt(_position) + GearDrop;   // standing on its legs on the mesh
-            Ship.Pose(_position, _rotation);
+            Ship.Pose(_position, _rotation * _barrel.Offset);   // the hull rolls; the camera and steering don't
             Ship.GearDown(GearDrop);   // the legs come out to the ground
             Ship.SetHeat(0f, 0.3f);
             Ship.EnginesOff();                                                 // parked: the flames die down
@@ -809,12 +809,17 @@ namespace LuckyNumbers.Planet
             if (_playerShip.Fuel.Value <= 0f) Debug.Log("[Landing] out of fuel: engines out, coming down on the reserve cells");
         }
 
-        /// <summary>Landed: the solar cells top the tank up to recharge_to (never stranded).</summary>
+        /// <summary>
+        /// Landed: the solar cells top the tank up to recharge_to (never stranded); an upgrade (the Perpetual Sun Cell)
+        /// may raise it, and fills three times as fast.
+        /// </summary>
         void Recharge(float dt)
         {
             if (F == null) return;
-            var to = _playerShip.FuelMax.Value * F.RechargeTo;
-            if (_playerShip.Fuel.Value < to) _playerShip.Fuel.Value = math.min(to, _playerShip.Fuel.Value + F.RechargePerSecond * dt);
+            var share = ShipUpgrades.RechargeTo(_playerShip, F.RechargeTo);
+            var rate = F.RechargePerSecond * (share > F.RechargeTo ? 3f : 1f);
+            var to = _playerShip.FuelMax.Value * share;
+            if (_playerShip.Fuel.Value < to) _playerShip.Fuel.Value = math.min(to, _playerShip.Fuel.Value + rate * dt);
         }
 
         void Chase(float dt)
@@ -827,7 +832,11 @@ namespace LuckyNumbers.Planet
             var floor = _ground.SurfaceAt(_camPos) + 1.5f;                      // never under the ground (its mesh)
             if (_camPos.y < floor) _camPos.y = floor;
             // Assisted: tilt a little with the bank, and widen the view with speed (a sense of speed).
-            var camUp = Assisted ? Vector3.Slerp(Vector3.up, _rotation * Vector3.up, math.saturate(A.CameraBank)) : Vector3.up;
+            // The tilt fades out as the ship goes past its side (Q/E all the way over): halfway between up and upside
+            // down there's no one way to tilt, and the view would flip.
+            var shipUp = _rotation * Vector3.up;
+            var bank = math.saturate(A.CameraBank) * math.saturate(Vector3.Dot(shipUp, Vector3.up) * 2f);
+            var camUp = Assisted ? Vector3.Slerp(Vector3.up, shipUp, bank) : Vector3.up;
             cam.SetPositionAndRotation(_camPos, Quaternion.LookRotation(_position + _rotation * Vector3.forward * L.ShipLength - _camPos, camUp));
             if (Assisted)
                 _view.FlightCamera.fieldOfView = math.lerp(_view.FlightCamera.fieldOfView,

@@ -23,6 +23,19 @@ guns {
   bolt { speed: 150 range: 450 length: 9 width: 0.5 color { r: 2.6 g: 0.35 b: 0.3 a: 1 }
          muzzle { size: 4 life: 0.07 } impact { size: 10 life: 0.25 } prewarm: 4 }   # prewarm: per barrel
 }
+# Black-market guns (content/upgrades.txtpb): the Plasma Lance and the Prism Repeater.
+guns {
+  id: "plasma_lance" name: "Plasma lance"
+  cooldown: 0.75 impulse: 260
+  bolt { speed: 95 range: 520 length: 6 width: 2.2 color { r: 0.4 g: 3.2 b: 1.2 a: 1 }
+         muzzle { size: 3 life: 0.12 } impact { size: 14 life: 0.45 } prewarm: 8 }
+}
+guns {
+  id: "prism_repeater" name: "Prism repeater"
+  cooldown: 0.11 impulse: 22
+  bolt { speed: 210 range: 400 length: 7 width: 0.35 color { r: 2.2 g: 0.5 b: 3.4 a: 1 }
+         muzzle { size: 5 life: 0.05 } impact { size: 8 life: 0.2 } prewarm: 24 }
+}
 
 default_stats {
   name: "Fighter" role: "Standard"

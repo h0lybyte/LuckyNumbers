@@ -3,6 +3,7 @@
 // (Core/CharacterPresenter) and sends CharacterSheet; this only shows it and sends requests back.
 import { useEffect, useRef, useState } from "react";
 import { LN, useLNState } from "./ln";
+import { CreditCounter } from "./counter";
 import { EquipmentTab, InventoryTab } from "./inventory";
 
 export type Tab = "sheet" | "inventory" | "equipment";
@@ -61,11 +62,12 @@ export function CharacterSheetGate() {
 
   const flying = useLNState("FlightState")?.flying ?? false;
   const credits = useLNState("PlayerVoyage")?.credits ?? 0;
+  const shopping = useLNState("Outfitter")?.open ?? false;   // the outfitter has its own credits and Close
   const scene = flow?.scene;
   if (scene !== "Station" && scene !== "Planet" && scene !== "Title") return null;
   return (
     <>
-      {!flying && !shown && scene !== "Title" && (
+      {!flying && !shown && !shopping && scene !== "Title" && (
         <div className="sheet-chips">
           <button type="button" className="ui chip" onClick={() => { setTab("sheet"); setOpen(true); }}>
             Sheet <kbd>C</kbd>
@@ -73,11 +75,9 @@ export function CharacterSheetGate() {
           <button type="button" className="ui chip" onClick={() => { setTab("inventory"); setOpen(true); }}>
             Pack <kbd>I</kbd>
           </button>
-          {credits > 0 && (
-            <span className="ui chip credits" title="Paid by the museum for the relics you brought back">
-              {credits.toLocaleString()} cr
-            </span>
-          )}
+          <span className="ui chip credits" title="Credits: the museum pays for relics, jobs pay on top; spend them at the Outfitter">
+            <CreditCounter value={credits} memo="hud" />
+          </span>
         </div>
       )}
       {shown && <Sheet onClose={close} setup={setup} tab={tab} setTab={setTab} />}

@@ -4031,6 +4031,58 @@ namespace LuckyNumbers.Model
                         Prewarm = 4,
                     },
                 },
+                new ShipGun
+                {
+                    Id = "plasma_lance",
+                    Name = "Plasma lance",
+                    Cooldown = 0.75f,
+                    Impulse = 260.0f,
+                    Bolt = new Projectile
+                    {
+                        Speed = 95.0f,
+                        Range = 520.0f,
+                        Length = 6.0f,
+                        Width = 2.2f,
+                        Color = new Rgba(0.4f, 3.2f, 1.2f, 1.0f),
+                        Muzzle = new ProjectileFlash
+                        {
+                            Size = 3.0f,
+                            Life = 0.12f,
+                        },
+                        Impact = new ProjectileFlash
+                        {
+                            Size = 14.0f,
+                            Life = 0.45f,
+                        },
+                        Prewarm = 8,
+                    },
+                },
+                new ShipGun
+                {
+                    Id = "prism_repeater",
+                    Name = "Prism repeater",
+                    Cooldown = 0.11f,
+                    Impulse = 22.0f,
+                    Bolt = new Projectile
+                    {
+                        Speed = 210.0f,
+                        Range = 400.0f,
+                        Length = 7.0f,
+                        Width = 0.35f,
+                        Color = new Rgba(2.2f, 0.5f, 3.4f, 1.0f),
+                        Muzzle = new ProjectileFlash
+                        {
+                            Size = 5.0f,
+                            Life = 0.05f,
+                        },
+                        Impact = new ProjectileFlash
+                        {
+                            Size = 8.0f,
+                            Life = 0.2f,
+                        },
+                        Prewarm = 24,
+                    },
+                },
             },
         };
 
@@ -4687,6 +4739,15 @@ namespace LuckyNumbers.Model
                                 Yaw = 180.0f,
                                 Action = StationAction.Undock,
                                 Prompt = "E: launch - fly out round the station",
+                            },
+                            new StationRoomItem
+                            {
+                                Piece = "lab_bench",
+                                U = 0.8f,
+                                V = -0.3f,
+                                Yaw = 180.0f,
+                                Action = StationAction.Outfitter,
+                                Prompt = "E: Outfitter - upgrade your ship",
                             },
                         },
                     },
@@ -5485,6 +5546,242 @@ namespace LuckyNumbers.Model
                 EnterSeconds = 0.6f,
             },
             ContinueSeconds = 1.6f,
+        };
+
+        /// <summary>From <c>content/upgrades.txtpb</c>.</summary>
+        public static readonly UpgradeConfig Upgrades = new UpgradeConfig
+        {
+            Upgrades =
+            {
+                new ShipUpgrade
+                {
+                    Id = "thrusters",
+                    Name = "Thruster Tuning",
+                    Tier = UpgradeTier.Common,
+                    Description = "Clean nozzles, sharper burn maps.",
+                    Effect = "+8% top speed per level",
+                    Costs =
+                    {
+                        400,
+                        900,
+                        1600,
+                        2600,
+                    },
+                    Speed = 1.08f,
+                },
+                new ShipUpgrade
+                {
+                    Id = "gyros",
+                    Name = "Gyro Stabilisers",
+                    Tier = UpgradeTier.Common,
+                    Description = "Faster spin-up on the attitude gyros.",
+                    Effect = "+8% agility per level",
+                    Costs =
+                    {
+                        400,
+                        900,
+                        1600,
+                        2600,
+                    },
+                    Agility = 1.08f,
+                },
+                new ShipUpgrade
+                {
+                    Id = "tanks",
+                    Name = "Extended Tanks",
+                    Tier = UpgradeTier.Common,
+                    Description = "Bolt-on bladders in the wing roots.",
+                    Effect = "+15% tank size per level",
+                    Costs =
+                    {
+                        350,
+                        800,
+                        1400,
+                        2200,
+                    },
+                    Fuel = 1.15f,
+                },
+                new ShipUpgrade
+                {
+                    Id = "injectors",
+                    Name = "Injector Refit",
+                    Tier = UpgradeTier.Common,
+                    Description = "Finer spray, fuller burn, less waste.",
+                    Effect = "+10% fuel efficiency per level",
+                    Costs =
+                    {
+                        350,
+                        800,
+                        1400,
+                        2200,
+                    },
+                    Efficiency = 1.1f,
+                },
+                new ShipUpgrade
+                {
+                    Id = "gear",
+                    Name = "Reinforced Gear",
+                    Tier = UpgradeTier.Common,
+                    Description = "Heavier struts, softer dampers.",
+                    Effect = "+15% landing toughness per level",
+                    Costs =
+                    {
+                        300,
+                        700,
+                        1200,
+                    },
+                    Toughness = 1.15f,
+                },
+                new ShipUpgrade
+                {
+                    Id = "capacitors",
+                    Name = "Capacitor Banks",
+                    Tier = UpgradeTier.Common,
+                    Description = "The guns recharge between shots faster.",
+                    Effect = "+10% fire rate per level",
+                    Costs =
+                    {
+                        500,
+                        1100,
+                        1900,
+                        3000,
+                    },
+                    Firepower = 1.1f,
+                },
+                new ShipUpgrade
+                {
+                    Id = "broker",
+                    Name = "Salvage Broker Licence",
+                    Tier = UpgradeTier.Common,
+                    Description = "Paperwork that makes buyers pay what things are worth.",
+                    Effect = "+6% credits paid per level",
+                    Costs =
+                    {
+                        800,
+                        1800,
+                        3200,
+                    },
+                    Payout = 1.06f,
+                },
+                new ShipUpgrade
+                {
+                    Id = "dice_drive",
+                    Name = "Dice Drive",
+                    Tier = UpgradeTier.Exotic,
+                    Description = "A probability engine wired into every system. Nobody knows what it'll do. Not even it.",
+                    Effect = "Every launch rerolls all six stats x0.6 to x1.8",
+                    Tag = "Unstable",
+                    Costs =
+                    {
+                        4000,
+                    },
+                    DiceMin = 0.6f,
+                    DiceMax = 1.8f,
+                },
+                new ShipUpgrade
+                {
+                    Id = "overclock",
+                    Name = "Overclocked Reactor",
+                    Tier = UpgradeTier.Exotic,
+                    Description = "Every safety limiter removed and sold separately.",
+                    Effect = "x1.5 speed, x1.15 agility - but burns fuel like it's free (x0.55 efficiency)",
+                    Tag = "Hot",
+                    Costs =
+                    {
+                        6000,
+                    },
+                    Speed = 1.5f,
+                    Agility = 1.15f,
+                    Efficiency = 0.55f,
+                },
+                new ShipUpgrade
+                {
+                    Id = "sun_cell",
+                    Name = "Perpetual Sun Cell",
+                    Tier = UpgradeTier.Exotic,
+                    Description = "A star in a jar. Allegedly.",
+                    Effect = "Landed, the tank refills all the way",
+                    Tag = "Prototype",
+                    Costs =
+                    {
+                        5000,
+                    },
+                    RechargeTo = 1.0f,
+                },
+                new ShipUpgrade
+                {
+                    Id = "gyroscope",
+                    Name = "Neutron Gyroscope",
+                    Tier = UpgradeTier.Exotic,
+                    Description = "A spinning neutron-star shard. Turns on a dime, rattles your bones.",
+                    Effect = "x1.8 agility, x0.7 landing toughness",
+                    Tag = "Twitchy",
+                    Costs =
+                    {
+                        5500,
+                    },
+                    Agility = 1.8f,
+                    Toughness = 0.7f,
+                },
+                new ShipUpgrade
+                {
+                    Id = "plasma_lance",
+                    Name = "Plasma Lance",
+                    Tier = UpgradeTier.Exotic,
+                    Description = "Mining-grade plasma cutters, re-pointed forwards. Hits like a freight train.",
+                    Effect = "Swaps both guns for slow, huge plasma bolts",
+                    Tag = "Contraband",
+                    Costs =
+                    {
+                        7500,
+                    },
+                    Guns =
+                    {
+                        "plasma_lance",
+                        "plasma_lance",
+                    },
+                },
+                new ShipUpgrade
+                {
+                    Id = "prism",
+                    Name = "Prism Repeater",
+                    Tier = UpgradeTier.Exotic,
+                    Description = "A cracked military repeater with a crystal where the regulator was.",
+                    Effect = "Swaps both guns for a violet storm, x1.5 fire rate",
+                    Tag = "Black market",
+                    Costs =
+                    {
+                        9000,
+                    },
+                    Firepower = 1.5f,
+                    Guns =
+                    {
+                        "prism_repeater",
+                        "prism_repeater",
+                    },
+                },
+                new ShipUpgrade
+                {
+                    Id = "gold_hull",
+                    Name = "Solid Gold Hull",
+                    Tier = UpgradeTier.Exotic,
+                    Description = "Collectors trust a pilot who flies in solid gold. So does gravity.",
+                    Effect = "x1.5 credits paid, x1.3 toughness - but x0.85 speed and agility",
+                    Tag = "Gaudy",
+                    Costs =
+                    {
+                        12000,
+                    },
+                    Speed = 0.85f,
+                    Agility = 0.85f,
+                    Toughness = 1.3f,
+                    Payout = 1.5f,
+                },
+            },
+            CommonTitle = "Station Outfitter",
+            CommonBlurb = "Certified parts, fitted while you wait.",
+            ExoticTitle = "Black Market",
+            ExoticBlurb = "No warranty. No refunds. No questions.",
         };
     }
 }

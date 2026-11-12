@@ -22,6 +22,10 @@ message PlayerShip {
   // scenes: the station fills it, flying burns it.
   float fuel = 2;
   float fuel_max = 3;
+  // Upgrades bought at the outfitter (content/upgrades.txtpb), each "id|level".
+  repeated string upgrades = 4;
+  // The dice drive's roll for this launch (rerolled every time you leave the station; 0 = none yet).
+  uint32 dice = 5;
 }
 
 message PlayerHealth {

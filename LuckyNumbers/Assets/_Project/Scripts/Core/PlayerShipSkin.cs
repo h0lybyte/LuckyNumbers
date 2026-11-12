@@ -47,7 +47,12 @@ namespace LuckyNumbers.Core
             return stats;
         }
 
-        public static ShipStats Of(PlayerShip ship) => Of(PlayerShipSkin.Current(ship));
+        /// <summary>Your ship: its skin's stats with your upgrades in (ShipUpgrades).</summary>
+        public static ShipStats Of(PlayerShip ship)
+        {
+            var stock = Of(PlayerShipSkin.Current(ship));
+            return ship.Upgrades.Count == 0 ? stock : ShipUpgrades.Apply(stock, ship);
+        }
 
         public static ShipGun Gun(string id)
         {
@@ -58,10 +63,13 @@ namespace LuckyNumbers.Core
         /// <summary>The tank's size for this skin (units).</summary>
         public static float FuelMax(string skin) => (GameContent.Ships?.Fuel?.Capacity ?? 1000f) * Of(skin).Fuel;
 
-        /// <summary>Fill the tank (the station; a new skin): fuel_max for the skin, fuel to it.</summary>
+        /// <summary>The tank's size for your ship (its skin, and any bigger tanks you've fitted).</summary>
+        public static float FuelMax(PlayerShip ship) => (GameContent.Ships?.Fuel?.Capacity ?? 1000f) * Of(ship).Fuel;
+
+        /// <summary>Fill the tank (the station; a new skin; an upgrade): fuel_max for the ship, fuel to it.</summary>
         public static void Refuel(PlayerShip ship)
         {
-            ship.FuelMax.Value = FuelMax(PlayerShipSkin.Current(ship));
+            ship.FuelMax.Value = FuelMax(ship);
             ship.Fuel.Value = ship.FuelMax.Value;
         }
 

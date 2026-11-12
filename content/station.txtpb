@@ -191,6 +191,8 @@ generator {
     items { piece: "crate_case" u: 1.25 v: 1.0 yaw: 12 solid: true }
     # Launch: take your ship out round the station (fly back into the docking beacon and E to dock).
     items { piece: "lab_bench" u: 0.5 v: -0.3 yaw: 180 action: STATION_ACTION_UNDOCK prompt: "E: launch - fly out round the station" }
+    # The outfitter: spend credits on ship upgrades (content/upgrades.txtpb).
+    items { piece: "lab_bench" u: 0.8 v: -0.3 yaw: 180 action: STATION_ACTION_OUTFITTER prompt: "E: Outfitter - upgrade your ship" }
   }
   rooms {
     # North of the docking bay: the Flight Academy. Its console takes you to the Flight School's training deck to

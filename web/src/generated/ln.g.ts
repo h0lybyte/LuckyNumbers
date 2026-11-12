@@ -345,6 +345,10 @@ export interface PlayerShip {
    */
   fuel: number;
   fuelMax: number;
+  /** Upgrades bought at the outfitter (content/upgrades.txtpb), each "id|level". */
+  upgrades: string[];
+  /** The dice drive's roll for this launch (rerolled every time you leave the station; 0 = none yet). */
+  dice: number;
 }
 
 export interface PlayerHealth {
@@ -419,6 +423,29 @@ export interface DiceState {
   faces: number[];
   rolling: boolean;
   seed: number;
+}
+
+/**
+ * The outfitter while it's open (mirrored to the page). Each item is
+ * "id|tier|name|tag|description|effect|level|levels|cost" (tier: Common / Exotic; cost: the next level's, 0 once
+ * maxed). The ship's stats now (multipliers, 1 = baseline, upgrades in), as the hangar shows them, plus the payout.
+ */
+export interface Outfitter {
+  open: boolean;
+  items: string[];
+  commonTitle: string;
+  commonBlurb: string;
+  exoticTitle: string;
+  exoticBlurb: string;
+  ship: string;
+  speed: number;
+  agility: number;
+  fuel: number;
+  efficiency: number;
+  toughness: number;
+  firepower: number;
+  payout: number;
+  guns: string;
 }
 
 /** A relic was used (Core/InventoryPresenter): the d20, your bonuses (luck die + sheet), the total, and what it did. */
@@ -679,6 +706,23 @@ export interface MenuItemSelected {
   action: MenuAction;
 }
 
+/** The page: buy the next level of upgrade `id`. */
+export interface UpgradeBuyRequested {
+  id: string;
+}
+
+/** The page: close the outfitter (its button; Esc and walking away close it too). */
+export interface OutfitterCloseRequested {
+}
+
+/** Bought: upgrade `id` is now at `level`, for `cost` credits. */
+export interface UpgradeBought {
+  id: string;
+  name: string;
+  level: number;
+  cost: number;
+}
+
 /** Every (ln.web) state, by name: the page holds the latest snapshot of each. */
 export interface WebStates {
   RelicSite: RelicSite;
@@ -702,6 +746,7 @@ export interface WebStates {
   PlayerVoyage: PlayerVoyage;
   SaveSlots: SaveSlots;
   DiceState: DiceState;
+  Outfitter: Outfitter;
 }
 
 /** Every (ln.web) event, by name: Unity -> page as they happen. */
@@ -748,9 +793,12 @@ export interface WebEvents {
   SaveSlotPicked: SaveSlotPicked;
   SaveSlotDeleteRequested: SaveSlotDeleteRequested;
   MenuItemSelected: MenuItemSelected;
+  UpgradeBuyRequested: UpgradeBuyRequested;
+  OutfitterCloseRequested: OutfitterCloseRequested;
+  UpgradeBought: UpgradeBought;
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "CharacterCallsignRequested" | "SceneChangeRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "SaveSlotsReady" | "SaveSlotPicked" | "SaveSlotDeleteRequested" | "MenuItemSelected";
+export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "CharacterCallsignRequested" | "SceneChangeRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "SaveSlotsReady" | "SaveSlotPicked" | "SaveSlotDeleteRequested" | "MenuItemSelected" | "UpgradeBuyRequested" | "OutfitterCloseRequested";
 
-export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "CombatState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "PlayerControl", "ShipPicker", "PlayerVoyage", "SaveSlots", "DiceState"] as const;
+export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "CombatState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "PlayerControl", "ShipPicker", "PlayerVoyage", "SaveSlots", "DiceState", "Outfitter"] as const;
