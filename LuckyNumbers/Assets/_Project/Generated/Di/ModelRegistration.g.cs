@@ -33,6 +33,7 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<UniverseSeedChanged>(options);
             builder.RegisterMessageBroker<CutsceneStepStarted>(options);
             builder.RegisterMessageBroker<CutsceneFinished>(options);
+            builder.RegisterMessageBroker<RunEnded>(options);
             builder.RegisterMessageBroker<EncounterChoice>(options);
             builder.RegisterMessageBroker<FindRolled>(options);
             builder.RegisterMessageBroker<HoldHurt>(options);
@@ -74,6 +75,8 @@ namespace LuckyNumbers.Model
             builder.Register<StationState>(Lifetime.Singleton);
             builder.Register<CombatState>(Lifetime.Singleton);
             builder.Register<CameraHandoff>(Lifetime.Singleton);
+            builder.Register<DogfightState>(Lifetime.Singleton);
+            builder.Register<DebtState>(Lifetime.Singleton);
             builder.Register<EncounterState>(Lifetime.Singleton);
             builder.Register<HoldTrip>(Lifetime.Singleton);
             builder.Register<PlayerInput>(Lifetime.Singleton);

@@ -30,6 +30,7 @@ Assemblies: `LuckyNumbers.Model` (types + content, no engine refs) and `LuckyNum
 content/title.txtpb, intro.txtpb, planet.txtpb, player.txtpb   game configs (top level, must be (ln.config)) -> GameContent.*
 content/cargo.txtpb                              the museum freighter's seeded manifest: ships, museums, cultures, relic kinds
 content/character.txtpb                          the player's character sheet: abilities, dice rule, point moving, classes, origins, skills, levels
+content/dogfight.txtpb                           space combat: defences, gunnery, rogue ships, the satellite, memory restore, debt (docs/dogfight.md)
 content/credits.txtpb                            credits: the title's Credits panel; `gen` also writes CREDITS.md and README.md's block
 content/engines.txtpb                            engine flames and cold-gas puffs: each ship's jets (position, direction, size, flame or gas) and their looks (Core/ShipView)
 content/school.txtpb                             the Flight School: ship lengths, the freighter's handling, the deck, the cameras

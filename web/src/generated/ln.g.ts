@@ -44,7 +44,8 @@ export type JobKind =
   | "Unspecified"
   | "Salvage"
   | "Clear"
-  | "Retrieve";
+  | "Retrieve"
+  | "Uplink";
 
 /**
  * Why the player can't walk and look right now, one bit per owner. Each system sets and clears only its own bit
@@ -64,7 +65,8 @@ export type StationArrival =
   | "None"
   | "Planet"
   | "FlightSchool"
-  | "Orbit";
+  | "Orbit"
+  | "Restored";
 
 export type RenderQuality =
   | "Unspecified"
@@ -132,6 +134,9 @@ export interface CharacterSheet {
   setup: boolean;
   /** Per ability, what equipped gear adds (already in `scores`). */
   gear: number[];
+  /** CharacterConfig.heritage and its blurb. */
+  heritage: string;
+  heritageBlurb: string;
 }
 
 export interface FlowState {
@@ -189,6 +194,48 @@ export interface CombatState {
   target: string;
   downed: boolean;
   armor: number;
+}
+
+/**
+ * The fight, for the page's HUD (OrbitPresenter / Station.Dogfight). `target`: the rogue you last hit or are aimed at,
+ * "name|hull|hullMax|shield|shieldMax|metres" ("" none).
+ */
+export interface DogfightState {
+  active: boolean;
+  hull: number;
+  hullMax: number;
+  shield: number;
+  shieldMax: number;
+  armor: number;
+  evasion: number;
+  gunnery: number;
+  target: string;
+  hostiles: number;
+  /** A satellite job: the upload so far (0..1), whether you're in range, done. */
+  uplinkJob: boolean;
+  uplink: number;
+  inRange: boolean;
+  uplinkDone: boolean;
+  objective: string;
+  destroyed: boolean;
+  destroyedText: string;
+  /** Your shield / hull took a hit just now (the page flashes the bar). */
+  shieldHit: boolean;
+  hullHit: boolean;
+  satelliteDistance: number;
+  wave: number;
+  waves: number;
+}
+
+/** Your debt (Core/DebtWatch): level 0 none, 1 in debt, 2 collections, 3 game over; the limits now (negative credits). */
+export interface DebtState {
+  level: number;
+  collections: number;
+  gameOver: number;
+  text: string;
+  gameOverShown: boolean;
+  gameOverTitle: string;
+  gameOverText: string;
 }
 
 /**
@@ -406,6 +453,8 @@ export interface PlayerVoyage {
   trips: number;
   /** Brought back by the rescue drone (you went down on the planet): the station's call says so. */
   rescued: boolean;
+  /** The last memory restore's bill (rebuild + fee), for Dispatch's call. */
+  restoreBill: number;
 }
 
 /**
@@ -479,6 +528,9 @@ export interface Outfitter {
   firepower: number;
   payout: number;
   guns: string;
+  /** Space combat's shield and armour multipliers. */
+  shield: number;
+  armor: number;
 }
 
 /** A relic was used (Core/InventoryPresenter): the d20, your bonuses (luck die + sheet), the total, and what it did. */
@@ -619,6 +671,11 @@ export interface CutsceneStepStarted {
 
 export interface CutsceneFinished {
   cutsceneId: string;
+}
+
+/** The run is over (game over): the save slot goes (SavePresenter) and the page reloads to the title. */
+export interface RunEnded {
+  reason: string;
 }
 
 /** The page picks a choice on the card (an option id), or "continue" to close it after the roll. */
@@ -774,6 +831,8 @@ export interface WebStates {
   RangeState: RangeState;
   StationState: StationState;
   CombatState: CombatState;
+  DogfightState: DogfightState;
+  DebtState: DebtState;
   EncounterState: EncounterState;
   PlayerInventory: PlayerInventory;
   JobBoard: JobBoard;
@@ -816,6 +875,7 @@ export interface WebEvents {
   UniverseSeedChanged: UniverseSeedChanged;
   CutsceneStepStarted: CutsceneStepStarted;
   CutsceneFinished: CutsceneFinished;
+  RunEnded: RunEnded;
   EncounterChoice: EncounterChoice;
   FindRolled: FindRolled;
   InputActionPerformed: InputActionPerformed;
@@ -846,4 +906,4 @@ export interface WebEvents {
 /** Events the page may publish into the game. */
 export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "CharacterCallsignRequested" | "SceneChangeRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "SaveSlotsReady" | "SaveSlotPicked" | "SaveSlotDeleteRequested" | "MenuItemSelected" | "UniverseSelected" | "UpgradeBuyRequested" | "OutfitterCloseRequested";
 
-export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "CombatState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "PlayerControl", "ShipPicker", "PlayerVoyage", "SaveSlots", "GameSettings", "DiceState", "UniverseState", "Outfitter"] as const;
+export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "CombatState", "DogfightState", "DebtState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "PlayerControl", "ShipPicker", "PlayerVoyage", "SaveSlots", "GameSettings", "DiceState", "UniverseState", "Outfitter"] as const;

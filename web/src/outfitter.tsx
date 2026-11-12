@@ -30,11 +30,14 @@ const STATS = [
   ["efficiency", "Efficiency"],
   ["toughness", "Toughness"],
   ["firepower", "Firepower"],
+  ["shield", "Shield"],
+  ["armor", "Armour"],
 ] as const;
 
 export function OutfitterPanel() {
   const shop = useLNState("Outfitter");
   const credits = useLNState("PlayerVoyage")?.credits ?? 0;
+  const debt = useLNState("DebtState");
   const open = shop?.open ?? false;
   const [flash, setFlash] = useState<string | null>(null);
   useLNEvent("UpgradeBought", (e) => {
@@ -60,6 +63,7 @@ export function OutfitterPanel() {
           Close
         </button>
       </header>
+      {(debt?.level ?? 0) >= 2 && <p className="debt-note" role="status">{debt?.text}</p>}
 
       <div className="outfitter-stats" aria-label="Your ship now">
         {STATS.map(([key, label]) => (

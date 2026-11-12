@@ -87,6 +87,11 @@ namespace LuckyNumbers.Model
         /// </summary>
         public float DiceMin { get; set; }
         public float DiceMax { get; set; }
+        /// <summary>
+        /// Per level, multiplies the ship's shield and armour in space combat (content/dogfight.txtpb).
+        /// </summary>
+        public float Shield { get; set; }
+        public float Armor { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public ShipUpgrade Clone() => (ShipUpgrade)MemberwiseClone();
@@ -114,6 +119,11 @@ namespace LuckyNumbers.Model
         public readonly ReactiveProperty<float> Firepower = new ReactiveProperty<float>();
         public readonly ReactiveProperty<float> Payout = new ReactiveProperty<float>();
         public readonly ReactiveProperty<string> Guns = new ReactiveProperty<string>();
+        /// <summary>
+        /// Space combat's shield and armour multipliers.
+        /// </summary>
+        public readonly ReactiveProperty<float> Shield = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<float> Armor = new ReactiveProperty<float>();
 
         public void Dispose()
         {
@@ -131,6 +141,8 @@ namespace LuckyNumbers.Model
             Firepower.Dispose();
             Payout.Dispose();
             Guns.Dispose();
+            Shield.Dispose();
+            Armor.Dispose();
         }
     }
 

@@ -62,9 +62,13 @@ namespace LuckyNumbers.Model
         /// </summary>
         FlightSchool = 2,
         /// <summary>
-        /// Docked again after flying round outside (GameScene.Orbit): beside your ship (no homecoming).
+        /// Docked again after flying round outside (GameScene.Orbit): beside your ship (no homecoming, unless on a job).
         /// </summary>
         Orbit = 3,
+        /// <summary>
+        /// Your ship was destroyed: your memory chip woke you in a new body; the rebuilt ship is in the bay, Dispatch bills you.
+        /// </summary>
+        Restored = 4,
     }
 
     public sealed class PlayerConfig
@@ -279,6 +283,10 @@ namespace LuckyNumbers.Model
         /// Brought back by the rescue drone (you went down on the planet): the station's call says so.
         /// </summary>
         public readonly ReactiveProperty<bool> Rescued = new ReactiveProperty<bool>();
+        /// <summary>
+        /// The last memory restore's bill (rebuild + fee), for Dispatch's call.
+        /// </summary>
+        public readonly ReactiveProperty<int> RestoreBill = new ReactiveProperty<int>();
 
         public void Dispose()
         {
@@ -287,6 +295,7 @@ namespace LuckyNumbers.Model
             LastPayout.Dispose();
             Trips.Dispose();
             Rescued.Dispose();
+            RestoreBill.Dispose();
         }
     }
 }

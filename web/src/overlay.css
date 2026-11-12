@@ -1892,3 +1892,118 @@ kbd {
   pointer-events: none;
   white-space: nowrap;
 }
+
+/* Space combat (dogfight.tsx): your shield / hull, the target, the satellite upload, the restore card. */
+.dogfight-self {
+  position: absolute;
+  left: max(var(--gap), env(safe-area-inset-left));
+  bottom: calc(max(var(--gap), env(safe-area-inset-bottom)) + 84px);
+  width: min(280px, calc(100% - 2 * var(--gap)));
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--edge);
+  background: var(--scan), rgba(2, 8, 16, 0.82);
+  font: 600 11px var(--font-mono);
+  letter-spacing: 0.08em;
+  color: var(--fg);
+  pointer-events: none;
+}
+.dogfight-row { display: grid; grid-template-columns: 96px 1fr 30px; align-items: center; gap: 8px; }
+.dogfight-row em { font-style: normal; text-align: right; }
+.dogfight-bar { height: 7px; border: 1px solid var(--edge); background: rgba(2, 8, 16, 0.75); }
+.dogfight-bar > div { height: 100%; transition: width 0.15s linear; }
+.dogfight-row.shield { color: var(--neon); }
+.dogfight-row.shield .dogfight-bar > div { background: var(--neon); box-shadow: var(--neon-glow); }
+.dogfight-row.shield.down { color: var(--warn); }
+.dogfight-row.hull { color: var(--good); }
+.dogfight-row.hull .dogfight-bar > div { background: var(--good); }
+.dogfight-row.hull.low { color: var(--bad); }
+.dogfight-row.hull.low .dogfight-bar > div { background: var(--bad); }
+.dogfight-row.hit .dogfight-bar { border-color: #fff; }
+.dogfight-row.hit .dogfight-bar > div { filter: brightness(1.8); }
+.dogfight-stats { color: var(--muted); font-weight: 400; font-size: 10px; }
+.dogfight-stats b { color: var(--bad); }
+.dogfight-target .combat-target-bar.shield { border-color: var(--neon); }
+.dogfight-target .combat-target-bar.shield > div { background: var(--neon); }
+.dogfight-uplink {
+  position: absolute;
+  left: 50%;
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 118px);
+  transform: translateX(-50%);
+  width: min(360px, calc(100% - 2 * var(--gap)));
+  display: grid;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid var(--warn);
+  background: var(--scan), rgba(2, 8, 16, 0.82);
+  font: 11px var(--font-mono);
+  color: var(--warn);
+  pointer-events: none;
+}
+.dogfight-uplink-head { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; }
+.dogfight-uplink-head em { font-style: normal; }
+.dogfight-uplink .dogfight-bar > div { background: var(--warn); }
+.dogfight-uplink small { color: var(--muted); }
+.dogfight-uplink.live { border-color: var(--neon); color: var(--neon); }
+.dogfight-uplink.live .dogfight-bar > div { background: var(--neon); }
+.dogfight-uplink.done { border-color: var(--good); color: var(--good); }
+.dogfight-uplink.done .dogfight-bar > div { background: var(--good); }
+.dogfight-down {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  transform: translateX(-50%);
+  width: min(440px, calc(100% - 2 * var(--gap)));
+  display: grid;
+  gap: 10px;
+  padding: 14px 18px;
+  border: 1px solid var(--bad);
+  background: var(--scan), rgba(30, 4, 8, 0.9);
+  color: var(--bad);
+  font: 600 15px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+.dogfight-upload { height: 4px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.dogfight-upload > div { height: 100%; width: 0; background: var(--neon); animation: dogfight-upload 4s linear forwards; }
+@keyframes dogfight-upload { to { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .dogfight-upload > div { animation: none; width: 100%; } }
+
+/* Debt (dogfight.tsx DebtChip) and game over. */
+.debt-chip {
+  position: absolute;
+  right: max(var(--gap), env(safe-area-inset-right));
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 44px);
+  max-width: min(360px, calc(100% - 2 * var(--gap)));
+  padding: 4px 10px;
+  border: 1px solid var(--warn);
+  background: var(--scan), rgba(24, 14, 2, 0.85);
+  font: 11px var(--font-mono);
+  color: var(--warn);
+  pointer-events: none;
+}
+.debt-chip b { margin-right: 6px; }
+.debt-chip.collections { border-color: var(--bad); color: var(--bad); }
+.debt-note { margin: 0 0 10px; padding: 6px 10px; border: 1px solid var(--bad); color: var(--bad); font: 12px var(--font-mono); }
+.game-over {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--gap);
+  background: rgba(10, 0, 2, 0.82);
+  pointer-events: auto;
+  z-index: 50;
+}
+.game-over-card {
+  width: min(480px, 100%);
+  padding: 20px 22px;
+  border: 1px solid var(--bad);
+  background: var(--scan), rgba(30, 4, 8, 0.94);
+  color: var(--fg);
+  font: 13px var(--font-mono);
+}
+.game-over-card h2 { margin: 4px 0 10px; color: var(--bad); letter-spacing: 0.1em; text-transform: uppercase; }
+.game-over-card p { margin: 0 0 16px; line-height: 1.5; }
+.sheet-heritage { margin-top: 2px; font-size: 11px; color: var(--neon); letter-spacing: 0.08em; text-transform: uppercase; }

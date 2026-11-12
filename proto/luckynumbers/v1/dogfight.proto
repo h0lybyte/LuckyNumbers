@@ -1,0 +1,186 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+import "luckynumbers/v1/common.proto";
+import "luckynumbers/v1/station.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Space combat outside the station (content/dogfight.txtpb; GameScene.Orbit). Your bolts fly and hit for real (aim
+// matters); a bolt that connects rolls d20 + your gunnery against the target's evasion for the grade (graze, hit,
+// strong, crit: Planet/Dice.Damage) and the gun's damage dice. Damage takes the shield first, then armour cuts each
+// hit (flat, only once the shield is down), then the hull. At 0 hull the ship is gone: you're restored from your
+// memory chip at the station and pay for the rebuild, into debt if need be (`debt`).
+message DogfightConfig {
+  option (ln.config) = true;
+  ShipDefense defense = 1;
+  Gunnery gunnery = 2;
+  // The rogue ships you meet (a satellite job's waves; ShipGun-like guns of their own).
+  repeated RogueShip rogues = 3;
+  Satellite satellite = 4;
+  MemoryRestore restore = 5;
+  DebtRules debt = 6;
+}
+
+// Your fighter's defences at baseline; the skin and upgrades multiply them (ShipStats toughness / shield / armor).
+message ShipDefense {
+  // Hull points x toughness.
+  float hull = 1;
+  // Shield points x ShipStats.shield.
+  float shield = 2;
+  // Cut off every hit once the shield is down (x ShipStats.armor, rounded). `armor_floor`: what a hit still does at
+  // least (0: small guns can bounce off).
+  float armor = 3;
+  int32 armor_floor = 4;
+  // Seconds without a hit before the shield recharges, and points per second then.
+  float shield_delay = 5;
+  float shield_regen = 6;
+  // The evasion your attackers roll against: this, plus evasion_per_agility x (agility - 1), rounded.
+  int32 evasion = 7;
+  float evasion_per_agility = 8;
+}
+
+// Your gunnery bonus: the sheet's `skill` bonus, plus the lucky number's share (0..luck_max, from your roll), plus
+// the targeting implant (your cyborg half).
+message Gunnery {
+  string skill = 1;
+  int32 luck_max = 2;
+  int32 implant = 3;
+  // Damage dice for a ship gun that names none (ShipGun.damage).
+  string default_damage = 4;
+}
+
+message RogueShip {
+  string id = 1;
+  string name = 2;
+  // A fighter skin (Art/Models/Fighter/Skins file name).
+  string skin = 3;
+  // Nose to tail (m).
+  float length = 4;
+  float hull = 5;
+  float shield = 6;
+  int32 armor = 7;
+  // The evasion your rolls are graded against.
+  int32 evasion = 8;
+  // Cruise speed (m/s) and turn rate (degrees/s).
+  float speed = 9;
+  float turn_rate = 10;
+  // Its gunner: d20 + attack against your evasion; its gun's dice, seconds between shots, range (m), and the cone
+  // (degrees off its nose) it fires inside.
+  int32 attack = 11;
+  string damage = 12;
+  float cooldown = 13;
+  float fire_range = 14;
+  float fire_cone = 15;
+  // Killed: XP and a bounty (credits, paid at once).
+  int32 xp = 16;
+  int32 bounty = 17;
+  Projectile bolt = 18;
+  // Joins a satellite job's waves from this danger (1..5) on.
+  int32 danger_min = 19;
+  // How far it keeps (m) while strafing: it closes to `close`, breaks off past `pass`.
+  float close = 20;
+  float pass = 21;
+}
+
+// A satellite job (JobKind.UPLINK): a data satellite out from the station; stay within `radius` of it for the job's
+// seconds while the rogues come at you in waves. Leaving the radius pauses the upload.
+message Satellite {
+  // Ship lengths out from the docking beacon, and the uplink radius (ship lengths).
+  float distance = 1;
+  float radius = 2;
+  // Upload seconds, when the job names none.
+  float seconds = 3;
+  // Size of the (placeholder) satellite, m.
+  float size = 4;
+  // Waves, and seconds between them (the first comes `first_wave` seconds into the upload).
+  int32 waves = 5;
+  float wave_seconds = 6;
+  float first_wave = 7;
+  // The HUD's lines.
+  string approach = 8;
+  string uplinking = 9;
+  string out_of_range = 10;
+  string done = 11;
+}
+
+// Hull at 0: the ship is gone. Your memory chip (your cyborg half's backup, made at the last dock) wakes you in a new
+// body at the station. The bill: rebuild_share of the ship's worth (hull_value plus what you paid for its upgrades)
+// and the restore fee; carried relics are lost and the job fails. Credits can go negative (DebtRules).
+message MemoryRestore {
+  float rebuild_share = 1;
+  int32 hull_value = 2;
+  int32 fee = 3;
+  // The page's card while the chip uploads, and how long it shows.
+  string destroyed_text = 4;
+  float seconds = 5;
+  // Dispatch's call at the station: {bill}, {credits}.
+  repeated StationCallLine lines = 6;
+}
+
+// Debt: below 0 credits you're in debt; past -collections the outfitter won't sell to you; past -game_over the
+// creditors take your memory chip: the run is over and its save slot goes. Both limits grow per character level.
+message DebtRules {
+  int32 collections = 1;
+  int32 game_over = 2;
+  int32 per_level = 3;
+  string debt_text = 4;
+  string collections_text = 5;
+  string game_over_title = 6;
+  string game_over_text = 7;
+  // The outfitter's line when collections stops a sale.
+  string outfitter_locked = 8;
+}
+
+// The fight, for the page's HUD (OrbitPresenter / Station.Dogfight). `target`: the rogue you last hit or are aimed at,
+// "name|hull|hullMax|shield|shieldMax|metres" ("" none).
+message DogfightState {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  bool active = 1;
+  float hull = 2;
+  float hull_max = 3;
+  float shield = 4;
+  float shield_max = 5;
+  int32 armor = 6;
+  int32 evasion = 7;
+  int32 gunnery = 8;
+  string target = 9;
+  int32 hostiles = 10;
+  // A satellite job: the upload so far (0..1), whether you're in range, done.
+  bool uplink_job = 11;
+  float uplink = 12;
+  bool in_range = 13;
+  bool uplink_done = 14;
+  string objective = 15;
+  bool destroyed = 16;
+  string destroyed_text = 17;
+  // Your shield / hull took a hit just now (the page flashes the bar).
+  bool shield_hit = 18;
+  bool hull_hit = 19;
+  float satellite_distance = 20;
+  int32 wave = 21;
+  int32 waves = 22;
+}
+
+// Your debt (Core/DebtWatch): level 0 none, 1 in debt, 2 collections, 3 game over; the limits now (negative credits).
+message DebtState {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  int32 level = 1;
+  int32 collections = 2;
+  int32 game_over = 3;
+  string text = 4;
+  bool game_over_shown = 5;
+  string game_over_title = 6;
+  string game_over_text = 7;
+}
+
+// The run is over (game over): the save slot goes (SavePresenter) and the page reloads to the title.
+message RunEnded {
+  option (ln.event) = true;
+  option (ln.web) = true;
+  string reason = 1;
+}

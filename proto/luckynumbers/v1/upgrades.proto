@@ -55,6 +55,9 @@ message ShipUpgrade {
   // Dice drive: every launch rerolls each of your six stats by a factor between these (from PlayerShip.dice).
   float dice_min = 17;
   float dice_max = 18;
+  // Per level, multiplies the ship's shield and armour in space combat (content/dogfight.txtpb).
+  float shield = 19;
+  float armor = 20;
 }
 
 // The outfitter while it's open (mirrored to the page). Each item is
@@ -78,6 +81,9 @@ message Outfitter {
   float firepower = 13;
   float payout = 14;
   string guns = 15;
+  // Space combat's shield and armour multipliers.
+  float shield = 16;
+  float armor = 17;
 }
 
 // The page: buy the next level of upgrade `id`.
