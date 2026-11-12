@@ -19,7 +19,6 @@ namespace LuckyNumbers.Planet
         [SerializeField] Transform amuletTemplate;            // relic shapes (off): copied per relic at the crash site
         [SerializeField] Transform vaseTemplate;
         [SerializeField] Transform relicBeamTemplate;         // thin beam over a revealed relic
-        [SerializeField] MonsterRig[] monsterModels = System.Array.Empty<MonsterRig>();   // monsters' models (off), by name (MonsterType.model)
         [SerializeField] Transform landingPad;                // ring on the ground where to land (flight assist; off otherwise)
 
         [Ui("flash")] VisualElement _flash;
@@ -42,13 +41,6 @@ namespace LuckyNumbers.Planet
         public Transform VaseTemplate => vaseTemplate;
         public Transform RelicBeamTemplate => relicBeamTemplate;
 
-        /// <summary>A monster's model template by name (MonsterType.model), or null (it's a placeholder block).</summary>
-        public MonsterRig MonsterModel(string name)
-        {
-            if (string.IsNullOrEmpty(name)) return null;
-            foreach (var t in monsterModels) if (t != null && t.name == name) return t;
-            return null;
-        }
         public Transform LandingPad => landingPad;
 
         /// <summary>Flight HUD: readout line (null = hide the HUD) and a big centred message (null = none).</summary>

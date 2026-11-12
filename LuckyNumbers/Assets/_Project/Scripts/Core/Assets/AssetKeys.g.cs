@@ -5,11 +5,11 @@ namespace LuckyNumbers.Core
     /// <summary>Every addressable asset, by address (see AssetScope).</summary>
     public static class AssetKeys
     {
+        public static readonly AssetKey<global::UnityEngine.GameObject> MonsterAberration = new("monster/aberration");
         public static readonly AssetKey<global::UnityEngine.GameObject> RelicRomanVase = new("relic/roman-vase");
         public static readonly AssetKey<global::UnityEngine.GameObject> RelicWaterAmulet = new("relic/water-amulet");
         public static readonly AssetKey<global::UnityEngine.GameObject> ShipFreighter = new("ship/freighter");
         public static readonly AssetKey<global::UnityEngine.GameObject> ShipFreighterSolid = new("ship/freighter-solid");
-        public static readonly AssetKey<global::UnityEngine.GameObject> SpikeSmokeCube = new("spike/smoke-cube");
         public static readonly AssetKey<global::UnityEngine.GameObject> WeaponCarbine = new("weapon/carbine");
         public static readonly AssetKey<global::UnityEngine.GameObject> WeaponHammer = new("weapon/hammer");
         public static readonly AssetKey<global::UnityEngine.GameObject> WeaponHeavyCannon = new("weapon/heavy-cannon");
@@ -65,11 +65,11 @@ namespace LuckyNumbers.Core
                 ["water_amulet"] = RelicWaterAmulet,
             };
 
-        /// <summary>Spikes, by file name.</summary>
-        public static readonly System.Collections.Generic.IReadOnlyDictionary<string, AssetKey<global::UnityEngine.GameObject>> Spike =
+        /// <summary>Monsters, by file name.</summary>
+        public static readonly System.Collections.Generic.IReadOnlyDictionary<string, AssetKey<global::UnityEngine.GameObject>> Monster =
             new System.Collections.Generic.Dictionary<string, AssetKey<global::UnityEngine.GameObject>>
             {
-                ["SmokeCube"] = SpikeSmokeCube,
+                ["aberration"] = MonsterAberration,
             };
     }
 }

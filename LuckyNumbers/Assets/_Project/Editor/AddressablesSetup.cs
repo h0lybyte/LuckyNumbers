@@ -46,9 +46,8 @@ namespace LuckyNumbers.Editor
             new("Ships", "Assets/_Project/Prefabs/Ships", "t:Prefab", "ship/", "Intro", "Planet", "FlightSchool"),
             // SceneBuilder.BakeRelics: named relics' models (an item's `model`); RelicsPresenter lays them out at the crash site.
             new("Relics", "Assets/_Project/Prefabs/Relics", "t:Prefab", "relic/", "Planet"),
-            // SPIKE: delete with the AddressablesSmoke folder.
-            // Labelled Station so Title's preload (its next scene) downloads it: the smoke test exercises prefetch.
-            new("Spikes", "Assets/_Project/Spikes/AddressablesSmoke", "t:Prefab", "spike/", "Station"),
+            // SceneBuilder.BakeMonsters: monsters' models (MonsterType.model); CombatPresenter copies one per monster.
+            new("Monsters", "Assets/_Project/Prefabs/Monsters", "t:Prefab", "monster/", "Planet"),
         };
 
         const string KeysPath = "Assets/_Project/Scripts/Core/Assets/AssetKeys.g.cs";
@@ -93,11 +92,10 @@ namespace LuckyNumbers.Editor
                     }
                 }
             }
-            // A group no rule names anymore (its folder's rule was deleted): its entries go with it.
+            // A group no rule names anymore (its folder's rule was deleted): the group goes, its entries with it.
             foreach (var group in settings.groups.Where(g => g != null && !g.IsDefaultGroup() && !ruled.Contains(g.Name) &&
-                                                             g.HasSchema<BundledAssetGroupSchema>() && g.entries.Count > 0).ToList())
-                foreach (var stale in group.entries.Select(e => e.guid).ToList())
-                    settings.RemoveAssetEntry(stale, false);
+                                                             g.HasSchema<BundledAssetGroupSchema>()).ToList())
+                settings.RemoveGroup(group);
 
             EditorUtility.SetDirty(settings);
             AssetDatabase.SaveAssets();
