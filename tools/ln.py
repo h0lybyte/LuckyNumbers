@@ -6,6 +6,7 @@
     python3 tools/ln.py serve         serve the Web build with COOP/COEP headers
     python3 tools/ln.py assets        apply Addressables groups/addresses, regenerate AssetKeys.g.cs
     python3 tools/ln.py fonts         subset FontSources/ TTFs into Assets (Latin only; needs fonttools)
+    python3 tools/ln.py bake-monsters rebake monster models from art-src/ with Blender (then: scenes)
     python3 tools/ln.py relic NAME    open the editor on a relic prefab in Prefab Mode (e.g. roman_vase)
     python3 tools/ln.py bake-grasps   bake weapons' finger grips into weapons.json (needs the build served)
     python3 tools/ln.py deploy        push the Web build to itch.io with butler
@@ -309,6 +310,9 @@ def cmd_preview(args) -> int:
     if "." not in method:
         method = f"ShaderPreview.{method}"
     extra = ["-lnSeed", str(args.seed)] if getattr(args, "seed", None) else []
+    if args.what == "monster" and getattr(args, "monster", None) and args.monster != "aberration":
+        extra += ["-lnMonster", args.monster]
+        png = f"preview-monster-{args.monster}.png"
     code, log = run_unity(["-executeMethod", f"LuckyNumbers.Editor.{method}", *extra],
                           "ln-preview.log", args.force, graphics=True)
     errors = summarize_log(log)
@@ -347,6 +351,61 @@ def cmd_scenes(args) -> int:
                           "ln-scenes.log", args.force)
     errors = summarize_log(log)
     return 0 if code == 0 and not errors else fail("scene build failed, see log above")
+
+
+ART_SRC = ROOT / "art-src"
+CHARACTERS = PROJECT / "Assets" / "_Project" / "Art" / "Characters"
+# Monster models baked from the raw packs in art-src/ (gitignored; the bakes are committed): name -> (Blender script,
+# the art-src files it reads, its folder in Art/Characters). The aberration's bake (export_aberration.py) is run by hand.
+MONSTER_BAKES = {
+    "skeleton": ("export_skeleton.py", ["Skeleton/skeleton.glb", "Skeleton/skeleton_d.png",
+                                        "UAL/AnimationLibrary_Unity_Standard.fbx", "UAL/UAL2_Standard.fbx"], "Skeleton"),
+}
+
+
+def find_blender() -> str | None:
+    env = os.environ.get("BLENDER_PATH")
+    if env:
+        return env
+    found = shutil.which("blender")
+    if found:
+        return found
+    app = Path("/Applications/Blender.app/Contents/MacOS/Blender")
+    return str(app) if app.is_file() else None
+
+
+def cmd_bake_monsters(args) -> int:
+    """Rebake monster models (FBX + clips + stride speeds + skin) from art-src/ with Blender, headless. Without the raw
+    art (CI, a fresh clone) each is skipped with a note: the committed bake stays. Then `scenes` bakes prefabs + VATs."""
+    names = args.names or list(MONSTER_BAKES)
+    blender = find_blender()
+    failed = 0
+    for name in names:
+        if name not in MONSTER_BAKES:
+            return fail(f"unknown monster bake '{name}' (have: {', '.join(MONSTER_BAKES)})")
+        script, inputs, folder = MONSTER_BAKES[name]
+        missing = [i for i in inputs if not (ART_SRC / i).is_file()]
+        if missing:
+            print(f"{name}: skipped, raw art not in art-src/ ({', '.join(missing)}); the committed bake in "
+                  f"Art/Characters/{folder} stays")
+            continue
+        if not blender:
+            print(f"{name}: skipped, Blender not found (install it or set BLENDER_PATH); the committed bake stays")
+            continue
+        out = CHARACTERS / folder
+        print(f"{name}: baking {', '.join(inputs)} -> {out.relative_to(ROOT)}")
+        proc = subprocess.run([blender, "-b", "--factory-startup", "--python", str(ROOT / "tools" / "blender" / script),
+                               "--", str(ART_SRC), str(out)], capture_output=True, text=True)
+        for line in proc.stdout.splitlines():
+            if line.startswith(("CLIP", "BAKED")) or "Error" in line:
+                print(f"  {line}")
+        if proc.returncode != 0 or "BAKED" not in proc.stdout:
+            print(proc.stdout[-3000:] + proc.stderr[-2000:])
+            failed += 1
+    if failed:
+        return fail(f"{failed} bake(s) failed")
+    print("Next: python3 tools/ln.py scenes  (prefabs + VAT bakes from the models)")
+    return 0
 
 
 def cmd_hold_textures(args) -> int:
@@ -850,6 +909,10 @@ def main(argv=None) -> int:
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
     s.set_defaults(func=cmd_scenes)
 
+    s = sub.add_parser("bake-monsters", help="rebake monster models from art-src/ with Blender (skipped without the raw art)")
+    s.add_argument("names", nargs="*", help=f"which (default all: {', '.join(MONSTER_BAKES)})")
+    s.set_defaults(func=cmd_bake_monsters)
+
     s = sub.add_parser("hold-textures", help="build the holds' Texture2DArray + HoldKit.mat (Editor/HoldTextureBuilder.cs)")
     s.add_argument("--preview", action="store_true", help="then render LuckyNumbers/Logs/preview-holdkit.png")
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
@@ -884,6 +947,7 @@ def main(argv=None) -> int:
     s.add_argument("what", nargs="?", choices=["space", "ship", "arms", "station", "exhaust", "legs", "monster", "relics", "hold", "stairs",
                                                "deep-space", "deep-ground"], default="space")
     s.add_argument("--seed", type=int, help="deep-*: the lucky number to render")
+    s.add_argument("--monster", help="monster: which MonsterType id (default aberration; others write preview-monster-<id>.png)")
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
     s.set_defaults(func=cmd_preview)
     s = sub.add_parser("deep-check", help="home universe unchanged + Emberdeep gate/terraces (Editor/DeepUniverseCheck.cs)")

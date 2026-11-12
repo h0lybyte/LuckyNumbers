@@ -14,7 +14,7 @@ namespace LuckyNumbers.Editor
     ///   merges them into chunks at runtime) and uncompressed (pieces must meet exactly on the 2 m grid); the
     ///   atlas keeps its full size, bilinear with mipmaps: the StationKit shader samples it "sharp bilinear"
     ///   (crisp PS1 texels up close, one anti-aliased pixel at texel edges, mips far off: no shimmer).
-    /// - Monsters (Art/Characters/Aberration): Blender's axes baked in (bakeAxisConversion), skins point-filtered.
+    /// - Monsters (Art/Characters/Aberration, Skeleton): Blender's axes baked in (bakeAxisConversion), skins point-filtered.
     /// - Tile textures (Art/Textures/, e.g. the Delven set): source images for the texture arrays built from them, so
     ///   kept exactly as drawn: uncompressed, readable, no mips, point-filtered, repeating. Nothing references them at
     ///   runtime, so they don't ship; the array built from the chosen layers does.
@@ -26,14 +26,14 @@ namespace LuckyNumbers.Editor
         const string Textures = "Assets/_Project/Art/Textures/";
 
         /// <summary>Bump when these rules change: Unity re-imports what they cover (otherwise old settings stick).</summary>
-        public override uint GetVersion() => 9;   // 9: tile textures (Art/Textures) kept raw (8: monsters get an avatar (7: their axis conversion baked (6: their skins point-filtered) (5: hero ship meshes uncompressed)
+        public override uint GetVersion() => 10;   // 10: the skeleton is a monster (9: tile textures (Art/Textures) kept raw (8: monsters get an avatar (7: their axis conversion baked (6: their skins point-filtered) (5: hero ship meshes uncompressed)
 
         bool Ours => assetPath.StartsWith(Models) || assetPath.StartsWith(Characters);
         bool Kit => assetPath.StartsWith(Models) && assetPath.Substring(Models.Length).Split('/')[0].EndsWith("Kit");
         /// <summary>Ships you see up close, big on screen (your fighter, the freighter wreck): textures kept sharp.</summary>
         bool Hero => assetPath.StartsWith(Models + "CargoShip/") || assetPath.StartsWith(Models + "Fighter/");
         /// <summary>Monsters' skins: nearest-neighbour, the colour-reduced PSX texels they're painted for.</summary>
-        bool Monster => assetPath.StartsWith(Characters + "Aberration/");
+        bool Monster => assetPath.StartsWith(Characters + "Aberration/") || assetPath.StartsWith(Characters + "Skeleton/");
 
         void OnPreprocessModel()
         {
@@ -113,7 +113,7 @@ namespace LuckyNumbers.Editor
             {
                 t.filterMode = FilterMode.Point;
                 t.anisoLevel = 0;
-                t.compressionQuality = 100;   // a 512 colour-reduced skin: crunch at 50 smears its palette
+                t.compressionQuality = 100;   // a 512 (the skeleton's: 256) colour-reduced skin: crunch at 50 smears its palette
             }
             if (Kit)
             {

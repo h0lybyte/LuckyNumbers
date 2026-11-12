@@ -21,6 +21,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Planet
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 06379b2c1de074838b28c592956115eb
+    m_Address: monster/skeleton
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: b9d3571235561429c802157337c555a1, type: 2}
   m_SchemaSet:

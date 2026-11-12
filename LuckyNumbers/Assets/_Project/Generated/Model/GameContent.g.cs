@@ -448,6 +448,34 @@ namespace LuckyNumbers.Model
                         Die = "fall_forward",
                     },
                 },
+                new MonsterType
+                {
+                    Id = "skeleton",
+                    Name = "Rattleframe",
+                    Hp = 12,
+                    Armor = 11,
+                    Attack = 3,
+                    Damage = "1d6+1",
+                    Speed = 4.0f,
+                    Size = new Vec3(0.6f, 1.6f, 0.5f),
+                    Color = new Rgba(0.85f, 0.8f, 0.68f, 1.0f),
+                    Reach = 1.5f,
+                    Sight = 17.0f,
+                    Cooldown = 1.8f,
+                    Xp = 110,
+                    DangerMin = 1,
+                    Weight = 2.0f,
+                    Model = "skeleton",
+                    Clips = new MonsterClips
+                    {
+                        Idle = "zombie_idle",
+                        Walk = "zombie_walk",
+                        Run = "jog",
+                        Attack = "zombie_scratch",
+                        Hit = "hit_chest",
+                        Die = "death",
+                    },
+                },
             },
             Count = 1,
             CountPerDanger = 1,
@@ -688,6 +716,27 @@ namespace LuckyNumbers.Model
                             Url = "https://rafaelmarrtins.itch.io/aberration-psx-horror-creature",
                             Notes = "Changes: baked from the pack's glTF into one FBX (tools/blender/export_aberration.py) with root motion cut to in-place clips and each clip's stride speed recorded; the stray helper sphere dropped. The raw pack is kept out of this repo.",
                             Path = "LuckyNumbers/Assets/_Project/Art/Characters/Aberration/",
+                        },
+                        new Credit
+                        {
+                            What = "Rattleframe (the skeleton you fight on planets: mesh, rig and skin)",
+                            Title = "PSX Skeleton Character",
+                            Author = "Vinrax",
+                            License = "Free to use in projects with credit",
+                            Url = "https://vinrax.itch.io/psx-skeleton-character",
+                            Notes = "Changes: baked from the pack's glTF into one FBX with animations retargeted onto its rig (tools/blender/export_skeleton.py); the stray helper sphere dropped; its own texture kept. The raw pack is kept out of this repo.",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Characters/Skeleton/",
+                        },
+                        new Credit
+                        {
+                            What = "Rattleframe's animations (idle, shamble, jog, claw swipe, flinch, death), retargeted onto the skeleton",
+                            Title = "Universal Animation Library and Universal Animation Library 2",
+                            Author = "Quaternius",
+                            License = "CC0, public domain",
+                            Url = "https://quaternius.com",
+                            LicenseUrl = "https://creativecommons.org/publicdomain/zero/1.0/",
+                            Notes = "Clips used: Zombie_Idle_Loop, Zombie_Walk_Fwd_Loop, Zombie_Scratch (UAL 2); Jog_Fwd_Loop, Hit_Chest, Death01 (UAL 1). Retargeted onto Vinrax's skeleton with root motion cut to in-place clips and stride speeds recorded (tools/blender/export_skeleton.py).",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Characters/Skeleton/skeleton.fbx",
                         },
                         new Credit
                         {
