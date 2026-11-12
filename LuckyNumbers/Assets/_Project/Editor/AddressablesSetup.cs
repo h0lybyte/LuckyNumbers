@@ -110,7 +110,9 @@ namespace LuckyNumbers.Editor
             bundled.BuildPath.SetVariableByName(settings, AddressableAssetSettings.kLocalBuildPath);
             bundled.LoadPath.SetVariableByName(settings, AddressableAssetSettings.kLocalLoadPath);
             bundled.BundleMode = BundledAssetGroupSchema.BundlePackingMode.PackTogether;   // one bundle per lifetime
-            // LZ4: itch serves bundles without Content-Encoding, and LZ4 loads without a full decompress (LZMA doesn't).
+            // LZ4: itch serves bundles without Content-Encoding, and LZ4 loads without a full decompress. Not LZMA: 27%
+            // smaller, but the Web player can't open it at all ("Decompressing this format (1) is not supported on
+            // this platform", every load fails; measured 2026-11, Unity 6000.6).
             bundled.Compression = BundledAssetGroupSchema.BundleCompressionMode.LZ4;
             EditorUtility.SetDirty(bundled);
             return group;
