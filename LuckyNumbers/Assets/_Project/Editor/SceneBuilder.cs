@@ -540,12 +540,29 @@ namespace LuckyNumbers.Editor
 
         /// <summary>
         /// Model scale per relic `model` (its FBX in Art/Models/Relics): sized to read on the ground. The amulet is 13 cm
-        /// in its file; the vase 1.98 m (0.35 makes it ~0.7 m, standing on the ground at the relic's 0.35 m rest height).
+        /// in its file; the vase 1.98 m and the block 2 m (0.35 makes them ~0.7 m, standing on the ground at the relic's
+        /// 0.35 m rest height).
         /// </summary>
         static readonly System.Collections.Generic.Dictionary<string, float> RelicScales = new()
         {
             ["water_amulet"] = 3f,
             ["roman_vase"] = 0.35f,
+            ["aztec_block"] = 0.35f,
+        };
+
+        /// <summary>
+        /// Painted relic parts, by `model/mesh` (meshes named by tools/blender/export_relic_parts.py): a material asset
+        /// with the model's own texture (beside its FBX in Art/Models/Relics) under near-white tones (low, high) and a rim
+        /// glow. Parts not listed are dressed by submesh (the amulet: gold, water gem, crest gem).
+        /// </summary>
+        static readonly System.Collections.Generic.Dictionary<string, (string Asset, string Paint, Color Low, Color High, float Glow)> RelicPaints = new()
+        {
+            // RenderX's Roman Vase: grey marble (rim, shoulder, foot) and the two filigree panels round its belly.
+            ["roman_vase/Body"] = ("RelicMarble", "roman_vase_marble.jpg", new Color(0.92f, 0.9f, 0.88f), new Color(1.1f, 1.08f, 1.04f), 0.25f),
+            ["roman_vase/PanelA"] = ("RelicVasePanelA", "roman_vase_panel_a.jpg", new Color(1f, 0.96f, 0.9f), new Color(1.15f, 1.1f, 1f), 0.4f),
+            ["roman_vase/PanelB"] = ("RelicVasePanelB", "roman_vase_panel_b.jpg", new Color(1f, 0.96f, 0.9f), new Color(1.15f, 1.1f, 1f), 0.4f),
+            // RenderX's Aztec Block: carved limestone all round.
+            ["aztec_block/Stone"] = ("RelicAztecStone", "aztec_block_stone.jpg", new Color(0.95f, 0.92f, 0.86f), new Color(1.1f, 1.06f, 1f), 0.3f),
         };
 
         /// <summary>
@@ -591,7 +608,7 @@ namespace LuckyNumbers.Editor
                 m.SetColor("_ColorA", a);
                 m.SetColor("_ColorB", b);
                 m.SetFloat("_Glow", glow);
-                // A painted part (the vase's own textures, beside its FBX): the paint under near-white tones, no mid band.
+                // A painted part (RelicPaints): the paint under near-white tones, no mid band.
                 m.SetTexture("_MainTex", paint == null ? null
                     : AssetDatabase.LoadAssetAtPath<Texture2D>($"{RelicsDir}/{paint}") ?? throw new System.Exception($"{paint} missing in {RelicsDir}"));
                 m.SetFloat("_Band", paint == null ? 1f : 0f);
@@ -601,10 +618,6 @@ namespace LuckyNumbers.Editor
             var gold = Mat("RelicGold", new Color(0.62f, 0.44f, 0.12f), new Color(0.95f, 0.78f, 0.35f), 0.35f);
             var gem = Mat("RelicWaterGem", new Color(0.08f, 0.32f, 0.62f), new Color(0.35f, 0.78f, 0.98f), 1.2f);
             var crest = Mat("RelicCrestGem", new Color(0.55f, 0.85f, 0.9f), new Color(0.9f, 1f, 1f), 0.9f);
-            // The vase's own paint (RenderX's textures): grey marble, and the two filigree panels round its belly.
-            var marble = Mat("RelicMarble", new Color(0.92f, 0.9f, 0.88f), new Color(1.1f, 1.08f, 1.04f), 0.25f, "roman_vase_marble.jpg");
-            var panelA = Mat("RelicVasePanelA", new Color(1f, 0.96f, 0.9f), new Color(1.15f, 1.1f, 1f), 0.4f, "roman_vase_panel_a.jpg");
-            var panelB = Mat("RelicVasePanelB", new Color(1f, 0.96f, 0.9f), new Color(1.15f, 1.1f, 1f), 0.4f, "roman_vase_panel_b.jpg");
             var root = new GameObject(name).transform;
             root.SetParent(parent, false);
             var model = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
@@ -612,15 +625,14 @@ namespace LuckyNumbers.Editor
             model.transform.localScale = Vector3.one * scale;
             foreach (var r in model.GetComponentsInChildren<MeshRenderer>())
             {
-                var count = r.GetComponent<MeshFilter>().sharedMesh.subMeshCount;
+                var mesh = r.GetComponent<MeshFilter>().sharedMesh;
+                var count = mesh.subMeshCount;
                 var mats = new Material[count];
-                // Parts named by their export script (the vase: marble Body = rim, shoulder and foot; PanelA/PanelB =
-                // its painted belly and rings); otherwise by submesh (the amulet: gold, water gem, crest gem).
+                // By mesh name, not object: a one-part FBX puts its mesh on the root, named after the file.
+                var painted = RelicPaints.TryGetValue($"{name}/{mesh.name}", out var p)
+                    ? Mat(p.Asset, p.Low, p.High, p.Glow, p.Paint) : null;
                 for (var i = 0; i < count; i++)
-                    mats[i] = r.name == "Body" ? marble
-                            : r.name == "PanelA" ? panelA
-                            : r.name == "PanelB" ? panelB
-                            : count == 1 ? gold : i == 0 ? gold : i == 1 ? gem : crest;
+                    mats[i] = painted != null ? painted : count == 1 ? gold : i == 0 ? gold : i == 1 ? gem : crest;
                 r.sharedMaterials = mats;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }

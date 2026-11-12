@@ -19,7 +19,7 @@ lore {
   era: "Roman Empire, 1st century CE"
   text: "A vase from the villa where Pliny wrote his Natural History. He sailed toward the burning mountain to see it for himself, and never came home."
 }
-# Model: "ROMAN VASE" by RenderX (Sketchfab, CC BY 4.0), decimated to ~4k triangles (tools/blender/export_vase.py).
+# Model: "ROMAN VASE" by RenderX (Sketchfab, CC BY 4.0), decimated to ~4k triangles (tools/blender/export_relic_parts.py).
 model: "roman_vase"
 
 use {

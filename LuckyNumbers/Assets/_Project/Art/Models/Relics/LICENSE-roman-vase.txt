@@ -5,5 +5,5 @@ https://sketchfab.com/3d-models/roman-vase-e63cb75682d144cab9e7f88343efff2c
 Licensed under Creative Commons Attribution 4.0 (CC BY 4.0): https://creativecommons.org/licenses/by/4.0/
 
 Changes: split into one part per material, decimated from 86,268 to about 4,300 triangles, centred
-(tools/blender/export_vase.py); its textures downsized to 512 px (the marble re-encoded as JPEG) and drawn
+(tools/blender/export_relic_parts.py); its textures downsized to 512 px (the marble re-encoded as JPEG) and drawn
 through the game's relic shader.

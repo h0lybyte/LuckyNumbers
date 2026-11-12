@@ -6,6 +6,7 @@ namespace LuckyNumbers.Core
     public static class AssetKeys
     {
         public static readonly AssetKey<global::UnityEngine.GameObject> MonsterAberration = new("monster/aberration");
+        public static readonly AssetKey<global::UnityEngine.GameObject> RelicAztecBlock = new("relic/aztec-block");
         public static readonly AssetKey<global::UnityEngine.GameObject> RelicRomanVase = new("relic/roman-vase");
         public static readonly AssetKey<global::UnityEngine.GameObject> RelicWaterAmulet = new("relic/water-amulet");
         public static readonly AssetKey<global::UnityEngine.GameObject> ShipFreighter = new("ship/freighter");
@@ -61,6 +62,7 @@ namespace LuckyNumbers.Core
         public static readonly System.Collections.Generic.IReadOnlyDictionary<string, AssetKey<global::UnityEngine.GameObject>> Relic =
             new System.Collections.Generic.Dictionary<string, AssetKey<global::UnityEngine.GameObject>>
             {
+                ["aztec_block"] = RelicAztecBlock,
                 ["roman_vase"] = RelicRomanVase,
                 ["water_amulet"] = RelicWaterAmulet,
             };

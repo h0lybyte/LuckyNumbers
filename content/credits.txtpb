@@ -44,8 +44,18 @@ sections {
     license: "CC BY 4.0"
     url: "https://sketchfab.com/3d-models/roman-vase-e63cb75682d144cab9e7f88343efff2c"
     license_url: "https://creativecommons.org/licenses/by/4.0/"
-    notes: "Changes: split into one part per material, decimated from 86k to about 4k triangles, textures downsized to 512 px and painted through the relic shader (tools/blender/export_vase.py)."
+    notes: "Changes: split into one part per material, decimated from 86k to about 4k triangles, textures downsized to 512 px and painted through the relic shader (tools/blender/export_relic_parts.py)."
     path: "LuckyNumbers/Assets/_Project/Art/Models/Relics/LICENSE-roman-vase.txt"
+  }
+  credits {
+    what: "Aztec Block (Nezahualcoyotl's relic)"
+    title: "aztec block a"
+    author: "RenderX"
+    license: "CC BY 4.0"
+    url: "https://sketchfab.com/3d-models/aztec-block-a-415b2d7d208a4e73a63ba1b3bd682269"
+    license_url: "https://creativecommons.org/licenses/by/4.0/"
+    notes: "Changes: stood upright (its showcase tilt cleared), extra UV layer dropped, texture downsized to 512 px and painted through the relic shader (tools/blender/export_relic_parts.py)."
+    path: "LuckyNumbers/Assets/_Project/Art/Models/Relics/LICENSE-aztec-block.txt"
   }
   credits {
     what: "Aberration (the limping creature you fight on planets: rig and 17 animations)"

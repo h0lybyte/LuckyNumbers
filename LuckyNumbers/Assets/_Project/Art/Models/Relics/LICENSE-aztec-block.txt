@@ -1,0 +1,8 @@
+aztec_block.fbx, aztec_block_stone.jpg
+
+"aztec block a" by RenderX
+https://sketchfab.com/3d-models/aztec-block-a-415b2d7d208a4e73a63ba1b3bd682269
+Licensed under Creative Commons Attribution 4.0 (CC BY 4.0): https://creativecommons.org/licenses/by/4.0/
+
+Changes: stood upright (the showcase tilt cleared), the extra UV layer dropped, centred
+(tools/blender/export_relic_parts.py); its texture downsized to 512 px and drawn through the game's relic shader.
