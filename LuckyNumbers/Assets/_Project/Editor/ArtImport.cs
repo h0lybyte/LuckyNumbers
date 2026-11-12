@@ -15,14 +15,18 @@ namespace LuckyNumbers.Editor
     ///   atlas keeps its full size, bilinear with mipmaps: the StationKit shader samples it "sharp bilinear"
     ///   (crisp PS1 texels up close, one anti-aliased pixel at texel edges, mips far off: no shimmer).
     /// - Monsters (Art/Characters/Aberration): Blender's axes baked in (bakeAxisConversion), skins point-filtered.
+    /// - Tile textures (Art/Textures/, e.g. the Delven set): source images for the texture arrays built from them, so
+    ///   kept exactly as drawn: uncompressed, readable, no mips, point-filtered, repeating. Nothing references them at
+    ///   runtime, so they don't ship; the array built from the chosen layers does.
     /// </summary>
     public sealed class ArtImport : AssetPostprocessor
     {
         const string Models = "Assets/_Project/Art/Models/";
         const string Characters = "Assets/_Project/Art/Characters/";
+        const string Textures = "Assets/_Project/Art/Textures/";
 
         /// <summary>Bump when these rules change: Unity re-imports what they cover (otherwise old settings stick).</summary>
-        public override uint GetVersion() => 8;   // 8: monsters get an avatar (7: their axis conversion baked (6: their skins point-filtered) (5: hero ship meshes uncompressed)
+        public override uint GetVersion() => 9;   // 9: tile textures (Art/Textures) kept raw (8: monsters get an avatar (7: their axis conversion baked (6: their skins point-filtered) (5: hero ship meshes uncompressed)
 
         bool Ours => assetPath.StartsWith(Models) || assetPath.StartsWith(Characters);
         bool Kit => assetPath.StartsWith(Models) && assetPath.Substring(Models.Length).Split('/')[0].EndsWith("Kit");
@@ -71,6 +75,21 @@ namespace LuckyNumbers.Editor
 
         void OnPreprocessTexture()
         {
+            if (assetPath.StartsWith(Textures))
+            {
+                var tile = (TextureImporter)assetImporter;
+                tile.textureType = TextureImporterType.Default;
+                tile.isReadable = true;   // the array builder reads the pixels
+                tile.mipmapEnabled = false;
+                tile.textureCompression = TextureImporterCompression.Uncompressed;
+                tile.crunchedCompression = false;
+                tile.filterMode = FilterMode.Point;
+                tile.anisoLevel = 0;
+                tile.wrapMode = TextureWrapMode.Repeat;
+                tile.npotScale = TextureImporterNPOTScale.None;
+                tile.alphaIsTransparency = assetPath.Contains("/Cutout/");
+                return;
+            }
             if (!Ours) return;
             var t = (TextureImporter)assetImporter;
             t.textureType = TextureImporterType.Default;

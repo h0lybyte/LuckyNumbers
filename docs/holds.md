@@ -29,6 +29,16 @@ Structures on and under dwarven worlds: a cell grid, meshed into chunks, skinned
 - Colliders (world-space boxes per chunk): whole Solid cells that carry a wall (merged runs per level), floor slabs
   (1 m thick over rock, 0.1 m over a room), pillar shafts. Self-test: `LuckyNumbers.Editor.HoldMesherCheck.Run`.
 
+## Textures and shader
+
+- `Editor/HoldTextureBuilder.cs` (menu LuckyNumbers/Holds/Build Texture Array, `tools/ln.py hold-textures`) builds
+  `Art/Textures/HoldLayers.asset` from `HoldTextures`: slice i = `layers[i]`, sources nearest-scaled to `size`,
+  box-filtered mips, DXT1 (DXT5 if a layer has alpha), repeat, trilinear. It also wires `Art/Materials/HoldKit.mat`
+  and compiles the shader for GLES3x + WebGPU. Rerun after changing the layers; the asset keeps its GUID.
+- `LuckyNumbers/HoldKit`: uv0 = (u, v, slice), sharp bilinear (as StationKit) x vertex colour, up to 4 URP additional
+  lights, haze to `_HazeColor` (full at `_HazeDistance`), `_ALPHATEST_ON` + `_Cutoff` for cutouts, `_LnPsx` PS1 look.
+- `--preview` renders `Logs/preview-holdkit.png` (Editor/HoldKitPreview.cs).
+
 ## Mines (the endless deep)
 
 - Regions of `region_cells` x `region_levels` x `region_cells`; region (rx, ry, rz) has
