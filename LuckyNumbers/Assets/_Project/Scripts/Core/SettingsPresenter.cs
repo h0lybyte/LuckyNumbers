@@ -1,5 +1,6 @@
 using System;
 using LuckyNumbers.Model;
+using MessagePipe;
 using LuckyNumbers.Rendering;
 using R3;
 using UnityEngine;
@@ -12,6 +13,9 @@ namespace LuckyNumbers.Core
     /// The player's settings (GameSettings state; proto settings.proto). Loads them from PlayerPrefs before the first
     /// scene's presenters start, saves each change, and applies the ones that aren't read where they're used: the
     /// render cap (RenderResolutionCap). Look speed and invert are read by InputBridge; show_fps by the page.
+    /// The page's Settings panel (web/src/settings.tsx) sends SettingsChanged (the whole set: clamped and checked
+    /// here), SettingsReset (Defaults) and SettingsToggled (open / close: GameSettings.open, which the title's
+    /// Settings button also sets; InputBridge holds the game's input while it's open).
     /// </summary>
     [Presenter]
     public sealed class SettingsPresenter : IInitializable, IDisposable
@@ -20,10 +24,20 @@ namespace LuckyNumbers.Core
         const string Key = "ln.settings.";
 
         readonly GameSettings _state;
+        readonly ISubscriber<SettingsChanged> _changed;
+        readonly ISubscriber<SettingsReset> _reset;
+        readonly ISubscriber<SettingsToggled> _toggled;
         readonly CompositeDisposable _disposables = new();
 
         [Inject]
-        public SettingsPresenter(GameSettings state) => _state = state;
+        public SettingsPresenter(GameSettings state, ISubscriber<SettingsChanged> changed, ISubscriber<SettingsReset> reset,
+                                 ISubscriber<SettingsToggled> toggled)
+        {
+            _state = state;
+            _changed = changed;
+            _reset = reset;
+            _toggled = toggled;
+        }
 
         public void Initialize()
         {
@@ -32,6 +46,7 @@ namespace LuckyNumbers.Core
             var q = (RenderQuality)PlayerPrefs.GetInt(Key + "quality", (int)DefaultQuality);
             _state.Quality.Value = q is RenderQuality.Low or RenderQuality.Medium or RenderQuality.High ? q : DefaultQuality;
             _state.ShowFps.Value = PlayerPrefs.GetInt(Key + "show_fps", 0) != 0;
+            _state.Open.Value = false;
             Debug.Log($"[Settings] look x{_state.LookSensitivity.Value:0.00}, invert {_state.InvertY.Value}, " +
                       $"quality {_state.Quality.Value}, fps {_state.ShowFps.Value}");
 
@@ -43,6 +58,21 @@ namespace LuckyNumbers.Core
             _state.ShowFps.Skip(1).Subscribe(v => Save("show_fps", () => PlayerPrefs.SetInt(Key + "show_fps", v ? 1 : 0))).AddTo(_disposables);
             _state.Quality.Subscribe(v => RenderResolutionCap.SetMaxHeight(MaxHeight(v))).AddTo(_disposables);
             _state.Quality.Skip(1).Subscribe(v => Save("quality", () => PlayerPrefs.SetInt(Key + "quality", (int)v))).AddTo(_disposables);
+
+            // The page's panel.
+            _changed.Subscribe(e => Apply(e)).AddTo(_disposables);
+            _reset.Subscribe(_ => Reset(_state)).AddTo(_disposables);
+            _toggled.Subscribe(e => _state.Open.Value = e.Open).AddTo(_disposables);
+        }
+
+        /// <summary>The page's whole set: look speed clamped (0.05 steps), an unknown quality ignored.</summary>
+        void Apply(SettingsChanged e)
+        {
+            if (float.IsFinite(e.LookSensitivity))
+                _state.LookSensitivity.Value = Mathf.Clamp(Mathf.Round(e.LookSensitivity * 20f) / 20f, MinSensitivity, MaxSensitivity);
+            _state.InvertY.Value = e.InvertY;
+            if (e.Quality is RenderQuality.Low or RenderQuality.Medium or RenderQuality.High) _state.Quality.Value = e.Quality;
+            _state.ShowFps.Value = e.ShowFps;
         }
 
         /// <summary>Back to the defaults (each change saves as usual).</summary>

@@ -14,6 +14,8 @@ namespace LuckyNumbers.Core
     /// <summary>
     /// Unity Input System -> model: button actions publish InputActionPerformed, axes feed PlayerInput.
     /// Bindings live in the project-wide actions asset (Settings/InputSystem_Actions).
+    /// While the page's Settings panel is open (GameSettings.open) the game gets nothing: no presses, no move, look,
+    /// fire or scroll (every scene, on foot or flying), and the pointer is freed so the panel can be clicked.
     /// </summary>
     [Presenter]
     public sealed class InputBridge : IStartable, ITickable, IDisposable
@@ -34,6 +36,7 @@ namespace LuckyNumbers.Core
         readonly ModelPlayerInput _input;
         readonly GameSettings _settings;
         readonly List<IDisposable> _subscriptions = new();
+        bool _wasHeld;
         UnityEngine.InputSystem.InputAction _move, _look, _sprint, _jump, _crouch, _roll, _brake, _attack;
 
         /// <summary>A right stick pushed all the way turns like the mouse moving this many pixels a second.</summary>
@@ -54,14 +57,18 @@ namespace LuckyNumbers.Core
             {
                 var a = actions?.FindAction(path);
                 if (a == null) continue;
-                void Performed(UnityEngine.InputSystem.InputAction.CallbackContext _) =>
-                    _publisher.Publish(new InputActionPerformed(action));
+                void Performed(UnityEngine.InputSystem.InputAction.CallbackContext _)
+                {
+                    if (!Held) _publisher.Publish(new InputActionPerformed(action));
+                }
                 a.performed += Performed;
                 a.Enable();
                 _subscriptions.Add(new Unsubscribe(() => a.performed -= Performed));
             }
             _subscriptions.Add(InputSystem.onAnyButtonPress.Call(_ =>
-                _publisher.Publish(new InputActionPerformed(ModelInputAction.AnyButton))));
+            {
+                if (!Held) _publisher.Publish(new InputActionPerformed(ModelInputAction.AnyButton));
+            }));
 
             _move = actions?.FindAction("Player/Move");
             _sprint = actions?.FindAction("Player/Sprint");
@@ -80,8 +87,19 @@ namespace LuckyNumbers.Core
             _look?.Enable();
         }
 
+        /// <summary>The page's Settings panel is open: the game's input is held.</summary>
+        bool Held => _settings.Open.Value;
+
         public void Tick()
         {
+            if (Held)
+            {
+                if (!_wasHeld) PointerLock.Release();   // the panel needs the mouse (a click on the view locks it again)
+                _wasHeld = true;
+                HoldAll();
+                return;
+            }
+            _wasHeld = false;
             if (_move != null) { var v = _move.ReadValue<UnityEngine.Vector2>(); _input.Move.Value = new Vec2(v.x, v.y); }
             _input.Sprinting.Value = _sprint != null && _sprint.IsPressed();
             _input.Lifting.Value = _jump != null && _jump.IsPressed();
@@ -118,6 +136,22 @@ namespace LuckyNumbers.Core
             }
             else _input.PointerPressed.Value = _attack != null && _attack.IsPressed();
             _input.PointerScroll.Value = Mouse.current != null ? Mouse.current.scroll.ReadValue().y : 0f;
+        }
+
+        /// <summary>Everything at rest: nothing pressed, moved or turned (the pointer's position still tracks).</summary>
+        void HoldAll()
+        {
+            _input.Move.Value = default;
+            _input.Sprinting.Value = false;
+            _input.Lifting.Value = false;
+            _input.Descending.Value = false;
+            _input.Roll.Value = 0f;
+            _input.Braking.Value = false;
+            _input.Look.Value = default;
+            PointerLock.StickLook = false;
+            _input.PointerPressed.Value = false;
+            _input.PointerDelta.Value = default;
+            _input.PointerScroll.Value = 0f;
         }
 
         public void Dispose()

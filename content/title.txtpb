@@ -22,21 +22,6 @@ hangar {
   enter_seconds: 0.6
 }
 
-# Settings panel labels. Values are saved per browser (Core/SettingsPresenter).
-settings {
-  title: "Settings"
-  body: ""
-  back_label: "Back"
-  sensitivity_label: "Look speed"
-  invert_label: "Invert look up/down"
-  quality_label: "Render quality"
-  quality_names: ["Low", "Medium", "High"]
-  fps_label: "Show frame rate"
-  reset_label: "Defaults"
-  on_label: "On"
-  off_label: "Off"
-}
-
 # The dice that create the universe: faces -> lucky number -> generated solar system.
 dice {
   roll_label: "Roll"

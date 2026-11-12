@@ -6406,24 +6406,6 @@ namespace LuckyNumbers.Model
                     Action = MenuAction.Credits,
                 },
             },
-            Settings = new SettingsPanel
-            {
-                Title = "Settings",
-                BackLabel = "Back",
-                SensitivityLabel = "Look speed",
-                InvertLabel = "Invert look up/down",
-                QualityLabel = "Render quality",
-                QualityNames =
-                {
-                    "Low",
-                    "Medium",
-                    "High",
-                },
-                FpsLabel = "Show frame rate",
-                ResetLabel = "Defaults",
-                OnLabel = "On",
-                OffLabel = "Off",
-            },
             Dice = new DiceRoller
             {
                 Dice =
