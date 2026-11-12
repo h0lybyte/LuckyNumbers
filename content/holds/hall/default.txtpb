@@ -1,0 +1,23 @@
+# proto-file: luckynumbers/v1/hold_hall.proto
+# proto-message: luckynumbers.v1.HallRules
+# The top of the hold: the cliff gate, the great hall, its side rooms and the stair down to the mines.
+
+gate_width: 3
+passage_min: 3
+passage_max: 4
+# Odd widths keep the nave centred on the gate.
+hall_width_min: 13
+hall_width_max: 15
+hall_length_min: 15
+hall_length_max: 19
+aisle_width: 2
+pillar_spacing: 2
+lantern_spacing: 4
+hall_palette: "hall"
+corridor_palette: "room"
+
+rooms { name: "stair"     palette: "room"  count_min: 1 count_max: 1 width_min: 4 width_max: 5 depth_min: 4 depth_max: 5 cells_per_lantern: 10 stair: true }
+rooms { name: "forge"     palette: "forge" count_min: 1 count_max: 1 width_min: 5 width_max: 7 depth_min: 5 depth_max: 7 tall: true pillars: true cells_per_lantern: 12 }
+rooms { name: "records"   palette: "room"  count_min: 1 count_max: 1 width_min: 5 width_max: 6 depth_min: 5 depth_max: 7 tall: true pillars: true cells_per_lantern: 12 }
+rooms { name: "barracks"  palette: "room"  count_min: 1 count_max: 1 width_min: 4 width_max: 6 depth_min: 5 depth_max: 7 cells_per_lantern: 12 }
+rooms { name: "storeroom" palette: "room"  count_min: 1 count_max: 3 width_min: 3 width_max: 5 depth_min: 3 depth_max: 5 cells_per_lantern: 14 }
