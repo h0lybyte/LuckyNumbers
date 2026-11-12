@@ -14,6 +14,11 @@ namespace LuckyNumbers.Planet
     /// A monster's body: its model (MonsterType.model: a MonsterRig template, animated by `clips`) or a placeholder
     /// block (named PLACEHOLDER_monster_*) with two eyes on its front. Either way the root sits at the middle of its
     /// `size` box, which is its collider. CombatPresenter moves it and rolls its fights; hits come back through `Damaged`.
+    ///
+    /// A model whose rig carries its clips baked to textures (MonsterRig.Vat) is drawn by <see cref="MonsterCrowd"/>,
+    /// GPU-instanced with every other: this keeps only its GameObject and collider, and tells the crowd what to play.
+    /// Without a bake (or with ?ln-skinned in the page's URL / -lnSkinned on the command line, for A/B tests, or in
+    /// edit mode: previews) it's a copy of the rig, skinned and animated by its Animator as before.
     /// </summary>
     public sealed class MonsterView : MonoBehaviour, IDamageable
     {
@@ -35,10 +40,19 @@ namespace LuckyNumbers.Planet
         LuckyNumbers.Model.MonsterClips _clips;
         float _oneShotUntil, _busyUntil;
         bool _dead;
+        // Or a VAT model: drawn by the crowd, which plays its clips.
+        MonsterVat _vat;
+        MonsterCrowd.Member _member;
+        internal MonsterCrowd.Member CrowdMember => _member;
 
-        public bool Modelled => _rig != null;
+        public bool Modelled => _rig != null || _member != null;
         /// <summary>Mid-stagger (a hit's clip): it doesn't walk.</summary>
-        public bool Busy => _rig != null && Time.time < _busyUntil;
+        public bool Busy => Modelled && Time.time < _busyUntil;
+
+        static bool? _skinnedOnly;
+        /// <summary>?ln-skinned (Web) / -lnSkinned: every model on the Animator path, to compare against the crowd.</summary>
+        static bool SkinnedOnly => _skinnedOnly ??= Application.absoluteURL.Contains("ln-skinned") ||
+                                                    Array.IndexOf(Environment.GetCommandLineArgs(), "-lnSkinned") >= 0;
 
         /// <summary>
         /// A monster from a model template (MonsterRig, kept off): a copy, its feet on the bottom of the `size` box
@@ -49,27 +63,63 @@ namespace LuckyNumbers.Planet
             var go = new GameObject($"Monster_{id}");
             var box = go.AddComponent<BoxCollider>();   // bolts hit it
             box.size = size;
-            var rig = Instantiate(template, go.transform, false);
-            rig.gameObject.SetActive(true);
-            rig.transform.localPosition = new Vector3(0f, -size.y * 0.5f, 0f);
             var view = go.AddComponent<MonsterView>();
-            view._rig = rig;
             view._clips = clips ?? new LuckyNumbers.Model.MonsterClips();
-            view._skins = rig.GetComponentsInChildren<Renderer>(true);
-            view._block = new MaterialPropertyBlock();
+            var vat = template.Vat;
+            if (Application.isPlaying && !SkinnedOnly && vat != null && VatCovers(vat, template, view._clips, id))
+            {
+                view._vat = vat;
+                view._member = MonsterCrowd.Current.Add(view, vat, -size.y * 0.5f);
+                if (Said.Add(id)) Debug.Log($"[Monster] {id}: instanced (VAT {vat.name}: {vat.Clips.Length} clips, {vat.BoneCount} bones)");
+            }
+            else
+            {
+                var rig = Instantiate(template, go.transform, false);
+                rig.gameObject.SetActive(true);
+                rig.transform.localPosition = new Vector3(0f, -size.y * 0.5f, 0f);
+                view._rig = rig;
+                view._skins = rig.GetComponentsInChildren<Renderer>(true);
+                view._block = new MaterialPropertyBlock();
+                if (Application.isPlaying && Said.Add(id)) Debug.Log($"[Monster] {id}: skinned{(SkinnedOnly ? " (ln-skinned)" : vat == null ? " (no VAT bake)" : "")}");
+            }
             view.Move(0f, false);
             return view;
+        }
+
+        static readonly System.Collections.Generic.HashSet<string> Warned = new(), Said = new();
+
+        /// <summary>The bake can draw this device and has every clip `clips` asks of the rig; else the Animator path, said once.</summary>
+        static bool VatCovers(MonsterVat vat, MonsterRig rig, LuckyNumbers.Model.MonsterClips clips, string id)
+        {
+            string missing = null;
+            if (!vat.Usable) missing = "this device can't draw it";
+            else
+                foreach (var c in new[] { clips.Idle, clips.Walk, clips.Run, clips.Attack, clips.Hit, clips.Die })
+                    if (rig.Has(c) && !vat.Has(c)) { missing = $"clip '{c}' isn't baked (tools/ln.py scenes)"; break; }
+            if (missing == null) return true;
+            if (Warned.Add(id)) Debug.LogWarning($"[Monster] {id}: VAT {vat.name}: {missing}; skinned instead");
+            return false;
+        }
+
+        bool Has(string clip) => _vat != null ? _vat.Has(clip) : _rig != null && _rig.Has(clip);
+        float Length(string clip) => _vat != null ? _vat.Length(clip) : _rig != null ? _rig.Length(clip) : 0f;
+        float Stride(string clip) => _vat != null ? _vat.Stride(clip) : _rig != null ? _rig.Stride(clip) : 0f;
+
+        void Play(string clip, float rate, bool once, float fade)
+        {
+            if (_member != null) _member.Crowd.Play(_member, _vat.Index(clip), rate, once, fade);
+            else if (_rig != null) _rig.Play(clip, rate, once, fade);
         }
 
         /// <summary>Walking at `speed` m/s (0: standing), chasing or not: the matching loop, at the stride's rate.</summary>
         public void Move(float speed, bool chasing)
         {
-            if (_rig == null || _dead || Time.time < _oneShotUntil) return;
-            var clip = speed < 0.05f ? _clips.Idle : chasing && _rig.Has(_clips.Run) ? _clips.Run : _clips.Walk;
-            if (!_rig.Has(clip)) clip = _clips.Idle;
-            var stride = _rig.Stride(clip);
+            if (!Modelled || _dead || Time.time < _oneShotUntil) return;
+            var clip = speed < 0.05f ? _clips.Idle : chasing && Has(_clips.Run) ? _clips.Run : _clips.Walk;
+            if (!Has(clip)) clip = _clips.Idle;
+            var stride = Stride(clip);
             var rate = stride > 0.01f ? Mathf.Clamp(speed / stride, 0.4f, 3.2f) : 1f;
-            _rig.Play(clip, rate, false, 0.25f);
+            Play(clip, rate, false, 0.25f);
         }
 
         /// <summary>Its attack (the clip once, then back to walking).</summary>
@@ -80,20 +130,20 @@ namespace LuckyNumbers.Planet
 
         void OneShot(string clip, float busy)
         {
-            if (_rig == null || _dead || !_rig.Has(clip)) return;
-            _rig.Play(clip, 1f, true, 0.12f);
-            _oneShotUntil = Time.time + Mathf.Max(0.1f, _rig.Length(clip) - 0.25f);   // hand back while it settles
-            _busyUntil = Time.time + Mathf.Min(busy, _rig.Length(clip));
+            if (!Modelled || _dead || !Has(clip)) return;
+            Play(clip, 1f, true, 0.12f);
+            _oneShotUntil = Time.time + Mathf.Max(0.1f, Length(clip) - 0.25f);   // hand back while it settles
+            _busyUntil = Time.time + Mathf.Min(busy, Length(clip));
         }
 
         /// <summary>Killed: its fall, held. Returns how long the fall lasts (0: no clip).</summary>
         public float Die()
         {
-            if (_rig == null || _dead) return 0f;
+            if (!Modelled || _dead) return 0f;
             _dead = true;
-            if (!_rig.Has(_clips.Die)) return 0f;
-            _rig.Play(_clips.Die, 1f, true, 0.1f);
-            return _rig.Length(_clips.Die);
+            if (!Has(_clips.Die)) return 0f;
+            Play(_clips.Die, 1f, true, 0.1f);
+            return Length(_clips.Die);
         }
 
         /// <summary>`material`: one that's in the build (a primitive's default is stripped and renders magenta).</summary>
@@ -145,7 +195,15 @@ namespace LuckyNumbers.Planet
         }
 
         /// <summary>Flash white for a moment (a hit).</summary>
-        public void Flash() => _flash = 0.15f;
+        public void Flash()
+        {
+            if (_member != null) _member.Crowd.Flash(_member, MonsterCrowd.FlashTime);   // the crowd fades it
+            else _flash = MonsterCrowd.FlashTime;
+        }
+
+        void OnEnable() => _member?.Crowd.SetHidden(_member, false);
+        void OnDisable() => _member?.Crowd.SetHidden(_member, true);
+        void OnDestroy() => _member?.Crowd.Remove(_member);
 
         void Update()
         {
