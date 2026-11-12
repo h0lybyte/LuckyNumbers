@@ -66,6 +66,37 @@ namespace LuckyNumbers.HoldScene
         readonly IPublisher<SceneChangeRequested> _scenes;
         readonly AssetScope _assets;
         readonly List<Creature> _creatures = new();
+        IDisposable _warpSub;
+
+        /// <summary>Dev (LN.send('DevWarpRequested', {to: 'creature'})): stand 3-6 cells from the nearest creature, in its sight.</summary>
+        void WarpToCreature()
+        {
+            var me = _player.Body.transform.position;
+            Creature best = null;
+            foreach (var c in _creatures)
+                if (!c.Brain.Dead && c.View != null && (best == null || (c.Position - me).sqrMagnitude < (best.Position - me).sqrMagnitude)) best = c;
+            if (best == null) { Debug.Log("[HoldLife] dev warp creature: none loaded"); return; }
+            var cell = _world.CellOf(best.Position + Vector3.up * 0.2f);
+            for (var r = 3; r <= 6; r++)
+            for (var dx = -r; dx <= r; dx++)
+            for (var dz = -r; dz <= r; dz++)
+            {
+                if (math.max(math.abs(dx), math.abs(dz)) != r) continue;
+                var to = cell + new int3(dx, 0, dz);
+                if (!_world.TryCell(to, out var t) || t.Kind != CellKind.Mine || (t.Flags & CellFlags.Pillar) != 0) continue;
+                var at = (Vector3)_world.CellFloor(to) + Vector3.up * 0.05f;
+                if (Physics.Linecast(at + Vector3.up * 1.6f, best.Position + Vector3.up * 1f)) continue;
+                var body = _player.Body;
+                body.enabled = false;
+                var face = best.Position - at;
+                body.transform.SetPositionAndRotation(at, Quaternion.Euler(0f, Mathf.Atan2(face.x, face.z) * Mathf.Rad2Deg, 0f));
+                body.enabled = true;
+                _firstPerson.Look(Mathf.Atan2(face.x, face.z) * Mathf.Rad2Deg, 0f);
+                Debug.Log($"[HoldLife] dev warp creature: {best.Type} at {cell}, standing at {to}");
+                return;
+            }
+            Debug.Log("[HoldLife] dev warp creature: no clear cell near it");
+        }
         readonly Dictionary<string, MonsterRig> _models = new();
         readonly List<int3> _pending = new();          // shown before the models were in
         readonly List<CachePlan> _unused = new();
@@ -87,8 +118,10 @@ namespace LuckyNumbers.HoldScene
         public DeepCreatures(HoldWorld world, PlayerView player, FirstPersonPresenter firstPerson, PlanetView ui, PlayerInput input,
                              PlayerHealth health, CharacterSheet sheet, IInventory pack, PlayerVoyage voyage, CombatState state,
                              IPublisher<CombatRoll> rolls, IPublisher<PlayerDamaged> damaged, IPublisher<PlayerDied> died,
-                             IPublisher<CharacterXpGained> xp, IPublisher<SceneChangeRequested> scenes, AssetScope assets)
+                             IPublisher<CharacterXpGained> xp, IPublisher<SceneChangeRequested> scenes, AssetScope assets,
+                             ISubscriber<DevWarpRequested> warps)
         {
+            _warpSub = warps.Subscribe(e => { if (e.To == "creature") WarpToCreature(); });
             _world = world;
             _player = player;
             _firstPerson = firstPerson;
@@ -611,6 +644,7 @@ namespace LuckyNumbers.HoldScene
 
         public void Dispose()
         {
+            _warpSub?.Dispose();
             _world.RegionShown -= Shown;
             _world.RegionHidden -= Hidden;
             _cts.Cancel();
