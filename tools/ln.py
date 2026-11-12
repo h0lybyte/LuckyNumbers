@@ -5,6 +5,7 @@
     python3 tools/ln.py build-web     headless Web build -> LuckyNumbers/Builds/WebGL
     python3 tools/ln.py serve         serve the Web build with COOP/COEP headers
     python3 tools/ln.py assets        apply Addressables groups/addresses, regenerate AssetKeys.g.cs
+    python3 tools/ln.py fonts         subset FontSources/ TTFs into Assets (Latin only; needs fonttools)
     python3 tools/ln.py relic NAME    open the editor on a relic prefab in Prefab Mode (e.g. roman_vase)
     python3 tools/ln.py bake-grasps   bake weapons' finger grips into weapons.json (needs the build served)
     python3 tools/ln.py deploy        push the Web build to itch.io with butler
@@ -335,6 +336,34 @@ def cmd_assets(args) -> int:
                           "ln-assets.log", args.force)
     errors = summarize_log(log)
     return 0 if code == 0 and not errors else fail("Addressables setup failed, see log above")
+
+
+# What the game's text uses: Latin (Basic, Latin-1, Extended-A), punctuation, arrows, shapes, a few symbols.
+# Widen this (and rerun `fonts`) before content uses other scripts: missing glyphs draw as boxes.
+FONT_UNICODES = "U+0020-007E,U+00A0-017F,U+2000-206F,U+20AC,U+2122,U+2190-21FF,U+2212,U+2022,U+25A0-25FF"
+FONT_SOURCES = PROJECT / "FontSources"
+FONT_ASSETS = PROJECT / "Assets/_Project/Art/Fonts"
+
+
+def cmd_fonts(args) -> int:
+    """Subset each FontSources/<family>/*.ttf (full, as published) into Assets/_Project/Art/Fonts/<family>/."""
+    try:
+        import fontTools  # noqa: F401  (pip install fonttools; only this command needs it)
+    except ImportError:
+        return fail("fonttools not installed: pip install fonttools (or run with a venv's python that has it)")
+    sources = sorted(FONT_SOURCES.glob("*/*.ttf"))
+    if not sources:
+        return fail(f"no TTFs under {FONT_SOURCES}")
+    for src in sources:
+        out = FONT_ASSETS / src.parent.name / src.name
+        out.parent.mkdir(parents=True, exist_ok=True)
+        code = subprocess.call([sys.executable, "-m", "fontTools.subset", str(src), f"--unicodes={FONT_UNICODES}",
+                                "--layout-features=*", f"--output-file={out}"])
+        if code != 0:
+            return fail(f"subsetting {src.name} failed")
+        print(f"  {src.parent.name}/{src.name}: {src.stat().st_size:,} -> {out.stat().st_size:,} B")
+    print("Next: python3 tools/ln.py scenes  (FontSetup rebuilds the SDF font assets from them)")
+    return 0
 
 
 def cmd_webshot(args) -> int:
@@ -788,6 +817,9 @@ def main(argv=None) -> int:
     s = sub.add_parser("assets", help="apply Addressables groups/addresses and regenerate AssetKeys.g.cs (Editor/AddressablesSetup.cs)")
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
     s.set_defaults(func=cmd_assets)
+
+    s = sub.add_parser("fonts", help="subset FontSources/ TTFs into Assets/_Project/Art/Fonts (needs fonttools)")
+    s.set_defaults(func=cmd_fonts)
 
     s = sub.add_parser("webshot", help="screenshot the served Web build after a console marker (Node + Chrome)")
     s.add_argument("--url", default="http://localhost:8080/")
