@@ -191,6 +191,8 @@ namespace LuckyNumbers.Model
                 d.Add(s.SatelliteDistance.Subscribe(_ => sink.MarkState(7)));
                 d.Add(s.Wave.Subscribe(_ => sink.MarkState(7)));
                 d.Add(s.Waves.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Tier.Subscribe(_ => sink.MarkState(7)));
+                d.Add(s.Alert.Subscribe(_ => sink.MarkState(7)));
                 sink.MarkState(7);
             }
             {
@@ -1122,6 +1124,10 @@ namespace LuckyNumbers.Model
             Json.Num(b, s.Wave.Value);
             b.Append(",\"waves\":");
             Json.Num(b, s.Waves.Value);
+            b.Append(",\"tier\":");
+            Json.Str(b, s.Tier.Value);
+            b.Append(",\"alert\":");
+            Json.Str(b, s.Alert.Value);
             b.Append('}');
         }
 

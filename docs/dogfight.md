@@ -121,6 +121,26 @@ The HUD target card shows the state of the rogue you're on (for example "FLANK")
    `waves` + danger / 2 waves.
 4. Upload done: dock, and Dispatch pays the job.
 
+### Tiers
+
+A satellite job's danger (1 to 5) sets its tier (`uplink_tiers` in `content/dogfight.txtpb`). The tier's name and
+blurb show on the job board, and its bonus is added to the pay. Bounties pay on top.
+
+| Danger | Tier | Waiting at the satellite | Ambush from behind | Biggest wave | Job pay |
+|---|---|---|---|---|---|
+| 1 | Routine | none | none | 1 | 700 |
+| 2 | Contested | 1 | none | 2 | 1,200 |
+| 3 | Hostile | 1 | 1, at 50% of the upload | 2 | 1,850 |
+| 4 | Ambush | 2 | 2, at 40% | 3 | 2,550 |
+| 5 | Black site | 2 | 3, at 35% | 3 | 3,300 |
+
+- **Waiting rogues** circle the satellite, then jump you once you come within `ambush_range` ship lengths (or you
+  shoot one). The page flashes "AMBUSH: rogues at the satellite!".
+- **The ambush** spawns behind you partway through the upload: "AMBUSH: behind you!".
+
+`?ln-dogfight` runs a practice uplink at danger 3 (Hostile) with no job behind it, so only bounties pay. In orbit,
+the dev warps `satellite` (jump beside the relay), `uplink` (finish the upload) and `dock` (dock at once) help test a job's payout.
+
 The relay is a placeholder (`PLACEHOLDER_satellite`, plain blocks) until it has a model.
 
 ## Destroyed: memory restore

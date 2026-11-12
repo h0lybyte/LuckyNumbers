@@ -36,9 +36,35 @@ namespace LuckyNumbers.Model
         /// </summary>
         public float Lookahead { get; set; }
         public float Clearance { get; set; }
+        /// <summary>
+        /// Satellite jobs by danger (1..5): what each tier is called, pays on top and throws at you.
+        /// </summary>
+        public List<UplinkTier> UplinkTiers { get; } = new List<UplinkTier>();
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public DogfightConfig Clone() => (DogfightConfig)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// A satellite job's tier (its danger). The board's title and brief fill {tier} and {tier_blurb}. `waiting`: rogues
+    /// already circling the satellite, who jump you once you're within `ambush_range` (ship lengths) of it. `ambush`:
+    /// rogues that come at you from behind once the upload is `ambush_at` (0..1) of the way done. `wave_size`: the most in
+    /// one wave (the waves still ramp up from one).
+    /// </summary>
+    public sealed class UplinkTier
+    {
+        public int Danger { get; set; }
+        public string Name { get; set; }
+        public string Blurb { get; set; }
+        public int PayBonus { get; set; }
+        public int Waiting { get; set; }
+        public float AmbushRange { get; set; }
+        public int Ambush { get; set; }
+        public float AmbushAt { get; set; }
+        public int WaveSize { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public UplinkTier Clone() => (UplinkTier)MemberwiseClone();
     }
 
     /// <summary>
@@ -274,6 +300,11 @@ namespace LuckyNumbers.Model
         public readonly ReactiveProperty<float> SatelliteDistance = new ReactiveProperty<float>();
         public readonly ReactiveProperty<int> Wave = new ReactiveProperty<int>();
         public readonly ReactiveProperty<int> Waves = new ReactiveProperty<int>();
+        /// <summary>
+        /// The satellite job's tier (UplinkTier.name), and a warning to flash ("AMBUSH: behind you"; "" none).
+        /// </summary>
+        public readonly ReactiveProperty<string> Tier = new ReactiveProperty<string>();
+        public readonly ReactiveProperty<string> Alert = new ReactiveProperty<string>();
 
         public void Dispose()
         {
@@ -299,6 +330,8 @@ namespace LuckyNumbers.Model
             SatelliteDistance.Dispose();
             Wave.Dispose();
             Waves.Dispose();
+            Tier.Dispose();
+            Alert.Dispose();
         }
     }
 

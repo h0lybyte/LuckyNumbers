@@ -46,10 +46,10 @@ types {
 }
 types {
   kind: JOB_KIND_UPLINK
-  title: "Satellite uplink for {client}"
-  brief: "{client} needs the data off a relay satellite out past the station. Rogue ships have been sniffing round it."
+  title: "Satellite uplink ({tier}) for {client}"
+  brief: "{client} needs the data off a relay satellite out past the station. {tier_blurb}"
   objective: "Fly out to the satellite and hold close while it uploads; fight off the rogues, then dock"
-  pay: 450 pay_per_danger: 200 danger_min: 1 danger_max: 4
-  target: 1 target_per_danger: 1     # rogues per wave
+  pay: 450 pay_per_danger: 250 danger_min: 1 danger_max: 5   # + the tier's pay_bonus (content/dogfight.txtpb)
+  target: 1 target_per_danger: 1     # rogues per wave, capped by the tier's wave_size
   uplink_seconds: 30 uplink_seconds_per_danger: 5
 }

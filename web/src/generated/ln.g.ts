@@ -225,6 +225,9 @@ export interface DogfightState {
   satelliteDistance: number;
   wave: number;
   waves: number;
+  /** The satellite job's tier (UplinkTier.name), and a warning to flash ("AMBUSH: behind you"; "" none). */
+  tier: string;
+  alert: string;
 }
 
 /** Your debt (Core/DebtWatch): level 0 none, 1 in debt, 2 collections, 3 game over; the limits now (negative credits). */

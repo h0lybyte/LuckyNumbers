@@ -27,6 +27,24 @@ message DogfightConfig {
   // Steering: seconds of travel a rogue looks ahead for the station's hull, and the clearance it keeps (m).
   float lookahead = 8;
   float clearance = 9;
+  // Satellite jobs by danger (1..5): what each tier is called, pays on top and throws at you.
+  repeated UplinkTier uplink_tiers = 10;
+}
+
+// A satellite job's tier (its danger). The board's title and brief fill {tier} and {tier_blurb}. `waiting`: rogues
+// already circling the satellite, who jump you once you're within `ambush_range` (ship lengths) of it. `ambush`:
+// rogues that come at you from behind once the upload is `ambush_at` (0..1) of the way done. `wave_size`: the most in
+// one wave (the waves still ramp up from one).
+message UplinkTier {
+  int32 danger = 1;
+  string name = 2;
+  string blurb = 3;
+  int32 pay_bonus = 4;
+  int32 waiting = 5;
+  float ambush_range = 6;
+  int32 ambush = 7;
+  float ambush_at = 8;
+  int32 wave_size = 9;
 }
 
 // Your fighter's defences at baseline; the skin and upgrades multiply them (ShipStats toughness / shield / armor).
@@ -177,6 +195,9 @@ message DogfightState {
   float satellite_distance = 20;
   int32 wave = 21;
   int32 waves = 22;
+  // The satellite job's tier (UplinkTier.name), and a warning to flash ("AMBUSH: behind you"; "" none).
+  string tier = 23;
+  string alert = 24;
 }
 
 // Your debt (Core/DebtWatch): level 0 none, 1 in debt, 2 collections, 3 game over; the limits now (negative credits).

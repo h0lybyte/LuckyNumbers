@@ -75,10 +75,14 @@ namespace LuckyNumbers.Station
                     }
                 }
                 o.Pay = type.Pay + type.PayPerDanger * o.Danger;
+                // A satellite job's tier (content/dogfight.txtpb): its name and blurb in the text, its bonus on the pay.
+                var tier = type.Kind == JobKind.Uplink ? UplinkTier(o.Danger) : null;
+                if (tier != null) o.Pay += tier.PayBonus;
+                string Tiered(string s) => tier == null ? s : (s ?? "").Replace("{tier}", tier.Name ?? "").Replace("{tier_blurb}", tier.Blurb ?? "");
                 o.Goal = type.Target + type.TargetPerDanger * o.Danger;
-                o.Title = Fill(type.Title, o);
-                o.Brief = Fill(type.Brief, o);
-                o.Objective = Fill(type.Objective, o);
+                o.Title = Fill(Tiered(type.Title), o);
+                o.Brief = Fill(Tiered(type.Brief), o);
+                o.Objective = Fill(Tiered(type.Objective), o);
                 offers.Add(o);
             }
             return offers;
@@ -144,6 +148,17 @@ namespace LuckyNumbers.Station
             job.Goal.Value = o.Goal;
             job.Done.Value = false;
             job.Active.Value = true;
+        }
+
+        /// <summary>A satellite job's tier for its danger (the highest at or under it); null if there are none.</summary>
+        public static UplinkTier UplinkTier(int danger)
+        {
+            UplinkTier best = null;
+            var tiers = GameContent.Dogfight?.UplinkTiers;
+            if (tiers != null)
+                foreach (var t in tiers)
+                    if (t.Danger <= danger && (best == null || t.Danger > best.Danger)) best = t;
+            return best;
         }
 
         public static string Fill(string s, Offer o) => Fill(s, o.Client, o.Planet, o.Target, o.Goal, o.Pay, o.Title);
