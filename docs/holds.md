@@ -29,3 +29,8 @@ Structures on and under dwarven worlds: a cell grid, meshed into chunks, skinned
 - Each region is generated from `hash(seed, rx, ry, rz)` only. Openings on a shared edge come from a hash of that
   edge (ordered so both neighbours compute the same one), so regions always line up. Shafts between a region and
   the one below come from a hash of that pair.
+- `MineGenerator.Region(seed, region, config, allocator)` digs one region (`Scripts/Hold/MineGenerator.cs`). Edge
+  openings sit 3+ cells from corners; east-west edges on a region's lowest level always have one, so nothing is
+  sealed. `MineGenerator.ShaftBelow(seed, (x, 1, z), ...)` says where region y 0's shaft up would meet the hold.
+- Check: `-executeMethod LuckyNumbers.Editor.MineCheck.Run` (seams, shafts, connectivity, determinism, timing);
+  ASCII maps in `LuckyNumbers/Logs/mines-ascii.txt`.
