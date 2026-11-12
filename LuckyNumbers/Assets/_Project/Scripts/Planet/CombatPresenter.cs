@@ -32,23 +32,18 @@ namespace LuckyNumbers.Planet
     [Presenter]
     public sealed partial class CombatPresenter : IStartable, ITickable, IDisposable
     {
-        /// <summary>A monster's state of mind, packed in a byte so related bits set/clear together (shot at: Aggro on, Ignored + Standoff off).</summary>
-        [Flags] enum Mind : byte { None = 0, Aggro = 1 << 0, Standoff = 1 << 1, Ignored = 1 << 2, Surprise = 1 << 3 }
-
         sealed class Monster
         {
             public MonsterType Type;
             public MonsterView View;
             public Vector3 Position, Home;
-            public float Heading, Cooldown, Dying = -1f, Wander;
+            public float Heading, Wander;
             // A model's death: its fall + a beat lying there (seconds), then it sinks into the ground.
             public float DeathFor;
             public int Hp;
-            // After you (Aggro). Encounters (CombatPresenter.Encounters): a standoff waiting for you; let you pass;
-            // your first shot gets the surprise bonus. Running off / calm until: Fleeing, CalmUntil.
-            public Mind Mind;
-            public bool Is(Mind m) => (Mind & m) != 0;
-            public float Fleeing = -1f, CalmUntil;
+            // Its state (MonsterBrain): wander, chase, an encounter's standoff / ignored / calm, flee, dying.
+            public MonsterBrain Brain;
+            public bool Dead => Brain.Dead;
             // Your shots in flight at it, rolled when you fired (Marksman): their damage lands with the bolt.
             public readonly Queue<int> Incoming = new();
         }
@@ -168,7 +163,7 @@ namespace LuckyNumbers.Planet
             var me = _player.Body.transform.position;
             var onFoot = _firstPerson.Active;
             _onFootFor = onFoot ? _onFootFor + dt : 0f;
-            if (_devAim != null && Time.time < _devAimUntil && _devAim.Dying < 0f)
+            if (_devAim != null && Time.time < _devAimUntil && !_devAim.Dead)
             {
                 var to = _devAim.Position - _player.Camera.transform.position;
                 _firstPerson.Look(Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg, -Mathf.Atan2(to.y, new Vector2(to.x, to.z).magnitude) * Mathf.Rad2Deg);
@@ -257,83 +252,91 @@ namespace LuckyNumbers.Planet
             var view = model != null
                 ? MonsterView.CreateModel(type.Id, model, size, type.Clips)
                 : MonsterView.Create(type.Id, size, new Color(type.Color.R, type.Color.G, type.Color.B, 1f), _bodyMaterial);
-            var m = new Monster { Type = type, View = view, Position = at, Home = at, Hp = math.max(1, type.Hp), Mind = aggro ? Mind.Aggro : Mind.None,
+            var m = new Monster { Type = type, View = view, Position = at, Home = at, Hp = math.max(1, type.Hp), Brain = MonsterBrain.Spawn(aggro),
                                   Heading = _rng.NextFloat(360f), Wander = _rng.NextFloat(3f) };
             view.Damaged += (v, source, point) => Hurt(m, source);
             Place(m, 0f);
             _monsters.Add(m);
-            _state.Alive.Value = _monsters.Count;
+            _state.Alive.Value = AliveCount();
         }
 
         // ---- Monsters -------------------------------------------------------------------------------------------
 
+        /// <summary>A monster's tick: its brain (MonsterBrain.Tick) picks the act, this carries it out.</summary>
         void Think(Monster m, Vector3 me, bool onFoot, float dt)
         {
-            if (m.Dying >= 0f)
-            {
-                m.Dying += dt;
-                var gone = 0.4f;
-                if (m.View.Modelled)
-                {
-                    // Falls (its clip), lies there, then sinks out of sight.
-                    const float sink = 1.2f;
-                    gone = m.DeathFor + sink;
-                    var down = math.saturate((m.Dying - m.DeathFor) / sink) * Size(m).y;
-                    m.View.transform.position = m.Position - Vector3.up * down;
-                }
-                else m.View.transform.localScale = Size(m) * math.max(0.01f, 1f - m.Dying / 0.4f);
-                if (m.Dying >= gone)
-                {
-                    UnityEngine.Object.Destroy(m.View.gameObject);
-                    _monsters.Remove(m);
-                    _state.Alive.Value = _monsters.FindAll(x => x.Dying < 0f).Count;
-                }
-                return;
-            }
-            m.Cooldown -= dt;
             var to = new Vector3(me.x - m.Position.x, 0f, me.z - m.Position.z);
             var distance = to.magnitude;
-            if (m.Fleeing >= 0f)
+            var senses = new MonsterSenses
             {
-                // Scared off: runs from you and is gone.
-                m.Fleeing += dt;
-                m.Heading = Mathf.MoveTowardsAngle(m.Heading, Mathf.Atan2(-to.x, -to.z) * Mathf.Rad2Deg, 540f * dt);
-                m.Position += Quaternion.Euler(0f, m.Heading, 0f) * Vector3.forward * (m.Type.Speed * 1.6f * dt);
-                m.View.Move(m.Type.Speed * 1.6f, true);
-                Place(m, dt);
-                if (m.Fleeing > 3.5f) m.Dying = 0f;
-                return;
-            }
-            if ((m.Mind & (Mind.Standoff | Mind.Aggro)) == Mind.Standoff && onFoot && _onFootFor > 1f && distance < StandoffDistance) { OpenStandoff(m); return; }
-            var calm = m.Is(Mind.Ignored | Mind.Standoff) || Time.time < m.CalmUntil;
-            if (onFoot && _onFootFor > 4f && distance < m.Type.Sight && !calm) m.Mind |= Mind.Aggro;
-            if (Time.time < m.CalmUntil) m.Mind &= ~Mind.Aggro;
-            var reach = math.max(0.8f, m.Type.Reach) + Size(m).z * 0.5f;
+                Dt = dt, Now = Time.time, Distance = distance, OnFoot = onFoot, OnFootFor = _onFootFor, Sight = m.Type.Sight,
+                Reach = math.max(0.8f, m.Type.Reach) + Size(m).z * 0.5f, StandoffDistance = StandoffDistance, Busy = m.View.Busy,
+            };
+            var act = MonsterBrain.Tick(ref m.Brain, senses);
             var walked = 0f;
-            if (m.Is(Mind.Aggro) && onFoot)
+            switch (act)
             {
-                m.Heading = Mathf.MoveTowardsAngle(m.Heading, Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg, 360f * dt);
-                if (m.View.Busy) { }   // staggered by a hit: holds still a moment
-                else if (distance > reach * 0.85f)
-                {
-                    m.Position += Quaternion.Euler(0f, m.Heading, 0f) * Vector3.forward * (m.Type.Speed * dt);
-                    walked = m.Type.Speed;
-                }
-                else if (m.Cooldown <= 0f) Bite(m);
-                if (distance > m.Type.Sight * 3f) m.Mind &= ~Mind.Aggro;   // lost you
+                case MonsterAct.Fade:
+                    Fade(m);
+                    return;
+                case MonsterAct.Run:
+                    // Scared off: runs from you and is gone.
+                    m.Heading = Mathf.MoveTowardsAngle(m.Heading, Mathf.Atan2(-to.x, -to.z) * Mathf.Rad2Deg, 540f * dt);
+                    m.Position += Quaternion.Euler(0f, m.Heading, 0f) * Vector3.forward * (m.Type.Speed * 1.6f * dt);
+                    m.View.Move(m.Type.Speed * 1.6f, true);
+                    Place(m, dt);
+                    return;
+                case MonsterAct.OpenStandoff:
+                    OpenStandoff(m);
+                    return;
+                case MonsterAct.Amble:
+                    // Idle: amble round where it started.
+                    m.Wander -= dt;
+                    if (m.Wander <= 0f) { m.Wander = _rng.NextFloat(2f, 5f); m.Heading += _rng.NextFloat(-120f, 120f); }
+                    var home = m.Home - m.Position;
+                    if (home.magnitude > 6f) m.Heading = Mathf.MoveTowardsAngle(m.Heading, Mathf.Atan2(home.x, home.z) * Mathf.Rad2Deg, 180f * dt);
+                    m.Position += Quaternion.Euler(0f, m.Heading, 0f) * Vector3.forward * (m.Type.Speed * 0.25f * dt);
+                    walked = m.Type.Speed * 0.25f;
+                    break;
+                default:
+                    // After you: turns to you; staggered by a hit it holds still a moment.
+                    m.Heading = Mathf.MoveTowardsAngle(m.Heading, Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg, 360f * dt);
+                    if (act == MonsterAct.Step)
+                    {
+                        m.Position += Quaternion.Euler(0f, m.Heading, 0f) * Vector3.forward * (m.Type.Speed * dt);
+                        walked = m.Type.Speed;
+                    }
+                    else if (act == MonsterAct.Bite) Bite(m);
+                    break;
             }
-            else
-            {
-                // Idle: amble round where it started.
-                m.Wander -= dt;
-                if (m.Wander <= 0f) { m.Wander = _rng.NextFloat(2f, 5f); m.Heading += _rng.NextFloat(-120f, 120f); }
-                var home = m.Home - m.Position;
-                if (home.magnitude > 6f) m.Heading = Mathf.MoveTowardsAngle(m.Heading, Mathf.Atan2(home.x, home.z) * Mathf.Rad2Deg, 180f * dt);
-                m.Position += Quaternion.Euler(0f, m.Heading, 0f) * Vector3.forward * (m.Type.Speed * 0.25f * dt);
-                walked = m.Type.Speed * 0.25f;
-            }
-            m.View.Move(walked, m.Is(Mind.Aggro));
+            m.View.Move(walked, m.Brain.Hunting);
             Place(m, dt);
+        }
+
+        /// <summary>Dying: falls (a model's clip), lies there, then sinks out of sight (a block shrinks); then it's removed.</summary>
+        void Fade(Monster m)
+        {
+            var t = m.Brain.Clock;
+            var gone = 0.4f;
+            if (m.View.Modelled)
+            {
+                const float sink = 1.2f;
+                gone = m.DeathFor + sink;
+                var down = math.saturate((t - m.DeathFor) / sink) * Size(m).y;
+                m.View.transform.position = m.Position - Vector3.up * down;
+            }
+            else m.View.transform.localScale = Size(m) * math.max(0.01f, 1f - t / 0.4f);
+            if (t < gone) return;
+            UnityEngine.Object.Destroy(m.View.gameObject);
+            _monsters.Remove(m);
+            _state.Alive.Value = AliveCount();
+        }
+
+        int AliveCount()
+        {
+            var n = 0;
+            foreach (var x in _monsters) if (!x.Dead) n++;
+            return n;
         }
 
         static Vector3 Size(Monster m) => new(m.Type.Size.X > 0f ? m.Type.Size.X : 1f, m.Type.Size.Y > 0f ? m.Type.Size.Y : 1f, m.Type.Size.Z > 0f ? m.Type.Size.Z : 1f);
@@ -342,14 +345,14 @@ namespace LuckyNumbers.Planet
         {
             var size = Size(m);
             m.Position.y = _ground.SurfaceAt(m.Position) + size.y * 0.5f;
-            var hop = m.Is(Mind.Aggro) && !m.View.Modelled ? math.abs(math.sin(Time.time * 9f + m.Home.x)) * size.y * 0.12f : 0f;   // scuttles when it's after you
+            var hop = m.Brain.Hunting && !m.View.Modelled ? math.abs(math.sin(Time.time * 9f + m.Home.x)) * size.y * 0.12f : 0f;   // scuttles when it's after you
             m.View.transform.SetPositionAndRotation(m.Position + Vector3.up * hop, Quaternion.Euler(0f, m.Heading, 0f));
         }
 
         /// <summary>A monster's attack: d20 + its attack against your armour; damage takes Stamina, then HP.</summary>
         void Bite(Monster m)
         {
-            m.Cooldown = math.max(0.3f, m.Type.Cooldown);
+            m.Brain.Cooldown = math.max(0.3f, m.Type.Cooldown);
             m.View.Attack();
             var armor = PlayerArmor();
             var (d20, total, hit, crit, fumble) = Dice.Attack(m.Type.Attack, armor, ref _rng);
@@ -411,7 +414,7 @@ namespace LuckyNumbers.Planet
             if (c == null) return null;
             var view = c.GetComponentInParent<MonsterView>();
             if (view == null) return null;
-            foreach (var m in _monsters) if (m.View == view && m.Dying < 0f) return m;
+            foreach (var m in _monsters) if (m.View == view && !m.Dead) return m;
             return null;
         }
 
@@ -445,11 +448,10 @@ namespace LuckyNumbers.Planet
             if (_down) return false;
             EnsureBolts();   // seeds the fight's dice
             var w = Weapon(source);
-            var surprise = 0;
-            if (m.Is(Mind.Surprise)) { surprise = SurpriseBonus; m.Mind &= ~Mind.Surprise; }   // you chose the fight: the first shot's yours
+            var surprise = MonsterBrain.TakeSurprise(ref m.Brain) ? SurpriseBonus : 0;   // you chose the fight: the first shot's yours
             var parts = new[] { ((w.Ability ?? "").ToUpperInvariant(), Mod(w.Ability)),
                                 ("level", (int)math.floor(C.AttackPerLevel * math.max(1, _sheet.Level.Value))), ("surprise", surprise) };
-            Engaged(m);
+            MonsterBrain.Fire(ref m.Brain, MonsterCue.ShotAt);   // shot at, it knows you're there
             var s = _marksman.Roll(parts, math.max(1, m.Type.Armor), w.Damage, aimed, _player.Camera.transform, _player.Body, ref _rng);
             _rolls.Publish(new CombatRoll("You", m.Type.Name, s.D20, s.Bonus, s.Total, s.Armor, s.Hit, s.Crit, s.Fumble, s.Damage, w.Damage, true,
                                           w.Name ?? source, s.Graze, s.Strong, s.Mods));
@@ -459,20 +461,13 @@ namespace LuckyNumbers.Planet
             return s.Hit;
         }
 
-        /// <summary>Shot at, it knows you're there.</summary>
-        static void Engaged(Monster m)
-        {
-            m.Mind = (m.Mind & ~(Mind.Ignored | Mind.Standoff)) | Mind.Aggro;
-            m.CalmUntil = 0f;
-        }
-
         /// <summary>
         /// Something hit a monster. Your hand shots were rolled when fired: the bolt brings that damage (a stray bolt
         /// with nothing rolled at this one does nothing). The ship's lasers and blades roll here, on contact.
         /// </summary>
         void Hurt(Monster m, string source)
         {
-            if (m.Dying >= 0f || _down) return;
+            if (m.Dead || _down) return;
             if (source != "ship" && source != "melee")
             {
                 if (m.Incoming.Count == 0) return;
@@ -481,9 +476,8 @@ namespace LuckyNumbers.Planet
             }
             var w = Weapon(source);
             var bonus = Mod(w.Ability) + (int)math.floor(C.AttackPerLevel * math.max(1, _sheet.Level.Value));
-            if (m.Is(Mind.Surprise)) { bonus += SurpriseBonus; m.Mind &= ~Mind.Surprise; }   // you chose the fight: the first shot's yours
-            m.Mind &= ~(Mind.Ignored | Mind.Standoff);                          // shot at, it knows you're there
-            m.CalmUntil = 0f;
+            if (MonsterBrain.TakeSurprise(ref m.Brain)) bonus += SurpriseBonus;   // you chose the fight: the first shot's yours
+            MonsterBrain.Fire(ref m.Brain, MonsterCue.ShotAt);                    // shot at, it knows you're there
             var armor = math.max(1, m.Type.Armor);
             var (d20, total, hit, crit, fumble) = Dice.Attack(bonus, armor, ref _rng);
             var damage = hit ? Dice.Roll(w.Damage, ref _rng, crit) : 0;
@@ -491,13 +485,12 @@ namespace LuckyNumbers.Planet
                                           false, false, ""));
             Debug.Log($"[Combat] you {(source == "ship" ? "strafe" : "shoot at")} {m.Type.Name} ({w.Name}): d20 {d20} + {bonus} = {total} vs {armor}: " +
                       $"{(hit ? $"{(crit ? "CRIT " : "")}{damage}" : "miss")}");
-            m.Mind |= Mind.Aggro;
             if (hit) Damage(m, damage);
         }
 
         void Damage(Monster m, int damage)
         {
-            if (m.Dying >= 0f) return;
+            if (m.Dead) return;
             m.View.Flash();
             m.Hp -= damage;
             _state.Target.Value = m.Hp > 0 ? $"{m.Type.Name}|{m.Hp}|{math.max(1, m.Type.Hp)}" : "";
@@ -507,12 +500,12 @@ namespace LuckyNumbers.Planet
 
         void Kill(Monster m)
         {
-            m.Dying = 0f;
+            MonsterBrain.Fire(ref m.Brain, MonsterCue.Killed);
             m.DeathFor = m.View.Die() + 1.5f;
             var col = m.View.GetComponent<Collider>();
             if (col != null) col.enabled = false;
             _state.Killed.Value++;
-            _state.Alive.Value = _monsters.FindAll(x => x.Dying < 0f).Count;
+            _state.Alive.Value = AliveCount();
             if (m.Type.Xp > 0) _xp.Publish(new CharacterXpGained(m.Type.Xp, m.Type.Name));
             if (_job.Active.Value && _job.Kind.Value == JobKind.Clear)
             {
