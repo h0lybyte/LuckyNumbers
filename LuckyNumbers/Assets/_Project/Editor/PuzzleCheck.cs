@@ -63,6 +63,11 @@ namespace LuckyNumbers.Editor
 
                 var ports = new NativeList<int3>(16, Allocator.Temp);
                 MinePasses.PuzzlePorts(g, ports);
+                // A depth seal closes its shaft on purpose (the band's key opens it): not a port the puzzles must keep.
+                if (g.Fixtures.IsCreated)
+                    for (var i = ports.Length - 1; i >= 0; i--)
+                        foreach (var f in g.Fixtures)
+                            if (f.Kind == FixtureKind.Seal && f.Cell.Equals(ports[i])) { ports.RemoveAtSwapBack(i); break; }
                 var n = g.Cells.Length;
                 var seen = new NativeArray<bool>(n, Allocator.Temp);
                 var standable = 0;

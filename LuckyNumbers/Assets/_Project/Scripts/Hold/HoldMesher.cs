@@ -175,7 +175,7 @@ namespace LuckyNumbers.Hold
         /// </summary>
         public static int3 LadderSide(in HoldGrid g, int3 c)
         {
-            if (g.Get(c).Kind != CellKind.ShaftUp) return int3.zero;
+            if (g.Get(c).Kind != CellKind.ShaftUp || DepthCells.NoLadder(g.Get(c))) return int3.zero;   // drop shafts: none
             var upper = c + new int3(0, 1, 0);
             var seen = g.InBounds(upper);
             var w = g.ToWorld(c);

@@ -112,6 +112,40 @@ Structures on and under dwarven worlds: a cell grid, meshed into chunks, skinned
   fixtures closed it proves keys/levers are reachable before what they open.
 - Mesher kit hooks: `KitVertical` (HoldMesher.Vertical.cs), `KitDepth` (HoldMesher.Depth.cs).
 
+## Depth (seals, drop shafts, collapses, falling)
+
+- Rules: `DepthRules` (`proto/luckynumbers/v1/hold_depth.proto`), content `content/holds/depth/default.txtpb`; pass
+  `Scripts/Hold/MinePasses.Depth.cs`, kit `Scripts/Hold/HoldMesher.Depth.cs`, scene `Scripts/HoldScene/DepthPresenter.cs`.
+- Depth = -region.y; band = depth / `seal_every` (6, = vertical `great_band`, so great shafts never cross a seal:
+  depths 0-5, 6-11, ...). `MinePasses.SealedBelow`: a band's bottom depth (5, 11, 17 ...). There every ShaftDown on
+  level 0 (and any GreatShaft cell there without its floor bit) gets a Seal fixture (Data,
+  Link: band) and ShaftDown cells `DepthCells.SealBit`; no drops out of those regions. A seal never cuts its region:
+  if it would, the ring round it is dug out.
+- Keys: `MinePasses.KeyRegion(seed, band, i)` for i < `keys_per_band`, x, z in -`key_area`..`key_area`; key 0 always on
+  the band's top depth in row z 0 (east-west seams on a lowest level always open). Each holds one SealKey (Data: band)
+  on a two-way tunnel cell (never a cache or creature spot) reachable from the west seam with every door/seal shut.
+- Drops: `MinePasses.DropBelow(seed, upper)`: the ShaftBelow shaft is a drop with `drop_chance` (hash of `upper`, so
+  both regions agree), from `drops_from_depth`, never out of a sealed depth or onto the lower region's own shaft down.
+  Upper: the ShaftDown gets `DepthCells.DropBit` and a DropLip fixture (Data 2: storeys). Lower: its top ShaftUp and the
+  cell under it (ShaftUp, joined to that storey's tunnels by the shortest dig) get DropBit: no ladder
+  (`HoldRules.LadderSide` asks `DepthCells.NoLadder`), no floor between, no HoldNav move. One way: 6 m down.
+- Collapses: `collapses_min..max` straight tunnel cells (rock both sides) become Rubble, each kept only if HoldNav
+  still reaches every other cell from the west seam with doors open and with them shut.
+- Kit (`ChunkMesher.KitDepth`): a jagged rubble heap (wall-stone faces, gravel tops, a snapped prop) in each walkable
+  cell beside Rubble; a broken timber rail (sill, posts, one of three breaks) on every approach side of a drop lip; a
+  winch beam (a corner-post frame where an end is open) over a sealed shaft. Runtime pieces (`DepthKit`, HoldKit material): the
+  seal hatch (iron-banded cap, the great door on top, collider until opened; winches up on two chains), the drop's
+  warning plaque (the yellow rune), the key's plinth (key itself: a PLACEHOLDER block).
+- Scene: `FirstPersonPresenter.Landed` (impact speed; not on ladders) -> drop height min(v^2 / 2g, height since last
+  footing) past `safe_fall` (4.2 m: a shaft's 3 m is safe) x `fall_damage_per_metre` -> `HoldHurt` -> DeepCreatures'
+  TakeDamage (Stamina, HP, rescue at 0). E at a seal with its band's key opens it; keys and opened seals last for the
+  visit. First time in a band: "Depth 6: the Old Works". Dev warps: `seal`, `key`, `drop`, `collapse`, `sealkey`.
+- Creatures: bites at depth d do x min(1, `bite_scale` + `bite_scale_per_depth` d) (HoldLife; 0.55 at depth 1, 0.7 at
+  2, full from 4) and attack less max(0, `attack_shallow` - d); aberrations from depth 3.
+- Check: `-executeMethod LuckyNumbers.Editor.DepthCheck.Run` (5 seeds, x, z -2..2, three bands (depths 0..17): drops agree, nothing
+  cut off, seals complete, a reachable key per band, determinism). Render: `LuckyNumbers.Editor.DepthPreview.Render`
+  (graphics) -> `Logs/preview-depth.png`.
+
 ## Stairs, great shafts, hoists (Vertical pass)
 
 - Rules: `VerticalRules` (`proto/luckynumbers/v1/hold_vertical.proto`), content `content/holds/vertical/default.txtpb`.

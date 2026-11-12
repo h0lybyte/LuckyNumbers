@@ -10,12 +10,108 @@ using R3;
 namespace LuckyNumbers.Model
 {
     /// <summary>
-    /// Pacing the deep: depth seals every few regions, drop shafts, collapsed tunnels, falling.
+    /// Pacing the deep: depth seals every few regions, drop shafts, collapsed tunnels, falling (docs/holds.md, "Depth").
+    /// Depth = regions down (region y 0: depth 0). A band is `seal_every` depths; its bottom depth's ways down are sealed
+    /// until you carry that band's seal key, which lies in one of a few regions of the band near the hold's column.
     /// </summary>
     public sealed class DepthRules
     {
+        /// <summary>
+        /// ---- falling (Hold scene only) ----
+        /// A drop up to this many metres is unhurt (one storey is 3 m; a drop shaft falls two).
+        /// </summary>
+        public float SafeFall { get; set; }
+        /// <summary>
+        /// Damage per metre past safe_fall (rounded, at least 1), through the creatures' path: Stamina, then HP.
+        /// </summary>
+        public float FallDamagePerMetre { get; set; }
+        /// <summary>
+        /// What hurt you (the damage log, the rescue's cause).
+        /// </summary>
+        public string FallSource { get; set; }
+        /// <summary>
+        /// ---- drop shafts: a shaft between regions with no ladder, falling on through the region below ----
+        /// Chance a region-to-region shaft is a drop (hash of the pair, so both regions agree).
+        /// </summary>
+        public float DropChance { get; set; }
+        /// <summary>
+        /// No drops out of regions above this depth.
+        /// </summary>
+        public int DropsFromDepth { get; set; }
+        /// <summary>
+        /// Shown beside a drop's lip.
+        /// </summary>
+        public string DropPrompt { get; set; }
+        /// <summary>
+        /// ---- collapses: tunnel cells filled with rubble, only where the region stays connected round them ----
+        /// </summary>
+        public int CollapsesMin { get; set; }
+        public int CollapsesMax { get; set; }
+        public int CollapsesFromDepth { get; set; }
+        /// <summary>
+        /// ---- depth seals ----
+        /// Every this many depths the way down is sealed (band b: depths b*seal_every .. b*seal_every + seal_every - 1;
+        /// the seals are in its bottom depth's regions, over every shaft down). 0: no seals. Keep it equal to
+        /// VerticalRules.great_band (same band formula), so great shafts never cross a seal (DepthCheck asserts it).
+        /// </summary>
+        public int SealEvery { get; set; }
+        /// <summary>
+        /// Regions per band that hold its key (hashed; one always on the band's top depth, row z 0).
+        /// </summary>
+        public int KeysPerBand { get; set; }
+        /// <summary>
+        /// Keys lie in regions with x and z in -key_area..key_area (round the hold's column).
+        /// </summary>
+        public int KeyArea { get; set; }
+        /// <summary>
+        /// The bands, from the top; past the last, the last repeats ("{n}": its band number, from 1).
+        /// </summary>
+        public List<DepthBand> Bands { get; } = new List<DepthBand>();
+        /// <summary>
+        /// First time in a band: "{depth}" (its top depth), "{name}".
+        /// </summary>
+        public string BandTitle { get; set; }
+        /// <summary>
+        /// At a seal without its key ("{name}": the band), with it, and at a key.
+        /// </summary>
+        public string SealLocked { get; set; }
+        public string SealPrompt { get; set; }
+        public string KeyPrompt { get; set; }
+        /// <summary>
+        /// Picked up: said by the suit ("{name}", "{depth}": the sealed depth).
+        /// </summary>
+        public string KeyText { get; set; }
+        /// <summary>
+        /// Reach to use a seal or take a key (metres, flat).
+        /// </summary>
+        public float UseDistance { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public DepthRules Clone() => (DepthRules)MemberwiseClone();
+    }
+
+    public sealed class DepthBand
+    {
+        public string Name { get; set; }
+        public string Blurb { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public DepthBand Clone() => (DepthBand)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// Something in the hold hurt you that isn't a creature (a fall): DeepCreatures takes it off Stamina, then HP, and
+    /// sends you to the rescue at 0 HP, as for a bite.
+    /// </summary>
+    public readonly struct HoldHurt
+    {
+        public readonly int Amount;
+        public readonly string Source;
+
+        public HoldHurt(int amount, string source)
+        {
+            Amount = amount;
+            Source = source;
+        }
     }
 }
