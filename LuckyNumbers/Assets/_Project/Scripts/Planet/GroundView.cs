@@ -235,12 +235,21 @@ namespace LuckyNumbers.Planet
         {
             var h = HeightAt(world);
             var from = new Vector3(world.x, h + 40f, world.z);
-            var hits = Physics.RaycastAll(from, Vector3.down, 80f, ~0, QueryTriggerInteraction.Ignore);
+            // Every hit (unordered), as RaycastAll gave: a full buffer may have dropped some, so it grows and retries.
+            int count;
+            while ((count = Physics.RaycastNonAlloc(from, Vector3.down, _hits, 80f, ~0, QueryTriggerInteraction.Ignore)) == _hits.Length)
+                _hits = new RaycastHit[_hits.Length * 2];
             var best = float.MinValue;
-            foreach (var hit in hits)
-                if (hit.collider.GetComponentInParent<GroundView>() == this) best = Mathf.Max(best, hit.point.y);
+            for (var i = 0; i < count; i++)
+            {
+                var c = _hits[i].collider;
+                if (c.transform.parent == transform || c.GetComponentInParent<GroundView>() == this) best = Mathf.Max(best, _hits[i].point.y);
+            }
             return best > float.MinValue ? best : h + missMargin;
         }
+
+        /// <summary>SurfaceAt's ray hits (main thread only; grows if a ray fills it).</summary>
+        static RaycastHit[] _hits = new RaycastHit[16];
         /// <summary>Ground normal under a world point (from the height function, like the chunk normals).</summary>
         public Vector3 NormalAt(Vector3 world) => Normal(new float2(world.x, world.z), 0.5f);
 
