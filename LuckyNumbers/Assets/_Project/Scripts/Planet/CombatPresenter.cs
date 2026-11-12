@@ -48,6 +48,8 @@ namespace LuckyNumbers.Planet
             public readonly Queue<int> Incoming = new();
             // A thrower's flask (its type's ranged, or a dev spawn's): null bites only (CombatPresenter.Ranged).
             public MonsterRanged Ranged;
+            // A thrower's cast clip still playing (its hands held out after the release): it stands its ground till then.
+            public float CastUntil;
         }
 
         readonly ICrashSite _site;
@@ -318,7 +320,7 @@ namespace LuckyNumbers.Planet
                 default:
                     // After you: turns to you; staggered by a hit it holds still a moment.
                     m.Heading = Mathf.MoveTowardsAngle(m.Heading, Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg, 360f * dt);
-                    if (act == MonsterAct.Step)
+                    if (act == MonsterAct.Step && Time.time >= m.CastUntil)
                     {
                         m.Position += Quaternion.Euler(0f, m.Heading, 0f) * Vector3.forward * (m.Type.Speed * dt);
                         walked = m.Type.Speed;

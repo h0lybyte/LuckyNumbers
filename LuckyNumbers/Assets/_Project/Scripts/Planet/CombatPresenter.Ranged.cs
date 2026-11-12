@@ -24,7 +24,7 @@ namespace LuckyNumbers.Planet
         /// <summary>Chords of the arc a ready throw checks for a clear way (only while a throw's ready and it can see you).</summary>
         const int ArcChecks = 6;
 
-        /// <summary>A dev thrower's attack when its type has none: a plague flask.</summary>
+        /// <summary>A dev thrower's attack when its type has none: the arcanist's plague flask (content/combat.txtpb).</summary>
         static readonly MonsterRanged DevRanged = new()
         {
             RangeMin = 7f, RangeMax = 15f, Cooldown = 3.2f, CastTime = 0.9f, Speed = 11f, Gravity = 7.5f,
@@ -33,10 +33,13 @@ namespace LuckyNumbers.Planet
         };
 
         /// <summary>
-        /// The cast's clip. Until MonsterView has its own cast one-shot (and MonsterClips a `cast` clip), the attack
-        /// clip plays: switch this one line over then.
+        /// The cast's clip (MonsterClips.cast: the arcanist's channel, whose thrust is its release, cast_time in); a
+        /// monster without one (a block, a dev thrower) plays its attack instead.
         /// </summary>
-        static void PlayCast(Monster m) => m.View.Attack();
+        static void PlayCast(Monster m)
+        {
+            if (!m.View.Cast()) m.View.Attack();
+        }
 
         void EnsureFlasks()
         {
@@ -134,6 +137,7 @@ namespace LuckyNumbers.Planet
             var flat = to.sqrMagnitude > 1e-4f ? to.normalized : Vector3.forward;
             var side = Vector3.Cross(Vector3.up, flat) * StrafeSign(m);
             var speed = m.Type.Speed;
+            if ((act == MonsterAct.Retreat || act == MonsterAct.Strafe) && Time.time < m.CastUntil) return 0f;   // still in its cast clip
             switch (act)
             {
                 case MonsterAct.Retreat:
@@ -144,6 +148,7 @@ namespace LuckyNumbers.Planet
                     return speed * 0.45f;
                 case MonsterAct.Cast:
                     PlayCast(m);
+                    m.CastUntil = Time.time + math.max(0f, m.View.CastLength - 0.25f);   // no cast clip: no hold
                     _flasks?.Charge(Hand(m), 0.5f, 0f, Tint(r));
                     return 0f;
                 case MonsterAct.Channel:

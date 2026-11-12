@@ -81,6 +81,14 @@ monsters {
   reach: 1.5 sight: 24 cooldown: 2.4 xp: 130 danger_min: 2 weight: 1
   model: "arcanist"
   clips { idle: "idle" walk: "creep" run: "run" attack: "palm_strike" cast: "channel" hit: "flinch" die: "collapse" }
+  # Its plague flask: keeps 7-15 m off and lobs one every 3.5 s, released on the channel clip's thrust (cast_time 1.0 s
+  # in); it stands its ground while the 4.3 s clip holds its hands out. 11 m/s under 7.5 m/s^2 carries 16 m: a lob of
+  # 1.1-1.8 s, so a step aside clears its 1.6 m splash.
+  ranged {
+    range_min: 7 range_max: 15 cooldown: 3.5 cast_time: 1.0 speed: 11 gravity: 7.5
+    attack: 3 damage: "1d6" splash_radius: 1.6 direct_bonus: 2 lead: 0.35
+    color { r: 0.9 g: 2.6 b: 0.35 a: 1 }
+  }
 }
 
 rescue {
