@@ -29,6 +29,7 @@ namespace LuckyNumbers.Station
             public ShipView View;
             public Collider Hitbox;
             public RogueBrain Brain;
+            public RogueFlight Flight;
             public Vector3 Position, Velocity, Home;
             public Quaternion Rotation;
             public float Hull, Shield, Ready, HitAt = -99f;
@@ -201,6 +202,7 @@ namespace LuckyNumbers.Station
                 Ready = Time.time + _rng.NextFloat(1f, 2.5f),   // a moment before the first shot
             };
             r.Velocity = r.Rotation * Vector3.forward * type.Speed;
+            r.Flight.Speed = type.Speed;
             view.Pose(r.Position, r.Rotation);
             view.SetHeat(0f, 1.2f);
             _rogues.Add(r);
@@ -277,15 +279,14 @@ namespace LuckyNumbers.Station
             desired = (desired + avoid * 2f).normalized;
             if (desired.sqrMagnitude < 1e-4f) desired = fwd;
 
-            r.Rotation = Quaternion.RotateTowards(r.Rotation, Quaternion.LookRotation(desired, r.Rotation * Vector3.up), t.TurnRate * dt);
-            // Banking: roll the wings level against the world's up, slowly, so they don't fly upside down for long.
+            // Flying it like a fighter: bank and pull, eased rates, speed bled in hard turns (RogueFlight).
+            r.Flight.Step(ref r.Rotation, ref r.Velocity, desired, t.Speed * pace, t.TurnRate, t.Speed * 1.3f, dt);
             fwd = r.Rotation * Vector3.forward;
-            r.Rotation = Quaternion.Slerp(r.Rotation, Quaternion.LookRotation(fwd, Vector3.up), 1f - math.exp(-0.8f * dt));
-            var speed = t.Speed * pace;
-            r.Velocity = Vector3.Lerp(r.Velocity, fwd * speed, 1f - math.exp(-1.6f * dt));
             r.Position = _outOfHull(r.Position + r.Velocity * dt, t.Length * 0.5f);
             r.View.Pose(r.Position, r.Rotation);
-            r.View.SetThrust(new Vector3(0f, 0.2f, pace), Vector3.zero, pace > 1.1f ? 1.4f : 1f);
+            var spin = r.Flight.Spin / math.max(10f, t.TurnRate);
+            r.View.SetThrust(new Vector3(0f, 0.2f, pace), new Vector3(math.clamp(spin.x, -1f, 1f), math.clamp(spin.y, -1f, 1f),
+                             math.clamp(spin.z * 0.4f, -1f, 1f)), pace > 1.1f ? 1.4f : 1f);
 
             // Rogue shields recharge too (a fifth of the way a second, after the same quiet spell).
             var d = C?.Defense;
@@ -379,7 +380,8 @@ namespace LuckyNumbers.Station
                 {
                     _wave++;
                     _state.Wave.Value = _wave;
-                    SpawnWave(_perWave, _danger, _satellite);
+                    // A ramp: the first wave is one ship, each after it one more, up to the job's size.
+                    SpawnWave(math.min(_wave, _perWave), _danger, _satellite);
                 }
                 if (_uploaded >= _seconds)
                 {

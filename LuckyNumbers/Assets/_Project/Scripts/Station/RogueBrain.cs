@@ -102,16 +102,26 @@ namespace LuckyNumbers.Station
                 case RogueState.Attack:
                     if (s.Distance < math.max(10f, _t.Pass) || s.Time > _until)
                     {
-                        // Out to one side and a little up or down, past you.
+                        // Past you, then up and over (or down and under) and out to one side: a climbing break that
+                        // RogueFlight flies as a bank and pull, so it comes round in an arc rather than flat.
                         var side = Vector3.Cross(s.Forward, Vector3.up);
                         if (side.sqrMagnitude < 1e-3f) side = Vector3.right;
-                        _point = s.Position + s.Forward * (Close * 3f) + side.normalized * (_side * Close * 2f) +
-                                 Vector3.up * rng.NextFloat(-Close, Close);
+                        var vertical = rng.NextFloat() < 0.7f ? 1f : -1f;
+                        _point = s.Position + s.Forward * (Close * 2f) + Vector3.up * (vertical * Close * 2.5f) +
+                                 side.normalized * (_side * Close * 1.5f);
                         _side = -_side;   // the other way next time
                         Go(RogueState.BreakOff, s, rng.NextFloat(1.5f, 2.6f));
                         return (_point, 1.25f, false);
                     }
-                    return (s.Aim, s.Distance > Close * 3f ? 1.25f : s.Distance < Close ? 0.75f : 1f, true);
+                    {
+                        // Weave on the way in (harder to hit), steadying up as it closes to shoot.
+                        var across = Vector3.Cross(s.Player - s.Position, Vector3.up);
+                        if (across.sqrMagnitude < 1e-3f) across = Vector3.right;
+                        var weave = math.saturate((s.Distance - Close * 2f) / (Close * 4f));
+                        var aim = s.Aim + across.normalized * (math.sin(s.Time * 1.3f + _side * 2f) * Close * 0.8f * weave) +
+                                  Vector3.up * (math.sin(s.Time * 0.9f + _side) * Close * 0.4f * weave);
+                        return (aim, s.Distance > Close * 3f ? 1.25f : s.Distance < Close ? 0.75f : 1f, true);
+                    }
 
                 case RogueState.BreakOff:
                     if (s.Time > _until)

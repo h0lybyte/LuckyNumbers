@@ -117,11 +117,11 @@ namespace LuckyNumbers.Station
             Layers.Set(_ship.gameObject, Layers.Local);   // the flight camera's only (PlaceInSpace)
             _guns = new ShipGuns(_ship) { Layer = Layers.Local };
             _guns.Arm(_stats);
-            // Dev (the page's inspector): "rogues" sends a wave at you, dead ahead (so you can try your guns at once).
+            // Dev (the page's inspector): "rogues" sends one at you, dead ahead (so you can try your guns at once).
             _subscriptions.Add(_warps.Subscribe(e =>
             {
                 if (e.To == "rogues" && _fight != null && !_fight.Destroyed)
-                    _fight.SpawnWave(2, 2, _flight.Position + _flight.Rotation * Vector3.forward * 320f, 0f, 30f);
+                    _fight.SpawnWave(1, 2, _flight.Position + _flight.Rotation * Vector3.forward * 320f, 0f, 30f);
             }));
             _view.FlightCamera.gameObject.SetActive(true);
             SetUp(_cts.Token).Forget();
