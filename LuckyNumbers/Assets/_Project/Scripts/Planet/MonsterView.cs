@@ -97,7 +97,7 @@ namespace LuckyNumbers.Planet
             string missing = null;
             if (!vat.Usable) missing = "this device can't draw it";
             else
-                foreach (var c in new[] { clips.Idle, clips.Walk, clips.Run, clips.Attack, clips.Hit, clips.Die })
+                foreach (var c in new[] { clips.Idle, clips.Walk, clips.Run, clips.Attack, clips.Cast, clips.Hit, clips.Die })
                     if (rig.Has(c) && !vat.Has(c)) { missing = $"clip '{c}' isn't baked (tools/ln.py scenes)"; break; }
             if (missing == null) return true;
             if (Warned.Add(id)) Debug.LogWarning($"[Monster] {id}: VAT {vat.name}: {missing}; skinned instead");
@@ -127,6 +127,18 @@ namespace LuckyNumbers.Planet
 
         /// <summary>Its attack (the clip once, then back to walking).</summary>
         public void Attack() => OneShot(_clips?.Attack, 0f);
+
+        /// <summary>Its spell or throw from range (MonsterClips.cast once, then back to walking); false if it has no
+        /// cast clip (a block, or none named), so the caller can fall back. See <see cref="CastLength"/>.</summary>
+        public bool Cast()
+        {
+            if (!Modelled || _dead || !Has(_clips?.Cast)) return false;
+            OneShot(_clips.Cast, 0f);
+            return true;
+        }
+
+        /// <summary>The cast clip's length in seconds (0: none), e.g. to time a projectile's release within it.</summary>
+        public float CastLength => Modelled && Has(_clips?.Cast) ? Length(_clips.Cast) : 0f;
 
         /// <summary>Hit and still up: a stagger, standing still a moment.</summary>
         public void Staggered() => OneShot(_clips?.Hit, 0.6f);
