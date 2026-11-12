@@ -44,6 +44,8 @@ namespace LuckyNumbers.Planet
         MonsterVat _vat;
         MonsterCrowd.Member _member;
         internal MonsterCrowd.Member CrowdMember => _member;
+        // Its blob shadow (MonsterBlobs), on the ground it's told of (Grounded).
+        MonsterBlobs.Member _blob;
 
         public bool Modelled => _rig != null || _member != null;
         /// <summary>Mid-stagger (a hit's clip): it doesn't walk.</summary>
@@ -83,6 +85,7 @@ namespace LuckyNumbers.Planet
                 if (Application.isPlaying && Said.Add(id)) Debug.Log($"[Monster] {id}: skinned{(SkinnedOnly ? " (ln-skinned)" : vat == null ? " (no VAT bake)" : "")}");
             }
             view.Move(0f, false);
+            view.AddBlob(size);
             return view;
         }
 
@@ -159,6 +162,7 @@ namespace LuckyNumbers.Planet
             view._color = color;
             view._block = new MaterialPropertyBlock();
             view.Tint(color);
+            view.AddBlob(size);
             // Eyes: two small dark blocks on its front face (local space: the cube is 1 x 1 x 1).
             foreach (var x in new[] { -0.22f, 0.22f })
             {
@@ -178,6 +182,14 @@ namespace LuckyNumbers.Planet
         }
 
         public void Hit(string source, Vector3 point, Vector3 direction) => Damaged?.Invoke(this, source, point);
+
+        void AddBlob(Vector3 size)
+        {
+            if (Application.isPlaying) _blob = MonsterBlobs.Current.Add(transform, size);
+        }
+
+        /// <summary>The ground's height under it, where its blob shadow lies (whoever moves it says, each time).</summary>
+        public void Grounded(float groundY) => _blob?.Blobs.SetGround(_blob, groundY);
 
         /// <summary>A plain tinted placeholder block (no collider, nothing to hit): encounter finds.</summary>
         public static Transform Block(string name, Vector3 size, Color color, Material material)
@@ -201,9 +213,23 @@ namespace LuckyNumbers.Planet
             else _flash = MonsterCrowd.FlashTime;
         }
 
-        void OnEnable() => _member?.Crowd.SetHidden(_member, false);
-        void OnDisable() => _member?.Crowd.SetHidden(_member, true);
-        void OnDestroy() => _member?.Crowd.Remove(_member);
+        void OnEnable()
+        {
+            _member?.Crowd.SetHidden(_member, false);
+            _blob?.Blobs.SetHidden(_blob, false);
+        }
+
+        void OnDisable()
+        {
+            _member?.Crowd.SetHidden(_member, true);
+            _blob?.Blobs.SetHidden(_blob, true);
+        }
+
+        void OnDestroy()
+        {
+            _member?.Crowd.Remove(_member);
+            _blob?.Blobs.Remove(_blob);
+        }
 
         void Update()
         {
