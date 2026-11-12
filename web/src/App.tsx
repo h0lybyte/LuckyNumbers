@@ -13,7 +13,8 @@ import { EncounterCard } from "./encounter";
 import { CharacterSheetGate } from "./sheet";
 import { HangarGate } from "./hangar";
 import { SaveSlotsGate } from "./saves";
-import { TouchControls, touchDevice } from "./touch";
+import { RotatePrompt, TouchControls, touchDevice } from "./touch";
+import { FpsMeter } from "./fps";
 import type { GameScene, InboundEvent, WebEvents } from "./ln";
 
 export function App({ dock }: { dock: HTMLElement | null }) {
@@ -61,6 +62,8 @@ export function App({ dock }: { dock: HTMLElement | null }) {
       <PayoutBanner />
       <ItemToasts />
       <TouchControls />
+      <RotatePrompt />
+      <FpsMeter />
       {inspector && dock && createPortal(<Inspector />, dock)}
     </>
   );

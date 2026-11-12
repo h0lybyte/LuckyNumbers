@@ -455,7 +455,7 @@ def cmd_build_web(args) -> int:
     version = args.version or changelog_version()[0]
     code, log = run_unity(["-buildTarget", "WebGL",
                            "-executeMethod", "LuckyNumbers.Editor.WebBuild.Build",
-                           "-lnGfx", args.gfx, "-lnVersion", version],
+                           "-lnGfx", args.gfx, "-lnTex", args.tex, "-lnVersion", version],
                           f"ln-build-web-{args.gfx}.log", args.force)
     errors = summarize_log(log)
     out = web_build_dir(args.gfx)
@@ -820,6 +820,8 @@ def main(argv=None) -> int:
                    help="graphics backend(s): both = WebGPU + WebGL 2 fallback (default); "
                         "other variants build to Builds/WebGL-<Variant>")
     s.add_argument("--version", help="game version (default: top entry of CHANGELOG.md)")
+    s.add_argument("--tex", choices=("both", "dxt"), default="both",
+                   help="texture formats: both = DXT + an ASTC copy for phones (what ships), dxt = one quicker pass")
     s.set_defaults(func=cmd_build_web)
 
     s = sub.add_parser("overlay", help="build the web overlays (web/) into the Web build; --watch rebuilds on save")

@@ -10,12 +10,19 @@ namespace LuckyNumbers.Planet
     /// PlayableGraph: looping (idle, walks: wrapped here, whatever the import's loop flag) or once (holding the last
     /// frame). The bake strips root motion, so clips play in place and the presenter moves the body; `speeds` (the
     /// bake's aberration.json) are each clip's stride in m/s, so a walk plays at the rate the body moves.
+    /// `vat`: the same clips baked to vertex animation textures (Editor/VatBaker); with it, MonsterView leaves this
+    /// template unused in play and MonsterCrowd draws the monster instanced. This graph stays the fallback (and the bake's
+    /// source: the baker poses the rig through <see cref="Pose"/>).
     /// </summary>
     public sealed class MonsterRig : MonoBehaviour
     {
         [SerializeField] Animator animator;
         [SerializeField] AnimationClip[] clips = System.Array.Empty<AnimationClip>();
         [SerializeField] float[] speeds = System.Array.Empty<float>();   // per clip, m/s (0: in place)
+        [SerializeField] MonsterVat vat;
+
+        public MonsterVat Vat => vat;
+        public void SetVat(MonsterVat v) => vat = v;
 
         PlayableGraph _graph;
         AnimationMixerPlayable _mixer;
@@ -43,6 +50,19 @@ namespace LuckyNumbers.Planet
         public static string Short(string take) => take[(take.LastIndexOf('|') + 1)..];
 
         public bool Has(string clip) => Index(clip) >= 0;
+
+        /// <summary>The clip itself (null if it has none): the VAT bake reads its loop flag.</summary>
+        public AnimationClip Find(string clip)
+        {
+            var i = Index(clip);
+            return i < 0 ? null : clips[i];
+        }
+
+        /// <summary>Every clip's short name, in order.</summary>
+        public System.Collections.Generic.IEnumerable<string> ClipNames
+        {
+            get { foreach (var c in clips) if (c != null) yield return Short(c.name); }
+        }
 
         /// <summary>The clip's length in seconds (0 if it has none).</summary>
         public float Length(string clip)
@@ -125,9 +145,12 @@ namespace LuckyNumbers.Planet
             else if (!_once && t >= length) p.SetTime(t % length);
         }
 
-        void OnDestroy()
+        /// <summary>Drop the graph (edit mode: nothing calls OnDestroy there).</summary>
+        public void Release()
         {
             if (_graph.IsValid()) _graph.Destroy();
         }
+
+        void OnDestroy() => Release();
     }
 }

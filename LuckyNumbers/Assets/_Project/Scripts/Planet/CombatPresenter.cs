@@ -66,6 +66,7 @@ namespace LuckyNumbers.Planet
         readonly IPublisher<CharacterXpGained> _xp;
         readonly IPublisher<SceneChangeRequested> _scenes;
         readonly IPublisher<ItemHandled> _handled;
+        RaycastHit[] _aimHits = new RaycastHit[16];   // the aim ray's hits (Fire), grows if a ray fills it
         readonly IPublisher<FindRolled> _foundRolls;
         readonly ISubscriber<DevWarpRequested> _warps;
         readonly List<Monster> _monsters = new();
@@ -393,11 +394,15 @@ namespace LuckyNumbers.Planet
             var eye = _player.Camera.transform;
             var from = eye.position + eye.right * 0.22f - eye.up * 0.18f + eye.forward * 0.4f;   // from the hip, right hand
             var target = eye.position + eye.forward * range;
-            var hits = Physics.RaycastAll(eye.position, eye.forward, range, ~0, QueryTriggerInteraction.Ignore);
+            // Every hit, as RaycastAll gave, without its array per shot: a full buffer may have dropped some, so it grows and retries.
+            int count;
+            while ((count = Physics.RaycastNonAlloc(eye.position, eye.forward, _aimHits, range, ~0, QueryTriggerInteraction.Ignore)) == _aimHits.Length)
+                _aimHits = new RaycastHit[_aimHits.Length * 2];
             var best = float.MaxValue;
             RaycastHit aimed = default;
-            foreach (var h in hits)
+            for (var i = 0; i < count; i++)
             {
+                var h = _aimHits[i];
                 if (h.collider.transform.IsChildOf(_player.Body.transform)) continue;
                 if (h.distance < best) { best = h.distance; target = h.point; aimed = h; }
             }

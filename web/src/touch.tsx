@@ -4,7 +4,7 @@
 // JSON). Pointer events go straight into that buffer through refs, so moving a thumb never re-renders React.
 //
 // Shown on a coarse pointer (a touch screen), or anywhere with ?ln-touch (try it with a mouse).
-import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useLNState } from "./ln";
 
 /** Button bits: must match TouchPad.Buttons (C#). */
@@ -203,5 +203,55 @@ function Hold({ bit, label, big }: { bit: number; label: ReactNode; big?: boolea
     >
       {label}
     </button>
+  );
+}
+
+// ---- turn sideways ---------------------------------------------------------------------------------------------
+
+const portraitQuery = typeof matchMedia !== "undefined" ? matchMedia("(orientation: portrait)") : null;
+
+/** The page's stage (canvas + overlay): what the template fullscreens. */
+const stage = () => document.getElementById("stage") ?? document.documentElement;
+
+/**
+ * Held upright on a touch screen: the sticks and the flight HUD need the width, so ask to turn it sideways. Where
+ * the browser allows (Android Chrome), one tap goes fullscreen and locks landscape; iPhone Safari has neither API,
+ * so there it's just the ask. "Play anyway" dismisses it for the visit (a tablet held upright is fine).
+ */
+export function RotatePrompt() {
+  const [portrait, setPortrait] = useState(portraitQuery?.matches ?? false);
+  const [dismissed, setDismissed] = useState(false);
+  useEffect(() => {
+    if (!portraitQuery) return;
+    const on = () => setPortrait(portraitQuery.matches);
+    portraitQuery.addEventListener("change", on);
+    return () => portraitQuery.removeEventListener("change", on);
+  }, []);
+  if (!touchDevice || !portrait || dismissed) return null;
+
+  const canFullscreen = !!stage().requestFullscreen;
+  const goLandscape = async () => {
+    try {
+      if (!document.fullscreenElement) await stage().requestFullscreen({ navigationUI: "hide" });
+      // Not in every browser's typings, nor every browser (iOS): best effort.
+      await (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.("landscape");
+    } catch {
+      // refused or unsupported: the ask stays up until the phone turns
+    }
+  };
+  return (
+    <div className="rotate ui" role="dialog" aria-label="Turn your phone sideways">
+      <div className="rotate-phone" aria-hidden="true" />
+      <b>Turn your phone sideways</b>
+      <span>The sticks and the flight instruments need the width.</span>
+      {canFullscreen && (
+        <button type="button" className="touch-btn rotate-go" onClick={goLandscape}>
+          Play fullscreen
+        </button>
+      )}
+      <button type="button" className="rotate-skip" onClick={() => setDismissed(true)}>
+        Play anyway
+      </button>
+    </div>
   );
 }

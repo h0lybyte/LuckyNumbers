@@ -1653,6 +1653,15 @@ kbd {
 .touch-btn.big { grid-column: span 2; width: 136px; height: 64px; font-size: 14px; border-color: var(--neon); }
 .touch-btn.held { background: color-mix(in srgb, var(--neon) 35%, var(--panel)); }
 
+/* A phone held sideways (~390 px tall): smaller buttons, so the flight pad stays under the pad compass (top right)
+   and Menu / Map clear the flight steps (top centre). Still well over a fingertip. */
+@media (max-height: 460px) {
+  .touch-pad { grid-template-columns: repeat(2, 56px); gap: 6px; }
+  .touch-btn { min-width: 56px; height: 38px; padding: 0 3px; font-size: 11px; white-space: nowrap; }
+  .touch-btn.big { width: 118px; height: 50px; font-size: 13px; }
+  .touch-top .touch-btn { min-width: 52px; height: 34px; }
+}
+
 /* ---- credits (counter.tsx): the counting readout, its floating +/-, the payout card ---- */
 .credit-counter {
   position: relative;
@@ -1820,4 +1829,58 @@ kbd {
   .upgrade { grid-template-columns: 1fr; }
   .upgrade-buy { width: 100%; }
   .outfitter-head { flex-wrap: wrap; }
+}
+
+/* ---- turn sideways (RotatePrompt, touch screens held upright) ---- */
+.rotate {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px max(16px, env(safe-area-inset-left));
+  text-align: center;
+  background: var(--scan), rgba(2, 8, 16, 0.94);
+  color: var(--fg);
+  pointer-events: auto;
+}
+.rotate b { font-size: 20px; letter-spacing: 0.06em; text-transform: uppercase; }
+.rotate span { color: var(--muted); max-width: 28ch; }
+.rotate-phone {
+  width: 44px;
+  height: 76px;
+  border: 2px solid var(--neon);
+  border-radius: 8px;
+  animation: rotate-turn 2.4s ease-in-out infinite;
+}
+@keyframes rotate-turn { 0%, 30% { transform: rotate(0deg); } 60%, 100% { transform: rotate(-90deg); } }
+.rotate-go { padding: 0 20px; height: 44px; }
+.rotate-skip {
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font: 12px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  padding: 8px;
+  cursor: pointer;
+}
+
+/* ?ln-fps (fps.tsx) */
+.fps-meter {
+  position: absolute;
+  top: max(4px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  padding: 2px 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #8f8;
+  font: 11px var(--font-mono);
+  pointer-events: none;
+  white-space: nowrap;
 }
