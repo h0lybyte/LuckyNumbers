@@ -1677,6 +1677,27 @@ namespace LuckyNumbers.Model
                 GraceSeconds = 4.0f,
             },
             ClimbSpeed = 2.2f,
+            Vertical = new VerticalRules
+            {
+                StairChance = 0.6f,
+                StairsMax = 2,
+                FlightMin = 3,
+                FlightMax = 4,
+                ReplaceShaftChance = 0.35f,
+                TimberChance = 0.5f,
+                GreatSpacing = 3,
+                GreatChance = 0.7f,
+                GreatBand = 6,
+                GreatRegionsMin = 2,
+                GreatRegionsMax = 5,
+                GreatSize = 3,
+                LandingEvery = 2,
+                HoistSpeed = 3.0f,
+                HoistCallDistance = 3.5f,
+                HoistBoardPrompt = "E  hoist down · Shift+E up",
+                HoistRidePrompt = "W/S up/down · E next landing down · Shift+E up",
+                HoistCallPrompt = "E  call the hoist",
+            },
             Puzzles = new PuzzleRules
             {
                 DoorChance = 0.35f,

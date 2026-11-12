@@ -163,49 +163,21 @@ namespace LuckyNumbers.Editor
 
         static int3 Cell(HoldGrid g, int i) => new(i % g.Size.x, i / (g.Size.x * g.Size.z), i / g.Size.x % g.Size.z);
 
-        static bool Open(HoldGrid g, int3 c)
-        {
-            var cell = g.Get(c);
-            return cell.Walkable && (cell.Flags & CellFlags.Pillar) == 0;
-        }
-
-        /// <summary>Independent flood fill over the finished grid (props block, shafts join levels).</summary>
+        /// <summary>Flood fill over the finished grid with the shared walkability rules (HoldNav: props block, shafts,
+        /// stairs and great shafts join levels).</summary>
         static int Flood(HoldGrid g, int3 start)
         {
             var seen = new NativeArray<bool>(g.Cells.Length, Allocator.Temp);
-            var queue = new NativeArray<int3>(g.Cells.Length, Allocator.Temp);
-            int head = 0, tail = 0;
-            queue[tail++] = start;
-            seen[g.Index(start)] = true;
-            while (head < tail)
-            {
-                var c = queue[head++];
-                var k = g.Get(c).Kind;
-                for (var dir = 0; dir < 6; dir++)
-                {
-                    var o = dir switch
-                    {
-                        0 => new int3(1, 0, 0), 1 => new int3(-1, 0, 0), 2 => new int3(0, 0, 1), 3 => new int3(0, 0, -1),
-                        4 => new int3(0, -1, 0), _ => new int3(0, 1, 0),
-                    };
-                    if (dir == 4 && !(k == CellKind.ShaftDown && g.Get(c + o).Kind == CellKind.ShaftUp)) continue;
-                    if (dir == 5 && !(k == CellKind.ShaftUp && g.Get(c + o).Kind == CellKind.ShaftDown)) continue;
-                    var nb = c + o;
-                    if (!g.InBounds(nb) || !Open(g, nb) || seen[g.Index(nb)]) continue;
-                    seen[g.Index(nb)] = true;
-                    queue[tail++] = nb;
-                }
-            }
+            var reached = HoldNav.Flood(g, start, false, seen);
             seen.Dispose();
-            queue.Dispose();
-            return tail;
+            return reached;
         }
 
         static string Ascii(HoldGrid[,,] grids, int n, int levels)
         {
             var sb = new StringBuilder();
             sb.AppendLine($"MineGenerator seed {Seed}: 3x3 regions x -1..1, z -1..1; north up, east right. " +
-                          "# solid  . mine  v shaft down  ^ shaft up  * lantern  o timber prop");
+                          "# solid  . mine  v shaft down  ^ shaft up  * lantern  o timber prop  / stair  _ stair well  O great shaft");
             for (var d = 0; d < 2; d++)
             for (var l = levels - 1; l >= 0; l--)
             {
@@ -228,6 +200,8 @@ namespace LuckyNumbers.Editor
             if (!c.Walkable) return '#';
             if (c.Kind == CellKind.ShaftDown) return 'v';
             if (c.Kind == CellKind.ShaftUp) return '^';
+            if (c.Kind == CellKind.Stair) return (c.Reserved & 0x80) != 0 ? '_' : '/';
+            if (c.Kind == CellKind.GreatShaft) return 'O';
             if ((c.Flags & CellFlags.Pillar) != 0) return 'o';
             if ((c.Flags & CellFlags.Lantern) != 0) return '*';
             return '.';

@@ -300,6 +300,8 @@ def cmd_preview(args) -> int:
                    "relics": ("RenderRelics", "preview-relics.png"),
                    "exhaust": ("RenderExhaust", "preview-exhaust.png"), "legs": ("RenderLegs", "preview-legs.png"),
                    "hold": ("RenderHold", "preview-hold.png"),
+                   # Stairs and great shafts (Editor/VerticalPreview.cs): also preview-greatshaft(-up).png.
+                   "stairs": ("VerticalPreview.Render", "preview-stairs.png"),
                    # The Emberdeep universe (Editor/DeepPreview.cs): a system and the terraced crash site with its gate.
                    "deep-space": ("DeepPreview.RenderSpace", "preview-deep-space.png"),
                    "deep-ground": ("DeepPreview.RenderGround", "preview-deep-ground.png")}.get(
@@ -879,7 +881,7 @@ def main(argv=None) -> int:
     s.add_argument("name", nargs="?", default="roman_vase")
     s.set_defaults(func=cmd_relic)
     s = sub.add_parser("preview", help="render shaders to LuckyNumbers/Logs/preview-<what>.png")
-    s.add_argument("what", nargs="?", choices=["space", "ship", "arms", "station", "exhaust", "legs", "monster", "relics", "hold",
+    s.add_argument("what", nargs="?", choices=["space", "ship", "arms", "station", "exhaust", "legs", "monster", "relics", "hold", "stairs",
                                                "deep-space", "deep-ground"], default="space")
     s.add_argument("--seed", type=int, help="deep-*: the lucky number to render")
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")

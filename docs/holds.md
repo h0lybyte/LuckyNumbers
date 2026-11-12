@@ -111,3 +111,34 @@ Structures on and under dwarven worlds: a cell grid, meshed into chunks, skinned
 - `HoldNav.Flood` / `Moves`: the one notion of walkable connectivity (stairs plug in via `ExtraMoves`); with
   fixtures closed it proves keys/levers are reachable before what they open.
 - Mesher kit hooks: `KitVertical` (HoldMesher.Vertical.cs), `KitDepth` (HoldMesher.Depth.cs).
+
+## Stairs, great shafts, hoists (Vertical pass)
+
+- Rules: `VerticalRules` (`proto/luckynumbers/v1/hold_vertical.proto`), content `content/holds/vertical/default.txtpb`.
+  Code: `MinePasses.Vertical.cs` (pass, `StairCell` / `GreatShaftCell` encodings, `GreatShaft`), `HoldNav.Stairs.cs`,
+  `HoldMesher.Vertical.cs` (kit, `VerticalKit` slices via SharedStatic, `HoistKit` meshes), `HoldScene/HoistPresenter.cs`.
+- Stairs: per storey pair (stair_chance, up to stairs_max) a flight of flight_min..flight_max cells (4 treads each,
+  rise storey / (4 * len) <= 0.4 m step offset) cut through untouched rock: steps on the lower storey (Stair + OpenAbove),
+  the well over them (Stair, well bit), walk on from the plain mine cell before step 0 and off onto the plain mine cell
+  past the last step, upper storey. Reserved: bits 0-1 direction up, 2-4 index, 5 timber, 7 well. A lantern over the
+  top. Then (replace_shaft_chance) one of that pair's internal shafts is filled in if the region stays connected.
+  Mesh: treads + risers (dlv_stonestp1a or dlv_woodstp1a), one collider box per tread, a lintel over the well's foot.
+- Great shafts: `MinePasses.GreatShaftOf(seed, group, band)`: group = region (x, z) / great_spacing, band = -region.y /
+  great_band; hash(seed, group, band) says whether (great_chance), which region column, how many regions
+  (great_regions_min..max) from where in the band, dock side, and the footprint (great_size square, 3..cells-3-size),
+  re-rolled until 2+ cells clear of every region-to-region shaft along it. Every region in the column computes the same.
+  Cells: GreatShaft, Reserved bits 0 floor (bottom storey only), 1 ceiling (top only), 2-3 dock, 4-7 footprint x/z.
+  Landings: every landing_every storeys from the top, the bottom, and any storey the dig had touched the footprint or
+  its ring: a ring of mine floor round the footprint, two lanterns, a tunnel from the dock side to the nearest mine
+  cell. Mesh: corner posts, walings, iron guide rails, wall lanterns, the headframe and pulley at the top; railings on
+  landing edges (colliders), an iron gateway at the dock's middle. One Hoist fixture per region (footprint corner, top
+  level; Data: storeys below | landing mask << 16).
+- Hoist (`HoistPresenter`): shafts tracked by (group, band) from their first shown region, kept for the visit (cage,
+  cable, gates don't stream). Cage: HoistKit mesh (HoldKit material), kinematic box colliders, own lamp; starts at the
+  top. On it: E down to the next landing, Shift+E up; riding (`FirstPersonPresenter.Climbing`, the presenter moves the
+  body with the cage) W/S drive it and it settles at the next landing that way, E / Shift+E retarget. At a landing
+  with the cage elsewhere: E calls it. Each landing's gate (collider) lifts while the cage stands there.
+  Dev: `LN.send('DevWarpRequested', {to: 'shaft'})` (nearest great shaft's top landing), `{to: 'stairs'}`.
+- Check: `-executeMethod LuckyNumbers.Editor.VerticalCheck.Run` (5 seeds: flights, shafts along their length, landings
+  joined, hoist fixtures, seams, connectivity, determinism, a mesh build). Renders: `tools/ln.py preview stairs`
+  (Editor/VerticalPreview.cs) -> `Logs/preview-stairs.png`, `preview-greatshaft.png`, `preview-greatshaft-up.png`.
