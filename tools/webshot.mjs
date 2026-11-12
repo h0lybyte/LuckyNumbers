@@ -7,10 +7,11 @@
 // --steps: JSON list run after --wait, coordinates are fractions of the game canvas (0..1, top-left):
 //   [{"drag":[x1,y1,x2,y2]}, {"scroll":[x,y,notches]}, {"sleep":1}, {"shot":"a.png"}, {"click":[x,y]}, {"wait":"text"},
 //    {"fps":5}, {"key":["KeyW",2]}, {"key":["ShiftLeft+KeyW",2]}, {"down":"KeyW"}, {"up":"KeyW"}, {"hold":[x,y,2]},
-//    {"press":[x,y]}, {"release":[x,y]}, {"js":"LN.send(...)"}]
+//    {"press":[x,y]}, {"release":[x,y]}, {"js":"LN.send(...)"}, {"throttle":4}, {"mem":1}]
 //   (fps: measure 5 s; key: hold for 2 s; down / up: press / release and go on; hold: the left button down for 2 s;
 //    focus: the page acts focused (headless pointer lock grants); press / release: the left button down / up and go on, so shots run while firing; sleep is in seconds;
-//    js: run in the page, prints the result)
+//    js: run in the page, prints the result; throttle: Chrome's CPU slowdown factor (1 = off), for low-end runs;
+//    mem: the wasm memory (all of Unity's heap) and the page's JS heap)
 // Prints the page's console lines (cut at 400 characters; --full keeps them whole). Without --steps it takes one
 // screenshot to <out.png>.
 import { spawn } from "node:child_process";
@@ -33,7 +34,7 @@ const port = 9300 + Math.floor(Math.random() * 500);
 const profile = mkdtempSync(join(tmpdir(), "webshot-"));
 const proc = spawn(chrome, ["--headless=new", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
   "--no-first-run", "--enable-unsafe-swiftshader", "--enable-unsafe-webgpu", `--window-size=${winW},${winH}`, `--force-device-scale-factor=${dpr}`,
-  "--hide-scrollbars",
+  "--hide-scrollbars", "--enable-precise-memory-info",
   // LN_UNCAPPED=1: no vsync / frame limit, so {"fps"} shows real headroom instead of the display's 60.
   ...(process.env.LN_UNCAPPED ? ["--disable-gpu-vsync", "--disable-frame-rate-limit"] : []),
   "about:blank"], { stdio: "ignore" });
@@ -93,6 +94,24 @@ for (const step of steps) {
     console.log(`js: ${JSON.stringify(r.result?.result?.value ?? r.result?.exceptionDetails?.text ?? null)}`);
   }
   if (step.wait) await waitConsole(step.wait);
+  if (step.profile) { // [seconds, "out.cpuprofile"]: the page's CPU profile (open in Chrome DevTools > Performance)
+    await send("Profiler.enable");
+    await send("Profiler.setSamplingInterval", { interval: 200 });
+    await send("Profiler.start");
+    await sleep(step.profile[0] * 1000);
+    const r = await send("Profiler.stop");
+    writeFileSync(step.profile[1], JSON.stringify(r.result.profile));
+    console.log(`profile: ${step.profile[1]}`);
+  }
+  if (step.throttle) { await send("Emulation.setCPUThrottlingRate", { rate: step.throttle }); console.log(`cpu throttle: ${step.throttle}x`); }
+  if (step.mem) {
+    const r = await send("Runtime.evaluate", { returnByValue: true, expression: `(() => {
+      const u = window.unityInstance, mb = (b) => (b / 1048576).toFixed(0);
+      const m = u && u.GetMetricsInfo ? u.GetMetricsInfo() : null, js = performance.memory;
+      return "wasm heap " + (m ? mb(m.usedWASMHeapSize) + "/" + mb(m.totalWASMHeapSize) + " MB" : "?") +
+        (js ? " | js heap " + mb(js.usedJSHeapSize) + "/" + mb(js.totalJSHeapSize) + " MB" : ""); })()` });
+    console.log(`mem: ${r.result?.result?.value}`);
+  }
   if (step.click) {
     const p = px(step.click);
     await mouse("mouseMoved", p); await sleep(100);
