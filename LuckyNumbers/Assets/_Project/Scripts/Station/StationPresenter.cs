@@ -40,6 +40,10 @@ namespace LuckyNumbers.Station
     /// (GameScene.FlightSchool) to test-fly your ship; back from it (PlayerVoyage.training) you step out beside it.
     /// The Docking Bay's launch console takes your ship out round the station (GameScene.Orbit); docked again
     /// (PlayerVoyage.docked) you step off beside it.
+    ///
+    /// The Docking Bay's outfitter console (STATION_ACTION_OUTFITTER) opens the outfitter (Outfitter state; the page's
+    /// panel, OutfitterPresenter sells): ship upgrades for your credits. E again, Esc or walking away closes it. Upgrades
+    /// that raise what you're paid (ShipUpgrades.Payout) scale the homecoming's payout and the job's pay.
     /// </summary>
     [Presenter]
     public sealed class StationPresenter : IStartable, IPostLateTickable, IDisposable
@@ -75,6 +79,8 @@ namespace LuckyNumbers.Station
         readonly ISubscriber<JobAcceptRequested> _accepts;
         readonly RangeRoom _range;                              // the shooting range room (StationScene.range)
         readonly ISubscriber<RangeResetRequested> _rangeResets;
+        readonly Outfitter _outfitter;                          // the outfitter panel (OutfitterPresenter)
+        Vector3 _outfitterAt;                                   // its console: walking away closes it
         List<Jobs.Offer> _offers = new();
         string _orbitBody = "";
         static JobConfig J => GameContent.Jobs;
@@ -84,6 +90,8 @@ namespace LuckyNumbers.Station
         bool NeedsJob => !_job.Active.Value && _voyage.Trips.Value > 0;
         /// <summary>Dev (the page's URL): ?ln-board starts you beside the ship between jobs, to try the job board.</summary>
         static bool DevBoard => (Application.absoluteURL ?? "").Contains("ln-board");
+        /// <summary>Dev: ?ln-outfitter starts you at the outfitter, open, with some credits to spend if you have none.</summary>
+        static bool DevOutfitter => (Application.absoluteURL ?? "").Contains("ln-outfitter");
         // The call playing (Dispatch's, or the museum's on your return), and what the museum paid.
         List<StationCallLine> _callLines;
         GameScene _next;
@@ -125,8 +133,10 @@ namespace LuckyNumbers.Station
                                 IPublisher<CharacterXpGained> xp, PlayerJob job, JobBoard board, LandingSite landing,
                                 ISubscriber<JobAcceptRequested> accepts, ISubscriber<DevWarpRequested> warps, ArmsView arms,
                                 RangeState rangeState, ISubscriber<RangeResetRequested> rangeResets, CharacterSheet sheet,
-                                IPublisher<CombatRoll> rolls, WeaponRack rack, IBufferedSubscriber<UniverseSeedChanged> seeds)
+                                IPublisher<CombatRoll> rolls, WeaponRack rack, IBufferedSubscriber<UniverseSeedChanged> seeds,
+                                Outfitter outfitter)
         {
+            _outfitter = outfitter;
             _seeds = seeds;
             _rack = rack;
             _range = new RangeRoom(station, player, arms, rangeState, warps, (at, yaw, pitch) => Teleport(at, yaw, pitch), firstPerson,
@@ -211,6 +221,7 @@ namespace LuckyNumbers.Station
                 Debug.Log("[Station] dev: ?ln-board, between jobs beside the ship");
             }
             PlaceOnArrival();
+            if (DevOutfitter) DevOpenOutfitter().Forget();
             _flow.Preload(NextScene);
             PlaceInSpace(_cts.Token).Forget();
         }
@@ -401,7 +412,8 @@ namespace LuckyNumbers.Station
             // The map: M toggles it, Esc closes it; it follows you (plan coordinates, compass heading).
             var press = _press;
             _press = Press.None;
-            if ((press & Press.CloseMap) != 0 && _board.Open.Value) { CloseBoard(); press &= ~Press.CloseMap; }   // Esc: the board first
+            if ((press & Press.CloseMap) != 0 && _outfitter.Open.Value) { CloseOutfitter(); press &= ~Press.CloseMap; }   // Esc: the outfitter first
+            if ((press & Press.CloseMap) != 0 && _board.Open.Value) { CloseBoard(); press &= ~Press.CloseMap; }   // then the board
             if ((press & Press.ToggleMap) != 0) _state.MapOpen.Value = !_state.MapOpen.Value;
             else if ((press & Press.CloseMap) != 0 && _state.MapOpen.Value) _state.MapOpen.Value = false;
             var plan = _station.Plan;
@@ -448,13 +460,15 @@ namespace LuckyNumbers.Station
                 else if (NearShip(position)) prompt = NeedsJob ? (_board.Open.Value ? "" : J.NoJobPrompt) : _layout.Dock.BoardPrompt;
             }
             if (_board.Open.Value && !NearShip(position)) CloseBoard();   // walked away from the ship
+            if (_outfitter.Open.Value && Vector2.Distance(new Vector2(_outfitterAt.x, _outfitterAt.z), new Vector2(position.x, position.z)) > UseDistance * 1.6f)
+                CloseOutfitter();   // walked away from its console
             if (_state.Prompt.Value != prompt) _state.Prompt.Value = prompt;
             _firstPerson.InteractElsewhere = prompt != "";   // E answers / uses / boards: the gun stays put
 
             if ((press & Press.Interact) != 0 && !Leaving)
             {
                 if (_state.Call.Value == CallPhase.Ringing) Answer();
-                else if (console != null) Use(console.Action);
+                else if (console != null) Use(console);
                 else if (NearShip(position) && NeedsJob && !_board.Open.Value) OpenBoard();   // pick the job here
                 else if (NearShip(position) && !NeedsJob) Board();
             }
@@ -476,10 +490,14 @@ namespace LuckyNumbers.Station
             return d < Mathf.Max(1f, dock.BoardDistance);
         }
 
-        void Use(StationAction action)
+        void Use(StationSwitch console)
         {
-            switch (action)
+            switch (console.Action)
             {
+                case StationAction.Outfitter:
+                    if (_outfitter.Open.Value) CloseOutfitter();
+                    else OpenOutfitter(_station.Plan.PlanToWorld(console.Col, console.Row));
+                    break;
                 case StationAction.Lights:
                     var next = _state.Lights.Value switch
                     {
@@ -556,6 +574,8 @@ namespace LuckyNumbers.Station
                 1 => names[0],
                 _ => string.Join(", ", names.GetRange(0, names.Count - 1)) + " and " + names[^1],
             };
+            var mult = ShipUpgrades.Payout(_playerShip);   // the broker's licence, a gold hull...
+            if (mult != 1f) total = Mathf.RoundToInt(total * mult);
             _payout = total.ToString("N0");
             _voyage.Credits.Value += total;
             _voyage.LastPayout.Value = total;
@@ -586,6 +606,7 @@ namespace LuckyNumbers.Station
                     _job.Completed.Value++;
                     if (_job.Pay.Value > 0)
                     {
+                        if (mult != 1f) _job.Pay.Value = Mathf.RoundToInt(_job.Pay.Value * mult);   // and the lines say so
                         _voyage.Credits.Value += _job.Pay.Value;
                         _voyage.LastPayout.Value += _job.Pay.Value;
                         lines.AddRange(J.DoneLines);
@@ -615,7 +636,7 @@ namespace LuckyNumbers.Station
             _next = GameScene.Orbit;
             _firstPerson.Lock(ControlLock.Leaving);
             _state.Prompt.Value = "";
-            PlayerShipStats.Refuel(_playerShip);   // docked: the station fills the tank
+            Launch();
             Debug.Log("[Station] launch: out of the bay");
             Leave(_cts.Token).Forget();
         }
@@ -632,7 +653,7 @@ namespace LuckyNumbers.Station
                 var spot = at + step * 1.3f;
                 if (!StationPlan.Walkable(_station.Plan.At(StationPlan.CellOf(spot)))) continue;
                 Teleport(new Vector3(spot.x, 0f, spot.z), Quaternion.LookRotation(-step, Vector3.up).eulerAngles.y);
-                Debug.Log($"[Station] back from the Flight School, beside its console ({sw.Col:0.#}, {sw.Row:0.#})");
+                Debug.Log($"[Station] beside the {action} console ({sw.Col:0.#}, {sw.Row:0.#})");
                 return;
             }
         }
@@ -742,6 +763,30 @@ namespace LuckyNumbers.Station
             if (_board.Open.Value) Debug.Log("[Station] job board open at the ship");
         }
 
+        void OpenOutfitter(Vector3 at)
+        {
+            if (_board.Open.Value) CloseBoard();
+            _outfitterAt = at;
+            _outfitter.Open.Value = true;
+            Debug.Log("[Station] outfitter open");
+        }
+
+        async UniTaskVoid DevOpenOutfitter()
+        {
+            TeleportBesideConsole(StationAction.Outfitter);
+            await UniTask.Delay(TimeSpan.FromSeconds(1.5), cancellationToken: _cts.Token);   // the page is up, then pay
+            if (_voyage.Credits.Value == 0) _voyage.Credits.Value = 12500;
+            var sw = _layout.Switches.Find(x => x.Action == StationAction.Outfitter);
+            if (sw != null) OpenOutfitter(_station.Plan.PlanToWorld(sw.Col, sw.Row));
+            Debug.Log($"[Station] dev: ?ln-outfitter, {_voyage.Credits.Value} cr");   // marker for ln.py webshot
+        }
+
+        void CloseOutfitter()
+        {
+            _outfitter.Open.Value = false;
+            Debug.Log("[Station] outfitter closed");
+        }
+
         void CloseBoard()
         {
             _board.Open.Value = false;
@@ -770,11 +815,25 @@ namespace LuckyNumbers.Station
             }
             _next = NextScene;
             _voyage.Trips.Value++;
-            PlayerShipStats.Refuel(_playerShip);   // docked: the station fills the tank
+            Launch();
             Debug.Log($"[Station] refuelled: {_playerShip.Fuel.Value:0} units");
             _firstPerson.Lock(ControlLock.Leaving);
             _state.Prompt.Value = "";
             Leave(_cts.Token).Forget();
+        }
+
+        /// <summary>Out of the bay: the dice drive rolls again (if you have one), and the station fills the tank.</summary>
+        void Launch()
+        {
+            _outfitter.Open.Value = false;
+            if (ShipUpgrades.HasDiceDrive(_playerShip))
+            {
+                ShipUpgrades.Reroll(_playerShip);
+                var s = PlayerShipStats.Of(_playerShip);
+                Debug.Log($"[Station] dice drive rolled {_playerShip.Dice.Value}: speed x{s.Speed:0.00}, agility x{s.Agility:0.00}, " +
+                          $"fuel x{s.Fuel:0.00}, efficiency x{s.Efficiency:0.00}, toughness x{s.Toughness:0.00}, firepower x{s.Firepower:0.00}");
+            }
+            PlayerShipStats.Refuel(_playerShip);   // docked: the station fills the tank
         }
 
         async UniTaskVoid Leave(CancellationToken ct)

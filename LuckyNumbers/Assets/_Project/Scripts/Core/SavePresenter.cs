@@ -74,6 +74,8 @@ namespace LuckyNumbers.Core
             public float fuel;
             public int credits, trips;
             public JobSave job;
+            public string[] upgrades;   // PlayerShip.upgrades, "id|level" (absent in older saves)
+            public uint dice;           // the dice drive's roll
         }
 
         [Serializable]
@@ -196,6 +198,9 @@ namespace LuckyNumbers.Core
             _pack.Restore(save.pack);
 
             if (!string.IsNullOrEmpty(save.skin)) _ship.Skin.Value = save.skin;
+            _ship.Upgrades.Clear();
+            if (save.upgrades != null) foreach (var u in save.upgrades) if (!string.IsNullOrEmpty(u)) _ship.Upgrades.Add(u);
+            _ship.Dice.Value = save.dice;
             PlayerShipStats.Refuel(_ship);   // the tank's size for that skin
             _ship.Fuel.Value = Mathf.Clamp(save.fuel, 0f, _ship.FuelMax.Value);
             _voyage.Credits.Value = save.credits;
@@ -247,6 +252,8 @@ namespace LuckyNumbers.Core
                 credits = _voyage.Credits.Value,
                 trips = _voyage.Trips.Value,
                 job = CaptureJob(),
+                upgrades = new List<string>(_ship.Upgrades).ToArray(),
+                dice = _ship.Dice.Value,
             };
             PlayerPrefs.SetString(KeyPrefix + index, JsonUtility.ToJson(file));
             PlayerPrefs.Save();

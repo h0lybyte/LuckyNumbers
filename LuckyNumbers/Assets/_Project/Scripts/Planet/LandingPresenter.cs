@@ -189,7 +189,7 @@ namespace LuckyNumbers.Planet
             if (_roaming)
             {
                 // Crashed flying about: hovering above where you last parked, enough fuel to set down again.
-                if (F != null) _playerShip.Fuel.Value = math.max(_playerShip.Fuel.Value, _playerShip.FuelMax.Value * F.RechargeTo);
+                if (F != null) _playerShip.Fuel.Value = math.max(_playerShip.Fuel.Value, _playerShip.FuelMax.Value * ShipUpgrades.RechargeTo(_playerShip, F.RechargeTo));
                 _position = _parked + Vector3.up * 40f;
                 _velocity = Vector3.zero;
                 _spin = _jetSpin = Vector3.zero;
@@ -804,12 +804,17 @@ namespace LuckyNumbers.Planet
             if (_playerShip.Fuel.Value <= 0f) Debug.Log("[Landing] out of fuel: engines out, coming down on the reserve cells");
         }
 
-        /// <summary>Landed: the solar cells top the tank up to recharge_to (never stranded).</summary>
+        /// <summary>
+        /// Landed: the solar cells top the tank up to recharge_to (never stranded); an upgrade (the Perpetual Sun Cell)
+        /// may raise it, and fills three times as fast.
+        /// </summary>
         void Recharge(float dt)
         {
             if (F == null) return;
-            var to = _playerShip.FuelMax.Value * F.RechargeTo;
-            if (_playerShip.Fuel.Value < to) _playerShip.Fuel.Value = math.min(to, _playerShip.Fuel.Value + F.RechargePerSecond * dt);
+            var share = ShipUpgrades.RechargeTo(_playerShip, F.RechargeTo);
+            var rate = F.RechargePerSecond * (share > F.RechargeTo ? 3f : 1f);
+            var to = _playerShip.FuelMax.Value * share;
+            if (_playerShip.Fuel.Value < to) _playerShip.Fuel.Value = math.min(to, _playerShip.Fuel.Value + rate * dt);
         }
 
         void Chase(float dt)

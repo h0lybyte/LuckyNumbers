@@ -49,6 +49,7 @@ namespace LuckyNumbers.Model
             "PlayerVoyage",
             "SaveSlots",
             "DiceState",
+            "Outfitter",
         };
 
         /// <summary>Subscribe to every (ln.web) state and event. Marks every state once so the page gets a full snapshot.</summary>
@@ -283,6 +284,10 @@ namespace LuckyNumbers.Model
                 d.Add(s.Skin.Subscribe(_ => sink.MarkState(14)));
                 d.Add(s.Fuel.Subscribe(_ => sink.MarkState(14)));
                 d.Add(s.FuelMax.Subscribe(_ => sink.MarkState(14)));
+                NotifyCollectionChangedEventHandler<string> hUpgrades = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(14);
+                s.Upgrades.CollectionChanged += hUpgrades;
+                d.Add(Disposable.Create(() => s.Upgrades.CollectionChanged -= hUpgrades));
+                d.Add(s.Dice.Subscribe(_ => sink.MarkState(14)));
                 sink.MarkState(14);
             }
             {
@@ -340,6 +345,27 @@ namespace LuckyNumbers.Model
                 d.Add(s.Rolling.Subscribe(_ => sink.MarkState(20)));
                 d.Add(s.Seed.Subscribe(_ => sink.MarkState(20)));
                 sink.MarkState(20);
+            }
+            {
+                var s = c.Resolve<Outfitter>();
+                d.Add(s.Open.Subscribe(_ => sink.MarkState(21)));
+                NotifyCollectionChangedEventHandler<string> hItems = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(21);
+                s.Items.CollectionChanged += hItems;
+                d.Add(Disposable.Create(() => s.Items.CollectionChanged -= hItems));
+                d.Add(s.CommonTitle.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.CommonBlurb.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.ExoticTitle.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.ExoticBlurb.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Ship.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Speed.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Agility.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Efficiency.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Toughness.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Firepower.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Payout.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Guns.Subscribe(_ => sink.MarkState(21)));
+                sink.MarkState(21);
             }
             d.Add(c.Resolve<ISubscriber<RelicRolled>>().Subscribe(e =>
             {
@@ -551,6 +577,21 @@ namespace LuckyNumbers.Model
                 Write(sink.BeginEvent("MenuItemSelected"), e);
                 sink.EndEvent();
             }));
+            d.Add(c.Resolve<ISubscriber<UpgradeBuyRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("UpgradeBuyRequested"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<OutfitterCloseRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("OutfitterCloseRequested"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<UpgradeBought>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("UpgradeBought"), e);
+                sink.EndEvent();
+            }));
             return d;
         }
 
@@ -580,6 +621,7 @@ namespace LuckyNumbers.Model
                 case 18: Write(b, c.Resolve<PlayerVoyage>()); break;
                 case 19: Write(b, c.Resolve<SaveSlots>()); break;
                 case 20: Write(b, c.Resolve<DiceState>()); break;
+                case 21: Write(b, c.Resolve<Outfitter>()); break;
             }
         }
 
@@ -677,6 +719,12 @@ namespace LuckyNumbers.Model
                     return true;
                 case "MenuItemSelected":
                     c.Resolve<IPublisher<MenuItemSelected>>().Publish(new MenuItemSelected(MenuActionParse(Json.Get(o, "action"))));
+                    return true;
+                case "UpgradeBuyRequested":
+                    c.Resolve<IPublisher<UpgradeBuyRequested>>().Publish(new UpgradeBuyRequested(Json.Get(o, "id") as string ?? ""));
+                    return true;
+                case "OutfitterCloseRequested":
+                    c.Resolve<IPublisher<OutfitterCloseRequested>>().Publish(new OutfitterCloseRequested());
                     return true;
                 default:
                     return false;
@@ -1212,6 +1260,20 @@ namespace LuckyNumbers.Model
             Json.Num(b, s.Fuel.Value);
             b.Append(",\"fuelMax\":");
             Json.Num(b, s.FuelMax.Value);
+            b.Append(",\"upgrades\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Upgrades)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Str(b, x);
+                }
+            }
+            b.Append(']');
+            b.Append(",\"dice\":");
+            Json.Num(b, s.Dice.Value);
             b.Append('}');
         }
 
@@ -1324,6 +1386,52 @@ namespace LuckyNumbers.Model
             b.Append(s.Rolling.Value ? "true" : "false");
             b.Append(",\"seed\":");
             Json.Num(b, s.Seed.Value);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, Outfitter s)
+        {
+            b.Append('{');
+            b.Append("\"open\":");
+            b.Append(s.Open.Value ? "true" : "false");
+            b.Append(",\"items\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Items)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Str(b, x);
+                }
+            }
+            b.Append(']');
+            b.Append(",\"commonTitle\":");
+            Json.Str(b, s.CommonTitle.Value);
+            b.Append(",\"commonBlurb\":");
+            Json.Str(b, s.CommonBlurb.Value);
+            b.Append(",\"exoticTitle\":");
+            Json.Str(b, s.ExoticTitle.Value);
+            b.Append(",\"exoticBlurb\":");
+            Json.Str(b, s.ExoticBlurb.Value);
+            b.Append(",\"ship\":");
+            Json.Str(b, s.Ship.Value);
+            b.Append(",\"speed\":");
+            Json.Num(b, s.Speed.Value);
+            b.Append(",\"agility\":");
+            Json.Num(b, s.Agility.Value);
+            b.Append(",\"fuel\":");
+            Json.Num(b, s.Fuel.Value);
+            b.Append(",\"efficiency\":");
+            Json.Num(b, s.Efficiency.Value);
+            b.Append(",\"toughness\":");
+            Json.Num(b, s.Toughness.Value);
+            b.Append(",\"firepower\":");
+            Json.Num(b, s.Firepower.Value);
+            b.Append(",\"payout\":");
+            Json.Num(b, s.Payout.Value);
+            b.Append(",\"guns\":");
+            Json.Str(b, s.Guns.Value);
             b.Append('}');
         }
 
@@ -1730,6 +1838,34 @@ namespace LuckyNumbers.Model
             b.Append('{');
             b.Append("\"action\":");
             Json.Str(b, MenuActionName(e.Action));
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, UpgradeBuyRequested e)
+        {
+            b.Append('{');
+            b.Append("\"id\":");
+            Json.Str(b, e.Id);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, OutfitterCloseRequested e)
+        {
+            b.Append('{');
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, UpgradeBought e)
+        {
+            b.Append('{');
+            b.Append("\"id\":");
+            Json.Str(b, e.Id);
+            b.Append(",\"name\":");
+            Json.Str(b, e.Name);
+            b.Append(",\"level\":");
+            Json.Num(b, e.Level);
+            b.Append(",\"cost\":");
+            Json.Num(b, e.Cost);
             b.Append('}');
         }
 

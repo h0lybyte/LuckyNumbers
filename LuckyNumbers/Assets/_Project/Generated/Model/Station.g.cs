@@ -75,6 +75,10 @@ namespace LuckyNumbers.Model
         /// Launch: take your ship out of the Docking Bay into space round the station (GameScene.Orbit); dock to come back.
         /// </summary>
         Undock = 5,
+        /// <summary>
+        /// The outfitter: spend credits on ship upgrades (content/upgrades.txtpb; the page's Outfitter panel).
+        /// </summary>
+        Outfitter = 6,
     }
 
     public enum CallPhase

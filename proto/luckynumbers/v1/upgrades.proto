@@ -1,0 +1,104 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Ship upgrades (content/upgrades.txtpb), bought with credits at the Outfitter console in the Docking Bay
+// (STATION_ACTION_OUTFITTER). Two counters: the station's standard parts (cheap, several levels, plain stat bumps)
+// and the black market's exotics (one-offs, expensive, each one bends a rule). What you own is PlayerShip.upgrades;
+// PlayerShipStats.Of(ship) folds them into your ship's stats wherever it flies.
+message UpgradeConfig {
+  option (ln.config) = true;
+  repeated ShipUpgrade upgrades = 1;
+  // The page's headings for each counter, and the line under them.
+  string common_title = 2;
+  string common_blurb = 3;
+  string exotic_title = 4;
+  string exotic_blurb = 5;
+}
+
+enum UpgradeTier {
+  UPGRADE_TIER_UNSPECIFIED = 0;
+  // Standard parts: the station's own counter.
+  UPGRADE_TIER_COMMON = 1;
+  // The black market: crazy, expensive one-offs.
+  UPGRADE_TIER_EXOTIC = 2;
+}
+
+message ShipUpgrade {
+  string id = 1;
+  string name = 2;
+  UpgradeTier tier = 3;
+  // What it is (flavour), and what it does (the card's effect line).
+  string description = 4;
+  string effect = 5;
+  // Exotics: a tag on the card ("Prototype", "Cursed", "Hot").
+  string tag = 6;
+  // Price of each level in order; how many there are is how many levels it has.
+  repeated int32 costs = 7;
+  // Per level, multiplies the ship's stat (1.1: +10% a level, compounding). 0 (unset) leaves it alone.
+  float speed = 8;
+  float agility = 9;
+  float fuel = 10;
+  float efficiency = 11;
+  float toughness = 12;
+  float firepower = 13;
+  // Replaces the guns in your barrels (ShipGun ids, content/ships.txtpb; one per barrel).
+  repeated string guns = 14;
+  // Per level, multiplies what you're paid back at the station (relics and the job).
+  float payout = 15;
+  // Landed, the solar cells top the tank up to at least this share (over ShipFuel.recharge_to).
+  float recharge_to = 16;
+  // Dice drive: every launch rerolls each of your six stats by a factor between these (from PlayerShip.dice).
+  float dice_min = 17;
+  float dice_max = 18;
+}
+
+// The outfitter while it's open (mirrored to the page). Each item is
+// "id|tier|name|tag|description|effect|level|levels|cost" (tier: Common / Exotic; cost: the next level's, 0 once
+// maxed). The ship's stats now (multipliers, 1 = baseline, upgrades in), as the hangar shows them, plus the payout.
+message Outfitter {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  bool open = 1;
+  repeated string items = 2;
+  string common_title = 3;
+  string common_blurb = 4;
+  string exotic_title = 5;
+  string exotic_blurb = 6;
+  string ship = 7;
+  float speed = 8;
+  float agility = 9;
+  float fuel = 10;
+  float efficiency = 11;
+  float toughness = 12;
+  float firepower = 13;
+  float payout = 14;
+  string guns = 15;
+}
+
+// The page: buy the next level of upgrade `id`.
+message UpgradeBuyRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  string id = 1;
+}
+
+// The page: close the outfitter (its button; Esc and walking away close it too).
+message OutfitterCloseRequested {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+}
+
+// Bought: upgrade `id` is now at `level`, for `cost` credits.
+message UpgradeBought {
+  option (ln.event) = true;
+  option (ln.web) = true;
+  string id = 1;
+  string name = 2;
+  int32 level = 3;
+  int32 cost = 4;
+}

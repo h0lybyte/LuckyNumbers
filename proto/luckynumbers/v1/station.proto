@@ -239,6 +239,8 @@ enum StationAction {
   STATION_ACTION_FLIGHT_SCHOOL = 4;
   // Launch: take your ship out of the Docking Bay into space round the station (GameScene.Orbit); dock to come back.
   STATION_ACTION_UNDOCK = 5;
+  // The outfitter: spend credits on ship upgrades (content/upgrades.txtpb; the page's Outfitter panel).
+  STATION_ACTION_OUTFITTER = 6;
 }
 
 message StationSwitch {

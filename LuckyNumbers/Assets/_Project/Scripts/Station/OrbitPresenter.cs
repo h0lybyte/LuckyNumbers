@@ -79,7 +79,7 @@ namespace LuckyNumbers.Station
                 if (e.Action == InputAction.Interact) _interact = true;
             }));
             var skin = PlayerShipSkin.Current(_playerShip);
-            _stats = PlayerShipStats.Of(skin);
+            _stats = PlayerShipStats.Of(_playerShip);   // with your upgrades
             _ship = _view.Fighter;
             _ship.Show(skin, Length);
             _view.FlightCamera.gameObject.SetActive(true);
