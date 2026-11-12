@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// The player's settings (Core/SettingsPresenter): changed on the title's Settings panel, kept in PlayerPrefs (the
+// browser's IndexedDB on the web) and applied everywhere: look speed and invert in InputBridge, the render cap in
+// Rendering/RenderResolutionCap, the frame-rate readout on the page.
+message GameSettings {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  // Look speed (mouse, touch pad and right stick), x the scene's own (1 = as authored; 0.25..3).
+  float look_sensitivity = 1;
+  // Look up/down reversed (pushing the mouse forward looks down).
+  bool invert_y = 2;
+  // The 3D view's resolution cap (the UI stays sharp at any setting).
+  RenderQuality quality = 3;
+  // The page's frame-rate readout (top centre), as with ?ln-fps.
+  bool show_fps = 4;
+}
+
+enum RenderQuality {
+  RENDER_QUALITY_UNSPECIFIED = 0;
+  // At most 960x540: for older phones and laptops.
+  RENDER_QUALITY_LOW = 1;
+  // At most 1280x720 (the default).
+  RENDER_QUALITY_MEDIUM = 2;
+  // At most 1920x1080.
+  RENDER_QUALITY_HIGH = 3;
+}

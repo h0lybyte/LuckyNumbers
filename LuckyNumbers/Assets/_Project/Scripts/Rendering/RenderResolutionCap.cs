@@ -5,15 +5,28 @@ using UnityEngine.Rendering.Universal;
 namespace LuckyNumbers.Rendering
 {
     /// <summary>
-    /// Caps the internal 3D render resolution at 1280x720 (URP render scale).
-    /// The window / canvas can be any size; the scene renders at most 720p and
+    /// Caps the internal 3D render resolution (URP render scale): 1280x720 unless the player's render quality
+    /// setting picks another height (SetMaxHeight; Core/SettingsPresenter). The window / canvas can be any size; the
+    /// scene renders at most that and
     /// URP upscales to the screen. UI (Screen Space - Overlay) stays native res.
     /// Bootstraps itself before the first scene loads — no scene setup needed.
     /// </summary>
     public sealed class RenderResolutionCap : MonoBehaviour
     {
-        public const int MaxWidth = 1280;
-        public const int MaxHeight = 720;
+        public static int MaxWidth { get; private set; } = 1280;
+        public static int MaxHeight { get; private set; } = 720;
+        static int _version;   // bumped by SetMaxHeight: re-apply even when the screen hasn't changed size
+        int _applied;
+
+        /// <summary>Cap the render target at this height (and 16:9 of it wide). Applies next frame.</summary>
+        public static void SetMaxHeight(int height)
+        {
+            height = Mathf.Clamp(height, 240, 2160);
+            if (height == MaxHeight) return;
+            MaxHeight = height;
+            MaxWidth = Mathf.RoundToInt(height * 16f / 9f);
+            _version++;
+        }
 
         UniversalRenderPipelineAsset _asset;
         float _baseScale;
@@ -40,15 +53,17 @@ namespace LuckyNumbers.Rendering
                 _lastW = _lastH = 0;
             }
 
-            if (_asset == null || (Screen.width == _lastW && Screen.height == _lastH))
+            if (_asset == null || (Screen.width == _lastW && Screen.height == _lastH && _applied == _version))
                 return;
+
+            _applied = _version;
 
             _lastW = Screen.width;
             _lastH = Screen.height;
             _asset.renderScale = ScaleFor(_lastW, _lastH, _baseScale);
         }
 
-        /// <summary>Largest scale that keeps the render target within 1280x720,
+        /// <summary>Largest scale that keeps the render target within MaxWidth x MaxHeight,
         /// never above the asset's own configured scale (e.g. Mobile = 0.8).</summary>
         public static float ScaleFor(int screenW, int screenH, float baseScale)
         {
