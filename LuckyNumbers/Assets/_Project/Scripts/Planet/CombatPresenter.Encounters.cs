@@ -62,7 +62,7 @@ namespace LuckyNumbers.Planet
             if (E == null) return;
             // Standoffs: the first few monsters wait for you instead of hunting.
             var standoffs = math.min(_monsters.Count, E.Standoffs + (int)math.floor(E.StandoffsPerDanger * danger));
-            for (var i = 0; i < standoffs; i++) _monsters[i].Mind |= Mind.Standoff;
+            for (var i = 0; i < standoffs; i++) MonsterBrain.Fire(ref _monsters[i].Brain, MonsterCue.Challenged);
             // Finds: placeholder blocks in a ring round the wreck.
             for (var i = 0; i < E.Finds && E.FindTypes.Count > 0; i++)
             {
@@ -237,27 +237,24 @@ namespace LuckyNumbers.Planet
 
         void Resolve(Monster m, EncounterOutcome outcome, EncounterOption option, bool success)
         {
-            m.Mind &= ~Mind.Standoff;
             switch (outcome)
             {
                 case EncounterOutcome.Ignored:
-                    m.Mind |= Mind.Ignored;
+                    MonsterBrain.Fire(ref m.Brain, MonsterCue.LetPass);
                     break;
                 case EncounterOutcome.Flees:
-                    m.Fleeing = 0f;
+                    MonsterBrain.Fire(ref m.Brain, MonsterCue.Scared);
                     if (m.Type.Xp > 1) _xp.Publish(new CharacterXpGained(m.Type.Xp / 2, $"{m.Type.Name} (scared off)"));
                     break;
                 case EncounterOutcome.Calm:
-                    m.CalmUntil = Time.time + math.max(1f, option.CalmSeconds);
+                    MonsterBrain.Fire(ref m.Brain, MonsterCue.Calmed, Time.time + math.max(1f, option.CalmSeconds));
                     break;
                 case EncounterOutcome.Ambushed:
-                    m.Mind |= Mind.Aggro;
-                    m.Cooldown = 0f;
-                    Bite(m);
+                    MonsterBrain.Fire(ref m.Brain, MonsterCue.Ambushed);
+                    if (!m.Dead) Bite(m);
                     break;
-                default:   // Fight
-                    m.Mind = (m.Mind & ~Mind.Surprise) | Mind.Aggro | (success ? Mind.Surprise : Mind.None);
-                    m.Cooldown = math.max(m.Cooldown, 0.8f);   // a moment to raise your weapon
+                default:   // Fight: a moment to raise your weapon (won: your first shot's a surprise)
+                    MonsterBrain.Fire(ref m.Brain, success ? MonsterCue.FightWon : MonsterCue.Fight);
                     break;
             }
             Debug.Log($"[Encounter] {m.Type.Name}: {outcome}");
@@ -307,7 +304,7 @@ namespace LuckyNumbers.Planet
             if (what == "standoff" && C.Monsters.Count > 0)
             {
                 Spawn(Pick(_danger), body.position + ahead * 8f, false);
-                _monsters[^1].Mind |= Mind.Standoff;
+                MonsterBrain.Fire(ref _monsters[^1].Brain, MonsterCue.Challenged);
             }
             else if (what == "find" && E.FindTypes.Count > 0)
             {
