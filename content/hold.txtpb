@@ -18,3 +18,6 @@ lantern_r: 1
 lantern_g: 0.72
 lantern_b: 0.42
 ambient: 0.18
+
+# Climbing shafts.
+climb_speed: 2.2

@@ -46,9 +46,42 @@ namespace LuckyNumbers.Model
         public float LanternG { get; set; }
         public float LanternB { get; set; }
         public float Ambient { get; set; }
+        /// <summary>
+        /// The bounded hold at the top of the deep: gate, great hall, rooms, the way down (hold_hall.proto).
+        /// </summary>
+        public HallRules Hall { get; set; }
+        /// <summary>
+        /// What lives and lies in the deep: creatures, relic caches (hold_life.proto).
+        /// </summary>
+        public HoldLife Life { get; set; }
+        /// <summary>
+        /// Climbing shafts (metres per second).
+        /// </summary>
+        public float ClimbSpeed { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public HoldConfig Clone() => (HoldConfig)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// Travel between a dwarven planet's surface and its hold (Planet &lt;-&gt; Hold scenes).
+    /// </summary>
+    public sealed class HoldTrip : IDisposable
+    {
+        /// <summary>
+        /// Came in through the surface gate: spawn inside the hall's gate. False: straight in (dev), into the mines.
+        /// </summary>
+        public readonly ReactiveProperty<bool> FromSurface = new ReactiveProperty<bool>();
+        /// <summary>
+        /// Walked out through the gate: the planet puts you outside it.
+        /// </summary>
+        public readonly ReactiveProperty<bool> Leaving = new ReactiveProperty<bool>();
+
+        public void Dispose()
+        {
+            FromSurface.Dispose();
+            Leaving.Dispose();
+        }
     }
 
     /// <summary>

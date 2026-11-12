@@ -73,6 +73,7 @@ namespace LuckyNumbers.Model
             builder.Register<CombatState>(Lifetime.Singleton);
             builder.Register<CameraHandoff>(Lifetime.Singleton);
             builder.Register<EncounterState>(Lifetime.Singleton);
+            builder.Register<HoldTrip>(Lifetime.Singleton);
             builder.Register<PlayerInput>(Lifetime.Singleton);
             builder.Register<PlayerInventory>(Lifetime.Singleton);
             builder.Register<JobBoard>(Lifetime.Singleton);

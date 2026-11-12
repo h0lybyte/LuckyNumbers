@@ -1489,6 +1489,7 @@ namespace LuckyNumbers.Model
             LanternG = 0.72f,
             LanternB = 0.42f,
             Ambient = 0.18f,
+            ClimbSpeed = 2.2f,
         };
 
         /// <summary>From <c>content/intro.txtpb</c>.</summary>

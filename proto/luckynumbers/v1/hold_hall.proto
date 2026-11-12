@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// The bounded hold at the top of the deep: the gate on the cliff, the great hall, rooms, the stair down to the mines.
+message HallRules {
+}

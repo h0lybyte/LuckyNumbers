@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// What lives and lies in the deep: creatures in the mines, relic caches in chambers.
+message HoldLife {
+}
