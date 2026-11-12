@@ -46,6 +46,8 @@ namespace LuckyNumbers.Planet
             public bool Dead => Brain.Dead;
             // Your shots in flight at it, rolled when you fired (Marksman): their damage lands with the bolt.
             public readonly Queue<int> Incoming = new();
+            // A thrower's flask (its type's ranged, or a dev spawn's): null bites only (CombatPresenter.Ranged).
+            public MonsterRanged Ranged;
         }
 
         readonly ICrashSite _site;
@@ -133,16 +135,26 @@ namespace LuckyNumbers.Planet
             StartEncounters();
             MonsterBlobs.Current.Ground = _ground;   // blob shadows bend to its terrain
             LoadModelsAsync(_cts.Token).Forget();   // while you fly in: nothing spawns before you're on foot
-            // Dev (the page's inspector): "monster" drops one a few metres ahead of you ("monster:<id>": that one).
+            // Dev (the page's inspector): "monster" drops one a few metres ahead of you ("monster:<id>": that one;
+            // "monster:<id>:ranged[:N]": as a thrower, CombatPresenter.Ranged).
             _subscriptions.Add(_warps.Subscribe(e =>
             {
                 if (e.To == "standoff" || e.To == "find") { DevEncounter(e.To); return; }
+                if (e.To == "monster:heal") { DevHeal(); return; }   // "monster..." so RelicsPresenter doesn't take it for a relic warp
                 if (e.To == null || !(e.To == "monster" || e.To.StartsWith("monster:")) || C == null || C.Monsters.Count == 0) return;
                 EnsureBolts();   // seeds the dice Pick rolls
                 var wanted = e.To.Length > 8 ? e.To.Substring(8) : null;
+                var throwers = 0;
+                var at = wanted?.IndexOf(":ranged", StringComparison.Ordinal) ?? -1;
+                if (at >= 0)
+                {
+                    throwers = at + 8 < wanted.Length && int.TryParse(wanted.Substring(at + 8), out var n) ? math.clamp(n, 1, 64) : 1;
+                    wanted = wanted.Substring(0, at);
+                }
                 var type = wanted != null ? null : Pick(5);
                 foreach (var t in C.Monsters) if (t.Id == wanted) type = t;
                 if (type == null) { Debug.LogWarning($"[Combat] dev: no monster \"{wanted}\""); return; }
+                if (throwers > 0) { DevRangedSpawn(type, throwers); return; }
                 // 10 m ahead of you, and your view turned onto it (so a test can just hold fire).
                 var eye = _player.Camera.transform;
                 var flat = Vector3.ProjectOnPlane(_player.Body.transform.forward, Vector3.up).normalized;
@@ -162,6 +174,7 @@ namespace LuckyNumbers.Planet
             _bolts?.Tick(dt);
             if (_down) return;
             if (TickEncounters()) return;   // a card is open: time stands still
+            _flasks?.Tick(dt);
             var me = _player.Body.transform.position;
             var onFoot = _firstPerson.Active;
             _onFootFor = onFoot ? _onFootFor + dt : 0f;
@@ -257,6 +270,7 @@ namespace LuckyNumbers.Planet
             var m = new Monster { Type = type, View = view, Position = at, Home = at, Hp = math.max(1, type.Hp), Brain = MonsterBrain.Spawn(aggro),
                                   Heading = _rng.NextFloat(360f), Wander = _rng.NextFloat(3f) };
             view.Damaged += (v, source, point) => Hurt(m, source);
+            Arm(m, type.Ranged);
             Place(m, 0f);
             _monsters.Add(m);
             _state.Alive.Value = AliveCount();
@@ -274,6 +288,7 @@ namespace LuckyNumbers.Planet
                 Dt = dt, Now = Time.time, Distance = distance, OnFoot = onFoot, OnFootFor = _onFootFor, Sight = m.Type.Sight,
                 Reach = math.max(0.8f, m.Type.Reach) + Size(m).z * 0.5f, StandoffDistance = StandoffDistance, Busy = m.View.Busy,
             };
+            SenseRanged(m, ref senses);
             var act = MonsterBrain.Tick(ref m.Brain, senses);
             var walked = 0f;
             switch (act)
@@ -309,6 +324,7 @@ namespace LuckyNumbers.Planet
                         walked = m.Type.Speed;
                     }
                     else if (act == MonsterAct.Bite) Bite(m);
+                    else if (act >= MonsterAct.Retreat) walked = Ranged(m, act, to, dt);
                     break;
             }
             m.View.Move(walked, m.Brain.Hunting);
@@ -475,7 +491,7 @@ namespace LuckyNumbers.Planet
         /// </summary>
         void Hurt(Monster m, string source)
         {
-            if (m.Dead || _down) return;
+            if (m.Dead || _down || source == "flask") return;   // a thrower's flask splashing another: monsters don't hurt monsters
             if (source != "ship" && source != "melee")
             {
                 if (m.Incoming.Count == 0) return;
@@ -574,6 +590,7 @@ namespace LuckyNumbers.Planet
             if (_firstPerson.ShotCheck == HeldShot) _firstPerson.ShotCheck = null;
             foreach (var s in _subscriptions) s.Dispose();
             _bolts?.Dispose();
+            _flasks?.Dispose();
             foreach (var m in _monsters) if (m.View != null) UnityEngine.Object.Destroy(m.View.gameObject);
         }
     }
