@@ -124,8 +124,10 @@ namespace LuckyNumbers.Planet
             return false;
         }
 
+        /// <summary>Open `m`'s card, unless one's already open: then it keeps waiting and opens once that one's closed.</summary>
         void OpenStandoff(Monster m)
         {
+            if (_card != null) return;   // two in one tick: the second would overwrite the first's card
             var card = new Card { Monster = m };
             foreach (var o in E.Options) card.Options.Add(Option(o.Id, o.Label, o.Skill, o.Dc, o.DcPerDanger, o));
             Open(card, "standoff", Fill(E.StandoffTitle, m), Fill(E.StandoffText, m));
