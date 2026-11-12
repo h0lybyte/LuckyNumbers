@@ -51,3 +51,17 @@ Structures on and under dwarven worlds: a cell grid, meshed into chunks, skinned
   sealed. `MineGenerator.ShaftBelow(seed, (x, 1, z), ...)` says where region y 0's shaft up would meet the hold.
 - Check: `-executeMethod LuckyNumbers.Editor.MineCheck.Run` (seams, shafts, connectivity, determinism, timing);
   ASCII maps in `LuckyNumbers/Logs/mines-ascii.txt`.
+
+## Shafts and ladders
+
+- A shaft is a ShaftDown cell over a ShaftUp cell. A ShaftDown on a grid's bottom level (or ShaftUp on its top) opens
+  into the next region down (up), so `HoldRules.HasFloor` / `HasCeiling` leave it open.
+- Every ShaftUp cell gets a timber ladder (rails: palette pillar slice, rungs: trim; rungs every 0.35 m) from its floor
+  to `HoldRules.LadderAbove` (1 m) over the upper floor, `LadderDepth` (0.12 m) deep against the wall from
+  `HoldRules.LadderSide(grid, shaftUp)`: Solid behind on the lower storey, then the upper, then a floor opposite on the
+  upper level; ties from a hash of the world cell. The whole ladder belongs to the ShaftUp cell's grid (even the part
+  in the region above), so the mesher and the climbing code ask the same grid. No collider.
+- Climbing (`Scripts/HoldScene/HoldClimbPresenter.cs`): in the shaft within 0.8 m of the ladder, facing it, W grabs it
+  (falling in, you catch it and W waits for a fresh press). `FirstPersonPresenter.Climbing` turns off gravity and
+  walking; W/S at `climb_speed`; at the top you walk off onto the floor opposite the ladder (else beside it); S at the
+  bottom puts you down; Space lets go (no grabbing again until you land).

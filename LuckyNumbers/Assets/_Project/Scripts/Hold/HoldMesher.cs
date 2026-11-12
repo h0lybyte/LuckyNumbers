@@ -132,8 +132,72 @@ namespace LuckyNumbers.Hold
             return !(g.Get(c).Kind == CellKind.Gate && !g.InBounds(n));
         }
 
-        public static bool HasFloor(in HoldGrid g, int3 c) => !Linked(g.Get(c - new int3(0, 1, 0)), g.Get(c));
-        public static bool HasCeiling(in HoldGrid g, int3 c) => !Linked(g.Get(c), g.Get(c + new int3(0, 1, 0)));
+        /// <summary>
+        /// No floor between linked cells. A ShaftDown on the grid's bottom level (or a ShaftUp on its top) opens into
+        /// the region next door, which this grid can't see: the shaft stays open there too.
+        /// </summary>
+        public static bool HasFloor(in HoldGrid g, int3 c)
+        {
+            var below = c - new int3(0, 1, 0);
+            if (!g.InBounds(below) && g.Get(c).Kind == CellKind.ShaftDown) return false;
+            return !Linked(g.Get(below), g.Get(c));
+        }
+
+        public static bool HasCeiling(in HoldGrid g, int3 c)
+        {
+            var above = c + new int3(0, 1, 0);
+            if (!g.InBounds(above) && g.Get(c).Kind == CellKind.ShaftUp) return false;
+            return !Linked(g.Get(c), g.Get(above));
+        }
+
+        /// <summary>Metres from the wall to the ladder's front face (rails' depth).</summary>
+        public const float LadderDepth = 0.12f;
+        /// <summary>How far the rails run on above the upper floor (something to hold stepping off).</summary>
+        public const float LadderAbove = 1f;
+
+        /// <summary>A cell you can step off a ladder onto (or stand in beside a shaft).</summary>
+        public static bool StepOff(HoldCell c) => c.Walkable && c.Kind != CellKind.ShaftDown && (c.Flags & CellFlags.Pillar) == 0;
+
+        /// <summary>
+        /// The wall (horizontal unit direction) the ladder of the shaft whose bottom is ShaftUp cell c stands against;
+        /// zero if c is not ShaftUp. The whole ladder (both storeys) belongs to the ShaftUp cell's grid, so the mesher
+        /// and the climbing code ask the same grid and always agree. Best side: Solid behind on the lower storey (4),
+        /// on the upper (2), a floor to step off onto opposite it on the upper level (1); ties (and the side order)
+        /// from a hash of the cell's world coordinates. A shaft on the grid's top level (its upper half in the
+        /// region above) is judged on the lower storey alone.
+        /// </summary>
+        public static int3 LadderSide(in HoldGrid g, int3 c)
+        {
+            if (g.Get(c).Kind != CellKind.ShaftUp) return int3.zero;
+            var upper = c + new int3(0, 1, 0);
+            var seen = g.InBounds(upper);
+            var w = g.ToWorld(c);
+            var start = (int)(Mix((uint)w.x * 0x9E3779B1u ^ (uint)w.y * 0x85EBCA77u ^ (uint)w.z * 0xC2B2AE3Du) & 3u);
+            var best = int3.zero;
+            var bestScore = -1;
+            for (var i = 0; i < 4; i++)
+            {
+                var d = Around(start + i);
+                var score = 0;
+                if (!g.Get(c + d).Walkable) score += 4;
+                if (seen && !g.Get(upper + d).Walkable) score += 2;
+                if (seen && StepOff(g.Get(upper - d))) score += 1;
+                if (score > bestScore) { bestScore = score; best = d; }
+            }
+            return best;
+        }
+
+        /// <summary>The four horizontal directions, anticlockwise from east (i mod 4).</summary>
+        public static int3 Around(int i) => (i & 3) switch
+        {
+            0 => new int3(1, 0, 0), 1 => new int3(0, 0, 1), 2 => new int3(-1, 0, 0), _ => new int3(0, 0, -1),
+        };
+
+        static uint Mix(uint h)
+        {
+            h ^= h >> 16; h *= 0x7FEB352Du; h ^= h >> 15; h *= 0x846CA68Bu; h ^= h >> 16;
+            return h;
+        }
     }
 
     /// <summary>Scheduled chunk jobs; <see cref="Complete"/> turns them into meshes. Dispose if never completed.</summary>
@@ -247,6 +311,10 @@ namespace LuckyNumbers.Hold
         const float PillarHalf = 0.3f, TrimHalf = 0.4f, TrimHeight = 0.3f;
         const float JambWidth = 0.3f, FrameDepth = 0.4f, DoorHeadroom = 0.6f;
         const float LanternHalf = 0.15f, LanternDrop = 0.75f, LanternBody = 0.3f, ChainHalf = 0.03f;
+        // Ladder: rail centres +-LadderHalfWidth from the wall's middle; rungs between them, set back off the rails'
+        // front (RungNear..RungFar from the wall) so there's a toe-hold.
+        const float LadderHalfWidth = 0.3f, RailHalf = 0.04f, RungNear = 0.035f, RungFar = 0.095f, RungThick = 0.05f;
+        const float FirstRung = 0.3f, RungPitch = 0.35f;
 
         public void Run(int2 chunk)
         {
@@ -292,6 +360,7 @@ namespace LuckyNumbers.Hold
             if (cell.Kind == CellKind.Door) DoorFrame(c, Slice(p.Trim), floor, ceiling);
             if ((cell.Flags & CellFlags.Pillar) != 0) Pillar(c, Slice(p.Pillar), Slice(p.Trim), floor, ceiling);
             if ((cell.Flags & CellFlags.Lantern) != 0) Lantern(c, Slice(p.Trim), ceiling);
+            if (cell.Kind == CellKind.ShaftUp) Ladder(c, Slice(p.Pillar), Slice(p.Trim), floor);
         }
 
         // ---------------------------------------------------------------- shell faces
@@ -380,6 +449,52 @@ namespace LuckyNumbers.Hold
             var sMax = new float3(centre.x + s.x, top - TrimHeight, centre.z + s.z);
             Box(sMin, sMax, pillar, NegY | PosY, false);
             B.Add(new HoldBox { Min = new float3(sMin.x, bottom, sMin.z), Max = new float3(sMax.x, top, sMax.z) });
+        }
+
+        /// <summary>
+        /// A timber ladder against the shaft's ladder wall (HoldRules.LadderSide): two rails from this cell's floor up
+        /// through the cell above to LadderAbove over its floor, rungs every RungPitch. All of it is this cell's,
+        /// even the part in the storey above (which may be another region's grid).
+        /// </summary>
+        void Ladder(int3 c, int rail, int rung, bool floor)
+        {
+            var d = HoldRules.LadderSide(G, c);
+            if (math.all(d == 0)) return;
+            int across = d.x != 0 ? 0 : 2, along = d.x != 0 ? 2 : 0;
+            var s = d[across];
+            var lo = World(c);
+            var hi = World((float3)c + 1f);
+            var wall = s > 0 ? hi[across] : lo[across];
+            var mid = (lo[along] + hi[along]) * 0.5f;
+            float y0 = lo.y, y1 = lo.y + S.StoreyHeight, y2 = y1 + HoldRules.LadderAbove;
+            var up = new int3(0, 1, 0);
+            var wallLow = !G.Get(c + d).Walkable;
+            var wallHigh = !G.InBounds(c + up) || !G.Get(c + up + d).Walkable;
+            var back = 1 << (across * 2 + (s > 0 ? 1 : 0));
+            var acrossLo = math.min(wall, wall - s * HoldRules.LadderDepth);
+            var acrossHi = math.max(wall, wall - s * HoldRules.LadderDepth);
+
+            for (var r = -1; r <= 1; r += 2)
+            {
+                var min = float3.zero; var max = float3.zero;
+                min[across] = acrossLo; max[across] = acrossHi;
+                min[along] = mid + r * LadderHalfWidth - RailHalf; max[along] = mid + r * LadderHalfWidth + RailHalf;
+                min.y = y0; max.y = y1;
+                Box(min, max, rail, (floor ? NegY : 0) | PosY | (wallLow ? back : 0), false);
+                min.y = y1; max.y = y2;
+                Box(min, max, rail, NegY | (wallHigh ? back : 0), false);
+            }
+
+            var rMin = float3.zero; var rMax = float3.zero;
+            rMin[across] = math.min(wall - s * RungNear, wall - s * RungFar);
+            rMax[across] = math.max(wall - s * RungNear, wall - s * RungFar);
+            rMin[along] = mid - LadderHalfWidth + RailHalf; rMax[along] = mid + LadderHalfWidth - RailHalf;
+            var ends = (1 << (along * 2)) | (1 << (along * 2 + 1));
+            for (var y = y0 + FirstRung; y + RungThick <= y2 - 0.1f; y += RungPitch)
+            {
+                rMin.y = y; rMax.y = y + RungThick;
+                Box(rMin, rMax, rung, ends, false);
+            }
         }
 
         float3 LanternPos(int3 c) =>

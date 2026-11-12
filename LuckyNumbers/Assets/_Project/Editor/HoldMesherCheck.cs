@@ -11,7 +11,8 @@ namespace LuckyNumbers.Editor
 {
     /// <summary>
     /// Headless self-test for HoldMesher: a small hand-made grid (room with pillar, lantern and a two-storey corner,
-    /// door, corridor out to a gate, a shaft up to a room on the level above), meshed, then every face checked.
+    /// door, corridor out to a gate, a shaft up to a room on the level above, shafts out of the grid's top and bottom),
+    /// meshed, then every face and ladder checked.
     /// Batchmode: -executeMethod LuckyNumbers.Editor.HoldMesherCheck.Run (throws on failure, so Unity exits non-zero).
     /// </summary>
     public static class HoldMesherCheck
@@ -77,9 +78,15 @@ namespace LuckyNumbers.Editor
             Fill(new int3(8, 0, 3), new int3(18, 0, 3), CellKind.Corridor);
             Fill(new int3(19, 0, 3), new int3(19, 0, 3), CellKind.Gate);         // the way out (east edge)
             Fill(new int3(12, 0, 3), new int3(12, 0, 3), CellKind.ShaftUp);
-            Fill(new int3(10, 1, 2), new int3(13, 1, 5), CellKind.Floor, 1);     // upper room, no ceiling layer
-            Fill(new int3(12, 1, 3), new int3(12, 1, 3), CellKind.ShaftDown, 1);
+            Fill(new int3(10, 1, 3), new int3(13, 1, 6), CellKind.Floor, 1);     // upper room, no ceiling layer
+            Fill(new int3(12, 1, 3), new int3(12, 1, 3), CellKind.ShaftDown, 1);  // on its south wall: ladder there
             Flag(new int3(11, 1, 4), CellFlags.Lantern);
+            // Shafts out of the grid: a ShaftUp on the top level (the region above has its ShaftDown) and a
+            // ShaftDown on the bottom level (the region below has its ShaftUp).
+            Fill(new int3(15, 1, 8), new int3(17, 1, 8), CellKind.Mine);
+            Fill(new int3(16, 1, 8), new int3(16, 1, 8), CellKind.ShaftUp);
+            Fill(new int3(8, 0, 8), new int3(10, 0, 8), CellKind.Mine);
+            Fill(new int3(9, 0, 8), new int3(9, 0, 8), CellKind.ShaftDown);
             return g;
         }
 
@@ -104,10 +111,12 @@ namespace LuckyNumbers.Editor
             var uvs = new List<Vector3>();
             var colors = new List<Color32>();
             var seen = new HashSet<(int3, int3)>();
+            var all = new List<float3>();
             foreach (var chunk in chunks)
             {
                 var m = chunk.Mesh;
                 m.GetVertices(verts);
+                foreach (var v in verts) all.Add(v);
                 m.GetNormals(normals);
                 m.GetUVs(0, uvs);
                 m.GetColors(colors);
@@ -199,6 +208,59 @@ namespace LuckyNumbers.Editor
             if (lanternFloor < config.Ambient * 3f) failures.Add($"floor under the lantern only {lanternFloor}");
             if (farFloor < 0f || farFloor > config.Ambient + 0.02f) failures.Add($"far corridor floor {farFloor}, expected ~ambient");
             if (kit == 0) failures.Add("no kit pieces (door frame, pillar, lantern)");
+            if (HoldRules.HasCeiling(g, new int3(16, 1, 8))) failures.Add("ShaftUp on the top level is capped (shaft into the region above sealed)");
+            if (HoldRules.HasFloor(g, new int3(9, 0, 8))) failures.Add("ShaftDown on the bottom level has a floor (shaft into the region below sealed)");
+            CheckLadders(g, config, all, failures);
+        }
+
+        /// <summary>Every ShaftUp has a ladder: on its LadderSide wall, touching it, floor to LadderAbove over the upper floor, rungs.</summary>
+        static void CheckLadders(in HoldGrid g, HoldConfig config, List<float3> verts, List<string> failures)
+        {
+            var inner = HoldRules.LadderSide(g, new int3(12, 0, 3));
+            if (math.any(inner != new int3(0, 0, -1))) failures.Add($"inner shaft ladder on {inner}, expected (0,0,-1) (Solid behind on both storeys, floor opposite)");
+            if (math.any(HoldRules.LadderSide(g, new int3(3, 0, 3)) != 0)) failures.Add("ladder side for a non-shaft cell");
+            var scale = new float3(config.CellSize, config.StoreyHeight, config.CellSize);
+            var ladders = 0;
+            for (var i = 0; i < g.Cells.Length; i++)
+            {
+                var c = new int3(i % g.Size.x, i / (g.Size.x * g.Size.z), i / g.Size.x % g.Size.z);
+                if (g.Get(c).Kind != CellKind.ShaftUp) continue;
+                ladders++;
+                var d = HoldRules.LadderSide(g, c);
+                if (math.all(d == 0)) { failures.Add($"shaft {c}: no ladder side"); continue; }
+                int across = d.x != 0 ? 0 : 2, along = d.x != 0 ? 2 : 0;
+                var s = d[across];
+                var lo = ((float3)(g.Origin + c)) * scale;
+                var hi = lo + scale;
+                var wall = s > 0 ? hi[across] : lo[across];
+                float yMin = float.MaxValue, yMax = float.MinValue, gapMin = float.MaxValue, gapMax = float.MinValue;
+                var heights = new SortedSet<float>();
+                var n = 0;
+                foreach (var v in verts)
+                {
+                    var gap = s * (wall - v[across]);   // metres in front of the wall
+                    if (gap < -1e-3f || gap > HoldRules.LadderDepth + 1e-3f) continue;
+                    if (v[along] <= lo[along] + 0.05f || v[along] >= hi[along] - 0.05f) continue;   // the wall's own corners
+                    if (v.y < lo.y - 1e-3f || v.y > lo.y + config.StoreyHeight + HoldRules.LadderAbove + 1e-3f) continue;
+                    n++;
+                    yMin = math.min(yMin, v.y); yMax = math.max(yMax, v.y);
+                    gapMin = math.min(gapMin, gap); gapMax = math.max(gapMax, gap);
+                    heights.Add(math.round(v.y * 100f) / 100f);
+                }
+                var top = lo.y + config.StoreyHeight + HoldRules.LadderAbove;
+                Debug.Log($"{Tag} ladder {c} on {d}: {n} vertices, y {yMin:0.00}..{yMax:0.00} (floor {lo.y:0.00}, top {top:0.00}), " +
+                          $"{gapMin:0.000}..{gapMax:0.000} m off the wall, {heights.Count} distinct heights");
+                if (n < 40) { failures.Add($"shaft {c}: ladder has {n} vertices"); continue; }
+                if (math.abs(yMin - lo.y) > 1e-3f) failures.Add($"shaft {c}: ladder starts at {yMin}, floor at {lo.y} (floating?)");
+                if (math.abs(yMax - top) > 1e-3f) failures.Add($"shaft {c}: ladder tops out at {yMax}, expected {top}");
+                if (gapMin > 1e-3f) failures.Add($"shaft {c}: ladder {gapMin} m off the wall (floating)");
+                // Rungs: two heights each (bottom, top), at most RungPitch + a bit apart.
+                var prev = float.NaN;
+                var maxStep = 0f;
+                foreach (var h in heights) { if (!float.IsNaN(prev)) maxStep = math.max(maxStep, h - prev); prev = h; }
+                if (heights.Count < 20 || maxStep > 0.36f) failures.Add($"shaft {c}: rungs too sparse ({heights.Count} heights, biggest gap {maxStep:0.00} m)");
+            }
+            if (ladders != 2) failures.Add($"{ladders} ShaftUp cells checked, expected 2");
         }
 
         static int3 Dir(int i) => i switch
