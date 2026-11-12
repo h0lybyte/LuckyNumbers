@@ -655,6 +655,86 @@ namespace LuckyNumbers.Editor
             Debug.Log($"[ShaderPreview] wrote {path}");
         }
 
+        /// <summary>
+        /// The mines under a hold (seed 1234, LN_HOLD_SEED to change): a first-person view from a lantern-lit spot
+        /// (Logs/preview-hold.png) and an overhead cutaway of the 3 x 3 regions at depth 0 (Logs/preview-hold-top.png:
+        /// faces only point inward, so from above you look straight into the tunnels).
+        /// </summary>
+        [MenuItem("LuckyNumbers/Preview/Render Hold Mines")]
+        public static void RenderHold()
+        {
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var config = LuckyNumbers.Model.GameContent.Hold;
+            var seed = uint.TryParse(System.Environment.GetEnvironmentVariable("LN_HOLD_SEED"), out var s) ? s : 1234u;
+            var mat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/HoldKit.mat")
+                      ?? throw new System.Exception("HoldKit.mat missing (tools/ln.py hold-textures)");
+            var palettes = LuckyNumbers.Hold.HoldPalettes.Resolve(config.Textures, Unity.Collections.Allocator.Persistent);
+            var settings = LuckyNumbers.Hold.HoldMeshSettings.From(config);
+            LuckyNumbers.Hold.HoldGrid home = default;
+            var triangles = 0;
+            for (var rx = -1; rx <= 1; rx++)
+            for (var rz = -1; rz <= 1; rz++)
+            {
+                var grid = LuckyNumbers.Hold.MineGenerator.Region(seed, new Unity.Mathematics.int3(rx, 0, rz), config,
+                                                                  Unity.Collections.Allocator.Persistent);
+                var build = LuckyNumbers.Hold.HoldMesher.Schedule(grid, palettes, settings);
+                foreach (var chunk in build.Complete())
+                {
+                    var go = new GameObject($"Chunk {rx},{rz} {chunk.Index}");
+                    go.AddComponent<MeshFilter>().sharedMesh = chunk.Mesh;
+                    go.AddComponent<MeshRenderer>().sharedMaterial = mat;
+                    triangles += (int)chunk.Mesh.GetIndexCount(0) / 3;
+                }
+                build.Dispose();
+                if (rx == 0 && rz == 0) home = grid; else grid.Dispose();
+            }
+
+            // First person: a walkable cell 2-4 cells from a lantern, looking at it.
+            var cell = new Unity.Mathematics.float3(config.CellSize, config.StoreyHeight, config.CellSize);
+            Vector3 eye = Vector3.up, target = Vector3.forward;
+            var found = false;
+            for (var i = 0; i < home.Cells.Length && !found; i++)
+            {
+                if ((home.Cells[i].Flags & LuckyNumbers.Hold.CellFlags.Lantern) == 0) continue;
+                var x = i % home.Size.x; var z = i / home.Size.x % home.Size.z; var y = i / (home.Size.x * home.Size.z);
+                var l = new Unity.Mathematics.int3(x, y, z);
+                foreach (var d in new[] { new Unity.Mathematics.int3(3, 0, 0), new Unity.Mathematics.int3(-3, 0, 0),
+                                          new Unity.Mathematics.int3(0, 0, 3), new Unity.Mathematics.int3(0, 0, -3),
+                                          new Unity.Mathematics.int3(2, 0, 0), new Unity.Mathematics.int3(0, 0, 2) })
+                {
+                    var c = home.Get(l + d);
+                    if (c.Kind != LuckyNumbers.Hold.CellKind.Mine || (c.Flags & LuckyNumbers.Hold.CellFlags.Pillar) != 0) continue;
+                    var w = home.ToWorld(l + d); var lw = home.ToWorld(l);
+                    eye = new Vector3((w.x + 0.5f) * cell.x, w.y * cell.y + 1.7f, (w.z + 0.5f) * cell.z);
+                    target = new Vector3((lw.x + 0.5f) * cell.x, lw.y * cell.y + 1.6f, (lw.z + 0.5f) * cell.z);
+                    found = true;
+                    break;
+                }
+            }
+            home.Dispose();
+            palettes.Dispose();
+
+            var cam = new GameObject("PreviewCamera").AddComponent<Camera>();
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.035f, 0.05f, 0.05f);
+            cam.fieldOfView = 70f;
+            cam.nearClipPlane = 0.05f;
+            cam.farClipPlane = 300f;
+            cam.transform.position = eye;
+            cam.transform.LookAt(target);
+            Save(cam, "preview-hold.png");
+
+            // Overhead: no haze (it would swallow everything at this height).
+            var clear = new Material(mat);
+            clear.SetFloat("_HazeDistance", 100000f);
+            foreach (var r in Object.FindObjectsByType<MeshRenderer>()) r.sharedMaterial = clear;
+            var size = config.RegionCells * config.CellSize;
+            cam.transform.SetPositionAndRotation(new Vector3(size * 0.5f, 210f, size * 0.5f), Quaternion.Euler(90f, 0f, 0f));
+            cam.fieldOfView = 60f;
+            Save(cam, "preview-hold-top.png");
+            Debug.Log($"[ShaderPreview] hold seed {seed}: 9 regions, {triangles} triangles, lantern view {(found ? "found" : "missing")}");
+        }
+
         static Shader Find(string name) => Shader.Find(name) ?? throw new System.Exception($"Shader not found: {name}");
     }
 }

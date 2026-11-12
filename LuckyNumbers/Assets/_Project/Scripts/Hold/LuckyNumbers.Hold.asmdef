@@ -1,0 +1,20 @@
+{
+    "name": "LuckyNumbers.Hold",
+    "rootNamespace": "LuckyNumbers.Hold",
+    "references": [
+        "LuckyNumbers.Model",
+        "LuckyNumbers.Model.Unity",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

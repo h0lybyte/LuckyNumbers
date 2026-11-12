@@ -1,0 +1,28 @@
+{
+    "name": "LuckyNumbers.HoldScene",
+    "rootNamespace": "LuckyNumbers.HoldScene",
+    "references": [
+        "LuckyNumbers.Attributes",
+        "LuckyNumbers.Hold",
+        "LuckyNumbers.Model",
+        "LuckyNumbers.Model.Unity",
+        "LuckyNumbers.Core",
+        "LuckyNumbers.Planet",
+        "VContainer",
+        "MessagePipe",
+        "R3.Unity",
+        "UniTask",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

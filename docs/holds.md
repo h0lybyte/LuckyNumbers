@@ -1,0 +1,53 @@
+# Dwarven holds
+
+Structures on and under dwarven worlds: a cell grid, meshed into chunks, skinned from one texture array.
+
+- Schema: `proto/luckynumbers/v1/hold.proto`. Config: `content/hold.txtpb` (`GameContent.Hold`); textures and
+  palettes `content/holds/textures/delven.txtpb`; mine rules `content/holds/mines/deep.txtpb`.
+- Code: `Scripts/Hold/` (assembly `LuckyNumbers.Hold`). Core types in `HoldGrid.cs`.
+
+## Grid
+
+- A cell is `cell_size` (2 m) square and `storey_height` (3 m) tall. `HoldGrid.Size` = (x east, levels up, z north).
+- `HoldGrid.Origin` is the world cell of local (0,0,0). World position of a cell's floor corner:
+  `(Origin + c) * (cell_size, storey_height, cell_size)`; its centre adds half a cell on x and z.
+- Reads outside a grid are Solid, so a grid's border always gets walls.
+- `HoldCell`: `Kind` (Solid, Floor, Corridor, Door, Gate, ShaftDown/ShaftUp, Mine), `Palette` (index into
+  `HoldTextures.palettes`), `Flags` (Lantern, Pillar, OpenAbove).
+
+## Mesh
+
+- One mesh per `chunk_cells` x `chunk_cells` column of cells (all levels), one material for everything.
+- Faces: floor, ceiling (unless OpenAbove), and a wall wherever a walkable cell meets Solid; door frames in trim;
+  pillars as boxes. Texture slice per face from the cell's palette (`HoldPalettes.Resolve`).
+- Vertex: position, normal, uv (u, v, slice) and colour (baked lantern light + ambient).
+- Code: `HoldMesher.Build(grid, palettes, config)` (or `Schedule(...)` then `Complete()`): one Burst job per chunk,
+  then Mesh.MeshData. Face rules (`HoldRules`: Linked, HasWall, HasFloor, HasCeiling) are shared with anything that
+  must agree with the mesh. Vertex stream (40 bytes): Position float3, Normal float3, Color UNorm8x4 (light rgb, a 1),
+  TexCoord0 float3 (u, v, slice); UVs world-aligned, 1 tile per cell_size metres. 32-bit indices.
+- No floor/ceiling between two cells that are one space: lower has OpenAbove, upper is ShaftDown, or lower is ShaftUp.
+- Colliders (world-space boxes per chunk): whole Solid cells that carry a wall (merged runs per level), floor slabs
+  (1 m thick over rock, 0.1 m over a room), pillar shafts. Self-test: `LuckyNumbers.Editor.HoldMesherCheck.Run`.
+
+## Textures and shader
+
+- `Editor/HoldTextureBuilder.cs` (menu LuckyNumbers/Holds/Build Texture Array, `tools/ln.py hold-textures`) builds
+  `Art/Textures/HoldLayers.asset` from `HoldTextures`: slice i = `layers[i]`, sources nearest-scaled to `size`,
+  box-filtered mips, DXT1 (DXT5 if a layer has alpha), repeat, trilinear. It also wires `Art/Materials/HoldKit.mat`
+  and compiles the shader for GLES3x + WebGPU. Rerun after changing the layers; the asset keeps its GUID.
+- `LuckyNumbers/HoldKit`: uv0 = (u, v, slice), sharp bilinear (as StationKit) x vertex colour, up to 4 URP additional
+  lights, haze to `_HazeColor` (full at `_HazeDistance`), `_ALPHATEST_ON` + `_Cutoff` for cutouts, `_LnPsx` PS1 look.
+- `--preview` renders `Logs/preview-holdkit.png` (Editor/HoldKitPreview.cs).
+
+## Mines (the endless deep)
+
+- Regions of `region_cells` x `region_levels` x `region_cells`; region (rx, ry, rz) has
+  `Origin = (rx * region_cells, ry * region_levels, rz * region_cells)`, ry < 0 going down.
+- Each region is generated from `hash(seed, rx, ry, rz)` only. Openings on a shared edge come from a hash of that
+  edge (ordered so both neighbours compute the same one), so regions always line up. Shafts between a region and
+  the one below come from a hash of that pair.
+- `MineGenerator.Region(seed, region, config, allocator)` digs one region (`Scripts/Hold/MineGenerator.cs`). Edge
+  openings sit 3+ cells from corners; east-west edges on a region's lowest level always have one, so nothing is
+  sealed. `MineGenerator.ShaftBelow(seed, (x, 1, z), ...)` says where region y 0's shaft up would meet the hold.
+- Check: `-executeMethod LuckyNumbers.Editor.MineCheck.Run` (seams, shafts, connectivity, determinism, timing);
+  ASCII maps in `LuckyNumbers/Logs/mines-ascii.txt`.

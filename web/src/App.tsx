@@ -26,7 +26,7 @@ export function App({ dock }: { dock: HTMLElement | null }) {
   // ?ln-board: the station between jobs, beside your ship (E opens the job board);
   // ?ln-outfitter: the station's outfitter, open, with test credits if you have none;
   // ?ln-flight: straight to the Flight School (test-flying the ships, their jets); ?ln-orbit: outside the station.
-  // ?ln-planet: straight to the planet (you fly in and land at the crash site).
+  // ?ln-planet: straight to the planet (you fly in and land at the crash site); ?ln-hold: the mines under a dwarven hold.
   useEffect(() => {
     if (!ready) return;
     const q = new URLSearchParams(location.search);
@@ -34,6 +34,7 @@ export function App({ dock }: { dock: HTMLElement | null }) {
     else if (q.has("ln-flight")) LN.send("SceneChangeRequested", { target: "FlightSchool" });
     else if (q.has("ln-orbit")) LN.send("SceneChangeRequested", { target: "Orbit" });
     else if (q.has("ln-planet")) LN.send("SceneChangeRequested", { target: "Planet" });
+    else if (q.has("ln-hold")) LN.send("SceneChangeRequested", { target: "Hold" });
   }, [ready]);
 
   // ` toggles the bridge inspector (capture phase: runs before Unity's keyboard handling).
@@ -271,7 +272,7 @@ function Inspector() {
       <section>
         <h3>Send</h3>
         <div className="row">
-          {(["Title", "Intro", "Planet", "Station", "FlightSchool", "Orbit"] as const).map((scene) => (
+          {(["Title", "Intro", "Planet", "Station", "FlightSchool", "Orbit", "Hold"] as const).map((scene) => (
             <button key={scene} type="button" onClick={() => LN.send("SceneChangeRequested", { target: scene })}>
               {scene}
             </button>

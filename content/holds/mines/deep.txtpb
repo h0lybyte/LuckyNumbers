@@ -1,0 +1,14 @@
+# proto-file: luckynumbers/v1/hold.proto
+# proto-message: luckynumbers.v1.MineRules
+# The endless mines under a hold.
+
+openings_min: 1
+openings_max: 2
+shaft_chance: 0.35
+turn_chance: 0.18
+chambers_min: 1
+chambers_max: 3
+chamber_size_min: 3
+chamber_size_max: 6
+cells_per_lantern: 24
+palette: "mine"

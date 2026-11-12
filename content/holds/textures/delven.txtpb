@@ -1,0 +1,22 @@
+# proto-file: luckynumbers/v1/hold.proto
+# proto-message: luckynumbers.v1.HoldTextures
+# The Delven layers that ship (Art/Textures/Delven, by Bradley D.: see credits). Only what the palettes use.
+
+source: "Delven"
+size: 128
+layers: [
+  "Surfaces/dlv_stonebrk1a", "Surfaces/dlv_stonebrk2a", "Surfaces/dlv_stonebrk4a",
+  "Surfaces/dlv_stoneflr1a", "Surfaces/dlv_stoneflr2a",
+  "Surfaces/dlv_slateflr1a", "Surfaces/dlv_slategen1",
+  "Surfaces/dlv_stonegen1", "Surfaces/dlv_stonegen2",
+  "Surfaces/dlv_stonetrm1a", "Surfaces/dlv_stonetrm2a",
+  "Surfaces/dlv_stonegrb1a", "Surfaces/dlv_stonegrb2a",
+  "Surfaces/dlv_ground1a", "Surfaces/dlv_ground2a",
+  "Surfaces/dlv_wood1a", "Surfaces/dlv_wood5a", "Surfaces/dlv_woodgen1",
+  "Surfaces/dlv_metalpan1a", "Surfaces/dlv_metaltrm1a", "Surfaces/dlv_metalpip1a", "Surfaces/dlv_metalstr1a"
+]
+
+palettes { name: "hall"  floor: "Surfaces/dlv_slateflr1a" wall: "Surfaces/dlv_stonebrk1a" ceiling: "Surfaces/dlv_stonegen1" trim: "Surfaces/dlv_stonetrm1a" pillar: "Surfaces/dlv_stonetrm2a" }
+palettes { name: "room"  floor: "Surfaces/dlv_stoneflr1a" wall: "Surfaces/dlv_stonebrk2a" ceiling: "Surfaces/dlv_stonegen2" trim: "Surfaces/dlv_stonetrm1a" pillar: "Surfaces/dlv_woodgen1" }
+palettes { name: "forge" floor: "Surfaces/dlv_stoneflr2a" wall: "Surfaces/dlv_metalpan1a" ceiling: "Surfaces/dlv_metalpip1a" trim: "Surfaces/dlv_metaltrm1a" pillar: "Surfaces/dlv_metalstr1a" }
+palettes { name: "mine"  floor: "Surfaces/dlv_ground1a" wall: "Surfaces/dlv_stonegen2" ceiling: "Surfaces/dlv_ground2a" trim: "Surfaces/dlv_wood1a" pillar: "Surfaces/dlv_wood5a" }

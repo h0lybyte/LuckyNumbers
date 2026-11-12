@@ -20,6 +20,8 @@ enum GameScene {
   GAME_SCENE_FLIGHT_SCHOOL = 6;
   // Outside the station: launched from the Docking Bay, fly round it in your ship and dock again.
   GAME_SCENE_ORBIT = 7;
+  // Under a dwarven hold: walk the endless mines, streamed region by region (dev: ?ln-hold).
+  GAME_SCENE_HOLD = 8;
 }
 
 message FlowState {

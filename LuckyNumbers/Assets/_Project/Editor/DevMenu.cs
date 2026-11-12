@@ -40,13 +40,21 @@ namespace LuckyNumbers.Editor
             c.Resolve<IPublisher<SceneChangeRequested>>().Publish(new SceneChangeRequested(GameScene.Planet));
         }
 
+        [MenuItem(Root + "Go to the Hold Mines", priority = 4)]
+        static void Hold()
+        {
+            var c = Container();
+            if (c == null) { Debug.LogWarning("[Dev] no RootLifetimeScope: enter Play mode first"); return; }
+            c.Resolve<IPublisher<SceneChangeRequested>>().Publish(new SceneChangeRequested(GameScene.Hold));
+        }
+
         [MenuItem(Root + "Land the Ship", priority = 1)] static void Land() => Warp("land");
         [MenuItem(Root + "Step Out at the Wreck", priority = 2)] static void Wreck() => Warp("wreck");
         [MenuItem(Root + "Step Out at the Ship", priority = 3)] static void Ship() => Warp("ship");
         [MenuItem(Root + "Spawn Monster/Aberration", priority = 20)] static void Aberration() => Warp("monster:aberration");
         [MenuItem(Root + "Spawn Monster/Random", priority = 21)] static void Monster() => Warp("monster");
 
-        [MenuItem(Root + "Go to Planet", true)] [MenuItem(Root + "Land the Ship", true)]
+        [MenuItem(Root + "Go to Planet", true)] [MenuItem(Root + "Go to the Hold Mines", true)] [MenuItem(Root + "Land the Ship", true)]
         [MenuItem(Root + "Step Out at the Wreck", true)] [MenuItem(Root + "Step Out at the Ship", true)]
         [MenuItem(Root + "Spawn Monster/Aberration", true)] [MenuItem(Root + "Spawn Monster/Random", true)]
         static bool Validate() => Playing();
