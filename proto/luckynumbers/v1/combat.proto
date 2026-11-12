@@ -56,6 +56,35 @@ message MonsterType {
   // Its model (PlanetView's monster models, by name; empty = the placeholder block). `size` is then its hitbox.
   string model = 16;
   MonsterClips clips = 17;
+  // A thrower (unset: it only bites): keeps its distance and lobs flasks at you.
+  MonsterRanged ranged = 18;
+}
+
+// A monster's ranged attack: a flask lobbed on a ballistic arc that splashes where it lands. While chasing, it keeps
+// between range_min and range_max (steps in past range_max, backs off inside range_min, else circles you) and casts
+// when its cooldown's up and it can see you; in `reach` it still bites. The cast winds up for cast_time seconds (its
+// cast clip), then releases toward where you are (and a little where you're going). On impact (the ground or you)
+// you're hit if within splash_radius: d20 + attack (+ direct_bonus if it struck you) against your armour, `damage`
+// as a bite's. It flies slowly: step aside. Metres, m/s, m/s^2, seconds.
+message MonsterRanged {
+  float range_min = 1;
+  float range_max = 2;
+  // Seconds between casts; the wind-up before release.
+  float cooldown = 3;
+  float cast_time = 4;
+  // Launch speed and the fall's pull (lower: a floatier lob). Too far for this speed: thrown its farthest, short.
+  float speed = 5;
+  float gravity = 6;
+  int32 attack = 7;
+  // Dice: "NdM+K".
+  string damage = 8;
+  float splash_radius = 9;
+  // Added to the roll when the flask strikes you square.
+  int32 direct_bonus = 10;
+  // How much of your motion it leads by (0: where you stand, 1: where you'd be when it lands).
+  float lead = 11;
+  // The flask's glow, its trail and the splash (HDR: blooms).
+  Rgba color = 12;
 }
 
 // A modelled monster's animations, by clip name (the model's takes). Walks play at the rate the body moves (the

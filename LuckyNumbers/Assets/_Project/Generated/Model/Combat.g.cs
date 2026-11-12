@@ -79,9 +79,58 @@ namespace LuckyNumbers.Model
         /// </summary>
         public string Model { get; set; }
         public MonsterClips Clips { get; set; }
+        /// <summary>
+        /// A thrower (unset: it only bites): keeps its distance and lobs flasks at you.
+        /// </summary>
+        public MonsterRanged Ranged { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public MonsterType Clone() => (MonsterType)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// A monster's ranged attack: a flask lobbed on a ballistic arc that splashes where it lands. While chasing, it keeps
+    /// between range_min and range_max (steps in past range_max, backs off inside range_min, else circles you) and casts
+    /// when its cooldown's up and it can see you; in `reach` it still bites. The cast winds up for cast_time seconds (its
+    /// cast clip), then releases toward where you are (and a little where you're going). On impact (the ground or you)
+    /// you're hit if within splash_radius: d20 + attack (+ direct_bonus if it struck you) against your armour, `damage`
+    /// as a bite's. It flies slowly: step aside. Metres, m/s, m/s^2, seconds.
+    /// </summary>
+    public sealed class MonsterRanged
+    {
+        public float RangeMin { get; set; }
+        public float RangeMax { get; set; }
+        /// <summary>
+        /// Seconds between casts; the wind-up before release.
+        /// </summary>
+        public float Cooldown { get; set; }
+        public float CastTime { get; set; }
+        /// <summary>
+        /// Launch speed and the fall's pull (lower: a floatier lob). Too far for this speed: thrown its farthest, short.
+        /// </summary>
+        public float Speed { get; set; }
+        public float Gravity { get; set; }
+        public int Attack { get; set; }
+        /// <summary>
+        /// Dice: "NdM+K".
+        /// </summary>
+        public string Damage { get; set; }
+        public float SplashRadius { get; set; }
+        /// <summary>
+        /// Added to the roll when the flask strikes you square.
+        /// </summary>
+        public int DirectBonus { get; set; }
+        /// <summary>
+        /// How much of your motion it leads by (0: where you stand, 1: where you'd be when it lands).
+        /// </summary>
+        public float Lead { get; set; }
+        /// <summary>
+        /// The flask's glow, its trail and the splash (HDR: blooms).
+        /// </summary>
+        public Rgba Color { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public MonsterRanged Clone() => (MonsterRanged)MemberwiseClone();
     }
 
     /// <summary>

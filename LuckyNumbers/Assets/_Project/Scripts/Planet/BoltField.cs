@@ -26,6 +26,8 @@ namespace LuckyNumbers.Planet
         public float ImpactSize, ImpactLife, ImpactLift;
         /// <summary>Push on what it hits (N s).</summary>
         public float Impulse;
+        /// <summary>Its fall (m/s^2 down; 0: a straight bolt). Each frame's ray is then the chord of its arc.</summary>
+        public float Gravity;
         /// <summary>Who shot it, for IDamageable.Hit ("ship", an item id, "default").</summary>
         public string Source;
         /// <summary>Colliders under these are passed through (the shooter, the gun).</summary>
@@ -33,6 +35,18 @@ namespace LuckyNumbers.Planet
         public IBoltSink Sink;
         /// <summary>The owner's own data for this shot (the gun it came from); the field never reads it.</summary>
         public object Tag;
+    }
+
+    /// <summary>How a field's bolts and flashes look.</summary>
+    public enum BoltLook : byte
+    {
+        /// <summary>Flat HDR capsules and spheres (LuckyNumbers/Bolt): bolts, lasers, muzzle and impact flashes.</summary>
+        Solid,
+        /// <summary>
+        /// Additive camera-facing sprites (LuckyNumbers/Glow): each bolt a glowing core with a streak trailing it, each
+        /// flash a puff that grows and fades. Lobbed things (a monster's flask).
+        /// </summary>
+        Glow,
     }
 
     /// <summary>
@@ -49,6 +63,10 @@ namespace LuckyNumbers.Planet
     /// (the shot's source, sink and filters) is a parallel managed list at the same index. Both swap-remove. The
     /// field lives in the active scene: its runner frees the native memory when the scene goes, and ticks it when
     /// nobody else does (`selfTick`: guns lying around share one field).
+    ///
+    /// A bolt with Gravity falls: each frame its direction bends and its ray is the chord of that frame's arc (short:
+    /// lobs are slow). A Glow field (BoltLook.Glow) draws quads instead, two per bolt (its core and its trail) and one
+    /// per flash or spark, in the same batches of 64 with a second per-instance vector (the sprite's shape and age).
     /// </summary>
     public sealed class BoltField : IDisposable
     {
@@ -58,13 +76,16 @@ namespace LuckyNumbers.Planet
         const int Batch = 64;
 
         static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
-        static Material _material;
-        static Mesh _capsule, _sphere;
+        static readonly int GlowShape = Shader.PropertyToID("_GlowShape");
+        static Material _material, _glowMaterial;
+        static Mesh _capsule, _sphere, _quad;
+        /// <summary>A Glow bolt's core sprite, in bolt widths.</summary>
+        const float CoreSize = 2.6f;
 
         struct Bolt
         {
             public float3 Position, Direction;
-            public float Speed, Left, Range, Length;
+            public float Speed, Left, Range, Length, Gravity;
             public quaternion Rotation;   // capsule +Y down the direction (fixed for the bolt's life)
             public float3 Scale;
             public float4 Color;
@@ -76,6 +97,14 @@ namespace LuckyNumbers.Planet
             public float Age, Life, Size;
             public Vector4 Color;
             public int Layer;
+        }
+
+        /// <summary>A Glow field's sprite for this frame only (a wind-up's charge): drawn once, then dropped.</summary>
+        struct Sparkle
+        {
+            public Vector3 Position;
+            public float Size;
+            public Vector4 Color;
         }
 
         [BurstCompile]
@@ -123,6 +152,8 @@ namespace LuckyNumbers.Planet
         readonly Runner _runner;
         readonly List<BoltShot> _shots = new();
         readonly List<Glow> _flashes = new();
+        readonly List<Sparkle> _sparks = new();
+        readonly BoltLook _look;
         NativeList<Bolt> _bolts;
         NativeArray<RaycastCommand> _rays;
         NativeArray<RaycastHit> _hits;
@@ -131,13 +162,22 @@ namespace LuckyNumbers.Planet
         // Draw scratch: a batch's colours, flash matrices, and one property block per batch in a frame (each draw
         // keeps the colours it was given).
         readonly Vector4[] _colors = new Vector4[Batch];
+        readonly Vector4[] _shapes = new Vector4[Batch];   // Glow: x 1 = a trail (else a sprite), y the flash's age 0..1 (-1: steady), z a seed
         readonly Matrix4x4[] _flashMatrices = new Matrix4x4[Batch];
         readonly List<MaterialPropertyBlock> _blocks = new();
         readonly List<int> _layers = new();
 
         /// <param name="selfTick">Tick every frame by itself (else the owner calls Tick).</param>
-        public BoltField(string name, int prewarm, bool selfTick = false)
+        public BoltField(string name, int prewarm, bool selfTick = false, BoltLook look = BoltLook.Solid)
         {
+            _look = look;
+            if (look == BoltLook.Glow)
+            {
+                _glowMaterial ??= Resources.Load<Material>("Glow");
+                if (_glowMaterial == null) Debug.LogError("[Bolts] Resources/Glow material missing: glowing bolts won't show");
+                else _glowMaterial.enableInstancing = true;
+                _quad ??= PrimitiveMesh(PrimitiveType.Quad);
+            }
             _material ??= Resources.Load<Material>("Bolt");
             if (_material == null) Debug.LogError("[Bolts] Resources/Bolt material missing: bolts won't show");
             else _material.enableInstancing = true;
@@ -186,7 +226,7 @@ namespace LuckyNumbers.Planet
             _bolts.Add(new Bolt
             {
                 Position = shot.From, Direction = dir,
-                Speed = math.max(0.01f, shot.Speed), Left = shot.Range, Range = shot.Range, Length = shot.Length,
+                Speed = math.max(0.01f, shot.Speed), Left = shot.Range, Range = shot.Range, Length = shot.Length, Gravity = shot.Gravity,
                 Rotation = Quaternion.FromToRotation(Vector3.up, dir),
                 Scale = new float3(shot.Width, shot.Length * 0.5f, shot.Width),
                 Color = (Vector4)shot.Color,
@@ -197,6 +237,9 @@ namespace LuckyNumbers.Planet
         /// <summary>A flash (muzzle, or anything else that should look like this field's): grows from 40% to `size`.</summary>
         public void Flash(Vector3 at, float size, float life, Color color, int layer = 0) =>
             _flashes.Add(new Glow { Position = at, Size = size, Life = math.max(0.01f, life), Color = color, Layer = layer != 0 ? layer : Layer });
+
+        /// <summary>A Glow field's steady sprite, this frame only (call it every frame it should show).</summary>
+        public void Spark(Vector3 at, float size, Color color) => _sparks.Add(new Sparkle { Position = at, Size = size, Color = color });
 
         public void Tick(float dt)
         {
@@ -223,6 +266,7 @@ namespace LuckyNumbers.Planet
                     b.Position += b.Direction * step;
                     b.Left -= step;
                     if (b.Left <= 0f) { Remove(i); continue; }
+                    if (b.Gravity != 0f) Fall(ref b, dt);
                     _bolts[i] = b;
                 }
             }
@@ -238,6 +282,16 @@ namespace LuckyNumbers.Planet
                 }
                 _flashes[i] = f;
             }
+        }
+
+        /// <summary>A falling bolt's velocity bends by a frame of gravity (its next ray, and its capsule, follow).</summary>
+        static void Fall(ref Bolt b, float dt)
+        {
+            var v = b.Direction * b.Speed;
+            v.y -= b.Gravity * dt;
+            b.Speed = math.max(0.01f, math.length(v));
+            b.Direction = v / b.Speed;
+            b.Rotation = Quaternion.FromToRotation(Vector3.up, b.Direction);
         }
 
         /// <summary>The closest hit of ray `i` that isn't the shooter's own.</summary>
@@ -283,6 +337,11 @@ namespace LuckyNumbers.Planet
         /// <summary>Every bolt (one instanced draw per batch) and every flash (per layer), this frame.</summary>
         void Draw()
         {
+            if (_look == BoltLook.Glow)
+            {
+                DrawGlow();
+                return;
+            }
             if (_material == null || !_bolts.IsCreated) return;
             var block = 0;
             var n = _bolts.Length;
@@ -345,6 +404,69 @@ namespace LuckyNumbers.Planet
             }
         }
 
+        /// <summary>
+        /// A Glow field's frame: each bolt's trail (a quad along it, behind its head, as long as its Length) and core
+        /// sprite, each flash as a puff (its age goes to the shader, which grows and fades it), each spark. Batches of
+        /// 64 quads; every flash on layer 0 (a glow field's flashes are all splashes).
+        /// </summary>
+        void DrawGlow()
+        {
+            if (_glowMaterial == null || !_bolts.IsCreated) { _sparks.Clear(); return; }
+            var block = 0;
+            var count = 0;
+            var lo = Vector3.positiveInfinity;
+            var hi = Vector3.negativeInfinity;
+            var reach = 0f;
+            for (var i = 0; i < _bolts.Length; i++)
+            {
+                var b = _bolts[i];
+                var trail = math.min(b.Length, b.Range - b.Left);   // never behind the hand that threw it
+                if (trail > 0.01f)
+                    Add(Matrix4x4.TRS(b.Position - b.Direction * (trail * 0.5f), b.Rotation, new Vector3(b.Scale.x, trail, b.Scale.x)),
+                        b.Color, new Vector4(1f, -1f, i, 0f), b.Position, trail);
+                Add(Matrix4x4.TRS(b.Position, Quaternion.identity, Vector3.one * (b.Scale.x * CoreSize)), b.Color, new Vector4(0f, -1f, i, 0f),
+                    b.Position, b.Scale.x * CoreSize);
+            }
+            for (var i = 0; i < _flashes.Count; i++)
+            {
+                var f = _flashes[i];
+                var age = f.Age / f.Life;
+                var size = f.Size * Mathf.Lerp(0.4f, 1f, math.sqrt(age));
+                Add(Matrix4x4.TRS(f.Position, Quaternion.identity, Vector3.one * size), f.Color, new Vector4(0f, age, i * 7.31f, 0f), f.Position, size);
+            }
+            foreach (var s in _sparks)
+                Add(Matrix4x4.TRS(s.Position, Quaternion.identity, Vector3.one * s.Size), s.Color, new Vector4(0f, -1f, 0f, 0f), s.Position, s.Size);
+            _sparks.Clear();
+            Flush();
+
+            void Add(in Matrix4x4 m, Vector4 color, Vector4 shape, Vector3 at, float size)
+            {
+                _flashMatrices[count] = m;
+                _colors[count] = color;
+                _shapes[count] = shape;
+                lo = Vector3.Min(lo, at);
+                hi = Vector3.Max(hi, at);
+                reach = math.max(reach, size);
+                if (++count == Batch) Flush();
+            }
+
+            void Flush()
+            {
+                if (count == 0) return;
+                var bounds = new Bounds((lo + hi) * 0.5f, hi - lo + Vector3.one * (2f * reach));
+                var props = Block(block++, count);
+                props.SetVectorArray(GlowShape, _shapes);
+                Graphics.RenderMeshInstanced(new RenderParams(_glowMaterial)
+                {
+                    layer = 0, worldBounds = bounds, shadowCastingMode = ShadowCastingMode.Off, receiveShadows = false, matProps = props,
+                }, _quad, 0, _flashMatrices, count);
+                count = 0;
+                lo = Vector3.positiveInfinity;
+                hi = Vector3.negativeInfinity;
+                reach = 0f;
+            }
+        }
+
         /// <summary>The frame's `i`th property block, holding the first `count` of the scratch colours.</summary>
         MaterialPropertyBlock Block(int i, int count)
         {
@@ -381,6 +503,7 @@ namespace LuckyNumbers.Planet
         {
             _shots.Clear();
             _flashes.Clear();
+            _sparks.Clear();
             if (_bolts.IsCreated) _bolts.Clear();
         }
 

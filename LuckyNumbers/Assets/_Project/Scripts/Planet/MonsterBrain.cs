@@ -5,7 +5,10 @@ namespace LuckyNumbers.Planet
     {
         /// <summary>Ambling round where it started; notices you within `sight`.</summary>
         Wander,
-        /// <summary>After you: closes to `reach` and bites when its cooldown's up; loses you at sight x 3.</summary>
+        /// <summary>
+        /// After you: closes to `reach` and bites when its cooldown's up; loses you at sight x 3. A thrower
+        /// (MonsterSenses.Ranged) keeps within its band instead, winding up and throwing when it can see you.
+        /// </summary>
         Chase,
         /// <summary>An encounter: waits for you, and opens the card when you're within the standoff distance.</summary>
         Standoff,
@@ -72,6 +75,16 @@ namespace LuckyNumbers.Planet
         Bite,
         /// <summary>Chase, in reach, cooling down: turns.</summary>
         Face,
+        /// <summary>A thrower (MonsterSenses.Ranged), chasing: inside `RangeMin`, backs off from you, facing you.</summary>
+        Retreat,
+        /// <summary>A thrower in its band, cast cooling down or no line of sight: circles you, facing you.</summary>
+        Strafe,
+        /// <summary>A thrower: starts its wind-up this tick (the presenter plays the cast clip). Holds still.</summary>
+        Cast,
+        /// <summary>A thrower mid wind-up: turns to you, holds still.</summary>
+        Channel,
+        /// <summary>A thrower's wind-up is done: the flask leaves its hand this tick (the presenter throws it).</summary>
+        Throw,
     }
 
     /// <summary>A one-shot modifier riding along with any state.</summary>
@@ -83,6 +96,8 @@ namespace LuckyNumbers.Planet
         Surprise = 1 << 0,
         /// <summary>Shot at while running off: the placeholder's chase hop, the rest of the way.</summary>
         Harried = 1 << 1,
+        /// <summary>A thrower winding up a throw (Chase only): `CastClock` counts up to its cast time, then it throws.</summary>
+        Winding = 1 << 2,
     }
 
     /// <summary>What a monster's brain sees this tick (all from the presenter; no Unity objects).</summary>
@@ -97,6 +112,13 @@ namespace LuckyNumbers.Planet
         public float Sight, Reach, StandoffDistance;
         /// <summary>Mid-stagger (MonsterView.Busy).</summary>
         public bool Busy;
+        /// <summary>
+        /// It throws (MonsterType.ranged): keeps between RangeMin and RangeMax (m) of you, winds up for CastTime and
+        /// waits CastCooldown between throws (s). LineOfSight: nothing between it and you (only asked while a throw is
+        /// ready; else it can be left false).
+        /// </summary>
+        public bool Ranged, LineOfSight;
+        public float RangeMin, RangeMax, CastTime, CastCooldown;
     }
 
     /// <summary>
@@ -110,6 +132,11 @@ namespace LuckyNumbers.Planet
     ///                                         Ambushed / Fight / FightWon Chase)
     ///   Calm     --CalmedDown--> Wander     Flee --Vanished--> Dying
     ///   any live --ShotAt-->     Chase (Flee stays Flee)        any --Killed--> Dying (final)
+    ///
+    /// A thrower's Chase (Ranged) has its own acts, no new states: past RangeMax Step, inside RangeMin Retreat, else
+    /// Strafe (Step while a throw is ready but it can't see you); with its cast cooled down and a line on you Cast (MonsterMark.Winding set, CastClock from 0), then
+    /// Channel until CastTime, then Throw (CastCooldown restarts). A stagger, leaving Chase or you leaving your feet
+    /// breaks a wind-up (CastInterrupted). In reach it still bites. Without Ranged nothing here changes.
     /// </summary>
     public struct MonsterBrain
     {
@@ -119,6 +146,12 @@ namespace LuckyNumbers.Planet
         public const float NoticeAfter = 4f, StandoffAfter = 1f;
         /// <summary>A won or lost standoff fight: at least this before its first bite (s).</summary>
         public const float RaiseWeapon = 0.8f;
+        /// <summary>A wind-up broken by a hit (or by losing you): at least this before it tries again (s).</summary>
+        public const float CastInterrupted = 1.2f;
+        /// <summary>Closer than this x RangeMin it won't start a throw (it backs off first): the splash would be its own.</summary>
+        public const float CastNearest = 0.6f;
+        /// <summary>A throw ready with no line on you: it walks in for one, down to this x RangeMin.</summary>
+        public const float SeekNearest = 1.15f;
 
         public MonsterState State;
         public MonsterMark Marks;
@@ -128,6 +161,12 @@ namespace LuckyNumbers.Planet
         public float CalmUntil;
         /// <summary>Seconds until it can bite again (counts down in every live state but Dying).</summary>
         public float Cooldown;
+        /// <summary>A thrower: seconds until it can throw again (counts down like Cooldown).</summary>
+        public float CastCooldown;
+        /// <summary>A thrower mid wind-up (MonsterMark.Winding): seconds into it.</summary>
+        public float CastClock;
+
+        public readonly bool Winding => (Marks & MonsterMark.Winding) != 0;
 
         public static MonsterBrain Spawn(bool chasing) => new() { State = chasing ? MonsterState.Chase : MonsterState.Wander };
 
@@ -202,7 +241,18 @@ namespace LuckyNumbers.Planet
         static void Exit(ref MonsterBrain b, MonsterState from)
         {
             if (from == MonsterState.Calm) b.CalmUntil = 0f;
-            if (from == MonsterState.Chase) b.Marks &= ~MonsterMark.Surprise;   // lost you (or died): the fight you chose is over
+            if (from == MonsterState.Chase)
+            {
+                b.Marks &= ~MonsterMark.Surprise;   // lost you (or died): the fight you chose is over
+                if (b.Winding) Interrupt(ref b);    // and a throw it was winding up goes nowhere
+            }
+        }
+
+        /// <summary>A wind-up broken off (a hit, it lost you, it died): no throw, and a moment before the next.</summary>
+        static void Interrupt(ref MonsterBrain b)
+        {
+            b.Marks &= ~MonsterMark.Winding;
+            if (b.CastCooldown < CastInterrupted) b.CastCooldown = CastInterrupted;
         }
 
         static void Enter(ref MonsterBrain b, MonsterState to)
@@ -219,6 +269,7 @@ namespace LuckyNumbers.Planet
                 return MonsterAct.Fade;
             }
             b.Cooldown -= s.Dt;
+            b.CastCooldown -= s.Dt;
             if (b.State == MonsterState.Flee)
             {
                 b.Clock += s.Dt;
@@ -229,13 +280,59 @@ namespace LuckyNumbers.Planet
                 return MonsterAct.OpenStandoff;
             if (b.State == MonsterState.Calm && s.Now >= b.CalmUntil) Fire(ref b, MonsterCue.CalmedDown);
             if (b.State == MonsterState.Wander && s.OnFoot && s.OnFootFor > NoticeAfter && s.Distance < s.Sight) Fire(ref b, MonsterCue.Noticed);
-            if (b.State != MonsterState.Chase || !s.OnFoot) return MonsterAct.Amble;
-            var act = s.Busy ? MonsterAct.Stagger
+            if (b.State != MonsterState.Chase || !s.OnFoot)
+            {
+                if (b.Winding) Interrupt(ref b);   // you got back in your ship mid-throw
+                return MonsterAct.Amble;
+            }
+            var act = s.Ranged ? Ranged(ref b, s)
+                    : s.Busy ? MonsterAct.Stagger
                     : s.Distance > s.Reach * 0.85f ? MonsterAct.Step
                     : b.Cooldown <= 0f ? MonsterAct.Bite
                     : MonsterAct.Face;
             if (s.Distance > s.Sight * 3f) Fire(ref b, MonsterCue.LostTarget);   // this tick's act still happens
             return act;
         }
+
+        /// <summary>
+        /// A thrower's chase: a wind-up runs to its throw (a stagger breaks it); in reach it bites when it can; past
+        /// RangeMax it closes in; a throw that's ready and has a line on you starts (not from too close); inside
+        /// RangeMin it backs off; a throw that's ready without a line on you walks in for one; else it circles you
+        /// while the cast cools down.
+        /// </summary>
+        static MonsterAct Ranged(ref MonsterBrain b, in MonsterSenses s)
+        {
+            if (s.Busy)
+            {
+                if (b.Winding) Interrupt(ref b);
+                return MonsterAct.Stagger;
+            }
+            if (b.Winding)
+            {
+                b.CastClock += s.Dt;
+                if (b.CastClock < s.CastTime) return MonsterAct.Channel;
+                b.Marks &= ~MonsterMark.Winding;
+                b.CastCooldown = s.CastCooldown;
+                return MonsterAct.Throw;
+            }
+            var bite = s.Distance <= s.Reach * 0.85f;
+            if (bite && b.Cooldown <= 0f) return MonsterAct.Bite;
+            if (s.Distance > s.RangeMax) return MonsterAct.Step;
+            var ready = b.CastCooldown <= 0f && !bite && s.Distance >= s.RangeMin * CastNearest;
+            if (ready && s.LineOfSight)
+            {
+                b.Marks |= MonsterMark.Winding;
+                b.CastClock = 0f;
+                return MonsterAct.Cast;
+            }
+            if (s.Distance < s.RangeMin) return MonsterAct.Retreat;
+            // Ready but something's in the way (a hill, another monster): it closes in for a clear line.
+            return ready && s.Distance > s.RangeMin * SeekNearest ? MonsterAct.Step : MonsterAct.Strafe;
+        }
+
+        /// <summary>Whether a thrower would start a throw this tick if it could see you (so the presenter only casts the sight ray then).</summary>
+        public readonly bool WantsSight(in MonsterSenses s) =>
+            s.Ranged && State == MonsterState.Chase && s.OnFoot && !Winding && !s.Busy && CastCooldown - s.Dt <= 0f &&
+            s.Distance <= s.RangeMax && s.Distance >= s.RangeMin * CastNearest && s.Distance > s.Reach * 0.85f;
     }
 }
