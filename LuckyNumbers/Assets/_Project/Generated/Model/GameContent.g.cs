@@ -1428,6 +1428,14 @@ namespace LuckyNumbers.Model
                     "Surfaces/dlv_metaltrm1a",
                     "Surfaces/dlv_metalpip1a",
                     "Surfaces/dlv_metalstr1a",
+                    "Surfaces/dlv_door1a",
+                    "Surfaces/dlv_door2a",
+                    "Surfaces/dlv_door3a",
+                    "Surfaces/dlv_keys1",
+                    "Surfaces/dlv_stonestp1a",
+                    "Surfaces/dlv_woodstp1a",
+                    "Surfaces/dlv_metalstr2a",
+                    "Surfaces/dlv_metalpan3a",
                 },
                 Palettes =
                 {

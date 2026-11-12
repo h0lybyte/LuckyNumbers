@@ -146,6 +146,9 @@ namespace LuckyNumbers.Hold
             return 0;
         }
 
+        /// <summary>A layer's slice by name (e.g. "Surfaces/dlv_door1a"), or -1 if it isn't in the array.</summary>
+        public static int Layer(HoldTextures textures, string name) => textures.Layers.IndexOf(name);
+
         /// <summary>Every palette's layers as slice indices, in palette order (for the mesher job).</summary>
         public static NativeArray<PaletteLayers> Resolve(HoldTextures textures, Allocator allocator)
         {
