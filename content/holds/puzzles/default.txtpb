@@ -1,0 +1,32 @@
+# proto-file: luckynumbers/v1/hold_puzzles.proto
+# proto-message: luckynumbers.v1.PuzzleRules
+# Locked doors + keys, portcullises + levers in the endless mines. Depth = regions down. Placeholder numbers.
+
+# ---- placement ----
+door_chance: 0.35
+door_chance_per_depth: 0.06
+door_chance_max: 0.8
+doors_max: 2
+gate_chance: 0.3
+gate_chance_per_depth: 0.05
+gate_chance_max: 0.7
+gates_max: 1
+behind_min_cells: 3
+behind_max_cells: 90
+key_min_cells: 10
+key_max_cells: 36
+lever_min_cells: 4
+lever_max_cells: 16
+reward_depth_bonus: 3
+
+# ---- interaction ----
+reach: 1.7
+key_name: "iron key"
+pickup_prompt: "E  pick up the key"
+pickup_text: "An old dwarven key, cold and heavy. It fits a door somewhere in these tunnels. Keys carried: {count}."
+unlock_prompt: "E  unlock the door"
+locked_text: "Locked: the key is somewhere in these tunnels"
+lever_prompt: "E  pull the lever"
+gate_text: "A portcullis: there's a lever somewhere near"
+door_swing_seconds: 0.9
+gate_raise_seconds: 1.6

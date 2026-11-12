@@ -4,6 +4,49 @@ package luckynumbers.v1;
 
 option csharp_namespace = "LuckyNumbers.Model";
 
-// Puzzles in the mines: locked doors and their keys, portcullises and their levers.
+// Puzzles in the mines: locked doors and their keys, portcullises and their levers (MinePasses.Puzzles places them,
+// PuzzlePresenter builds and works them). Depth is regions down (region y 0: depth 0). A door or gate goes on a
+// chokepoint: a one-wide tunnel cell between two walls whose removal cuts off a pocket of the region with no opening
+// or shaft in it; its key / lever lies on the open side, reachable without passing any door or gate.
 message PuzzleRules {
+  // ---- placement (per region) ----
+  // Each of up to doors_max tries places a locked door with this chance (plus per depth, capped at door_chance_max).
+  float door_chance = 1;
+  float door_chance_per_depth = 2;
+  float door_chance_max = 3;
+  int32 doors_max = 4;
+  // The same for portcullises (each with its lever).
+  float gate_chance = 5;
+  float gate_chance_per_depth = 6;
+  float gate_chance_max = 7;
+  int32 gates_max = 8;
+  // The pocket a door or gate closes off: at least / at most this many walkable cells.
+  int32 behind_min_cells = 9;
+  int32 behind_max_cells = 10;
+  // A key lies key_min..key_max steps (cells walked) from its door (farther only if nothing fits); dead ends and
+  // chambers are preferred.
+  int32 key_min_cells = 11;
+  int32 key_max_cells = 25;
+  // A lever is on a wall this many steps from its gate.
+  int32 lever_min_cells = 12;
+  int32 lever_max_cells = 13;
+  // Behind a locked door: a strongbox (HoldLifePlan) whose find is rolled as if this many regions deeper.
+  int32 reward_depth_bonus = 14;
+
+  // ---- interaction (PuzzlePresenter) ----
+  // Reach (metres, flat) to pick up a key, work a door or lever.
+  float reach = 15;
+  string key_name = 16;
+  string pickup_prompt = 17;
+  // Shown when you pick a key up ("{count}": keys you now carry).
+  string pickup_text = 18;
+  string unlock_prompt = 19;
+  // At a locked door without its key.
+  string locked_text = 20;
+  string lever_prompt = 21;
+  // At a portcullis that's still down.
+  string gate_text = 22;
+  // Animation times (seconds).
+  float door_swing_seconds = 23;
+  float gate_raise_seconds = 24;
 }
