@@ -4,7 +4,6 @@ using LuckyNumbers.Hold;
 using LuckyNumbers.Model;
 using LuckyNumbers.Planet;
 using MessagePipe;
-using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using VContainer;
@@ -13,58 +12,45 @@ using VContainer.Unity;
 namespace LuckyNumbers.HoldScene
 {
     /// <summary>
-    /// The endless mines under a dwarven hold, streamed round the player. Each region (MineGenerator) is generated from
-    /// the lucky number and its coordinates, meshed off the main thread (HoldMesher jobs) and shown as chunks (HoldView).
-    /// Loaded: the 3 x 3 regions at the player's depth plus the ones straight above and below. You drop down shafts;
-    /// in a shaft's bottom cell, E climbs back up (no ladders yet).
+    /// The Hold scene's driver: starts the deep (HoldWorld) from the lucky number, puts the player at the first
+    /// IHoldSpawn that answers (else in the mines' first region), streams regions round them, fades in and shows
+    /// the bottom line (HoldWorld.Prompt from other presenters, else the controls).
     /// </summary>
-    [Presenter]
-    public sealed class HoldPresenter : IStartable, ITickable, IDisposable
+    // Registered by hand in HoldScope (AsSelf), not [Presenter]: other presenters inject it.
+    public sealed class HoldPresenter : IStartable, ITickable, ILateTickable, IDisposable
     {
-        const int BuildsPerFrame = 2;
-        const string ClimbHint = "E  climb up the shaft";
-        const string WalkHint = "WASD walk · Shift run · Space jump · drop down shafts to go deeper";
+        static readonly int SunPosition = Shader.PropertyToID("_LnSunPosition");
+        static readonly int SunColor = Shader.PropertyToID("_LnSunColor");
+        static readonly int SkyColor = Shader.PropertyToID("_LnSkyColor");
+        static readonly int GroundColor = Shader.PropertyToID("_LnGroundColor");
+        const string WalkHint = "WASD walk · Shift run · Space jump · climb shafts to go deeper";
 
-        sealed class Region
-        {
-            public HoldGrid Grid;
-            public HoldMeshBuild Build;
-            public readonly List<long> Chunks = new();
-        }
-
-        readonly HoldConfig _config;
-        readonly HoldView _view;
+        readonly HoldWorld _world;
+        readonly IReadOnlyList<IHoldSpawn> _spawns;
         readonly PlayerView _player;
         readonly FirstPersonPresenter _firstPerson;
         readonly PlanetView _ui;
         readonly IBufferedSubscriber<UniverseSeedChanged> _seeds;
-        readonly ISubscriber<InputActionPerformed> _actions;
-        readonly Dictionary<int3, Region> _regions = new();
-        readonly HashSet<int3> _wanted = new();
-        readonly List<int3> _drop = new();
-        MineParams _rules;
-        HoldMeshSettings _mesh;
-        NativeArray<PaletteLayers> _palettes;
-        IDisposable _seedSub, _actionSub;
-        uint _seed;
-        bool _started, _interact;
+        readonly ISubscriber<DevWarpRequested> _warps;
+        IDisposable _seedSub, _warpSub;
+        bool _started;
         float _fade = 1f, _hintAlpha = 1f;
-        float3 _regionSize;   // metres
-        int _deepest;         // lowest region depth reached (logged when it changes)
         float3 _spawn;
+        float _spawnYaw;
+        int _deepest;
 
         [Inject]
-        public HoldPresenter(HoldConfig config, HoldView view, PlayerView player, FirstPersonPresenter firstPerson,
-                             PlanetView ui, IBufferedSubscriber<UniverseSeedChanged> seeds,
-                             ISubscriber<InputActionPerformed> actions)
+        public HoldPresenter(HoldWorld world, IEnumerable<IHoldSpawn> spawns, PlayerView player,
+                             FirstPersonPresenter firstPerson, PlanetView ui, IBufferedSubscriber<UniverseSeedChanged> seeds,
+                             ISubscriber<DevWarpRequested> warps)
         {
-            _config = config;
-            _view = view;
+            _warps = warps;
+            _world = world;
+            _spawns = new List<IHoldSpawn>(spawns);
             _player = player;
             _firstPerson = firstPerson;
             _ui = ui;
             _seeds = seeds;
-            _actions = actions;
         }
 
         public void Start()
@@ -72,186 +58,82 @@ namespace LuckyNumbers.HoldScene
             _ui.Bind();
             _ui.Fade(1f);
             _ui.Hint(WalkHint, 1f);
-            _rules = MineParams.From(_config);
-            _mesh = HoldMeshSettings.From(_config);
-            _palettes = HoldPalettes.Resolve(_config.Textures, Allocator.Persistent);
-            _regionSize = new float3(_config.RegionCells * _config.CellSize, _config.RegionLevels * _config.StoreyHeight,
-                                     _config.RegionCells * _config.CellSize);
-            _actionSub = _actions.Subscribe(e => { if (e.Action == InputAction.Interact) _interact = true; });
+            // Lit models (creatures, the Ship shader) underground: a dim warm "sun" kept overhead (lantern light from
+            // above), cool rock from the sides and below.
+            var c = _world.Config;
+            Shader.SetGlobalVector(SunColor, new Vector4(c.LanternR, c.LanternG, c.LanternB, 1f) * 0.55f);
+            Shader.SetGlobalVector(SkyColor, new Vector4(0.45f, 0.4f, 0.34f, 1f));
+            Shader.SetGlobalVector(GroundColor, new Vector4(0.3f, 0.28f, 0.26f, 1f));
             _seedSub = _seeds.Subscribe(roll =>
             {
                 if (_started) return;
                 _started = true;
-                _seed = roll.Seed == 0 ? 1u : roll.Seed;
+                _world.Begin(roll.Seed == 0 ? 1u : roll.Seed);
                 Enter();
             });
+            // Dev (the page's LN.send('DevWarpRequested', {to: 'deep'})): one region down, onto its top level.
+            _warpSub = _warps.Subscribe(e => { if (_started && e.To == "deep") Deeper(); });
         }
 
-        /// <summary>First region now (synchronously), the player on its top level, then the rest streams in.</summary>
+        void Deeper()
+        {
+            var region = _world.RegionOf((float3)_player.Body.transform.position) + new int3(0, -1, 0);
+            _world.LoadNow(region);
+            if (!_world.TryGrid(region, out var grid)) return;
+            for (var level = grid.Size.y - 1; level >= 0; level--)
+            for (var z = 2; z < grid.Size.z - 2; z++)
+            for (var x = 2; x < grid.Size.x - 2; x++)
+            {
+                var c = grid.Get(new int3(x, level, z));
+                if (c.Kind != CellKind.Mine || (c.Flags & CellFlags.Pillar) != 0) continue;
+                Teleport(_world.CellFloor(grid.ToWorld(new int3(x, level, z))) + new float3(0f, 0.05f, 0f), 0f);
+                Debug.Log($"[Hold] dev warp deep: region {region}");
+                return;
+            }
+        }
+
         void Enter()
         {
-            var home = new int3(0, 0, 0);
-            var region = Load(home);
-            region.Build.Handle.Complete();
-            ShowBuilt(region);
-            var spawn = SpawnCell(region.Grid);
-            _spawn = CellFloor(region.Grid.ToWorld(spawn)) + new float3(0f, 0.05f, 0f);
-            Teleport(_spawn, 0f);
+            _world.LoadNow(new int3(0, 0, 0));
+            foreach (var s in _spawns)
+                if (s.TrySpawn(_world, out _spawn, out _spawnYaw)) break;
+            _world.LoadNow(_world.RegionOf(_spawn));
+            Teleport(_spawn + new float3(0f, 0.05f, 0f), _spawnYaw);
             _firstPerson.Unlock(ControlLock.Spawn);
-            Debug.Log($"[Hold] mines under lucky number {_seed}: spawned at cell {region.Grid.ToWorld(spawn)}");
+            Debug.Log($"[Hold] mines under lucky number {_world.Seed}: spawned at cell {_world.CellOf(_spawn)}");
         }
 
         public void Tick()
         {
             if (!_started) return;
             var pos = (float3)_player.Body.transform.position;
-            var here = RegionOf(pos);
-
-            // Stream: the 3 x 3 at this depth, plus straight above and below.
-            _wanted.Clear();
-            for (var dx = -1; dx <= 1; dx++)
-            for (var dz = -1; dz <= 1; dz++)
-                _wanted.Add(here + new int3(dx, 0, dz));
-            _wanted.Add(here + new int3(0, 1, 0));
-            _wanted.Add(here + new int3(0, -1, 0));
-
-            _drop.Clear();
-            foreach (var key in _regions.Keys) if (!_wanted.Contains(key)) _drop.Add(key);
-            foreach (var key in _drop) Unload(key);
-
-            var started = 0;
-            foreach (var key in _wanted)
-            {
-                if (_regions.ContainsKey(key)) continue;
-                if (started++ >= BuildsPerFrame) break;
-                Load(key);
-            }
-            foreach (var region in _regions.Values)
-                if (region.Build != null && region.Build.IsCompleted) ShowBuilt(region);
-
+            Shader.SetGlobalVector(SunPosition, new Vector4(pos.x + 8f, pos.y + 40f, pos.z - 6f, 1f));
+            _world.Stream(pos);
+            var here = _world.RegionOf(pos);
             if (here.y < _deepest)
             {
                 _deepest = here.y;
                 Debug.Log($"[Hold] deeper: region {here}");
             }
-
             // Fell through everything loaded (a region below not built yet): back to where you came in.
-            if (!_regions.ContainsKey(here) && !_regions.ContainsKey(here + new int3(0, 1, 0))) Teleport(_spawn, 0f);
-
-            Climb(pos);
+            if (!_world.Loaded(here) && !_world.Loaded(here + new int3(0, 1, 0))) Teleport(_spawn + new float3(0f, 0.05f, 0f), _spawnYaw);
 
             _fade = math.max(0f, _fade - Time.deltaTime * 1.2f);
             _ui.Fade(_fade);
             _hintAlpha = math.max(0f, _hintAlpha - Time.deltaTime * 0.08f);
-            _interact = false;
         }
 
-        /// <summary>In a shaft's bottom cell: show the prompt, and E puts you beside the shaft on the floor above.</summary>
-        void Climb(float3 pos)
+        /// <summary>After every presenter's Tick: their prompt if any, else the fading controls line.</summary>
+        public void LateTick()
         {
-            var cell = CellOf(pos + new float3(0f, 0.2f, 0f));
-            if (!TryCell(cell, out var c) || c.Kind != CellKind.ShaftUp)
-            {
-                _ui.Hint(WalkHint, math.saturate(_hintAlpha * 2f));
-                return;
-            }
-            _ui.Hint(ClimbHint, 1f);
-            if (!_interact) return;
-            var above = cell + new int3(0, 1, 0);
-            foreach (var d in new[] { new int3(1, 0, 0), new int3(-1, 0, 0), new int3(0, 0, 1), new int3(0, 0, -1) })
-            {
-                var to = above + d;
-                if (!TryCell(to, out var t) || !t.Walkable || t.Kind == CellKind.ShaftDown || (t.Flags & CellFlags.Pillar) != 0) continue;
-                var yaw = math.degrees(math.atan2(d.x, d.z));
-                Teleport(CellFloor(to) + new float3(0f, 0.05f, 0f), yaw);
-                return;
-            }
+            if (!_started) return;
+            var prompt = _world.Prompt;
+            if (!string.IsNullOrEmpty(prompt)) _ui.Hint(prompt, 1f);
+            else _ui.Hint(WalkHint, math.saturate(_hintAlpha * 2f));
+            _world.Prompt = null;
         }
 
-        Region Load(int3 key)
-        {
-            var region = new Region { Grid = MineGenerator.Region(_seed, key, _rules, Allocator.Persistent) };
-            region.Build = HoldMesher.Schedule(region.Grid, _palettes, _mesh);
-            _regions[key] = region;
-            return region;
-        }
-
-        void ShowBuilt(Region region)
-        {
-            var chunks = region.Build.Complete();
-            region.Build.Dispose();
-            region.Build = null;
-            var origin = region.Grid.Origin;
-            foreach (var chunk in chunks)
-            {
-                var key = ChunkKey(origin, chunk.Index);
-                _view.Show(key, chunk.Mesh, chunk.Colliders);
-                region.Chunks.Add(key);
-            }
-        }
-
-        void Unload(int3 key)
-        {
-            var region = _regions[key];
-            _regions.Remove(key);
-            if (region.Build != null)
-            {
-                region.Build.Handle.Complete();
-                foreach (var chunk in region.Build.Complete()) UnityEngine.Object.Destroy(chunk.Mesh);
-                region.Build.Dispose();
-            }
-            foreach (var chunk in region.Chunks) _view.Hide(chunk);
-            region.Grid.Dispose();
-        }
-
-        /// <summary>A walkable, plain cell on the top level, nearest the region's middle.</summary>
-        static int3 SpawnCell(in HoldGrid grid)
-        {
-            var best = new int3(grid.Size.x / 2, grid.Size.y - 1, grid.Size.z / 2);
-            var bestD = int.MaxValue;
-            for (var level = grid.Size.y - 1; level >= 0 && bestD == int.MaxValue; level--)
-            for (var z = 1; z < grid.Size.z - 1; z++)
-            for (var x = 1; x < grid.Size.x - 1; x++)
-            {
-                var c = new int3(x, level, z);
-                var cell = grid.Get(c);
-                if (cell.Kind != CellKind.Mine || (cell.Flags & CellFlags.Pillar) != 0) continue;
-                var d = math.abs(x - grid.Size.x / 2) + math.abs(z - grid.Size.z / 2);
-                if (d < bestD) { bestD = d; best = c; }
-            }
-            return best;
-        }
-
-        bool TryCell(int3 world, out HoldCell cell)
-        {
-            var key = new int3(FloorDiv(world.x, _config.RegionCells), FloorDiv(world.y, _config.RegionLevels),
-                               FloorDiv(world.z, _config.RegionCells));
-            if (_regions.TryGetValue(key, out var region))
-            {
-                cell = region.Grid.Get(world - region.Grid.Origin);
-                return true;
-            }
-            cell = HoldCell.Solid;
-            return false;
-        }
-
-        int3 CellOf(float3 pos) => (int3)math.floor(pos / new float3(_config.CellSize, _config.StoreyHeight, _config.CellSize));
-        int3 RegionOf(float3 pos) => (int3)math.floor(pos / _regionSize);
-
-        float3 CellFloor(int3 world) =>
-            new((world.x + 0.5f) * _config.CellSize, world.y * _config.StoreyHeight, (world.z + 0.5f) * _config.CellSize);
-
-        static int FloorDiv(int a, int b) => (int)math.floor(a / (float)b);
-
-        /// <summary>World chunk column + region level: unique per chunk mesh (20 bits each, wraps far beyond play).</summary>
-        long ChunkKey(int3 origin, int2 chunk)
-        {
-            var n = math.max(1, _config.ChunkCells);
-            long x = FloorDiv(origin.x, n) + chunk.x, z = FloorDiv(origin.z, n) + chunk.y, y = origin.y;
-            return (x & 0xFFFFF) | ((z & 0xFFFFF) << 20) | ((y & 0xFFFFF) << 40);
-        }
-
-        void Teleport(float3 position, float yaw)
+        public void Teleport(float3 position, float yaw)
         {
             var body = _player.Body;
             body.enabled = false;   // a CharacterController ignores transform moves while enabled
@@ -263,19 +145,7 @@ namespace LuckyNumbers.HoldScene
         public void Dispose()
         {
             _seedSub?.Dispose();
-            _actionSub?.Dispose();
-            // The scene is going: its objects are gone with it, so only free the native memory.
-            foreach (var region in _regions.Values)
-            {
-                if (region.Build != null)
-                {
-                    region.Build.Handle.Complete();
-                    region.Build.Dispose();
-                }
-                region.Grid.Dispose();
-            }
-            _regions.Clear();
-            if (_palettes.IsCreated) _palettes.Dispose();
+            _warpSub?.Dispose();
         }
     }
 }

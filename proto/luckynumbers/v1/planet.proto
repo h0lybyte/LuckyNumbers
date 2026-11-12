@@ -96,6 +96,39 @@ message PlanetScene {
   FlightLanding landing = 53;
   // On a touch screen (PointerLock.Touch), in place of the keyboard / mouse line above; empty: that one.
   string touch_hint = 60;
+  // In universes with holds (Universe.holds): the surface gate into the hold, near where you land.
+  SurfaceGate gate = 61;
+}
+
+// A hold's gate set into the ground (Planet/SurfaceGatePresenter): a stone facade with a dark doorway, two lanterns and
+// a stepped approach on a flattened pad. Placed from the site seed, distance_min..max metres from the site's middle,
+// on the side away from the wreck. Metres.
+message SurfaceGate {
+  float distance_min = 1;
+  float distance_max = 2;
+  // The facade: width, height, and how deep the stone block runs back into the ground.
+  float width = 3;
+  float height = 4;
+  float depth = 5;
+  // The doorway in it: width and height.
+  float door_width = 6;
+  float door_height = 7;
+  // The approach: how many steps up to the door, each this tall and deep.
+  int32 steps = 8;
+  float step_rise = 9;
+  float step_depth = 10;
+  // The flattened pad around it (the ground eases back to its own shape over the same distance again).
+  float pad_radius = 11;
+  // Walk this close to the doorway for the prompt; walk this far into it and you're in.
+  float prompt_distance = 12;
+  float walk_in_depth = 13;
+  string prompt = 14;
+  // Lanterns either side of the door: light colour, intensity and range.
+  float lantern_r = 15;
+  float lantern_g = 16;
+  float lantern_b = 17;
+  float lantern_intensity = 18;
+  float lantern_range = 19;
 }
 
 // Piloting your fighter down to the crash site. Metres, seconds, m/s, m/s^2, degrees.

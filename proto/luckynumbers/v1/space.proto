@@ -113,6 +113,15 @@ message GroundProfile {
   float swell_scale = 5;
   // Surface colour noise scale (detail on the ground texture).
   float surface_noise_scale = 6;
+  // Terraces (0 = none, the land stays smooth): the hills are cut into steps this many metres tall. Sharpness 0..1:
+  // how much of each step is cliff (0 = a smooth ramp, 1 = a sheer wall between flat plateaus). A slow noise of
+  // terrace_break_scale softens the cliffs into ramps in places (0 = none), so the land is never sealed.
+  float terrace_height = 7;
+  float terrace_sharpness = 8;
+  float terrace_break_scale = 9;
+  // Sharp ridges (0 = none): ridged noise, cliff_height metres tall, cliff_scale x the hills' frequency; terraced too.
+  float cliff_height = 10;
+  float cliff_scale = 11;
 }
 
 // One entity of the universe: a planet or a star sphere.

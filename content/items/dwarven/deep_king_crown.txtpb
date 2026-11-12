@@ -1,0 +1,13 @@
+# proto-file: luckynumbers/v1/inventory.proto
+# proto-message: luckynumbers.v1.ItemDef
+# Found in the dwarven hold's mines (a strongbox, content/holds/life/default.txtpb). No model yet: a placeholder block.
+
+id: "deep_king_crown"
+name: "Crown of the Deep King"
+kind: ITEM_KIND_RELIC
+unique: true
+description: "Seven points of deep-iron set with garnets. Whoever wore it ruled everything under the mountain."
+shape: "###"
+bulk: 1
+value: 7500
+color { r: 0.75 g: 0.15 b: 0.18 a: 1 }

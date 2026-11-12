@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// What lives and lies in the deep: creatures in the mines, relic caches in chambers and dead-end spurs. Everything
+// is placed from hash(seed, region) alone (HoldLifePlan), like the mines themselves. Depth is how many regions down
+// a region is (region y 0: depth 0, y -3: depth 3); deeper means rarer finds and more creatures.
+message HoldLife {
+  // ---- relic caches (dwarven strongboxes) ----
+  // Chance a chamber holds a cache, and a dead-end spur's last cell.
+  float cache_chamber_chance = 1;
+  float cache_dead_end_chance = 2;
+  // Extra chance per depth (added to both, capped at 0.95).
+  float cache_chance_per_depth = 3;
+  // At most this many caches in one region.
+  int32 caches_max = 4;
+  // What it's called ("{name}" in the prompt) and the prompt shown within reach.
+  string cache_name = 5;
+  string open_prompt = 6;
+  // Reach to open (metres, flat).
+  float open_distance = 7;
+  // What a cache can hold, rarest last: one tier is picked by weight at that depth, then one of its items.
+  repeated CacheTier tiers = 8;
+  // A tier's unique item you already carry (or no room for): this said instead (no "{name}": the cache is empty).
+  string empty_text = 9;
+
+  // ---- creatures ----
+  // Who roams the mines (combat.txtpb monster ids), by weight at a depth.
+  repeated HoldCreature creatures = 10;
+  // Chance a chamber has a creature at depth `creatures_from_depth`, extra per depth below that, and the cap.
+  float creature_chamber_chance = 11;
+  float creature_chance_per_depth = 12;
+  float creature_chance_max = 13;
+  // No creatures above this depth (0: region y 0 too).
+  int32 creatures_from_depth = 14;
+  // At most this many creatures in one region.
+  int32 creatures_max = 15;
+  // Aggro: a creature notices you within this (metres) if it can see you (0: its monster type's `sight`).
+  float sight = 16;
+  // Chasing: how many cells the cell-graph search may visit to find a way to you.
+  int32 path_cells = 17;
+  // Wandering: it picks a cell up to this many steps away, walks there, waits, picks again.
+  int32 wander_steps = 18;
+  // Seconds in the deep before anything comes for you (like the planet's grace on foot).
+  float grace_seconds = 19;
+}
+
+// One rarity of find. Weight at depth d = max(0, weight + weight_per_depth * d), and 0 above min_depth.
+message CacheTier {
+  string name = 1;
+  float weight = 2;
+  float weight_per_depth = 3;
+  int32 min_depth = 4;
+  // Item ids (items.txtpb, Kind RELIC: they sell at the museum like the freighter's relics).
+  repeated string items = 5;
+}
+
+// A monster type (combat.txtpb `monsters` id) that roams the mines.
+message HoldCreature {
+  string monster = 1;
+  float weight = 2;
+  float weight_per_depth = 3;
+  int32 min_depth = 4;
+}

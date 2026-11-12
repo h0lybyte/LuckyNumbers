@@ -1,0 +1,14 @@
+# proto-file: luckynumbers/v1/space.proto
+# proto-message: luckynumbers.v1.PlanetLook
+# proto-extends: space/looks/planet_base
+# Forge world: black crust, ember-red seams, a glowing smoke rim.
+
+planet_color { r: 0.6 g: 0.15 b: 0.035 a: 1 }
+atmosphere_color { r: 1 g: 0.36 b: 0.08 a: 1 }
+light_intensity: 0.12
+noise_scale: 3.6
+noise_remap: 0
+atmosphere_thickness: 0.05
+atmosphere_intensity: 1.1
+atmosphere_power: 3
+light_color { r: 0.5 g: 0.3 b: 0.25 a: 1 }

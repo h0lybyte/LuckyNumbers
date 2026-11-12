@@ -12,9 +12,17 @@ region_cells: 32
 region_levels: 2
 mines_ref: "holds/mines/deep"
 
+# What lives and lies in the deep: relic caches, creatures.
+life_ref: "holds/life/default"
+# The top of the hold: the gate, the great hall and its rooms (region y 1 over x, z 0).
+hall_ref: "holds/hall/default"
+
 # Warm lantern light baked into the vertex colours; ambient keeps unlit stone just readable.
 lantern_radius: 9
 lantern_r: 1
 lantern_g: 0.72
 lantern_b: 0.42
 ambient: 0.18
+
+# Climbing shafts.
+climb_speed: 2.2

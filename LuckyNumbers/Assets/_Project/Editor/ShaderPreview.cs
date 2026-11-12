@@ -711,6 +711,28 @@ namespace LuckyNumbers.Editor
                     break;
                 }
             }
+            // Ladder: an inner shaft (ShaftUp on level 0 under its ShaftDown), from up in the shaft opposite the
+            // ladder, looking down it so both storeys and the floor show. Prefer one with rock behind both storeys.
+            Vector3 ladderEye = Vector3.zero, ladderTarget = Vector3.forward;
+            var ladderAt = new Unity.Mathematics.int3(-1, -1, -1);
+            var ladderBest = -1;
+            for (var i = 0; i < home.Cells.Length; i++)
+            {
+                if (home.Cells[i].Kind != LuckyNumbers.Hold.CellKind.ShaftUp) continue;
+                var c = new Unity.Mathematics.int3(i % home.Size.x, i / (home.Size.x * home.Size.z), i / home.Size.x % home.Size.z);
+                if (!home.InBounds(c + new Unity.Mathematics.int3(0, 1, 0))) continue;
+                var d = LuckyNumbers.Hold.HoldRules.LadderSide(home, c);
+                var score = (home.Get(c + d).Walkable ? 0 : 2) + (home.Get(c + new Unity.Mathematics.int3(0, 1, 0) + d).Walkable ? 0 : 1);
+                if (score <= ladderBest) continue;
+                ladderBest = score;
+                ladderAt = c;
+                var across = d.x != 0 ? 0 : 2;
+                var w = home.ToWorld(c);
+                var mid = new Vector3((w.x + 0.5f) * cell.x, w.y * cell.y, (w.z + 0.5f) * cell.z);
+                var wallAt = mid + new Vector3(d.x, 0f, d.z) * (cell[across] * 0.5f);
+                ladderEye = wallAt - new Vector3(d.x, 0f, d.z) * (cell[across] - 0.15f) + Vector3.up * (cell.y + 0.6f);
+                ladderTarget = wallAt + Vector3.up * (cell.y + 0.6f - (cell[across] - 0.15f) * Mathf.Tan(25f * Mathf.Deg2Rad));
+            }
             home.Dispose();
             palettes.Dispose();
 
@@ -733,6 +755,15 @@ namespace LuckyNumbers.Editor
             cam.fieldOfView = 60f;
             Save(cam, "preview-hold-top.png");
             Debug.Log($"[ShaderPreview] hold seed {seed}: 9 regions, {triangles} triangles, lantern view {(found ? "found" : "missing")}");
+
+            if (ladderBest >= 0)
+            {
+                cam.transform.position = ladderEye;
+                cam.transform.LookAt(ladderTarget);
+                cam.fieldOfView = 80f;
+                Save(cam, "preview-hold-ladder.png");
+            }
+            Debug.Log($"[ShaderPreview] hold ladder view: {(ladderBest >= 0 ? $"shaft {ladderAt} (rock behind: {ladderBest} of 3)" : "no inner shaft")}");
         }
 
         static Shader Find(string name) => Shader.Find(name) ?? throw new System.Exception($"Shader not found: {name}");

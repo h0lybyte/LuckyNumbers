@@ -1,0 +1,12 @@
+# proto-file: luckynumbers/v1/inventory.proto
+# proto-message: luckynumbers.v1.ItemDef
+# Found in the dwarven hold's mines (a strongbox, content/holds/life/default.txtpb). No model yet: a placeholder block.
+
+id: "rune_shard"
+name: "Rune-cut shard"
+kind: ITEM_KIND_RELIC
+description: "A splinter of slate cut with runes. It's faintly warm to hold."
+shape: "#"
+bulk: 0.2
+value: 180
+color { r: 0.4 g: 0.5 b: 0.62 a: 1 }

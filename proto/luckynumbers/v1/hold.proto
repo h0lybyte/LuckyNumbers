@@ -3,6 +3,8 @@ syntax = "proto3";
 package luckynumbers.v1;
 
 import "ln/options.proto";
+import "luckynumbers/v1/hold_hall.proto";
+import "luckynumbers/v1/hold_life.proto";
 
 option csharp_namespace = "LuckyNumbers.Model";
 
@@ -31,6 +33,23 @@ message HoldConfig {
   float lantern_g = 12;
   float lantern_b = 13;
   float ambient = 14;
+  // The bounded hold at the top of the deep: gate, great hall, rooms, the way down (hold_hall.proto).
+  HallRules hall = 15;
+  string hall_ref = 16 [(ln.ref) = "hall"];
+  // What lives and lies in the deep: creatures, relic caches (hold_life.proto).
+  HoldLife life = 17;
+  string life_ref = 18 [(ln.ref) = "life"];
+  // Climbing shafts (metres per second).
+  float climb_speed = 19;
+}
+
+// Travel between a dwarven planet's surface and its hold (Planet <-> Hold scenes).
+message HoldTrip {
+  option (ln.state) = true;
+  // Came in through the surface gate: spawn inside the hall's gate. False: straight in (dev), into the mines.
+  bool from_surface = 1;
+  // Walked out through the gate: the planet puts you outside it.
+  bool leaving = 2;
 }
 
 // One Texture2DArray built from tile textures (Art/Textures/...): every layer the same size, in this order.

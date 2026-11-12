@@ -1,0 +1,12 @@
+# proto-file: luckynumbers/v1/inventory.proto
+# proto-message: luckynumbers.v1.ItemDef
+# Found in the dwarven hold's mines (a strongbox, content/holds/life/default.txtpb). No model yet: a placeholder block.
+
+id: "forge_heart"
+name: "Forge-heart"
+kind: ITEM_KIND_RELIC
+description: "A fist-sized stone with an ember still glowing at its core."
+shape: "##/##"
+bulk: 1.2
+value: 1800
+color { r: 1 g: 0.45 b: 0.15 a: 1 }

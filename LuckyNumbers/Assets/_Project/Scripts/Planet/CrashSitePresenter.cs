@@ -36,6 +36,8 @@ namespace LuckyNumbers.Planet
         /// job's site is just the nest. Either way the site's middle is where the wreck would lie (PlanetView.Wreck's pivot).
         /// </summary>
         bool HasWreck { get; }
+        /// <summary>The hold's surface gate here (Exists false: this universe has no holds).</summary>
+        GatePlacement Gate { get; }
         /// <summary>The ground streams around `target` and the sun sits beyond `eye` (null: the player, the default).</summary>
         void Follow(Transform target, Transform eye);
     }
@@ -45,6 +47,8 @@ namespace LuckyNumbers.Planet
     {
         /// <summary>Called once the site is built (passed in, rather than injected, to avoid a dependency loop).</summary>
         UniTask ArriveAsync(ICrashSite site, CancellationToken ct);
+        /// <summary>Back out of the hold: no arrival flight, your ship already parked on its pad. Done at once.</summary>
+        void Park(ICrashSite site);
     }
 
     [Presenter]
@@ -68,6 +72,8 @@ namespace LuckyNumbers.Planet
         readonly ShipYard _yard;
         readonly SceneCurtain _curtain;
         readonly IBufferedSubscriber<UniverseSeedChanged> _seeds;
+        readonly UniverseState _universe;
+        readonly HoldTrip _trip;
         readonly CancellationTokenSource _cts = new();
         IDisposable _subscription;
         Vector3 _sunDirection = new(0.4f, 0.6f, 0.3f);
@@ -80,14 +86,18 @@ namespace LuckyNumbers.Planet
         public System.Collections.Generic.IReadOnlyList<CelestialBody> Bodies { get; private set; }
         public Vector3 SunDirection => _sunDirection;
         public bool HasWreck { get; private set; } = true;
+        public GatePlacement Gate { get; private set; }
         public void Follow(Transform target, Transform eye) { _follow = target; _eye = eye; }
         ShipView _wreck => _view.Wreck;
 
         [Inject]
         public CrashSitePresenter(PlanetScene config, GroundView ground, PlanetView view, PlayerView player, IArrival arrival,
                                   IFirstPerson firstPerson, LandingSite landing, IBufferedSubscriber<UniverseSeedChanged> seeds,
-                                  PlayerShip playerShip, PlayerJob job, ShipYard yard, SceneCurtain curtain)
+                                  PlayerShip playerShip, PlayerJob job, ShipYard yard, SceneCurtain curtain,
+                                  UniverseState universe, HoldTrip trip)
         {
+            _universe = universe;
+            _trip = trip;
             _yard = yard;
             _curtain = curtain;
             _job = job;
@@ -122,13 +132,19 @@ namespace LuckyNumbers.Planet
             try { await _curtain.Opened; }
             catch (OperationCanceledException) { return; }
             if (ct.IsCancellationRequested) return;
+            if (_trip.Leaving.Value)
+            {
+                _trip.Leaving.Value = false;
+                if (Gate.Exists) { OutOfTheHoldAsync(ct).Forget(); return; }
+                Debug.LogWarning("[Planet] back from a hold, but this universe has no gate: the usual arrival");
+            }
             if (_config.Landing != null) _arrival.ArriveAsync(this, ct).Forget();
             else WakeAsync(ct).Forget();
         }
 
         void Build(UniverseSeedChanged roll)
         {
-            var rules = _config.Backdrop.Generator;
+            var rules = Multiverse.Generator(_universe.Id.Value, _config.Backdrop.Generator);   // the run's universe
             var bodyId = _landing.Valid.Value && !string.IsNullOrEmpty(_landing.Body.Value) ? _landing.Body.Value : "home";
             var bodies = UniverseGenerator.Generate(rules, roll);
             CelestialBody planet = null, star = null;
@@ -172,6 +188,15 @@ namespace LuckyNumbers.Planet
             _ground.Material.SetFloat("_HazeHorizon", reach);
             _ground.ConfigureFar(_config.FarChunkScale, _config.FarResolution, _config.FarViewChunks,
                                  land.SiteRelief, land.SwellHeight, land.SwellScale);
+            _ground.ConfigureRelief(land.TerraceHeight, land.TerraceSharpness, land.TerraceBreakScale, land.CliffHeight, land.CliffScale);
+            // A universe with holds: the gate's spot (its own seeded draw, so nothing else here moves), flattened.
+            Gate = Multiverse.HasHolds(_universe.Id.Value) ? GatePlacement.Place(Seed, _config.Gate) : default;
+            if (Gate.Exists)
+            {
+                var y = _ground.Pad(new float2(Gate.Position.x, Gate.Position.z), _config.Gate.PadRadius);
+                Gate = Gate.At(y);
+                Debug.Log($"[Planet] hold gate at ({Gate.Position.x:0}, {Gate.Position.z:0}), {math.length(new float2(Gate.Position.x, Gate.Position.z)):0} m out");
+            }
             _ground.Stream(Vector3.zero, int.MaxValue);   // everything around the spawn, now
 
             // Boulders: squashed, tilted spheres half sunk into the ground; the first right beside your path.
@@ -181,6 +206,7 @@ namespace LuckyNumbers.Planet
                 var p = i == 0 ? new float2(0.9f, 1.4f)    // a standing stone just ahead-right of where you wake
                               : rng.NextFloat2Direction() * rng.NextFloat(6f, math.max(8f, _config.BoulderSpread));
                 if (i > 0 && math.distance(p, new float2(0f, _config.WreckDistance)) < _config.WreckLength * 0.6f) continue;   // keep the wreck clear
+                if (i > 0 && Gate.Exists && math.distance(p, new float2(Gate.Position.x, Gate.Position.z)) < _config.Gate.PadRadius * 1.5f) continue;   // and the gate
                 var rock = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 rock.name = $"Boulder {i}";
                 var scale = i == 0 ? new Vector3(1.5f, 2.6f, 1.3f)
@@ -292,6 +318,28 @@ namespace LuckyNumbers.Planet
                 _view.Hint(Controls.Pick(_config.Hint, _config.TouchHint), math.smoothstep(0f, 0.5f, t) * (1f - math.smoothstep(5.5f, 7f, t)));
                 await UniTask.Yield(ct);
             }
+        }
+
+        /// <summary>
+        /// Walked back out of the hold (HoldTrip.leaving): no landing, no wake-up. Your ship is parked on its pad and you
+        /// stand at the foot of the gate's steps, facing away from it.
+        /// </summary>
+        async UniTaskVoid OutOfTheHoldAsync(CancellationToken ct)
+        {
+            if (_config.Landing != null) _arrival.Park(this);
+            var body = _player.Body.transform;
+            var at = Gate.Outside(_config.Gate);
+            at.y = _ground.SurfaceAt(at) + 0.15f;
+            _player.Body.enabled = false;
+            body.SetPositionAndRotation(at, Quaternion.Euler(0f, Gate.Yaw, 0f));
+            _player.Body.enabled = true;
+            _player.Head.localPosition = new Vector3(0f, _config.EyeHeight, 0f);
+            _player.Head.localRotation = Quaternion.identity;
+            _firstPerson.Look(Gate.Yaw, 4f);
+            _firstPerson.Unlock(ControlLock.Spawn);
+            Debug.Log("[Planet] out of the hold, at its gate");
+            for (var t = 0f; t < 0.8f; t += Time.deltaTime) { _view.Fade(1f - t / 0.8f); await UniTask.Yield(ct); }
+            _view.Fade(0f);
         }
 
         async UniTask SayAsync(CancellationToken ct)

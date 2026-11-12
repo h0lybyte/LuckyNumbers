@@ -116,6 +116,11 @@ namespace LuckyNumbers.Planet
         public void Unlock(ControlLock why) => _control.Locks.Value &= ~why;
         public float SpeedScale { get; set; } = 1f;
         public Func<RaycastHit, bool> ShotCheck { get; set; }
+        /// <summary>
+        /// On a ladder (the Hold's HoldClimbPresenter): no gravity, no walking or jumping; whoever set it moves the
+        /// CharacterController itself. Look, head and hands carry on. False everywhere else.
+        /// </summary>
+        public bool Climbing { get; set; }
 
         public Rigidbody Held => _held;
 
@@ -201,7 +206,7 @@ namespace LuckyNumbers.Planet
             _pitch = math.clamp(_pitch - lookDelta.y * _config.LookDegreesPerPixel, -85f, 85f);
 
             var body = _player.Body;
-            var grounded = body.isGrounded;
+            var grounded = body.isGrounded || Climbing;   // on a ladder: footed, not airborne (arms don't fly up)
             var move = _input.Move.Value;
             var running = _input.Sprinting.Value;
             var speed = (running ? _config.SprintSpeed : _config.WalkSpeed) * SpeedScale;
@@ -210,11 +215,19 @@ namespace LuckyNumbers.Planet
             if (wish.sqrMagnitude > 1f) wish.Normalize();
             if (_reaching != null && _reachT < 0.5f) wish += StepIn(_reaching.position) / math.max(0.1f, speed);   // step in to grab
 
-            if (grounded && _vertical < 0f) _vertical = -2f;                 // stick to slopes
-            if (Pressed(Press.Jump) && grounded && _reaching == null) _vertical = _config.JumpSpeed;
-            Use(Press.Jump);
-            _vertical -= _config.Gravity * dt;
-            body.Move((wish * speed + Vector3.up * _vertical) * dt);
+            if (Climbing)
+            {
+                _vertical = 0f;   // whoever climbs moves the body; letting go starts the fall from rest
+                Use(Press.Jump);
+            }
+            else
+            {
+                if (grounded && _vertical < 0f) _vertical = -2f;                 // stick to slopes
+                if (Pressed(Press.Jump) && grounded && _reaching == null) _vertical = _config.JumpSpeed;
+                Use(Press.Jump);
+                _vertical -= _config.Gravity * dt;
+                body.Move((wish * speed + Vector3.up * _vertical) * dt);
+            }
             body.transform.rotation = yawRot;
 
             if (!_wasGrounded && body.isGrounded) _landDip = 1f;              // landing thump

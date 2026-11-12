@@ -164,7 +164,7 @@ def summarize_log(log: Path) -> int:
     for line in shader_errors[:20]:
         print(f"  {line}")
     errors += shader_errors
-    for line in re.findall(r"^\[(?:WebBuild|ShaderPreview|SceneBuilder|FontSetup|HoldTextures|HoldKitPreview)\].*$", text, re.M):
+    for line in re.findall(r"^\[(?:WebBuild|ShaderPreview|SceneBuilder|FontSetup|HoldTextures|HoldKitPreview|DeepPreview|DeepCheck|Gate)\].*$", text, re.M):
         print(f"  {line}")
     for marker in ("Scripts have compiler errors.", "Aborting batchmode due to failure:"):
         if marker in text:
@@ -299,9 +299,15 @@ def cmd_preview(args) -> int:
                    "monster": ("RenderMonster", "preview-monster.png"),
                    "relics": ("RenderRelics", "preview-relics.png"),
                    "exhaust": ("RenderExhaust", "preview-exhaust.png"), "legs": ("RenderLegs", "preview-legs.png"),
-                   "hold": ("RenderHold", "preview-hold.png")}.get(
+                   "hold": ("RenderHold", "preview-hold.png"),
+                   # The Emberdeep universe (Editor/DeepPreview.cs): a system and the terraced crash site with its gate.
+                   "deep-space": ("DeepPreview.RenderSpace", "preview-deep-space.png"),
+                   "deep-ground": ("DeepPreview.RenderGround", "preview-deep-ground.png")}.get(
         args.what, ("RenderSpace", "preview-space.png"))
-    code, log = run_unity(["-executeMethod", f"LuckyNumbers.Editor.ShaderPreview.{method}"],
+    if "." not in method:
+        method = f"ShaderPreview.{method}"
+    extra = ["-lnSeed", str(args.seed)] if getattr(args, "seed", None) else []
+    code, log = run_unity(["-executeMethod", f"LuckyNumbers.Editor.{method}", *extra],
                           "ln-preview.log", args.force, graphics=True)
     errors = summarize_log(log)
     out = PROJECT / "Logs" / png
@@ -309,6 +315,15 @@ def cmd_preview(args) -> int:
         return fail("preview failed, see log above")
     print(f"Preview: {out}")
     return 0
+
+
+def cmd_deep_check(args) -> int:
+    code, log = run_unity(["-executeMethod", "LuckyNumbers.Editor.DeepUniverseCheck.Run"], "ln-deep-check.log", args.force)
+    errors = summarize_log(log)
+    text = log.read_text(encoding="utf-8", errors="replace") if log.is_file() else ""
+    for line in re.findall(r"^.*\[DeepCheck\] FAIL.*$", text, re.M):
+        print(f"  {line}")
+    return 0 if code == 0 and not errors else fail("deep check failed, see log above")
 
 
 def cmd_relic(args) -> int:
@@ -864,9 +879,14 @@ def main(argv=None) -> int:
     s.add_argument("name", nargs="?", default="roman_vase")
     s.set_defaults(func=cmd_relic)
     s = sub.add_parser("preview", help="render shaders to LuckyNumbers/Logs/preview-<what>.png")
-    s.add_argument("what", nargs="?", choices=["space", "ship", "arms", "station", "exhaust", "legs", "monster", "relics", "hold"], default="space")
+    s.add_argument("what", nargs="?", choices=["space", "ship", "arms", "station", "exhaust", "legs", "monster", "relics", "hold",
+                                               "deep-space", "deep-ground"], default="space")
+    s.add_argument("--seed", type=int, help="deep-*: the lucky number to render")
     s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
     s.set_defaults(func=cmd_preview)
+    s = sub.add_parser("deep-check", help="home universe unchanged + Emberdeep gate/terraces (Editor/DeepUniverseCheck.cs)")
+    s.add_argument("--force", action="store_true", help="ignore a stale Unity lockfile")
+    s.set_defaults(func=cmd_deep_check)
 
     s = sub.add_parser("serve", aliases=["server"], help="serve the Web build with COOP/COEP headers")
     s.add_argument("--port", type=int, default=8080)

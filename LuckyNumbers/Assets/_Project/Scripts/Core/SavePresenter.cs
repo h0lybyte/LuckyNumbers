@@ -76,6 +76,7 @@ namespace LuckyNumbers.Core
             public JobSave job;
             public string[] upgrades;   // PlayerShip.upgrades, "id|level" (absent in older saves)
             public uint dice;           // the dice drive's roll
+            public string universe;     // UniverseState.id (absent in older saves: the default, home)
         }
 
         [Serializable]
@@ -98,6 +99,8 @@ namespace LuckyNumbers.Core
         readonly IPackSave _pack;
         readonly IBufferedSubscriber<UniverseSeedChanged> _seeds;
         readonly IBufferedPublisher<UniverseSeedChanged> _seedPublisher;
+        readonly UniverseState _universeState;
+        readonly IPublisher<UniverseSelected> _universePublisher;
         readonly ISubscriber<SaveSlotsReady> _ready;
         readonly ISubscriber<SaveSlotPicked> _picked;
         readonly ISubscriber<SaveSlotDeleteRequested> _deletes;
@@ -115,8 +118,11 @@ namespace LuckyNumbers.Core
                              IBufferedSubscriber<UniverseSeedChanged> seeds, IBufferedPublisher<UniverseSeedChanged> seedPublisher,
                              ISubscriber<SaveSlotsReady> ready, ISubscriber<SaveSlotPicked> picked,
                              ISubscriber<SaveSlotDeleteRequested> deletes,
-                             ISubscriber<SceneChangeRequested> leaving, ISubscriber<SceneEntered> entered)
+                             ISubscriber<SceneChangeRequested> leaving, ISubscriber<SceneEntered> entered,
+                             UniverseState universeState, IPublisher<UniverseSelected> universePublisher)
         {
+            _universeState = universeState;
+            _universePublisher = universePublisher;
             _state = state;
             _flow = flow;
             _dice = dice;
@@ -192,6 +198,7 @@ namespace LuckyNumbers.Core
                 _dice.Faces.Clear();
                 foreach (var f in save.faces) _dice.Faces.Add(f);
             }
+            _universePublisher.Publish(new UniverseSelected(save.universe ?? "", 0));   // which universe, before its roll
             _dice.Seed.Value = save.seed;
             _seedPublisher.Publish(new UniverseSeedChanged(save.seed, save.star, save.worlds, save.luck, save.moons));
             _character.Restore(save.character);
@@ -254,6 +261,7 @@ namespace LuckyNumbers.Core
                 job = CaptureJob(),
                 upgrades = new List<string>(_ship.Upgrades).ToArray(),
                 dice = _ship.Dice.Value,
+                universe = _universeState.Id.Value ?? "",
             };
             PlayerPrefs.SetString(KeyPrefix + index, JsonUtility.ToJson(file));
             PlayerPrefs.Save();

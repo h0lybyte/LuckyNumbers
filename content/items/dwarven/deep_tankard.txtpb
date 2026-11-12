@@ -1,0 +1,12 @@
+# proto-file: luckynumbers/v1/inventory.proto
+# proto-message: luckynumbers.v1.ItemDef
+# Found in the dwarven hold's mines (a strongbox, content/holds/life/default.txtpb). No model yet: a placeholder block.
+
+id: "deep_tankard"
+name: "Deep-iron tankard"
+kind: ITEM_KIND_RELIC
+description: "Heavy enough to stun a troll, engraved with a feast nobody remembers."
+shape: "##/##"
+bulk: 1
+value: 450
+color { r: 0.55 g: 0.5 b: 0.48 a: 1 }

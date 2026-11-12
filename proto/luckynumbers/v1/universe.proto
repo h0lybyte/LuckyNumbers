@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+import "luckynumbers/v1/space.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Every universe the dice can roll a system in (content/universes.txtpb). Each has its own generator: stars,
+// worlds, skies and the ground you walk on. The first is the default (a new run, an old save without one).
+message UniverseCatalog {
+  option (ln.config) = true;
+  repeated Universe universes = 1;
+}
+
+message Universe {
+  string id = 1;
+  string name = 2;
+  // One line about it (the title's switch, the dev menu).
+  string blurb = 3;
+  // Seed -> solar system for this universe (replaces the scenes' backdrop generator).
+  SystemGenerator generator = 4;
+  string generator_ref = 5 [(ln.ref) = "generator"];
+  // Its worlds have dwarven holds: a surface gate near where you land leads down into one (Planet -> Hold).
+  bool holds = 6;
+  // The folk who live there (flavour, empty for none).
+  string people = 7;
+}
+
+// The universe this run is in: saved with the slot, read by every scene that builds a system (Space, Planet).
+// Empty id = the catalog's first.
+message UniverseState {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  string id = 1;
+  string name = 2;
+  bool holds = 3;
+}
+
+// Switch universe (the title's switch, ?ln-universe=<id>, the dev menu): by id, or with an empty id `step` places
+// along the catalog (1 = next, wrapping; 0 = the default, the first). The title's system re-forms in it.
+message UniverseSelected {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  string id = 1;
+  int32 step = 2;
+}
