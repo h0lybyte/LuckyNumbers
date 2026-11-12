@@ -20,10 +20,19 @@ namespace LuckyNumbers.Editor
         Both,
     }
 
+    /// <summary>Texture formats a Web build carries.</summary>
+    public enum WebTextures
+    {
+        /// <summary>DXT for desktop GPUs plus an ASTC copy of the data and bundles for phones (project default).</summary>
+        Both,
+        /// <summary>DXT only: one pass, for quick local builds. Phones decompress every texture on the CPU.</summary>
+        Dxt,
+    }
+
     /// <summary>
     /// Web (itch.io) player settings and build, usable from the menu or headless:
     ///   Unity -batchmode -quit -buildTarget WebGL -projectPath LuckyNumbers \
-    ///         -executeMethod LuckyNumbers.Editor.WebBuild.Build [-lnGfx webgl2|webgpu|both]
+    ///         -executeMethod LuckyNumbers.Editor.WebBuild.Build [-lnGfx webgl2|webgpu|both] [-lnTex both|dxt]
     /// Default (committed project setting) is WebGPU + WebGL 2 fallback: WebGPU fixed Safari, and
     /// browsers without WebGPU fall back to WebGL 2. Other variants are applied for the build only,
     /// restored afterwards, and go to their own output folder.
@@ -33,6 +42,9 @@ namespace LuckyNumbers.Editor
         public const string DefaultOutputDir = "Builds/WebGL";
         const string GfxArg = "-lnGfx";
         const string VersionArg = "-lnVersion";
+        const string TexArg = "-lnTex";
+        /// <summary>The template's switch (index.html) for the ASTC copy; set true once it's in the build.</summary>
+        const string AstcFlagOff = "var lnAstc = false;", AstcFlagOn = "var lnAstc = true;";
         const int Width = 1280, Height = 720;
 
         public static string OutputDirFor(WebGraphics gfx) =>
@@ -89,12 +101,14 @@ namespace LuckyNumbers.Editor
         };
 
         [MenuItem("LuckyNumbers/Web/Build (WebGPU + WebGL 2)")]
-        public static void Build() => Build(GraphicsFromCommandLine());
+        public static void Build() => Build(GraphicsFromCommandLine(), TexturesFromCommandLine());
 
         [MenuItem("LuckyNumbers/Web/Build (WebGL 2 only)")]
         public static void BuildWebGL2() => Build(WebGraphics.WebGL2);
 
-        public static void Build(WebGraphics gfx)
+        public static void Build(WebGraphics gfx) => Build(gfx, WebTextures.Both);
+
+        public static void Build(WebGraphics gfx, WebTextures textures)
         {
             var output = OutputDirFor(gfx);
             // Release version comes from CHANGELOG.md via "-lnVersion x.y.z" (tools/ln.py, CI).
@@ -128,6 +142,7 @@ namespace LuckyNumbers.Editor
                           $"{s.totalTime.TotalSeconds:F0}s -> {Path.GetFullPath(output)}");
                 if (s.result != BuildResult.Succeeded)
                     throw new BuildFailedException($"Web build {s.result}");
+                if (textures == WebTextures.Both) BuildAstc(scenes, output);
             }
             finally
             {
@@ -139,6 +154,79 @@ namespace LuckyNumbers.Editor
                     AssetDatabase.SaveAssets();
                 }
             }
+        }
+
+        /// <summary>
+        /// The same build again with ASTC textures, keeping only what differs: its data file (as Build/&lt;name&gt;-astc.data*)
+        /// and its bundles (StreamingAssets-astc). index.html loads those instead when the GPU has ASTC and no DXT
+        /// (phones and tablets), so their textures stay compressed on the GPU instead of being unpacked on the CPU at
+        /// load into 4-8x the memory. The code (wasm, framework) doesn't depend on the texture format: checked here.
+        /// </summary>
+        static void BuildAstc(string[] scenes, string output)
+        {
+            var temp = output + "-astc-tmp";
+            var was = EditorUserBuildSettings.webGLBuildSubtarget;
+            try
+            {
+                EditorUserBuildSettings.webGLBuildSubtarget = WebGLTextureSubtarget.ASTC;
+                if (Directory.Exists(temp)) Directory.Delete(temp, true);
+                var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+                {
+                    scenes = scenes,
+                    locationPathName = temp,
+                    target = BuildTarget.WebGL,
+                    options = BuildOptions.None,
+                });
+                if (report.summary.result != BuildResult.Succeeded)
+                    throw new BuildFailedException($"Web build (ASTC) {report.summary.result}");
+
+                var name = Path.GetFileName(output);
+                foreach (var code in Directory.GetFiles(Path.Combine(temp, "Build")).Where(f => !Path.GetFileName(f).Contains(".data")))
+                {
+                    var ext = Path.GetFileName(code).Substring(Path.GetFileName(temp).Length);   // ".wasm.gz", ".framework.js.gz", ...
+                    var mine = Path.Combine(output, "Build", name + ext);
+                    if (File.Exists(mine) && !Unpacked(mine).AsSpan().SequenceEqual(Unpacked(code)))
+                        throw new BuildFailedException($"ASTC pass: {name + ext} differs from the DXT build's, its data can't share the code");
+                }
+                var data = Directory.GetFiles(Path.Combine(temp, "Build"), Path.GetFileName(temp) + ".data*").Single();
+                var dataExt = Path.GetFileName(data).Substring(Path.GetFileName(temp).Length);   // ".data.gz"
+                File.Copy(data, Path.Combine(output, "Build", name + "-astc" + dataExt), true);
+
+                var bundles = Path.Combine(output, "StreamingAssets-astc");
+                if (Directory.Exists(bundles)) Directory.Delete(bundles, true);
+                if (Directory.Exists(Path.Combine(temp, "StreamingAssets"))) Directory.Move(Path.Combine(temp, "StreamingAssets"), bundles);
+
+                var index = Path.Combine(output, "index.html");
+                var html = File.ReadAllText(index);
+                if (!html.Contains(AstcFlagOff)) throw new BuildFailedException($"index.html has no '{AstcFlagOff}' (WebGLTemplates/LuckyNumbers)");
+                File.WriteAllText(index, html.Replace(AstcFlagOff, AstcFlagOn));
+                Debug.Log($"[WebBuild] ASTC copy: Build/{name}-astc{dataExt} ({new FileInfo(data).Length / (1024f * 1024f):F1} MB)" +
+                          $" + StreamingAssets-astc, {report.summary.totalTime.TotalSeconds:F0}s");
+            }
+            finally
+            {
+                EditorUserBuildSettings.webGLBuildSubtarget = was;
+                if (Directory.Exists(temp)) Directory.Delete(temp, true);
+            }
+        }
+
+        /// <summary>A build file's bytes, un-gzipped (the gzip header carries a timestamp).</summary>
+        static byte[] Unpacked(string path)
+        {
+            if (!path.EndsWith(".gz")) return File.ReadAllBytes(path);
+            using var gz = new System.IO.Compression.GZipStream(File.OpenRead(path), System.IO.Compression.CompressionMode.Decompress);
+            using var bytes = new MemoryStream();
+            gz.CopyTo(bytes);
+            return bytes.ToArray();
+        }
+
+        /// <summary>Reads "-lnTex both|dxt" from the command line (default Both).</summary>
+        static WebTextures TexturesFromCommandLine()
+        {
+            var value = ArgValue(TexArg);
+            if (value == null) return WebTextures.Both;
+            if (Enum.TryParse(value, ignoreCase: true, out WebTextures tex)) return tex;
+            throw new BuildFailedException($"Unknown {TexArg} value '{value}' (use both or dxt)");
         }
 
         /// <summary>Reads "-lnGfx webgl2|webgpu|both" from the command line (default Both).</summary>
