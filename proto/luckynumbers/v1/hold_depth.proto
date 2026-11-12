@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Pacing the deep: depth seals every few regions, drop shafts, collapsed tunnels, falling.
+message DepthRules {
+}

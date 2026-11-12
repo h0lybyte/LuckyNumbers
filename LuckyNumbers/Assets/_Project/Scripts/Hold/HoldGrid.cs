@@ -22,6 +22,12 @@ namespace LuckyNumbers.Hold
         ShaftUp,
         /// <summary>Mine tunnel or chamber: rough walls, timber supports.</summary>
         Mine,
+        /// <summary>A flight of steps climbing one storey (HoldCell.Reserved: direction and step index; see HoldNav).</summary>
+        Stair,
+        /// <summary>A great shaft: open through many storeys and regions (no floors, no ceilings), with a hoist.</summary>
+        GreatShaft,
+        /// <summary>A collapse: blocks the way like rock, but drawn as a rubble heap from the cells beside it.</summary>
+        Rubble,
     }
 
     [Flags]
@@ -45,8 +51,43 @@ namespace LuckyNumbers.Hold
         public CellFlags Flags;
         public byte Reserved;
 
-        public bool Walkable => Kind != CellKind.Solid;
+        /// <summary>Open space you can be in (Rubble blocks like rock).</summary>
+        public bool Walkable => Kind != CellKind.Solid && Kind != CellKind.Rubble;
         public static readonly HoldCell Solid = default;
+    }
+
+    /// <summary>Things placed on cells that aren't cell geometry: built at runtime by the scene's presenters.</summary>
+    public enum FixtureKind : byte
+    {
+        None = 0,
+        /// <summary>A locked door across a Door cell; opened by the Key with the same Link.</summary>
+        LockedDoor,
+        /// <summary>A key (lies on the floor); Link names the door it opens.</summary>
+        Key,
+        /// <summary>A portcullis across a cell; raised by the Lever with the same Link.</summary>
+        Portcullis,
+        /// <summary>A lever on a wall (Dir: the wall it's on).</summary>
+        Lever,
+        /// <summary>A hoist (lift cage) in a great shaft; Data: how many storeys it serves below this cell.</summary>
+        Hoist,
+        /// <summary>A depth seal: a great door closing the way deeper until its band's seal key is found.</summary>
+        Seal,
+        /// <summary>The seal key of a depth band.</summary>
+        SealKey,
+        /// <summary>The lip of a drop shaft (one-way down, a long fall).</summary>
+        DropLip,
+    }
+
+    /// <summary>One fixture: what, where (local cell), facing, which other fixture it pairs with, and kind data.</summary>
+    public struct HoldFixture
+    {
+        public FixtureKind Kind;
+        public int3 Cell;
+        /// <summary>Direction index (0 +x, 1 -x, 2 +z, 3 -z), where it matters.</summary>
+        public byte Dir;
+        /// <summary>Pairs a key with its door, a lever with its gate (unique within a region).</summary>
+        public ushort Link;
+        public int Data;
     }
 
     /// <summary>
@@ -60,12 +101,16 @@ namespace LuckyNumbers.Hold
         public int3 Size;
         public int3 Origin;
         public NativeArray<HoldCell> Cells;
+        /// <summary>Doors, keys, levers, hoists, seals... (not meshed; presenters build them). Not created on grids
+        /// made only for meshing jobs.</summary>
+        public NativeList<HoldFixture> Fixtures;
 
         public HoldGrid(int3 size, int3 origin, Allocator allocator)
         {
             Size = size;
             Origin = origin;
             Cells = new NativeArray<HoldCell>(size.x * size.y * size.z, allocator, NativeArrayOptions.ClearMemory);
+            Fixtures = new NativeList<HoldFixture>(8, allocator);
         }
 
         public readonly bool IsCreated => Cells.IsCreated;
@@ -77,7 +122,11 @@ namespace LuckyNumbers.Hold
         /// <summary>World cell coordinates (for hashing, matching neighbours) of a local cell.</summary>
         public readonly int3 ToWorld(int3 local) => Origin + local;
 
-        public void Dispose() { if (Cells.IsCreated) Cells.Dispose(); }
+        public void Dispose()
+        {
+            if (Cells.IsCreated) Cells.Dispose();
+            if (Fixtures.IsCreated) Fixtures.Dispose();
+        }
     }
 
     /// <summary>A palette resolved to texture-array slices (HoldTextures.layers indices); -1 = layer missing.</summary>

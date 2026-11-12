@@ -295,7 +295,7 @@ namespace LuckyNumbers.Hold
         }
     }
 
-    struct ChunkMesher
+    partial struct ChunkMesher
     {
         public HoldGrid G;
         public NativeArray<PaletteLayers> Pal;
@@ -361,7 +361,12 @@ namespace LuckyNumbers.Hold
             if ((cell.Flags & CellFlags.Pillar) != 0) Pillar(c, Slice(p.Pillar), Slice(p.Trim), floor, ceiling);
             if ((cell.Flags & CellFlags.Lantern) != 0) Lantern(c, Slice(p.Trim), ceiling);
             if (cell.Kind == CellKind.ShaftUp) Ladder(c, Slice(p.Pillar), Slice(p.Trim), floor);
+            KitVertical(c, cell, p, floor, ceiling);   // stairs, great shafts (HoldMesher.Vertical.cs)
+            KitDepth(c, cell, p, floor, ceiling);      // rubble heaps, drop-shaft lips (HoldMesher.Depth.cs)
         }
+
+        partial void KitVertical(int3 c, HoldCell cell, PaletteLayers p, bool floor, bool ceiling);
+        partial void KitDepth(int3 c, HoldCell cell, PaletteLayers p, bool floor, bool ceiling);
 
         // ---------------------------------------------------------------- shell faces
 

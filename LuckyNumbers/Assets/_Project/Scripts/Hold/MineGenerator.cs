@@ -7,7 +7,7 @@ using Random = Unity.Mathematics.Random;
 namespace LuckyNumbers.Hold
 {
     /// <summary>MineRules and region size flattened to plain values, so the digger needs no managed objects.</summary>
-    public struct MineParams
+    public partial struct MineParams
     {
         public int Cells, Levels;
         public int OpeningsMin, OpeningsMax;
@@ -35,8 +35,16 @@ namespace LuckyNumbers.Hold
             p.ChambersMax = math.max(p.ChambersMin, r.ChambersMax);
             p.ChamberSizeMax = math.clamp(r.ChamberSizeMax, p.ChamberSizeMin, p.Cells - 4);
             p.ChamberSizeMin = math.min(p.ChamberSizeMin, p.ChamberSizeMax);
+            // The passes' own rules (MinePasses.*.cs): each fills its fields here.
+            p.FromVertical(config);
+            p.FromPuzzles(config);
+            p.FromDepth(config);
             return p;
         }
+
+        partial void FromVertical(HoldConfig config);
+        partial void FromPuzzles(HoldConfig config);
+        partial void FromDepth(HoldConfig config);
     }
 
     /// <summary>
@@ -74,6 +82,7 @@ namespace LuckyNumbers.Hold
             if (!ok) Debug.LogWarning($"[MineGenerator] seed {seed} region {region}: no valid dig in {MaxAttempts} attempts");
             dig.WriteTo(ref grid);
             dig.Dispose();
+            MinePasses.Run(seed, region, p, ref grid);
             return grid;
         }
 

@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Puzzles in the mines: locked doors and their keys, portcullises and their levers.
+message PuzzleRules {
+}

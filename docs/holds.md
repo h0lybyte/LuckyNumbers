@@ -99,3 +99,15 @@ Structures on and under dwarven worlds: a cell grid, meshed into chunks, skinned
   `HallGatePresenter` (prompt near the gate; into its outer edge: fade, `HoldTrip.Leaving`, Planet scene).
 - Check: `-executeMethod LuckyNumbers.Editor.HallCheck.Run` (200 seeds; ASCII in `Logs/hall-ascii.txt`). Renders:
   `-executeMethod LuckyNumbers.Editor.HallPreview.Render` (graphics) -> `Logs/preview-hall.png`, `preview-hall-top.png`.
+
+## Passes, fixtures, navigation (wave 3)
+
+- `MinePasses.Run` runs after each mine region's dig: Vertical (stairs, great shafts, hoists), Puzzles (locked
+  doors + keys, portcullises + levers), Depth (seals, drop shafts, collapses), each in its own
+  `MinePasses.<Name>.cs`, with rules in `hold_<name>.proto` (HoldConfig.vertical / puzzles / depth) flattened into
+  `MineParams` by its `From<Name>` partial.
+- New cell kinds: Stair, GreatShaft, Rubble (blocks like rock). `HoldGrid.Fixtures`: doors, keys, gates, levers,
+  hoists, seals, drop lips, built at runtime by presenters, not meshed.
+- `HoldNav.Flood` / `Moves`: the one notion of walkable connectivity (stairs plug in via `ExtraMoves`); with
+  fixtures closed it proves keys/levers are reachable before what they open.
+- Mesher kit hooks: `KitVertical` (HoldMesher.Vertical.cs), `KitDepth` (HoldMesher.Depth.cs).

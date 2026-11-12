@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Getting between depths: stairs between storeys, great shafts through many regions, their hoists.
+message VerticalRules {
+}
