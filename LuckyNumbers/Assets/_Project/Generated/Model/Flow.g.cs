@@ -30,6 +30,10 @@ namespace LuckyNumbers.Model
         /// Outside the station: launched from the Docking Bay, fly round it in your ship and dock again.
         /// </summary>
         Orbit = 7,
+        /// <summary>
+        /// Under a dwarven hold: walk the endless mines, streamed region by region (dev: ?ln-hold).
+        /// </summary>
+        Hold = 8,
     }
 
     public sealed class FlowState : IDisposable

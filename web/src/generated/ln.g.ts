@@ -10,7 +10,8 @@ export type GameScene =
   | "Planet"
   | "Station"
   | "FlightSchool"
-  | "Orbit";
+  | "Orbit"
+  | "Hold";
 
 export type CallPhase =
   | "None"

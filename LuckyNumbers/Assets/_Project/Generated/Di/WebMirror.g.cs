@@ -1880,6 +1880,7 @@ namespace LuckyNumbers.Model
                 case GameScene.Station: return "Station";
                 case GameScene.FlightSchool: return "FlightSchool";
                 case GameScene.Orbit: return "Orbit";
+                case GameScene.Hold: return "Hold";
                 default: return ((int)v).ToString(CultureInfo.InvariantCulture);
             }
         }
@@ -1896,6 +1897,7 @@ namespace LuckyNumbers.Model
                 case "Station": return GameScene.Station;
                 case "FlightSchool": return GameScene.FlightSchool;
                 case "Orbit": return GameScene.Orbit;
+                case "Hold": return GameScene.Hold;
                 default: return default;
             }
         }
