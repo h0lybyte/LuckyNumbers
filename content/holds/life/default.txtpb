@@ -1,0 +1,34 @@
+# proto-file: luckynumbers/v1/hold_life.proto
+# proto-message: luckynumbers.v1.HoldLife
+# What lives and lies in the endless mines. Depth = regions down (region y 0: depth 0). Placeholder numbers.
+
+# ---- relic caches: dwarven strongboxes in chambers and at the ends of dead-end spurs ----
+cache_chamber_chance: 0.3
+cache_dead_end_chance: 0.25
+cache_chance_per_depth: 0.04
+caches_max: 3
+cache_name: "dwarven strongbox"
+open_prompt: "E  open the {name}"
+open_distance: 1.8
+empty_text: "Picked clean long ago."
+
+# Rarer finds the deeper you go: common salvage thins out, the rare tiers grow.
+tiers { name: "salvage"  weight: 10 weight_per_depth: -1.2 items: ["dwarven_ingot", "rune_shard", "miners_lamp"] }
+tiers { name: "fine"     weight: 3  weight_per_depth: 0.6  items: ["deep_tankard", "clan_seal"] }
+tiers { name: "rare"     weight: 0.5 weight_per_depth: 0.6 min_depth: 1 items: ["forge_heart", "ancestor_mask"] }
+tiers { name: "legendary" weight: 0 weight_per_depth: 0.25 min_depth: 3 items: ["deep_king_crown"] }
+
+# ---- creatures: roaming the chambers, more of them deeper ----
+creatures { monster: "aberration" weight: 3 weight_per_depth: 0.5 min_depth: 1 }
+creatures { monster: "skitter"    weight: 2 weight_per_depth: 0 }
+creatures { monster: "lurker"     weight: 1 weight_per_depth: 0.4 min_depth: 2 }
+creatures { monster: "brute"      weight: 0 weight_per_depth: 0.3 min_depth: 4 }
+creature_chamber_chance: 0.25
+creature_chance_per_depth: 0.1
+creature_chance_max: 0.8
+creatures_from_depth: 1
+creatures_max: 4
+sight: 14
+path_cells: 600
+wander_steps: 6
+grace_seconds: 4

@@ -1,0 +1,12 @@
+# proto-file: luckynumbers/v1/inventory.proto
+# proto-message: luckynumbers.v1.ItemDef
+# Found in the dwarven hold's mines (a strongbox, content/holds/life/default.txtpb). No model yet: a placeholder block.
+
+id: "ancestor_mask"
+name: "Ancestor mask"
+kind: ITEM_KIND_RELIC
+description: "A gold face with a braided beard, the eyes shut in sleep."
+shape: "##/##"
+bulk: 1
+value: 2400
+color { r: 0.95 g: 0.78 b: 0.3 a: 1 }

@@ -1489,6 +1489,102 @@ namespace LuckyNumbers.Model
             LanternG = 0.72f,
             LanternB = 0.42f,
             Ambient = 0.18f,
+            Life = new HoldLife
+            {
+                CacheChamberChance = 0.3f,
+                CacheDeadEndChance = 0.25f,
+                CacheChancePerDepth = 0.04f,
+                CachesMax = 3,
+                CacheName = "dwarven strongbox",
+                OpenPrompt = "E  open the {name}",
+                OpenDistance = 1.8f,
+                Tiers =
+                {
+                    new CacheTier
+                    {
+                        Name = "salvage",
+                        Weight = 10.0f,
+                        WeightPerDepth = -1.2f,
+                        Items =
+                        {
+                            "dwarven_ingot",
+                            "rune_shard",
+                            "miners_lamp",
+                        },
+                    },
+                    new CacheTier
+                    {
+                        Name = "fine",
+                        Weight = 3.0f,
+                        WeightPerDepth = 0.6f,
+                        Items =
+                        {
+                            "deep_tankard",
+                            "clan_seal",
+                        },
+                    },
+                    new CacheTier
+                    {
+                        Name = "rare",
+                        Weight = 0.5f,
+                        WeightPerDepth = 0.6f,
+                        MinDepth = 1,
+                        Items =
+                        {
+                            "forge_heart",
+                            "ancestor_mask",
+                        },
+                    },
+                    new CacheTier
+                    {
+                        Name = "legendary",
+                        WeightPerDepth = 0.25f,
+                        MinDepth = 3,
+                        Items =
+                        {
+                            "deep_king_crown",
+                        },
+                    },
+                },
+                EmptyText = "Picked clean long ago.",
+                Creatures =
+                {
+                    new HoldCreature
+                    {
+                        Monster = "aberration",
+                        Weight = 3.0f,
+                        WeightPerDepth = 0.5f,
+                        MinDepth = 1,
+                    },
+                    new HoldCreature
+                    {
+                        Monster = "skitter",
+                        Weight = 2.0f,
+                    },
+                    new HoldCreature
+                    {
+                        Monster = "lurker",
+                        Weight = 1.0f,
+                        WeightPerDepth = 0.4f,
+                        MinDepth = 2,
+                    },
+                    new HoldCreature
+                    {
+                        Monster = "brute",
+                        WeightPerDepth = 0.3f,
+                        MinDepth = 4,
+                    },
+                },
+                CreatureChamberChance = 0.25f,
+                CreatureChancePerDepth = 0.1f,
+                CreatureChanceMax = 0.8f,
+                CreaturesFromDepth = 1,
+                CreaturesMax = 4,
+                Sight = 14.0f,
+                PathCells = 600,
+                WanderSteps = 6,
+                GraceSeconds = 4.0f,
+            },
             ClimbSpeed = 2.2f,
         };
 
@@ -2225,6 +2321,95 @@ namespace LuckyNumbers.Model
                         },
                     },
                     ColorB = new Rgba(0.35f, 0.62f, 0.55f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "dwarven_ingot",
+                    Name = "Tarnished ingot",
+                    Description = "A bar of dull deep-iron, stamped with a clan rune worn almost smooth.",
+                    Kind = ItemKind.Relic,
+                    Shape = "##",
+                    Bulk = 0.8f,
+                    Value = 120,
+                    Color = new Rgba(0.45f, 0.42f, 0.4f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "rune_shard",
+                    Name = "Rune-cut shard",
+                    Description = "A splinter of slate cut with runes. It's faintly warm to hold.",
+                    Kind = ItemKind.Relic,
+                    Shape = "#",
+                    Bulk = 0.2f,
+                    Value = 180,
+                    Color = new Rgba(0.4f, 0.5f, 0.62f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "miners_lamp",
+                    Name = "Old miner's lamp",
+                    Description = "Brass and cracked glass. Someone carried it down here a long time ago.",
+                    Kind = ItemKind.Relic,
+                    Shape = "#/#",
+                    Bulk = 0.5f,
+                    Value = 90,
+                    Color = new Rgba(0.85f, 0.62f, 0.3f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "deep_tankard",
+                    Name = "Deep-iron tankard",
+                    Description = "Heavy enough to stun a troll, engraved with a feast nobody remembers.",
+                    Kind = ItemKind.Relic,
+                    Shape = "##/##",
+                    Bulk = 1.0f,
+                    Value = 450,
+                    Color = new Rgba(0.55f, 0.5f, 0.48f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "clan_seal",
+                    Name = "Clan seal",
+                    Description = "A ring-seal of black stone. It still presses a crisp mark.",
+                    Kind = ItemKind.Relic,
+                    Shape = "#",
+                    Bulk = 0.2f,
+                    Value = 600,
+                    Color = new Rgba(0.2f, 0.2f, 0.24f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "forge_heart",
+                    Name = "Forge-heart",
+                    Description = "A fist-sized stone with an ember still glowing at its core.",
+                    Kind = ItemKind.Relic,
+                    Shape = "##/##",
+                    Bulk = 1.2f,
+                    Value = 1800,
+                    Color = new Rgba(1.0f, 0.45f, 0.15f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "ancestor_mask",
+                    Name = "Ancestor mask",
+                    Description = "A gold face with a braided beard, the eyes shut in sleep.",
+                    Kind = ItemKind.Relic,
+                    Shape = "##/##",
+                    Bulk = 1.0f,
+                    Value = 2400,
+                    Color = new Rgba(0.95f, 0.78f, 0.3f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "deep_king_crown",
+                    Name = "Crown of the Deep King",
+                    Description = "Seven points of deep-iron set with garnets. Whoever wore it ruled everything under the mountain.",
+                    Kind = ItemKind.Relic,
+                    Shape = "###",
+                    Bulk = 1.0f,
+                    Value = 7500,
+                    Color = new Rgba(0.75f, 0.15f, 0.18f, 1.0f),
+                    Unique = true,
                 },
                 new ItemDef
                 {
