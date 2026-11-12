@@ -119,6 +119,7 @@ namespace LuckyNumbers.Station
         /// <param name="layout">Plan, props and consoles (default: content's; or seeded, or the page's editor).</param>
         public void Build(StationScene config, StationLayout layout = null)
         {
+            var started = Time.realtimeSinceStartup;
             Clear();
             _config = config;
             layout ??= StationLayout.FromContent(config);
@@ -311,7 +312,7 @@ namespace LuckyNumbers.Station
             SetPools(config.LightPools, StationPlan.Cell * 2f * Mathf.Max(1, config.CeilingLightEvery));
             SetLights(StationLightMode.On);
             Debug.Log($"[Station] {Plan.Width}x{Plan.Depth} cells, {Plan.Pieces.Count} pieces -> {batches.Count} meshes " +
-                      $"({triangles} tris), {Plan.Boxes.Count} boxes");
+                      $"({triangles} tris), {Plan.Boxes.Count} boxes, {(Time.realtimeSinceStartup - started) * 1000f:F0} ms");
         }
 
         /// <summary>
