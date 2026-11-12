@@ -7,6 +7,7 @@ on its own.
 ```
 proto install                # moon pinned in .prototools (and Node 24 via .moon/toolchains.yml)
 moon run game:check          # content:check first, then headless compile (editor closed)
+moon run game:test           # EditMode tests (Assets/_Project/Tests), pass/fail (editor closed)
 moon run game:build-web      # content:check + web:typecheck, then Web build (editor closed)
 moon run game:serve          # serve Builds/WebGL with COOP/COEP
 moon run web:dev             # rebuild the overlay on save

@@ -52,8 +52,14 @@ export function DogfightHud() {
           </div>
           <div className="dogfight-bar"><div style={{ width: pct(d.uplink, 1) }} /></div>
           <small>
+            {d.tier && <b className="dogfight-tier">{d.tier.toUpperCase()} · </b>}
             Satellite {Math.round(d.satelliteDistance)} m{d.waves > 0 && ` · wave ${d.wave}/${d.waves}`}
           </small>
+        </div>
+      )}
+      {d.alert && (
+        <div className="dogfight-alert" role="alert">
+          {d.alert}
         </div>
       )}
       <CombatFeed />

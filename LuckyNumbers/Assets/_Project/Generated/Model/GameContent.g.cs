@@ -1204,6 +1204,62 @@ namespace LuckyNumbers.Model
             Attackers = 2,
             Lookahead = 1.6f,
             Clearance = 18.0f,
+            UplinkTiers =
+            {
+                new UplinkTier
+                {
+                    Danger = 1,
+                    Name = "Routine",
+                    Blurb = "Quiet sector. A rogue or two might wander by.",
+                    WaveSize = 1,
+                },
+                new UplinkTier
+                {
+                    Danger = 2,
+                    Name = "Contested",
+                    Blurb = "Something's been parked by the relay. Expect company when you get there.",
+                    PayBonus = 250,
+                    Waiting = 1,
+                    AmbushRange = 7.0f,
+                    WaveSize = 2,
+                },
+                new UplinkTier
+                {
+                    Danger = 3,
+                    Name = "Hostile",
+                    Blurb = "Rogues are working this lane. They'll try to cut in behind you mid-upload.",
+                    PayBonus = 600,
+                    Waiting = 1,
+                    AmbushRange = 8.0f,
+                    Ambush = 1,
+                    AmbushAt = 0.5f,
+                    WaveSize = 2,
+                },
+                new UplinkTier
+                {
+                    Danger = 4,
+                    Name = "Ambush",
+                    Blurb = "Our last pilot didn't come back. They're waiting for whoever comes next.",
+                    PayBonus = 1100,
+                    Waiting = 2,
+                    AmbushRange = 9.0f,
+                    Ambush = 2,
+                    AmbushAt = 0.4f,
+                    WaveSize = 3,
+                },
+                new UplinkTier
+                {
+                    Danger = 5,
+                    Name = "Black site",
+                    Blurb = "Off the books, well guarded, and the pay says it all.",
+                    PayBonus = 1800,
+                    Waiting = 2,
+                    AmbushRange = 10.0f,
+                    Ambush = 3,
+                    AmbushAt = 0.35f,
+                    WaveSize = 3,
+                },
+            },
         };
 
         /// <summary>From <c>content/encounters.txtpb</c>.</summary>
@@ -2388,7 +2444,7 @@ namespace LuckyNumbers.Model
                     MoonChance = 0.6f,
                     MaxMoons = 3,
                     MoonScaleRatio = 0.27f,
-                    SecondsPerOrbitUnit = 0.4f,
+                    SecondsPerOrbitUnit = 1.2f,
                     MaxEccentricity = 0.1f,
                     MaxInclinationDegrees = 7.0f,
                     GalaxyCount = 5,
@@ -3406,20 +3462,20 @@ namespace LuckyNumbers.Model
                 new JobType
                 {
                     Kind = JobKind.Uplink,
-                    Title = "Satellite uplink for {client}",
-                    Brief = "{client} needs the data off a relay satellite out past the station. Rogue ships have been sniffing round it.",
+                    Title = "Satellite uplink ({tier}) for {client}",
+                    Brief = "{client} needs the data off a relay satellite out past the station. {tier_blurb}",
                     Objective = "Fly out to the satellite and hold close while it uploads; fight off the rogues, then dock",
                     Pay = 450,
-                    PayPerDanger = 200,
+                    PayPerDanger = 250,
                     DangerMin = 1,
-                    DangerMax = 4,
+                    DangerMax = 5,
                     Target = 1,
                     TargetPerDanger = 1,
                     UplinkSeconds = 30.0f,
                     UplinkSecondsPerDanger = 5.0f,
                 },
             },
-            Offers = 3,
+            Offers = 4,
             Clients =
             {
                 "the Meridian Museum",
@@ -3731,7 +3787,7 @@ namespace LuckyNumbers.Model
                     MoonChance = 0.6f,
                     MaxMoons = 3,
                     MoonScaleRatio = 0.27f,
-                    SecondsPerOrbitUnit = 0.4f,
+                    SecondsPerOrbitUnit = 1.2f,
                     MaxEccentricity = 0.1f,
                     MaxInclinationDegrees = 7.0f,
                     GalaxyCount = 5,
@@ -6165,7 +6221,7 @@ namespace LuckyNumbers.Model
                     MoonChance = 0.6f,
                     MaxMoons = 3,
                     MoonScaleRatio = 0.27f,
-                    SecondsPerOrbitUnit = 0.4f,
+                    SecondsPerOrbitUnit = 1.2f,
                     MaxEccentricity = 0.1f,
                     MaxInclinationDegrees = 7.0f,
                     GalaxyCount = 5,
@@ -6640,7 +6696,7 @@ namespace LuckyNumbers.Model
                         MoonChance = 0.6f,
                         MaxMoons = 3,
                         MoonScaleRatio = 0.27f,
-                        SecondsPerOrbitUnit = 0.4f,
+                        SecondsPerOrbitUnit = 1.2f,
                         MaxEccentricity = 0.1f,
                         MaxInclinationDegrees = 7.0f,
                         GalaxyCount = 5,
@@ -6997,7 +7053,7 @@ namespace LuckyNumbers.Model
                         MoonChance = 0.3f,
                         MaxMoons = 1,
                         MoonScaleRatio = 0.24f,
-                        SecondsPerOrbitUnit = 0.45f,
+                        SecondsPerOrbitUnit = 1.35f,
                         MaxEccentricity = 0.08f,
                         MaxInclinationDegrees = 5.0f,
                         GalaxyCount = 3,

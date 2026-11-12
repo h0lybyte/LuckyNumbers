@@ -32,7 +32,7 @@ moon_orbit_min: 3
 moon_orbit_max: 5
 moon_hill_fraction: 0.5
 
-seconds_per_orbit_unit: 0.45
+seconds_per_orbit_unit: 1.35   # x3 slower: calmer skies
 max_eccentricity: 0.08
 max_inclination_degrees: 5
 

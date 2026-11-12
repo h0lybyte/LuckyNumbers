@@ -275,7 +275,7 @@ namespace LuckyNumbers.Planet
             Arm(m, type.Ranged);
             Place(m, 0f);
             _monsters.Add(m);
-            _state.Alive.Value = AliveCount();
+            Recount();
         }
 
         // ---- Monsters -------------------------------------------------------------------------------------------
@@ -291,7 +291,9 @@ namespace LuckyNumbers.Planet
                 Reach = math.max(0.8f, m.Type.Reach) + Size(m).z * 0.5f, StandoffDistance = StandoffDistance, Busy = m.View.Busy,
             };
             SenseRanged(m, ref senses);
+            var threat = m.Brain.Threat;
             var act = MonsterBrain.Tick(ref m.Brain, senses);
+            if (m.Brain.Threat != threat) Recount();   // Tick's own cues (noticed, lost, calmed down, vanished) don't change it today; a new one can't go stale
             var walked = 0f;
             switch (act)
             {
@@ -348,14 +350,27 @@ namespace LuckyNumbers.Planet
             else m.View.transform.localScale = Size(m) * math.max(0.01f, 1f - t / 0.4f);
             if (t < gone) return;
             UnityEngine.Object.Destroy(m.View.gameObject);
-            _monsters.Remove(m);
-            _state.Alive.Value = AliveCount();
+            _monsters.Remove(m);   // dying, so it left the count when it died (Cue / Think): nothing to recount
         }
 
+        /// <summary>
+        /// A cue to a monster's brain (MonsterBrain.Fire): every state change outside its own Tick goes through here, so
+        /// one that stops (or starts) being a threat changes the count the moment it does.
+        /// </summary>
+        void Cue(Monster m, MonsterCue cue, float calmUntil = 0f)
+        {
+            var threat = m.Brain.Threat;
+            MonsterBrain.Fire(ref m.Brain, cue, calmUntil);
+            if (m.Brain.Threat != threat) Recount();
+        }
+
+        void Recount() => _state.Alive.Value = AliveCount();
+
+        /// <summary>The monsters left (CombatState.alive): live threats only (MonsterBrain.Threat), not ones running off or dying.</summary>
         int AliveCount()
         {
             var n = 0;
-            foreach (var x in _monsters) if (!x.Dead) n++;
+            foreach (var x in _monsters) if (x.Brain.Threat) n++;
             return n;
         }
 
@@ -477,7 +492,7 @@ namespace LuckyNumbers.Planet
             var surprise = MonsterBrain.TakeSurprise(ref m.Brain) ? SurpriseBonus : 0;   // you chose the fight: the first shot's yours
             var parts = new[] { ((w.Ability ?? "").ToUpperInvariant(), Mod(w.Ability)),
                                 ("level", (int)math.floor(C.AttackPerLevel * math.max(1, _sheet.Level.Value))), ("surprise", surprise) };
-            MonsterBrain.Fire(ref m.Brain, MonsterCue.ShotAt);   // shot at, it knows you're there
+            Cue(m, MonsterCue.ShotAt);   // shot at, it knows you're there
             var s = _marksman.Roll(parts, math.max(1, m.Type.Armor), w.Damage, aimed, _player.Camera.transform, _player.Body, ref _rng);
             _rolls.Publish(new CombatRoll("You", m.Type.Name, s.D20, s.Bonus, s.Total, s.Armor, s.Hit, s.Crit, s.Fumble, s.Damage, w.Damage, true,
                                           w.Name ?? source, s.Graze, s.Strong, s.Mods));
@@ -503,7 +518,7 @@ namespace LuckyNumbers.Planet
             var w = Weapon(source);
             var bonus = Mod(w.Ability) + (int)math.floor(C.AttackPerLevel * math.max(1, _sheet.Level.Value));
             if (MonsterBrain.TakeSurprise(ref m.Brain)) bonus += SurpriseBonus;   // you chose the fight: the first shot's yours
-            MonsterBrain.Fire(ref m.Brain, MonsterCue.ShotAt);                    // shot at, it knows you're there
+            Cue(m, MonsterCue.ShotAt);                                            // shot at, it knows you're there
             var armor = math.max(1, m.Type.Armor);
             var (d20, total, hit, crit, fumble) = Dice.Attack(bonus, armor, ref _rng);
             var damage = hit ? Dice.Roll(w.Damage, ref _rng, crit) : 0;
@@ -526,12 +541,11 @@ namespace LuckyNumbers.Planet
 
         void Kill(Monster m)
         {
-            MonsterBrain.Fire(ref m.Brain, MonsterCue.Killed);
+            Cue(m, MonsterCue.Killed);   // out of the count now (a fleeing one already was)
             m.DeathFor = m.View.Die() + 1.5f;
             var col = m.View.GetComponent<Collider>();
             if (col != null) col.enabled = false;
             _state.Killed.Value++;
-            _state.Alive.Value = AliveCount();
             if (m.Type.Xp > 0) _xp.Publish(new CharacterXpGained(m.Type.Xp, m.Type.Name));
             if (_job.Active.Value && _job.Kind.Value == JobKind.Clear)
             {
