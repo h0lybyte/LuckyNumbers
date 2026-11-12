@@ -624,7 +624,7 @@ kbd {
 
 .flight-pad {
   position: absolute;
-  right: calc(max(var(--gap), env(safe-area-inset-right)) + 48px);
+  right: calc(max(var(--gap), env(safe-area-inset-right)) + var(--toolbar-w, 36px) + 12px);
   top: calc(max(var(--gap), env(safe-area-inset-top)) + 6px);
   display: grid;
   justify-items: center;
@@ -750,7 +750,7 @@ kbd {
 .sheet-chips {
   position: absolute;
   top: max(var(--gap), env(safe-area-inset-top));
-  right: calc(max(var(--gap), env(safe-area-inset-right)) + 44px);
+  right: calc(max(var(--gap), env(safe-area-inset-right)) + var(--toolbar-w, 36px) + 8px);   /* beside the toolbar (Fullscreen, Settings) */
   display: flex;
   gap: 6px;
 }
@@ -1265,7 +1265,7 @@ kbd {
 /* Flying back out (flight.tsx): how far to orbit, where the pad arrow sits on the way in. */
 .flight-orbit {
   position: absolute;
-  right: calc(max(var(--gap), env(safe-area-inset-right)) + 48px);
+  right: calc(max(var(--gap), env(safe-area-inset-right)) + var(--toolbar-w, 36px) + 12px);
   top: calc(max(var(--gap), env(safe-area-inset-top)) + 10px);
   display: grid;
   justify-items: end;
@@ -2026,3 +2026,171 @@ kbd {
 }
 @keyframes dogfight-alert { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .dogfight-alert { animation: none; } }
+
+/* ---- Settings (settings.tsx): one panel for the title and in game ---- */
+
+/* The gear sits in the template's toolbar, left of Fullscreen. */
+.settings-gear { order: -1; }
+.settings-gear.locked { opacity: 0.35; }
+.settings-gear-host {
+  position: absolute;
+  top: max(var(--gap), env(safe-area-inset-top));
+  right: max(var(--gap), env(safe-area-inset-right));
+}
+
+.settings-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(1, 4, 10, 0.45);
+  pointer-events: auto;
+}
+.settings {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(440px, calc(100% - 2 * var(--gap)));
+  max-height: calc(100% - 2 * var(--gap));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  gap: 14px;
+  padding: 14px 18px 12px;
+  border: 1px solid var(--neon-soft);
+  border-left: 3px solid var(--neon);
+  clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+  background: var(--scan), rgba(2, 8, 16, 0.92);
+  backdrop-filter: blur(8px);
+  color: var(--fg);
+  pointer-events: auto;
+  animation: glitch-in 240ms steps(4, end);
+}
+.settings h2 { margin: 2px 0 0; font: 600 20px var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; color: #e8fbff; }
+.settings:focus { outline: none; }
+.settings :focus-visible { outline: 2px solid var(--hot); outline-offset: 2px; }
+
+.settings-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px 10px; }
+.settings-row > :nth-child(n + 3) { grid-column: 1 / -1; }
+.settings-label { font: 12px var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--fg); }
+.settings-value { font: 600 14px var(--font-mono); color: var(--neon); text-shadow: var(--neon-glow); }
+.settings-hint { font-size: 12px; color: var(--muted); }
+.settings-scale { display: flex; justify-content: space-between; font: 10px var(--font-mono); color: var(--muted); }
+
+/* Range: a thin cyan track filled to the value, a chamfered thumb (big enough for a thumb on a phone). */
+.settings-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 32px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-y;
+}
+.settings-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border: 1px solid var(--edge);
+  background: linear-gradient(90deg, var(--neon) var(--pct, 50%), rgba(0, 229, 255, 0.08) var(--pct, 50%));
+}
+.settings-slider::-moz-range-track { height: 6px; border: 1px solid var(--edge); background: rgba(0, 229, 255, 0.08); }
+.settings-slider::-moz-range-progress { height: 6px; background: var(--neon); }
+.settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 26px;
+  margin-top: -11px;
+  border: 1px solid var(--neon);
+  border-radius: 0;
+  clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+  background: #e8fbff;
+  box-shadow: var(--neon-glow);
+}
+.settings-slider::-moz-range-thumb {
+  width: 18px;
+  height: 26px;
+  border: 1px solid var(--neon);
+  border-radius: 0;
+  background: #e8fbff;
+}
+.settings-slider:focus-visible { outline-offset: 4px; }
+
+/* Segmented Low / Medium / High. */
+.settings-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.settings-seg button {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  min-height: 44px;
+  padding: 4px 6px;
+  border: 1px solid var(--edge);
+  clip-path: var(--chamfer);
+  background: rgba(0, 229, 255, 0.06);
+  color: var(--neon);
+  cursor: pointer;
+}
+.settings-seg button b { font: 600 13px var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; }
+.settings-seg button small { font: 10px var(--font-mono); letter-spacing: 0.08em; color: var(--muted); }
+.settings-seg button:hover { border-color: var(--neon); background: rgba(0, 229, 255, 0.14); }
+.settings-seg button.active { border-color: var(--neon); background: var(--neon); color: #030a14; }
+.settings-seg button.active small { color: rgba(3, 10, 20, 0.7); }
+
+/* On/off rows: the whole row is the switch. */
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 1px solid var(--edge);
+  background: rgba(0, 229, 255, 0.04);
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+}
+.settings-toggle:hover { border-color: var(--neon); background: rgba(0, 229, 255, 0.1); }
+.settings-toggle-text { flex: 1; display: grid; gap: 2px; min-width: 0; }
+.settings-toggle small { font-size: 12px; color: var(--muted); }
+.settings-switch {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 18px;
+  border: 1px solid var(--edge);
+  background: rgba(0, 229, 255, 0.06);
+  transform: skewX(-18deg);
+}
+.settings-switch > span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 12px;
+  background: var(--muted);
+  transition: left 120ms ease, background 120ms ease;
+}
+.settings-toggle.on .settings-switch { border-color: var(--neon); }
+.settings-toggle.on .settings-switch > span { left: 20px; background: var(--neon); box-shadow: var(--neon-glow); }
+.settings-state { flex: none; width: 3ch; font: 11px var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.settings-toggle.on .settings-state { color: var(--neon); }
+
+.settings-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--edge);
+}
+.settings-keys { flex: 1; font: 10px var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.settings-foot .sheet-btn { height: 36px; padding: 0 14px; }
+.settings-foot .sheet-btn.primary { border-color: var(--neon); background: rgba(0, 229, 255, 0.18); color: var(--fg); }
+
+@media (max-height: 520px) {
+  .settings { gap: 8px; padding: 10px 14px 8px; }
+  .settings h2 { font-size: 16px; }
+  .settings-hint { display: none; }
+}
+@media (hover: none) { .settings-keys { visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) {
+  .settings { animation: none; }
+  .settings-switch > span { transition: none; }
+}
