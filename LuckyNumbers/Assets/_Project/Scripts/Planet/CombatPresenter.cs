@@ -131,6 +131,7 @@ namespace LuckyNumbers.Planet
             _state.Armor.Value = PlayerArmor();
             _firstPerson.ShotCheck = HeldShot;   // a held gun's shots at a monster roll as they're fired
             StartEncounters();
+            MonsterBlobs.Current.Ground = _ground;   // blob shadows bend to its terrain
             LoadModelsAsync(_cts.Token).Forget();   // while you fly in: nothing spawns before you're on foot
             // Dev (the page's inspector): "monster" drops one a few metres ahead of you ("monster:<id>": that one).
             _subscriptions.Add(_warps.Subscribe(e =>
@@ -345,7 +346,9 @@ namespace LuckyNumbers.Planet
         void Place(Monster m, float dt)
         {
             var size = Size(m);
-            m.Position.y = _ground.SurfaceAt(m.Position) + size.y * 0.5f;
+            var ground = _ground.SurfaceAt(m.Position);
+            m.Position.y = ground + size.y * 0.5f;
+            m.View.Grounded(ground);   // its blob shadow lies there (no second raycast)
             var hop = m.Brain.Hunting && !m.View.Modelled ? math.abs(math.sin(Time.time * 9f + m.Home.x)) * size.y * 0.12f : 0f;   // scuttles when it's after you
             m.View.transform.SetPositionAndRotation(m.Position + Vector3.up * hop, Quaternion.Euler(0f, m.Heading, 0f));
         }

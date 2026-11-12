@@ -252,6 +252,9 @@ namespace LuckyNumbers.Planet
 
         public float HeightAt(Vector3 world) => Height(new float2(world.x, world.z));
 
+        /// <summary>The terrain's height function, for Burst jobs (MonsterBlobs bends its blobs to it).</summary>
+        public GroundShape Shape => _shape;
+
         /// <summary>
         /// The ground you actually stand on: the chunk mesh's surface (a ray down onto its collider). Between its
         /// vertices the mesh runs a little above the smooth height function on a hill's curve, so placing a body by
