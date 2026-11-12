@@ -62,7 +62,7 @@ namespace LuckyNumbers.Planet
             if (E == null) return;
             // Standoffs: the first few monsters wait for you instead of hunting.
             var standoffs = math.min(_monsters.Count, E.Standoffs + (int)math.floor(E.StandoffsPerDanger * danger));
-            for (var i = 0; i < standoffs; i++) MonsterBrain.Fire(ref _monsters[i].Brain, MonsterCue.Challenged);
+            for (var i = 0; i < standoffs; i++) Cue(_monsters[i], MonsterCue.Challenged);
             // Finds: placeholder blocks in a ring round the wreck.
             for (var i = 0; i < E.Finds && E.FindTypes.Count > 0; i++)
             {
@@ -242,21 +242,21 @@ namespace LuckyNumbers.Planet
             switch (outcome)
             {
                 case EncounterOutcome.Ignored:
-                    MonsterBrain.Fire(ref m.Brain, MonsterCue.LetPass);
+                    Cue(m, MonsterCue.LetPass);
                     break;
                 case EncounterOutcome.Flees:
-                    MonsterBrain.Fire(ref m.Brain, MonsterCue.Scared);
+                    Cue(m, MonsterCue.Scared);
                     if (m.Type.Xp > 1) _xp.Publish(new CharacterXpGained(m.Type.Xp / 2, $"{m.Type.Name} (scared off)"));
                     break;
                 case EncounterOutcome.Calm:
-                    MonsterBrain.Fire(ref m.Brain, MonsterCue.Calmed, Time.time + math.max(1f, option.CalmSeconds));
+                    Cue(m, MonsterCue.Calmed, Time.time + math.max(1f, option.CalmSeconds));
                     break;
                 case EncounterOutcome.Ambushed:
-                    MonsterBrain.Fire(ref m.Brain, MonsterCue.Ambushed);
+                    Cue(m, MonsterCue.Ambushed);
                     if (!m.Dead) Bite(m);
                     break;
                 default:   // Fight: a moment to raise your weapon (won: your first shot's a surprise)
-                    MonsterBrain.Fire(ref m.Brain, success ? MonsterCue.FightWon : MonsterCue.Fight);
+                    Cue(m, success ? MonsterCue.FightWon : MonsterCue.Fight);
                     break;
             }
             Debug.Log($"[Encounter] {m.Type.Name}: {outcome}");
@@ -306,7 +306,7 @@ namespace LuckyNumbers.Planet
             if (what == "standoff" && C.Monsters.Count > 0)
             {
                 Spawn(Pick(_danger), body.position + ahead * 8f, false);
-                MonsterBrain.Fire(ref _monsters[^1].Brain, MonsterCue.Challenged);
+                Cue(_monsters[^1], MonsterCue.Challenged);
             }
             else if (what == "find" && E.FindTypes.Count > 0)
             {

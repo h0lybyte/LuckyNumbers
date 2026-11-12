@@ -172,6 +172,12 @@ namespace LuckyNumbers.Planet
 
         public readonly bool Dead => State == MonsterState.Dying;
 
+        /// <summary>
+        /// Still one of the monsters left (CombatState.alive): from the moment it's scared off (Flee) or dying it isn't,
+        /// though it stays on the ground a while running or fading.
+        /// </summary>
+        public readonly bool Threat => State != MonsterState.Flee && State != MonsterState.Dying;
+
         /// <summary>After you, for the view (run clip, the placeholder's hop).</summary>
         public readonly bool Hunting => State == MonsterState.Chase || (Marks & MonsterMark.Harried) != 0;
 
