@@ -27,7 +27,8 @@ namespace LuckyNumbers.Model
     }
 
     /// <summary>
-    /// The player's settings (Core/SettingsPresenter): changed on the title's Settings panel, kept in PlayerPrefs (the
+    /// The player's settings (Core/SettingsPresenter): changed on the page's one Settings panel (web/src/settings.tsx,
+    /// opened from the title or in game), kept in PlayerPrefs (the
     /// browser's IndexedDB on the web) and applied everywhere: look speed and invert in InputBridge, the render cap in
     /// Rendering/RenderResolutionCap, the frame-rate readout on the page.
     /// </summary>
@@ -49,6 +50,10 @@ namespace LuckyNumbers.Model
         /// The page's frame-rate readout (top centre), as with ?ln-fps.
         /// </summary>
         public readonly ReactiveProperty<bool> ShowFps = new ReactiveProperty<bool>();
+        /// <summary>
+        /// The Settings panel is open (the page shows it; Unity holds look/fire input and frees the pointer meanwhile).
+        /// </summary>
+        public readonly ReactiveProperty<bool> Open = new ReactiveProperty<bool>();
 
         public void Dispose()
         {
@@ -56,6 +61,46 @@ namespace LuckyNumbers.Model
             InvertY.Dispose();
             Quality.Dispose();
             ShowFps.Dispose();
+            Open.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// The page changed the settings: the whole set as the panel now has it (Unity clamps and saves each value).
+    /// </summary>
+    public readonly struct SettingsChanged
+    {
+        public readonly float LookSensitivity;
+        public readonly bool InvertY;
+        public readonly RenderQuality Quality;
+        public readonly bool ShowFps;
+
+        public SettingsChanged(float lookSensitivity, bool invertY, RenderQuality quality, bool showFps)
+        {
+            LookSensitivity = lookSensitivity;
+            InvertY = invertY;
+            Quality = quality;
+            ShowFps = showFps;
+        }
+    }
+
+    /// <summary>
+    /// Back to the defaults (the page's Defaults button).
+    /// </summary>
+    public readonly struct SettingsReset
+    {
+    }
+
+    /// <summary>
+    /// Open or close the Settings panel (the page's gear / Esc menu; Unity's title button sets GameSettings.open itself).
+    /// </summary>
+    public readonly struct SettingsToggled
+    {
+        public readonly bool Open;
+
+        public SettingsToggled(bool open)
+        {
+            Open = open;
         }
     }
 }

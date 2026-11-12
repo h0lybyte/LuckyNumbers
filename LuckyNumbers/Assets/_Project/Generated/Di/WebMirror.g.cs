@@ -389,6 +389,7 @@ namespace LuckyNumbers.Model
                 d.Add(s.InvertY.Subscribe(_ => sink.MarkState(22)));
                 d.Add(s.Quality.Subscribe(_ => sink.MarkState(22)));
                 d.Add(s.ShowFps.Subscribe(_ => sink.MarkState(22)));
+                d.Add(s.Open.Subscribe(_ => sink.MarkState(22)));
                 sink.MarkState(22);
             }
             {
@@ -640,6 +641,21 @@ namespace LuckyNumbers.Model
                 Write(sink.BeginEvent("SaveSlotDeleteRequested"), e);
                 sink.EndEvent();
             }));
+            d.Add(c.Resolve<ISubscriber<SettingsChanged>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("SettingsChanged"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<SettingsReset>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("SettingsReset"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<SettingsToggled>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("SettingsToggled"), e);
+                sink.EndEvent();
+            }));
             d.Add(c.Resolve<ISubscriber<MenuItemSelected>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("MenuItemSelected"), e);
@@ -793,6 +809,15 @@ namespace LuckyNumbers.Model
                     return true;
                 case "SaveSlotDeleteRequested":
                     c.Resolve<IPublisher<SaveSlotDeleteRequested>>().Publish(new SaveSlotDeleteRequested((int)Json.Number(Json.Get(o, "index"))));
+                    return true;
+                case "SettingsChanged":
+                    c.Resolve<IPublisher<SettingsChanged>>().Publish(new SettingsChanged((float)Json.Number(Json.Get(o, "lookSensitivity")), Json.Get(o, "invertY") is bool settingsChangedInvertY && settingsChangedInvertY, RenderQualityParse(Json.Get(o, "quality")), Json.Get(o, "showFps") is bool settingsChangedShowFps && settingsChangedShowFps));
+                    return true;
+                case "SettingsReset":
+                    c.Resolve<IPublisher<SettingsReset>>().Publish(new SettingsReset());
+                    return true;
+                case "SettingsToggled":
+                    c.Resolve<IPublisher<SettingsToggled>>().Publish(new SettingsToggled(Json.Get(o, "open") is bool settingsToggledOpen && settingsToggledOpen));
                     return true;
                 case "MenuItemSelected":
                     c.Resolve<IPublisher<MenuItemSelected>>().Publish(new MenuItemSelected(MenuActionParse(Json.Get(o, "action"))));
@@ -1538,6 +1563,8 @@ namespace LuckyNumbers.Model
             Json.Str(b, RenderQualityName(s.Quality.Value));
             b.Append(",\"showFps\":");
             b.Append(s.ShowFps.Value ? "true" : "false");
+            b.Append(",\"open\":");
+            b.Append(s.Open.Value ? "true" : "false");
             b.Append('}');
         }
 
@@ -2028,6 +2055,34 @@ namespace LuckyNumbers.Model
             b.Append('{');
             b.Append("\"index\":");
             Json.Num(b, e.Index);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, SettingsChanged e)
+        {
+            b.Append('{');
+            b.Append("\"lookSensitivity\":");
+            Json.Num(b, e.LookSensitivity);
+            b.Append(",\"invertY\":");
+            b.Append(e.InvertY ? "true" : "false");
+            b.Append(",\"quality\":");
+            Json.Str(b, RenderQualityName(e.Quality));
+            b.Append(",\"showFps\":");
+            b.Append(e.ShowFps ? "true" : "false");
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, SettingsReset e)
+        {
+            b.Append('{');
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, SettingsToggled e)
+        {
+            b.Append('{');
+            b.Append("\"open\":");
+            b.Append(e.Open ? "true" : "false");
             b.Append('}');
         }
 

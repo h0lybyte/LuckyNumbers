@@ -57,6 +57,9 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<SaveSlotsReady>(options);
             builder.RegisterMessageBroker<SaveSlotPicked>(options);
             builder.RegisterMessageBroker<SaveSlotDeleteRequested>(options);
+            builder.RegisterMessageBroker<SettingsChanged>(options);
+            builder.RegisterMessageBroker<SettingsReset>(options);
+            builder.RegisterMessageBroker<SettingsToggled>(options);
             builder.RegisterMessageBroker<MenuItemSelected>(options);
             builder.RegisterMessageBroker<UniverseSelected>(options);
             builder.RegisterMessageBroker<UpgradeBuyRequested>(options);
