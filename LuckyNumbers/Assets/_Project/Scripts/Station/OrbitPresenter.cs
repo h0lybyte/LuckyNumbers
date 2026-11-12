@@ -101,7 +101,7 @@ namespace LuckyNumbers.Station
             _flight.Rotation = Quaternion.LookRotation(-_out, Vector3.up);
             _flight.Stop();
             _camPos = _flight.Position + _out * (Length * O.ChaseDistance) + Vector3.up * (Length * O.ChaseHeight);
-            _ship.Pose(_flight.Position, _flight.Rotation);
+            _ship.Pose(_flight.Position, _flight.Pose);
             _ready = true;
             Debug.Log($"[Orbit] ready: {_stats.Name} off the bay of station {_space.Seed}, {_hull.Count} hull blocks"); // marker for ln.py webshot
         }
@@ -219,7 +219,7 @@ namespace LuckyNumbers.Station
                 _flight.Step(_input, dt, _stats.Speed, _stats.Agility, level: false, _ship);
                 KeepOutOfHull();
             }
-            _ship.Pose(_flight.Position, _flight.Rotation);
+            _ship.Pose(_flight.Position, _flight.Pose);
 
             // Docking: inside the beacon and slow enough, E docks.
             var inside = Vector3.Distance(_flight.Position, _beacon) < Length * math.max(0.5f, O.DockRadius);

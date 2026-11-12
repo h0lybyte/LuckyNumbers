@@ -151,7 +151,7 @@ namespace LuckyNumbers.Planet
                 _fade = Mathf.MoveTowards(_fade, _leaving ? 1f : 0f, dt / (_leaving ? 0.5f : 0.8f));
             _view.Fade(_fade);
             if (!_leaving) Fly(dt);
-            _ship.Pose(_position, _rotation);
+            _ship.Pose(_position, _flight.Pose);   // the hull rolls (barrel roll); the cameras don't
             Aim(dt);
 
             if (Time.time >= _readoutAt)
