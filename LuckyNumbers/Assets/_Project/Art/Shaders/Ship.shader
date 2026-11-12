@@ -35,14 +35,14 @@ Shader "LuckyNumbers/Ship"
             #pragma fragment frag
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            float4 _LnSunPosition, _LnSunColor; // globals set by SpacePresenter / CrashSitePresenter
-            float4 _LnSkyColor, _LnGroundColor; // globals set by CrashSitePresenter (w = 1), else neutral
             TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
                 float _Ambient, _Fill, _Glow, _Rim, _Heat, _Cutoff, _Lift, _GlowMin, _Spec, _SpecPower;
             CBUFFER_END
+
+            #include "Include/ShipLit.hlsl"
 
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; float2 uv : TEXCOORD0; };
             struct Varyings { float4 positionCS : SV_POSITION; float2 uv : TEXCOORD0; float3 normalWS : TEXCOORD1; float3 positionWS : TEXCOORD2; };
@@ -61,30 +61,8 @@ Shader "LuckyNumbers/Ship"
             {
                 float4 texel = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
                 if (_Cutoff > 0.0) clip(texel.a - _Cutoff);
-                float3 albedo = texel.rgb;
                 float3 n = normalize(i.normalWS) * (front ? 1.0 : -1.0);
-                bool sunSet = _LnSunPosition.w > 0.5;
-                float3 l = sunSet ? normalize(_LnSunPosition.xyz - i.positionWS) : normalize(float3(0.6, 0.3, -0.7));
-                float3 sun = sunSet ? _LnSunColor.rgb : float3(1, 1, 1);
-                float diffuse = saturate(dot(n, l) * 0.8 + 0.2);                       // wrapped: softer terminator
-                float3 v = normalize(GetCameraPositionWS() - i.positionWS);
-                float rim = pow(1.0 - saturate(dot(n, v)), 3.0) * _Rim;
-
-                float maxc = max(albedo.r, max(albedo.g, albedo.b)), minc = min(albedo.r, min(albedo.g, albedo.b));
-                float glow = smoothstep(0.35, 0.8, maxc - minc) * smoothstep(_GlowMin, min(_GlowMin + 0.4, 1.0), maxc);   // lights & engines
-                float fill = saturate(dot(n, v)) * _Fill;                                  // soft key from the viewer
-                // Dark skins: lift the albedo floor a little so panel detail survives.
-                float3 base = lerp(albedo, max(albedo, 0.06 + albedo * 0.4), _Lift);
-                // Ambient: sky from above, ground bounce from below (white when the scene sets neither).
-                float3 hemi = _LnSkyColor.w > 0.5 ? lerp(_LnGroundColor.rgb, _LnSkyColor.rgb, n.y * 0.5 + 0.5) : float3(1, 1, 1);
-                // Sun highlight on the lit side: painted metal catching the light (brighter panels shine more).
-                float3 h = normalize(l + v);
-                float spec = pow(saturate(dot(n, h)), _SpecPower) * _Spec * saturate(dot(n, l) * 4.0) * (0.4 + maxc);
-                float3 color = base * (sun * diffuse + hemi * _Ambient + fill) + albedo * glow * _Glow + sun * (rim * 0.5 + spec);
-                // Atmospheric entry: hot orange-white fresnel that swallows the hull as heat rises.
-                float hot = pow(1.0 - saturate(dot(n, v)), 1.5);
-                color = lerp(color, float3(1.0, 0.45, 0.12) * 3.0, saturate(_Heat * (0.35 + 0.9 * hot)));
-                return float4(color, 1);
+                return float4(ShipShade(texel.rgb, n, i.positionWS, _Heat), 1);
             }
             ENDHLSL
         }
