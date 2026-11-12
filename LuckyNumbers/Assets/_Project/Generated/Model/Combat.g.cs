@@ -151,6 +151,10 @@ namespace LuckyNumbers.Model
         /// </summary>
         public string Hit { get; set; }
         public string Die { get; set; }
+        /// <summary>
+        /// A spell or throw from range, once (MonsterView.Cast); empty: it has none.
+        /// </summary>
+        public string Cast { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public MonsterClips Clone() => (MonsterClips)MemberwiseClone();

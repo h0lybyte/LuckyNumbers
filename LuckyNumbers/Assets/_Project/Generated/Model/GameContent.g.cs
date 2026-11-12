@@ -478,6 +478,35 @@ namespace LuckyNumbers.Model
                         Die = "death",
                     },
                 },
+                new MonsterType
+                {
+                    Id = "arcanist",
+                    Name = "Plague Arcanist",
+                    Hp = 16,
+                    Armor = 11,
+                    Attack = 2,
+                    Damage = "1d4",
+                    Speed = 3.4f,
+                    Size = new Vec3(0.6f, 1.75f, 0.5f),
+                    Color = new Rgba(0.3f, 0.28f, 0.26f, 1.0f),
+                    Reach = 1.5f,
+                    Sight = 24.0f,
+                    Cooldown = 2.4f,
+                    Xp = 130,
+                    DangerMin = 2,
+                    Weight = 1.0f,
+                    Model = "arcanist",
+                    Clips = new MonsterClips
+                    {
+                        Idle = "idle",
+                        Walk = "creep",
+                        Run = "run",
+                        Attack = "palm_strike",
+                        Hit = "flinch",
+                        Die = "collapse",
+                        Cast = "channel",
+                    },
+                },
             },
             Count = 1,
             CountPerDanger = 1,
@@ -742,6 +771,16 @@ namespace LuckyNumbers.Model
                         },
                         new Credit
                         {
+                            What = "Plague Arcanist (the beaked caster you fight on planets: mesh, rig, skin and animations)",
+                            Title = "Plague Arcanist - Retro PS1 Low Poly Magic Character",
+                            Author = "imaginais",
+                            License = "Free to use, commercial projects included (the author's reply on the asset page); credit appreciated",
+                            Url = "https://imaginais.itch.io/plague-arcanist-retro-ps1-low-poly-magic-character",
+                            Notes = "Its animations are Mixamo's (mixamo.com takes on a Mixamo rig): fine to use in a game, not to redistribute as raw files, so only the bake is here. Changes: baked into one FBX (tools/blender/export_arcanist.py): scaled to metres, grounded, clips named and cut from the pack's takes (its death and flinch made from the ground slam and the leap's crouch), stride speeds recorded; its five textures packed into one 512 atlas. The raw pack is kept out of this repo.",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Characters/Arcanist/",
+                        },
+                        new Credit
+                        {
                             What = "Space station corridors and rooms (cream panels, leaning walls, ribs, portholes, doorways, deck)",
                             Title = "PSX Starship Kit Free",
                             Author = "heyheythere",
@@ -1001,6 +1040,11 @@ namespace LuckyNumbers.Model
                     DangerMin = 1,
                     Close = 70.0f,
                     Pass = 25.0f,
+                    AggroRange = 700.0f,
+                    AttackSeconds = 3.0f,
+                    Aggression = 0.7f,
+                    EvadeHull = 0.6f,
+                    RetreatHull = 0.25f,
                 },
                 new RogueShip
                 {
@@ -1043,6 +1087,10 @@ namespace LuckyNumbers.Model
                     DangerMin = 1,
                     Close = 90.0f,
                     Pass = 30.0f,
+                    AggroRange = 800.0f,
+                    AttackSeconds = 4.0f,
+                    Aggression = 0.5f,
+                    EvadeHull = 0.4f,
                 },
                 new RogueShip
                 {
@@ -1085,6 +1133,9 @@ namespace LuckyNumbers.Model
                     DangerMin = 3,
                     Close = 140.0f,
                     Pass = 45.0f,
+                    AggroRange = 900.0f,
+                    AttackSeconds = 6.0f,
+                    Aggression = 0.85f,
                 },
             },
             Satellite = new Satellite
@@ -1135,6 +1186,9 @@ namespace LuckyNumbers.Model
                 GameOverText = "Your debts came due. The creditors took your ship, your body and your memory chip, and sold the lot at auction. This run is over.",
                 OutfitterLocked = "Collections hold: no sales until you pay your debt down",
             },
+            Attackers = 2,
+            Lookahead = 1.6f,
+            Clearance = 18.0f,
         };
 
         /// <summary>From <c>content/encounters.txtpb</c>.</summary>

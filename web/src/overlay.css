@@ -2007,3 +2007,4 @@ kbd {
 .game-over-card h2 { margin: 4px 0 10px; color: var(--bad); letter-spacing: 0.1em; text-transform: uppercase; }
 .game-over-card p { margin: 0 0 16px; line-height: 1.5; }
 .sheet-heritage { margin-top: 2px; font-size: 11px; color: var(--neon); letter-spacing: 0.08em; text-transform: uppercase; }
+.dogfight-mode { color: var(--warn); font-weight: 600; }

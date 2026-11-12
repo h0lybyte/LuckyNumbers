@@ -467,7 +467,7 @@ namespace LuckyNumbers.Editor
         /// A monster's model template (off): Art/Characters/&lt;folder&gt;/&lt;name&gt;.fbx (baked by
         /// tools/blender/export_&lt;name&gt;.py) with its skin &lt;name&gt;_body.png on the Ship shader, every take as a
         /// clip and each clip's stride speed from &lt;name&gt;.json. Turned so it faces +Z: its front is worked out from
-        /// its hips (thigh_l to thigh_r, or thigh.L to thigh.R, is its right), whatever axes the FBX came in with.
+        /// its hips (thigh_l to thigh_r, or thigh.L to thigh.R, is its right; a Mixamo rig: its arms, LeftArm to RightArm), whatever axes the FBX came in with.
         /// </summary>
         static MonsterRig MonsterModel(Transform parent, string name, string folder)
         {
@@ -517,8 +517,10 @@ namespace LuckyNumbers.Editor
                             return s.transform.TransformPoint(s.sharedMesh.bindposes[i].inverse.GetColumn(3));
                 return null;
             }
-            var left = Bone("thigh_l") ?? Bone("thigh.L");   // the aberration's names; the skeleton's (Rigify)
-            var right = Bone("thigh_r") ?? Bone("thigh.R");
+            // The aberration's names; the skeleton's (Rigify); the arcanist's (Mixamo): its arms, as its bind pose's hips are
+            // skewed 8 deg (its thighs' line), while its arms and feet are square to where its run goes.
+            var left = Bone("thigh_l") ?? Bone("thigh.L") ?? Bone("LeftArm");
+            var right = Bone("thigh_r") ?? Bone("thigh.R") ?? Bone("RightArm");
             if (left != null && right != null)
             {
                 var side = Vector3.ProjectOnPlane(right.Value - left.Value, Vector3.up);
@@ -545,7 +547,7 @@ namespace LuckyNumbers.Editor
         const string MonsterPrefabsDir = "Assets/_Project/Prefabs/Monsters";
 
         /// <summary>Monsters with a model: (MonsterType.model, its folder in Art/Characters).</summary>
-        static readonly (string name, string folder)[] MonsterModels = { ("aberration", "Aberration"), ("skeleton", "Skeleton") };
+        static readonly (string name, string folder)[] MonsterModels = { ("aberration", "Aberration"), ("skeleton", "Skeleton"), ("arcanist", "Arcanist") };
 
         /// <summary>
         /// Every monster's model as a prefab in Prefabs/Monsters (the Monsters Addressables group, see
@@ -561,7 +563,7 @@ namespace LuckyNumbers.Editor
             var wanted = new System.Collections.Generic.List<string>();
             foreach (var m in LuckyNumbers.Model.GameContent.Combat?.Monsters ?? new())
                 if (m.Model == name && m.Clips != null)
-                    wanted.AddRange(new[] { m.Clips.Idle, m.Clips.Walk, m.Clips.Run, m.Clips.Attack, m.Clips.Hit, m.Clips.Die });
+                    wanted.AddRange(new[] { m.Clips.Idle, m.Clips.Walk, m.Clips.Run, m.Clips.Attack, m.Clips.Cast, m.Clips.Hit, m.Clips.Die });
             wanted.RemoveAll(string.IsNullOrEmpty);
             return wanted.Count > 0 ? wanted : rig.ClipNames;
         }

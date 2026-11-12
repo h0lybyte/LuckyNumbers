@@ -202,6 +202,9 @@ namespace LuckyNumbers.Planet
         /// <summary>False once its scene is gone (a shared field is then made again).</summary>
         public bool Alive => _runner != null && _bolts.IsCreated;
 
+        /// <summary>The layer its bolts draw on, and its flashes unless Flash names one (0: Default).</summary>
+        public int Layer;
+
         public int Count => _shots.Count;
 
         /// <summary>Room for `count` bolts and flashes up front, so a fight's first shots allocate nothing.</summary>
@@ -233,7 +236,7 @@ namespace LuckyNumbers.Planet
 
         /// <summary>A flash (muzzle, or anything else that should look like this field's): grows from 40% to `size`.</summary>
         public void Flash(Vector3 at, float size, float life, Color color, int layer = 0) =>
-            _flashes.Add(new Glow { Position = at, Size = size, Life = math.max(0.01f, life), Color = color, Layer = layer });
+            _flashes.Add(new Glow { Position = at, Size = size, Life = math.max(0.01f, life), Color = color, Layer = layer != 0 ? layer : Layer });
 
         /// <summary>A Glow field's steady sprite, this frame only (call it every frame it should show).</summary>
         public void Spark(Vector3 at, float size, Color color) => _sparks.Add(new Sparkle { Position = at, Size = size, Color = color });
@@ -362,7 +365,7 @@ namespace LuckyNumbers.Planet
                         reach = math.max(reach, b.Length + b.Scale.x);
                     }
                     var bounds = new Bounds((lo + hi) * 0.5f, hi - lo + Vector3.one * (2f * reach));
-                    Graphics.RenderMeshInstanced(Params(0, bounds, Block(block++, count)), _capsule, 0, matrices, count, start);
+                    Graphics.RenderMeshInstanced(Params(Layer, bounds, Block(block++, count)), _capsule, 0, matrices, count, start);
                 }
             }
             if (_flashes.Count == 0) return;

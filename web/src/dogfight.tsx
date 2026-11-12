@@ -15,7 +15,7 @@ export function DogfightHud() {
         <div className="dogfight-upload" aria-hidden="true"><div /></div>
       </div>
     );
-  const [name, hull, hullMax, shield, shieldMax, metres] = (d.target ?? "").split("|");
+  const [name, hull, hullMax, shield, shieldMax, metres, mode] = (d.target ?? "").split("|");
   const pct = (v: number, max: number) => `${Math.max(0, Math.min(100, (100 * v) / Math.max(1, max)))}%`;
   return (
     <>
@@ -37,7 +37,7 @@ export function DogfightHud() {
       </div>
       {d.target && (
         <div className="combat-target dogfight-target" aria-label={`${name}: hull ${hull} of ${hullMax}`}>
-          <span>{name} · {metres} m</span>
+          <span>{name} · {metres} m{mode && <b className="dogfight-mode"> · {mode.replace(/([a-z])([A-Z])/g, "$1 $2").toUpperCase()}</b>}</span>
           {Number(shieldMax) > 0 && (
             <div className="combat-target-bar shield"><div style={{ width: pct(Number(shield), Number(shieldMax)) }} /></div>
           )}

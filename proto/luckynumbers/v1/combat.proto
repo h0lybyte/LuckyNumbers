@@ -98,6 +98,8 @@ message MonsterClips {
   // Hit and still standing; killed (it holds the last frame, then sinks into the ground).
   string hit = 5;
   string die = 6;
+  // A spell or throw from range, once (MonsterView.Cast); empty: it has none.
+  string cast = 7;
 }
 
 message CombatWeapon {

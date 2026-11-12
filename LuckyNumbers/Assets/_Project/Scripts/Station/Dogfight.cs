@@ -28,9 +28,11 @@ namespace LuckyNumbers.Station
             public RogueShip Type;
             public ShipView View;
             public Collider Hitbox;
-            public Vector3 Position, Velocity, BreakTo;
+            public RogueBrain Brain;
+            public RogueFlight Flight;
+            public Vector3 Position, Velocity, Home;
             public Quaternion Rotation;
-            public float Hull, Shield, Ready, BreakUntil, HitAt = -99f;
+            public float Hull, Shield, Ready, HitAt = -99f;
             public int Barrel;
             public bool Dead;
         }
@@ -58,6 +60,9 @@ namespace LuckyNumbers.Station
         Rogue _target;
         float _targetAt;
         Vector3 _playerPos;
+        readonly float _length;   // your ship's, for keeping the rogues off it
+        readonly SpaceNav _nav;   // round the station's hull
+        readonly AttackTokens _tokens = new();
 
         // A satellite job.
         bool _uplink, _forJob, _done;
@@ -73,8 +78,11 @@ namespace LuckyNumbers.Station
 
         public Dogfight(ShipView player, GameObject rogueTemplate, ShipStats stats, CharacterSheet sheet, uint luck,
                         float length, DogfightState state, PlayerJob job, PlayerVoyage voyage, IPublisher<CombatRoll> rolls,
-                        IPublisher<CharacterXpGained> xp, Func<Vector3, float, Vector3> outOfHull, uint seed)
+                        IPublisher<CharacterXpGained> xp, Func<Vector3, float, Vector3> outOfHull, uint seed,
+                        IReadOnlyList<Bounds> obstacles)
         {
+            _nav = new SpaceNav(obstacles);
+            _tokens.Max = math.max(1, C?.Attackers ?? 2);
             _player = player;
             _template = rogueTemplate;
             _state = state;
@@ -109,7 +117,8 @@ namespace LuckyNumbers.Station
 
             var prewarm = 0;
             if (C != null) foreach (var r in C.Rogues) prewarm += r.Bolt.PrewarmOr(6);
-            _field = new BoltField("RogueLaser", math.max(8, prewarm));
+            _field = new BoltField("RogueLaser", math.max(8, prewarm)) { Layer = rogueTemplate.layer };
+            _length = length;
 
             _state.Active.Value = true;
             _state.Destroyed.Value = false;
@@ -180,17 +189,20 @@ namespace LuckyNumbers.Station
             var view = go.GetComponent<ShipView>();
             var length = type.Length > 0f ? type.Length : 24f;
             view.Show(type.Skin, length);
+            Layers.Set(go, _template.layer);   // its flames and gear too (built by Show)
             var box = new GameObject("Hitbox").AddComponent<SphereCollider>();
             box.transform.SetParent(view.Pivot, false);
             box.radius = length * 0.45f / math.max(1e-4f, view.Pivot.lossyScale.x);
             var r = new Rogue
             {
-                Type = type, View = view, Hitbox = box, Position = at,
+                Type = type, View = view, Hitbox = box, Position = at, Home = at,
+                Brain = new RogueBrain(type, _tokens, ref _rng),
                 Rotation = Quaternion.LookRotation(_playerPos - at, Vector3.up),
                 Hull = math.max(1f, type.Hull), Shield = math.max(0f, type.Shield),
                 Ready = Time.time + _rng.NextFloat(1f, 2.5f),   // a moment before the first shot
             };
             r.Velocity = r.Rotation * Vector3.forward * type.Speed;
+            r.Flight.Speed = type.Speed;
             view.Pose(r.Position, r.Rotation);
             view.SetHeat(0f, 1.2f);
             _rogues.Add(r);
@@ -213,6 +225,7 @@ namespace LuckyNumbers.Station
                 if (r.Dead) continue;
                 Fly(r, dt, playerPos, playerVel);
             }
+            Separate(playerPos);
             if (_uplink) Upload(dt, playerPos);
             _field.Tick(dt);
             if (_satelliteView != null) _satelliteView.Rotate(Vector3.up, 6f * dt, UnityEngine.Space.World);
@@ -226,8 +239,9 @@ namespace LuckyNumbers.Station
         }
 
         /// <summary>
-        /// A rogue's flying: chase where you'll be when its bolt gets there (lead), fire inside its cone and range, and
-        /// past `pass` metres break off to a point out to one side for a couple of seconds, then come round again.
+        /// A rogue's flying: its pilot (RogueBrain) picks a goal, a speed and whether it may shoot; SpaceNav routes the
+        /// goal round the station (a detour point while the hull's in the way) and pushes it off the hull just ahead;
+        /// it turns toward that at its turn rate, banks level, and fires when you're in its cone, in range and in sight.
         /// </summary>
         void Fly(Rogue r, float dt, Vector3 playerPos, Vector3 playerVel)
         {
@@ -236,42 +250,98 @@ namespace LuckyNumbers.Station
             var dist = to.magnitude;
             var boltSpeed = math.max(1f, t.Bolt?.Speed ?? 140f);
             var aim = playerPos + playerVel * (dist / boltSpeed);
-            var breaking = Time.time < r.BreakUntil;
-            if (!breaking && !Destroyed && dist < math.max(10f, t.Pass))
-            {
-                // Too close: peel off to one side and come round again.
-                var side = Vector3.Cross(to.normalized, (Vector3)_rng.NextFloat3Direction()).normalized;
-                r.BreakTo = r.Position + (r.Rotation * Vector3.forward) * (t.Close * 2.5f) + side * (t.Close * 2f);
-                r.BreakUntil = Time.time + _rng.NextFloat(1.6f, 3f);
-                breaking = true;
-            }
-            // You're gone: they circle the wreck.
-            var goal = breaking ? r.BreakTo : Destroyed ? playerPos + Quaternion.Euler(0f, Time.time * 20f, 0f) * Vector3.forward * 250f : aim;
-            var want = goal - r.Position;
-            if (want.sqrMagnitude > 1e-3f)
-                r.Rotation = Quaternion.RotateTowards(r.Rotation, Quaternion.LookRotation(want, r.Rotation * Vector3.up), t.TurnRate * dt);
-            // Banking: roll the wings level against the world's up, slowly, so they don't fly upside down for long.
             var fwd = r.Rotation * Vector3.forward;
-            r.Rotation = Quaternion.Slerp(r.Rotation, Quaternion.LookRotation(fwd, Vector3.up), 1f - math.exp(-0.8f * dt));
-            var speed = t.Speed * (dist > t.Close * 3f ? 1.3f : dist < t.Close ? 0.75f : 1f);
-            r.Velocity = Vector3.Lerp(r.Velocity, fwd * speed, 1f - math.exp(-1.6f * dt));
+            var senses = new RogueSenses
+            {
+                Position = r.Position, Forward = fwd, Home = r.Home,
+                Player = playerPos, PlayerVelocity = playerVel, PlayerForward = _player.Pivot.forward, Aim = aim,
+                Distance = dist, HullShare = r.Hull / math.max(1f, t.Hull), Time = Time.time,
+                PlayerAlive = !Destroyed, ShieldDown = r.Shield <= 0.5f, ShieldFull = r.Shield >= t.Shield - 0.5f,
+                Hit = Time.time - r.HitAt < 0.5f,
+            };
+            var (goal, pace, mayFire) = r.Brain.Think(senses, ref _rng);
+
+            // Getting there: round the station, and off the hull just ahead.
+            var radius = t.Length * 0.5f + math.max(0f, C?.Clearance ?? 18f);
+            var waypoint = _nav.Waypoint(r.Position, goal, radius);
+            var want = waypoint - r.Position;
+            var desired = want.sqrMagnitude > 1e-3f ? want.normalized : fwd;
+            var avoid = _nav.Avoid(r.Position, r.Velocity.sqrMagnitude > 1f ? r.Velocity : fwd * t.Speed, radius, C?.Lookahead ?? 1.6f);
+            // Soft room round you and its wingmen (the hard push is Separate), so they don't line up nose to tail.
+            foreach (var o in _rogues)
+            {
+                if (o == r || o.Dead) continue;
+                var gap = r.Position - o.Position;
+                var room = (t.Length + o.Type.Length) * 1.5f;
+                if (gap.sqrMagnitude < room * room && gap.sqrMagnitude > 1e-3f) avoid += gap.normalized * (1f - gap.magnitude / room) * 0.6f;
+            }
+            if (!mayFire && !Destroyed && dist < (t.Length + _length) * 2f) avoid -= to.normalized * 0.8f;
+            desired = (desired + avoid * 2f).normalized;
+            if (desired.sqrMagnitude < 1e-4f) desired = fwd;
+
+            // Flying it like a fighter: bank and pull, eased rates, speed bled in hard turns (RogueFlight).
+            r.Flight.Step(ref r.Rotation, ref r.Velocity, desired, t.Speed * pace, t.TurnRate, t.Speed * 1.3f, dt);
+            fwd = r.Rotation * Vector3.forward;
             r.Position = _outOfHull(r.Position + r.Velocity * dt, t.Length * 0.5f);
             r.View.Pose(r.Position, r.Rotation);
-            r.View.SetThrust(new Vector3(0f, 0.2f, speed / math.max(1f, t.Speed)), Vector3.zero, dist > t.Close * 3f ? 1.4f : 1f);
+            var spin = r.Flight.Spin / math.max(10f, t.TurnRate);
+            r.View.SetThrust(new Vector3(0f, 0.2f, pace), new Vector3(math.clamp(spin.x, -1f, 1f), math.clamp(spin.y, -1f, 1f),
+                             math.clamp(spin.z * 0.4f, -1f, 1f)), pace > 1.1f ? 1.4f : 1f);
 
             // Rogue shields recharge too (a fifth of the way a second, after the same quiet spell).
             var d = C?.Defense;
             if (d != null && Time.time - r.HitAt > d.ShieldDelay && r.Shield < t.Shield)
                 r.Shield = math.min(t.Shield, r.Shield + t.Shield * 0.2f * dt);
 
-            if (Destroyed || breaking || Time.time < r.Ready || dist > t.FireRange) return;
+            if (Destroyed || !mayFire || Time.time < r.Ready || dist > t.FireRange) return;
             var lead = aim - r.Position;
             if (Vector3.Angle(fwd, lead) > math.max(1f, t.FireCone)) return;
+            if (_nav.Blocked(r.Position, playerPos, 0f)) return;   // the station's in the way: no shooting through it
             r.Ready = Time.time + math.max(0.1f, t.Cooldown) * _rng.NextFloat(0.85f, 1.2f);
             // Not a perfect shot: off the lead by up to a few degrees (more at range), so dodging pays.
             var spread = math.lerp(1f, 4f, math.saturate(dist / math.max(1f, t.FireRange)));
             var off = Quaternion.AngleAxis(_rng.NextFloat(0f, spread), Vector3.Cross(lead, (Vector3)_rng.NextFloat3Direction()));
             Fire(r, off * lead.normalized);
+        }
+
+        /// <summary>
+        /// Ships don't pass through each other: a rogue inside your ship's room is pushed back out (losing its speed
+        /// toward you; its pilot breaks off inside `pass`); two rogues too close push apart.
+        /// </summary>
+        void Separate(Vector3 playerPos)
+        {
+            for (var i = 0; i < _rogues.Count; i++)
+            {
+                var a = _rogues[i];
+                if (a.Dead) continue;
+                if (!Destroyed)
+                {
+                    var room = (a.Type.Length + _length) * 0.5f;
+                    var away = a.Position - playerPos;
+                    var d = away.magnitude;
+                    if (d < room)
+                    {
+                        var n = d > 1e-3f ? away / d : a.Rotation * Vector3.back;
+                        a.Position = playerPos + n * room;
+                        var toward = Vector3.Dot(a.Velocity, -n);
+                        if (toward > 0f) a.Velocity += n * toward;
+                    }
+                }
+                for (var j = i + 1; j < _rogues.Count; j++)
+                {
+                    var b = _rogues[j];
+                    if (b.Dead) continue;
+                    var room = (a.Type.Length + b.Type.Length) * 0.5f;
+                    var gap = a.Position - b.Position;
+                    var d = gap.magnitude;
+                    if (d >= room) continue;
+                    var n = d > 1e-3f ? gap / d : Vector3.up;
+                    var push = (room - d) * 0.5f;
+                    a.Position += n * push;
+                    b.Position -= n * push;
+                }
+                a.View.Pose(a.Position, a.Rotation);
+            }
         }
 
         void Fire(Rogue r, Vector3 dir)
@@ -310,7 +380,8 @@ namespace LuckyNumbers.Station
                 {
                     _wave++;
                     _state.Wave.Value = _wave;
-                    SpawnWave(_perWave, _danger, _satellite);
+                    // A ramp: the first wave is one ship, each after it one more, up to the job's size.
+                    SpawnWave(math.min(_wave, _perWave), _danger, _satellite);
                 }
                 if (_uploaded >= _seconds)
                 {
@@ -392,6 +463,7 @@ namespace LuckyNumbers.Station
         void Kill(Rogue r)
         {
             r.Dead = true;
+            r.Brain.Release();
             _byCollider.Remove(r.Hitbox);
             var at = r.Position;
             _field.Flash(at, r.Type.Length * 2.2f, 0.7f, new Color(3.5f, 1.6f, 0.4f));
@@ -441,7 +513,7 @@ namespace LuckyNumbers.Station
             var target = _target != null && !_target.Dead && Time.time - _targetAt < 4f ? _target : Ahead();
             _state.Target.Value = target == null ? ""
                 : $"{target.Type.Name}|{math.max(0f, target.Hull):0}|{target.Type.Hull:0}|{math.max(0f, target.Shield):0}|{target.Type.Shield:0}|" +
-                  $"{Vector3.Distance(target.Position, _playerPos):0}";
+                  $"{Vector3.Distance(target.Position, _playerPos):0}|{target.Brain.State}";
         }
 
         /// <summary>The live rogue nearest your nose (inside 25 degrees and 700 m), or null.</summary>
