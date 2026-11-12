@@ -79,7 +79,7 @@ namespace LuckyNumbers.Planet
     public enum MonsterMark : byte
     {
         None = 0,
-        /// <summary>Your next shot at it gets the surprise bonus (a won standoff fight); used up by that shot.</summary>
+        /// <summary>Your next shot at it gets the surprise bonus (a won standoff fight); used up by that shot, or dropped when it leaves Chase.</summary>
         Surprise = 1 << 0,
         /// <summary>Shot at while running off: the placeholder's chase hop, the rest of the way.</summary>
         Harried = 1 << 1,
@@ -202,6 +202,7 @@ namespace LuckyNumbers.Planet
         static void Exit(ref MonsterBrain b, MonsterState from)
         {
             if (from == MonsterState.Calm) b.CalmUntil = 0f;
+            if (from == MonsterState.Chase) b.Marks &= ~MonsterMark.Surprise;   // lost you (or died): the fight you chose is over
         }
 
         static void Enter(ref MonsterBrain b, MonsterState to)
