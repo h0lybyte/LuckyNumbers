@@ -6,7 +6,7 @@ ship_names: ["MSV Curator", "MSV Long Memory", "MSV Patient Archive", "MSV Quiet
 museums: ["Galactic Museum of Antiquities", "Hall of Lost Worlds", "Interstellar Heritage Trust", "Museum of Before"]
 
 # The relics aboard, always all of them: item ids (named relics, each its own file in content/items/relics).
-relics: ["zhang_heng_water_amulet", "pliny_roman_vase"]
+relics: ["zhang_heng_water_amulet", "pliny_roman_vase", "nezahualcoyotl_aztec_block"]
 
 # Using a relic rolls a d20; your luck die from the title adds up to this.
 luck_bonus: 3

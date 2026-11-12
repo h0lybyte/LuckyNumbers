@@ -21,6 +21,12 @@ MonoBehaviour:
     m_SerializedLabels:
     - Planet
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7af6435a600e04120a999f3392396f5b
+    m_Address: relic/aztec-block
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - Planet
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b753b80d0cf114148be3a6edc3cde2cd
     m_Address: relic/water-amulet
     m_ReadOnly: 0

@@ -1,0 +1,52 @@
+# proto-file: luckynumbers/v1/inventory.proto
+# proto-message: luckynumbers.v1.ItemDef
+# Nezahualcoyotl (1402-1472 CE): poet-king of Texcoco, ally of Tenochtitlan in the Aztec Triple Alliance
+# (https://en.wikipedia.org/wiki/Nezahualcoyotl_(tlatoani)). He built the great dike across Lake Texcoco and the
+# Chapultepec aqueduct that carried fresh water to Tenochtitlan, and his poems ("flower and song") are still read.
+
+id: "nezahualcoyotl_aztec_block"
+name: "Aztec Block"
+kind: ITEM_KIND_RELIC
+unique: true
+description: "Carved limestone, heavy and cool. A stern face looks out from every side."
+shape: "##/##"
+bulk: 2.5
+value: 5400
+color { r: 0.78 g: 0.72 b: 0.6 a: 1 }     # limestone
+color_b { r: 0.35 g: 0.62 b: 0.55 a: 1 }  # jade water
+lore {
+  figure: "Nezahualcoyotl"
+  era: "Texcoco, 15th century CE"
+  text: "A block from the works of Nezahualcoyotl, the poet-king who walled back a lake and brought spring water to Tenochtitlan along Chapultepec's aqueduct."
+}
+# Model: "aztec block a" by RenderX (Sketchfab, CC BY 4.0), stood upright (tools/blender/export_relic_parts.py).
+model: "aztec_block"
+
+use {
+  cooldown_seconds: 14
+  rolls {
+    min: 1 max: 1 title: "Dead Weight"
+    text: "The block is heavier than any stone should be. You stagger under it, slowed."
+    effects: [RELIC_EFFECT_SLOW] amount: 0.5 seconds: 8
+  }
+  rolls {
+    min: 2 max: 7 title: "Cool Stone"
+    text: "You press your forehead to the cool stone. A little strength comes back."
+    effects: [RELIC_EFFECT_HEAL] amount: 3
+  }
+  rolls {
+    min: 8 max: 14 title: "Flower and Song"
+    text: "A verse of the poet-king rises from the carving. You feel much better."
+    effects: [RELIC_EFFECT_HEAL] amount: 8
+  }
+  rolls {
+    min: 15 max: 19 title: "Aqueduct"
+    text: "Channels in the carving run like Chapultepec's aqueduct, toward the nearest relic."
+    effects: [RELIC_EFFECT_REVEAL_NEAREST] seconds: 25
+  }
+  rolls {
+    min: 20 max: 20 title: "Fifth Sun"
+    text: "The carved face blazes like the Fifth Sun: you stand whole again, and every relic shines."
+    effects: [RELIC_EFFECT_FULL_HEAL, RELIC_EFFECT_REVEAL_ALL] seconds: 30
+  }
+}

@@ -33,6 +33,7 @@ namespace LuckyNumbers.Model
             {
                 "zhang_heng_water_amulet",
                 "pliny_roman_vase",
+                "nezahualcoyotl_aztec_block",
             },
             LuckBonus = 3,
             ScatterMin = 10.0f,
@@ -664,8 +665,19 @@ namespace LuckyNumbers.Model
                             License = "CC BY 4.0",
                             Url = "https://sketchfab.com/3d-models/roman-vase-e63cb75682d144cab9e7f88343efff2c",
                             LicenseUrl = "https://creativecommons.org/licenses/by/4.0/",
-                            Notes = "Changes: split into one part per material, decimated from 86k to about 4k triangles, textures downsized to 512 px and painted through the relic shader (tools/blender/export_vase.py).",
+                            Notes = "Changes: split into one part per material, decimated from 86k to about 4k triangles, textures downsized to 512 px and painted through the relic shader (tools/blender/export_relic_parts.py).",
                             Path = "LuckyNumbers/Assets/_Project/Art/Models/Relics/LICENSE-roman-vase.txt",
+                        },
+                        new Credit
+                        {
+                            What = "Aztec Block (Nezahualcoyotl's relic)",
+                            Title = "aztec block a",
+                            Author = "RenderX",
+                            License = "CC BY 4.0",
+                            Url = "https://sketchfab.com/3d-models/aztec-block-a-415b2d7d208a4e73a63ba1b3bd682269",
+                            LicenseUrl = "https://creativecommons.org/licenses/by/4.0/",
+                            Notes = "Changes: stood upright (its showcase tilt cleared), extra UV layer dropped, texture downsized to 512 px and painted through the relic shader (tools/blender/export_relic_parts.py).",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Models/Relics/LICENSE-aztec-block.txt",
                         },
                         new Credit
                         {
@@ -2000,6 +2012,95 @@ namespace LuckyNumbers.Model
                         },
                     },
                     ColorB = new Rgba(0.95f, 0.78f, 0.35f, 1.0f),
+                },
+                new ItemDef
+                {
+                    Id = "nezahualcoyotl_aztec_block",
+                    Name = "Aztec Block",
+                    Description = "Carved limestone, heavy and cool. A stern face looks out from every side.",
+                    Kind = ItemKind.Relic,
+                    Shape = "##/##",
+                    Bulk = 2.5f,
+                    Value = 5400,
+                    Color = new Rgba(0.78f, 0.72f, 0.6f, 1.0f),
+                    Unique = true,
+                    Model = "aztec_block",
+                    Lore = new ItemLore
+                    {
+                        Figure = "Nezahualcoyotl",
+                        Era = "Texcoco, 15th century CE",
+                        Text = "A block from the works of Nezahualcoyotl, the poet-king who walled back a lake and brought spring water to Tenochtitlan along Chapultepec's aqueduct.",
+                    },
+                    Use = new ItemUse
+                    {
+                        CooldownSeconds = 14.0f,
+                        Rolls =
+                        {
+                            new RelicRoll
+                            {
+                                Min = 1,
+                                Max = 1,
+                                Title = "Dead Weight",
+                                Text = "The block is heavier than any stone should be. You stagger under it, slowed.",
+                                Effects =
+                                {
+                                    RelicEffect.Slow,
+                                },
+                                Amount = 0.5f,
+                                Seconds = 8.0f,
+                            },
+                            new RelicRoll
+                            {
+                                Min = 2,
+                                Max = 7,
+                                Title = "Cool Stone",
+                                Text = "You press your forehead to the cool stone. A little strength comes back.",
+                                Effects =
+                                {
+                                    RelicEffect.Heal,
+                                },
+                                Amount = 3.0f,
+                            },
+                            new RelicRoll
+                            {
+                                Min = 8,
+                                Max = 14,
+                                Title = "Flower and Song",
+                                Text = "A verse of the poet-king rises from the carving. You feel much better.",
+                                Effects =
+                                {
+                                    RelicEffect.Heal,
+                                },
+                                Amount = 8.0f,
+                            },
+                            new RelicRoll
+                            {
+                                Min = 15,
+                                Max = 19,
+                                Title = "Aqueduct",
+                                Text = "Channels in the carving run like Chapultepec's aqueduct, toward the nearest relic.",
+                                Effects =
+                                {
+                                    RelicEffect.RevealNearest,
+                                },
+                                Seconds = 25.0f,
+                            },
+                            new RelicRoll
+                            {
+                                Min = 20,
+                                Max = 20,
+                                Title = "Fifth Sun",
+                                Text = "The carved face blazes like the Fifth Sun: you stand whole again, and every relic shines.",
+                                Effects =
+                                {
+                                    RelicEffect.FullHeal,
+                                    RelicEffect.RevealAll,
+                                },
+                                Seconds = 30.0f,
+                            },
+                        },
+                    },
+                    ColorB = new Rgba(0.35f, 0.62f, 0.55f, 1.0f),
                 },
                 new ItemDef
                 {
