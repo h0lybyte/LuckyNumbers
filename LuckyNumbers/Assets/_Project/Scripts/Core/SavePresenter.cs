@@ -106,6 +106,7 @@ namespace LuckyNumbers.Core
         readonly ISubscriber<SaveSlotDeleteRequested> _deletes;
         readonly ISubscriber<SceneChangeRequested> _leaving;
         readonly ISubscriber<SceneEntered> _entered;
+        readonly ISubscriber<RunEnded> _runEnded;
         readonly List<IDisposable> _subscriptions = new();
         UniTaskCompletionSource<int> _pick;
         UniverseSeedChanged _universe = new(1u, -1f, -1f, -1f, -1f);
@@ -119,8 +120,10 @@ namespace LuckyNumbers.Core
                              ISubscriber<SaveSlotsReady> ready, ISubscriber<SaveSlotPicked> picked,
                              ISubscriber<SaveSlotDeleteRequested> deletes,
                              ISubscriber<SceneChangeRequested> leaving, ISubscriber<SceneEntered> entered,
-                             UniverseState universeState, IPublisher<UniverseSelected> universePublisher)
+                             UniverseState universeState, IPublisher<UniverseSelected> universePublisher,
+                             ISubscriber<RunEnded> runEnded)
         {
+            _runEnded = runEnded;
             _universeState = universeState;
             _universePublisher = universePublisher;
             _state = state;
@@ -149,6 +152,7 @@ namespace LuckyNumbers.Core
             _subscriptions.Add(_ready.Subscribe(e => _page = e.On));
             _subscriptions.Add(_picked.Subscribe(e => _pick?.TrySetResult(e.Index)));
             _subscriptions.Add(_deletes.Subscribe(e => Delete(e.Index)));
+            _subscriptions.Add(_runEnded.Subscribe(e => End(e.Reason)));
             // Before a scene goes (the state is still whole), and once the next one is in.
             _subscriptions.Add(_leaving.Subscribe(_ => Save()));
             _subscriptions.Add(_entered.Subscribe(e =>
@@ -267,6 +271,32 @@ namespace LuckyNumbers.Core
             PlayerPrefs.Save();
             Refresh();
             Debug.Log($"[Save] slot {index + 1}: {file.character?.callsign} at {file.scene}");
+        }
+
+        /// <summary>
+        /// Game over (RunEnded): the slot it was saving to goes, nothing saves from now on, and the run's money, ship
+        /// and job are cleared, so a new run from the title starts clean.
+        /// </summary>
+        void End(string reason)
+        {
+            var index = _state.Active.Value;
+            _state.Active.Value = -1;
+            if (index >= 0 && index < SlotCount)
+            {
+                PlayerPrefs.DeleteKey(KeyPrefix + index);
+                PlayerPrefs.Save();
+            }
+            _voyage.Credits.Value = 0;
+            _voyage.LastPayout.Value = 0;
+            _voyage.Trips.Value = 0;
+            _voyage.RestoreBill.Value = 0;
+            _voyage.Rescued.Value = false;
+            _voyage.Arrival.Value = StationArrival.None;
+            _ship.Upgrades.Clear();
+            _job.Active.Value = false;
+            _job.Completed.Value = 0;
+            Refresh();
+            Debug.Log($"[Save] run over ({reason}): slot {index + 1} deleted");
         }
 
         void Delete(int index)

@@ -44,3 +44,12 @@ types {
   pay: 600 pay_per_danger: 250 danger_min: 2 danger_max: 5
   target: 3 target_per_danger: 1
 }
+types {
+  kind: JOB_KIND_UPLINK
+  title: "Satellite uplink for {client}"
+  brief: "{client} needs the data off a relay satellite out past the station. Rogue ships have been sniffing round it."
+  objective: "Fly out to the satellite and hold close while it uploads; fight off the rogues, then dock"
+  pay: 450 pay_per_danger: 200 danger_min: 1 danger_max: 4
+  target: 1 target_per_danger: 1     # rogues per wave
+  uplink_seconds: 30 uplink_seconds_per_danger: 5
+}

@@ -11,6 +11,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
+using Object = UnityEngine.Object;
 
 namespace LuckyNumbers.Station
 {
@@ -22,6 +23,12 @@ namespace LuckyNumbers.Station
     /// (OrbitView), scaled so your fighter at its flying size fits the bay as the docked ship does inside; it's solid.
     /// Flies like the Flight School (HoverFlight). Inside the docking beacon and slow enough, E docks: the station
     /// puts you off the ship beside it (PlayerVoyage.docked).
+    ///
+    /// Your guns work out here (click, as on the planet), and space combat runs (Dogfight, content/dogfight.txtpb):
+    /// on a satellite job (JobKind.Uplink) the relay sits out from the bay and the rogues come in waves while it
+    /// uploads; docking with it done gets you paid (the station's homecoming). Dev: ?ln-dogfight starts a practice
+    /// uplink with no job. Hull at 0: the memory restore (your chip wakes you at the station, the rebuild billed,
+    /// into debt if need be: StationArrival.Restored).
     /// </summary>
     public sealed class OrbitPresenter : IStartable, ITickable, ILateTickable, IDisposable
     {
@@ -38,6 +45,17 @@ namespace LuckyNumbers.Station
         readonly CancellationTokenSource _cts = new();
         readonly HoverFlight _flight = new();
         readonly List<Bounds> _hull = new();
+        readonly CharacterSheet _sheet;
+        readonly PlayerJob _job;
+        readonly DogfightState _dogfight;
+        readonly IInventory _pack;
+        readonly IPublisher<CombatRoll> _rolls;
+        readonly IPublisher<CharacterXpGained> _xp;
+        readonly ISubscriber<DevWarpRequested> _warps;
+        ShipGuns _guns;
+        Dogfight _fight;
+        GameObject _rogueTemplate;
+        bool _lockClick, _canFire, _destroyed;
 
         ShipView _ship;
         ShipStats _stats = new();
@@ -53,8 +71,17 @@ namespace LuckyNumbers.Station
         [Inject]
         public OrbitPresenter(PlanetView view, OrbitView orbit, PlayerInput input, PlayerShip playerShip,
                               PlayerVoyage voyage, ISpaceDirector space, StationScene config,
-                              ISubscriber<InputActionPerformed> actions, IPublisher<SceneChangeRequested> scenes)
+                              ISubscriber<InputActionPerformed> actions, IPublisher<SceneChangeRequested> scenes,
+                              CharacterSheet sheet, PlayerJob job, DogfightState dogfight, IInventory pack,
+                              IPublisher<CombatRoll> rolls, IPublisher<CharacterXpGained> xp, ISubscriber<DevWarpRequested> warps)
         {
+            _sheet = sheet;
+            _job = job;
+            _dogfight = dogfight;
+            _pack = pack;
+            _rolls = rolls;
+            _xp = xp;
+            _warps = warps;
             _view = view;
             _orbit = orbit;
             _input = input;
@@ -81,7 +108,19 @@ namespace LuckyNumbers.Station
             var skin = PlayerShipSkin.Current(_playerShip);
             _stats = PlayerShipStats.Of(_playerShip);   // with your upgrades
             _ship = _view.Fighter;
+            // The rogues are copies of the fighter, taken before it's shown (so no flames or gear come along).
+            _rogueTemplate = Object.Instantiate(_ship.gameObject);
+            _rogueTemplate.name = "Rogue template";
+            _rogueTemplate.SetActive(false);
             _ship.Show(skin, Length);
+            _guns = new ShipGuns(_ship);
+            _guns.Arm(_stats);
+            // Dev (the page's inspector): "rogues" sends a wave at you, dead ahead (so you can try your guns at once).
+            _subscriptions.Add(_warps.Subscribe(e =>
+            {
+                if (e.To == "rogues" && _fight != null && !_fight.Destroyed)
+                    _fight.SpawnWave(2, 2, _flight.Position + _flight.Rotation * Vector3.forward * 320f, 0f, 30f);
+            }));
             _view.FlightCamera.gameObject.SetActive(true);
             SetUp(_cts.Token).Forget();
         }
@@ -102,6 +141,7 @@ namespace LuckyNumbers.Station
             _flight.Stop();
             _camPos = _flight.Position + _out * (Length * O.ChaseDistance) + Vector3.up * (Length * O.ChaseHeight);
             _ship.Pose(_flight.Position, _flight.Pose);
+            Fight();
             _ready = true;
             Debug.Log($"[Orbit] ready: {_stats.Name} off the bay of station {_space.Seed}, {_hull.Count} hull blocks"); // marker for ln.py webshot
         }
@@ -214,12 +254,20 @@ namespace LuckyNumbers.Station
             _view.Fade(_fade);
             if (!_ready) return;
 
-            if (!_leaving)
+            if (!_leaving && !_destroyed)
             {
                 _flight.Step(_input, dt, _stats.Speed, _stats.Agility, level: false, _ship);
                 KeepOutOfHull();
+                Shoot();
             }
-            _ship.Pose(_flight.Position, _flight.Pose);
+            if (!_destroyed) _ship.Pose(_flight.Position, _flight.Pose);
+            if (_fight != null)
+            {
+                _fight.Tick(dt, _flight.Position, _flight.Velocity);
+                if (_fight.Destroyed && !_destroyed) Restore().Forget();
+            }
+            Physics.SyncTransforms();   // the hitboxes where the ships are now, for this frame's bolts
+            _guns?.Tick(dt);
 
             // Docking: inside the beacon and slow enough, E docks.
             var inside = Vector3.Distance(_flight.Position, _beacon) < Length * math.max(0.5f, O.DockRadius);
@@ -230,13 +278,16 @@ namespace LuckyNumbers.Station
             string message = null;
             if (inside) message = slow ? O.DockPrompt : O.SlowPrompt;
             else if (Vector3.Distance(_flight.Position, _centre) > Length * math.max(5f, O.Range)) message = "Far out: turn back to the station";
-            if (inside && slow && interact && !_leaving) Dock().Forget();
+            if (inside && slow && interact && !_leaving && !_destroyed) Dock().Forget();
 
-            if (Time.time >= _readoutAt || _leaving)
+            if (!_destroyed && (Time.time >= _readoutAt || _leaving))
             {
                 _readoutAt = Time.time + math.max(0.05f, O.ReadoutSeconds);
                 var toBeacon = Vector3.Distance(_flight.Position, _beacon);
-                _view.Flight($"{O.Title}   {_stats.Name}   {speed:0} m/s   docking beacon {toBeacon:0} m", _leaving ? null : message);
+                var defence = _fight == null ? "" : $"   SHIELD {_dogfight.Shield.Value:0}/{_dogfight.ShieldMax.Value:0}   HULL {_dogfight.Hull.Value:0}/{_dogfight.HullMax.Value:0}";
+                var uplink = _dogfight.UplinkJob.Value ? $"\n{_dogfight.Objective.Value}  ({_dogfight.Uplink.Value * 100f:0}%, satellite {_dogfight.SatelliteDistance.Value:0} m)" : "";
+                _view.Flight($"{O.Title}   {_stats.Name}   {speed:0} m/s   docking beacon {toBeacon:0} m{defence}{uplink}",
+                             _leaving || _destroyed ? null : message);
             }
         }
 
@@ -298,12 +349,93 @@ namespace LuckyNumbers.Station
             _view.Hint("", 0f);
             Debug.Log("[Orbit] docked: back to the station");
             await UniTask.Delay(TimeSpan.FromSeconds(0.6), cancellationToken: _cts.Token);
-            _voyage.Arrival.Value = StationArrival.Orbit;   // the station puts you off the ship beside it
+            // The station puts you off the ship beside it; on a job, Dispatch settles it (the homecoming).
+            _voyage.Arrival.Value = StationArrival.Orbit;
+            _scenes.Publish(new SceneChangeRequested(GameScene.Station));
+        }
+
+        // ---- space combat ----------------------------------------------------------------------------------------
+
+        static bool DevDogfight => (Application.absoluteURL ?? "").Contains("ln-dogfight");
+
+        /// <summary>The fight: always armed (rogues can find you), and on a satellite job (or ?ln-dogfight) the relay.</summary>
+        void Fight()
+        {
+            if (GameContent.Dogfight == null) return;
+            var seed = _space.Seed ^ (_job.Seed.Value * 0x9E3779B9u) ^ (uint)_voyage.Trips.Value;
+            _fight = new Dogfight(_ship, _rogueTemplate, _stats, _sheet, _space.Seed, Length, _dogfight, _job, _voyage, _rolls, _xp,
+                                  (p, r) => { var none = Vector3.zero; return OutOfHull(p, r, ref none); }, seed);
+            _fight.Arm(_guns);
+            var onJob = _job.Active.Value && _job.Kind.Value == JobKind.Uplink;
+            if (!onJob && !DevDogfight) return;
+            var s = GameContent.Dogfight.Satellite;
+            if (s == null) return;
+            // The relay: out from the bay, turned off the straight line by the job's seed (so each job's is somewhere new).
+            var rng = new Unity.Mathematics.Random(seed | 1u);
+            var dir = Quaternion.Euler(rng.NextFloat(-12f, 12f), rng.NextFloat(-50f, 50f), 0f) * _out;
+            var at = _beacon + dir * (Length * math.max(4f, s.Distance));
+            var radius = Length * math.max(1f, s.Radius);
+            var view = _orbit.Satellite(at, math.max(2f, s.Size), radius);
+            var type = UplinkType();
+            var danger = onJob ? math.max(1, _job.Danger.Value) : 2;
+            var seconds = (type != null && type.UplinkSeconds > 0f ? type.UplinkSeconds : s.Seconds) + (type?.UplinkSecondsPerDanger ?? 0f) * danger;
+            var waves = (type != null && type.Waves > 0 ? type.Waves : s.Waves) + danger / 2;
+            var perWave = onJob ? math.max(1, _job.Goal.Value) : 2;
+            _fight.StartUplink(at, view, radius, seconds, waves, perWave, danger, onJob);
+        }
+
+        static JobType UplinkType()
+        {
+            var jobs = GameContent.Jobs;
+            if (jobs != null) foreach (var t in jobs.Types) if (t.Kind == JobKind.Uplink) return t;
+            return null;
+        }
+
+        /// <summary>Guns: hold the button and the barrels fire in turn (the click that locks the pointer doesn't fire).</summary>
+        void Shoot()
+        {
+            var pressed = _input.PointerPressed.Value;
+            var locked = PointerLock.Locked;
+            if (!pressed && _lockClick) { _lockClick = false; _canFire = true; }
+            if (pressed && !locked && !_canFire) _lockClick = true;
+            if (locked && !pressed) _canFire = true;
+            if (pressed && _canFire) _guns?.TryFire(Vector3.Dot(_flight.Velocity, _flight.Rotation * Vector3.forward));
+        }
+
+        /// <summary>
+        /// Your hull's gone: the ship blows apart, the memory chip uploads (the page's card), and you wake at the station
+        /// in a new body. The bill (content/dogfight.txtpb restore): a share of the ship's worth plus the body's fee,
+        /// taken even past zero (debt); what you carried is lost and the job fails (Dispatch says so).
+        /// </summary>
+        async UniTaskVoid Restore()
+        {
+            _destroyed = true;
+            var r = GameContent.Dogfight.Restore ?? new MemoryRestore();
+            _flight.Stop();
+            _ship.Hide();
+            PointerLock.Release();
+            _view.Hint("", 0f);
+            _view.Flight(null, r.DestroyedText);
+            var worth = r.HullValue + ShipUpgrades.Spent(_playerShip);
+            var bill = Mathf.RoundToInt(worth * math.max(0f, r.RebuildShare)) + math.max(0, r.Fee);
+            var lost = _pack.TakeRelics();
+            _voyage.Credits.Value -= bill;
+            _voyage.RestoreBill.Value = bill;
+            Debug.Log($"[Orbit] ship destroyed: memory restore, bill {bill} cr (worth {worth}), lost {lost.Count} relic(s); " +
+                      $"{_voyage.Credits.Value} cr now");
+            await UniTask.Delay(TimeSpan.FromSeconds(math.max(1f, r.Seconds)), cancellationToken: _cts.Token);
+            _leaving = true;
+            await UniTask.Delay(TimeSpan.FromSeconds(0.6), cancellationToken: _cts.Token);
+            _voyage.Arrival.Value = StationArrival.Restored;
             _scenes.Publish(new SceneChangeRequested(GameScene.Station));
         }
 
         public void Dispose()
         {
+            _fight?.Dispose();
+            _guns?.Dispose();
+            _dogfight.Destroyed.Value = false;
+            if (_rogueTemplate != null) Object.Destroy(_rogueTemplate);
             _cts.Cancel();
             _cts.Dispose();
             foreach (var s in _subscriptions) s.Dispose();

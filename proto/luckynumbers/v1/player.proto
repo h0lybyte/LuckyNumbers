@@ -143,8 +143,10 @@ enum StationArrival {
   STATION_ARRIVAL_PLANET = 1;
   // From the Flight School: beside its console (not by your ship, no homecoming).
   STATION_ARRIVAL_FLIGHT_SCHOOL = 2;
-  // Docked again after flying round outside (GameScene.Orbit): beside your ship (no homecoming).
+  // Docked again after flying round outside (GameScene.Orbit): beside your ship (no homecoming, unless on a job).
   STATION_ARRIVAL_ORBIT = 3;
+  // Your ship was destroyed: your memory chip woke you in a new body; the rebuilt ship is in the bay, Dispatch bills you.
+  STATION_ARRIVAL_RESTORED = 4;
 }
 
 // The trip so far (app-wide): set when you fly out of the planet's atmosphere, so the station knows you're back;
@@ -162,4 +164,6 @@ message PlayerVoyage {
   int32 trips = 4;
   // Brought back by the rescue drone (you went down on the planet): the station's call says so.
   bool rescued = 5;
+  // The last memory restore's bill (rebuild + fee), for Dispatch's call.
+  int32 restore_bill = 9;
 }

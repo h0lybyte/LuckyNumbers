@@ -357,6 +357,8 @@ namespace LuckyNumbers.Core
             _sheet.RelicAbility.Value = Abbr(Config.RelicAbility);
             _sheet.XpLevelStart.Value = _level >= 2 && _level - 2 < Config.LevelXp.Count ? Config.LevelXp[_level - 2] : 0;
             _sheet.Seed.Value = _seed;
+            _sheet.Heritage.Value = Config.Heritage ?? "";
+            _sheet.HeritageBlurb.Value = Config.HeritageBlurb ?? "";
             Set(_sheet.Rolled, _rolled);
             Set(_sheet.Moved, _moved);
             Set(_sheet.Scores, scores);

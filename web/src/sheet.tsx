@@ -134,6 +134,11 @@ function Sheet({ onClose, setup, tab, setTab }: { onClose: () => void; setup: bo
           <div className="sheet-sub">
             {cls?.name ?? s.classId} &middot; {origin?.name ?? s.originId} &middot; Level {s.level}
           </div>
+          {s.heritage && (
+            <div className="sheet-heritage" title={s.heritageBlurb}>
+              {s.heritage}
+            </div>
+          )}
         </div>
         <div className="sheet-head-right">
           <span className={`sheet-badge${s.locked ? " locked" : ""}`}>{s.locked ? "Locked" : "Editable"}</span>

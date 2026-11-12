@@ -359,6 +359,8 @@ namespace LuckyNumbers.Model
             StaminaAbility = "con",
             XpPerRelic = 40,
             XpPerArtifact = 150,
+            Heritage = "Half human, half cyborg",
+            HeritageBlurb = "Organic and machine. A memory chip backs you up at every dock; the targeting implant steadies your guns (+1 gunnery).",
         };
 
         /// <summary>From <c>content/combat.txtpb</c>.</summary>
@@ -885,6 +887,204 @@ namespace LuckyNumbers.Model
                     },
                     Compact = true,
                 },
+            },
+        };
+
+        /// <summary>From <c>content/dogfight.txtpb</c>.</summary>
+        public static readonly DogfightConfig Dogfight = new DogfightConfig
+        {
+            Defense = new ShipDefense
+            {
+                Hull = 40.0f,
+                Shield = 30.0f,
+                Armor = 2.0f,
+                ShieldDelay = 3.0f,
+                ShieldRegen = 6.0f,
+                Evasion = 12,
+                EvasionPerAgility = 5.0f,
+            },
+            Gunnery = new Gunnery
+            {
+                Skill = "piloting",
+                LuckMax = 2,
+                Implant = 1,
+                DefaultDamage = "1d4",
+            },
+            Rogues =
+            {
+                new RogueShip
+                {
+                    Id = "scout",
+                    Name = "Rogue Scout",
+                    Skin = "krulspeld1",
+                    Length = 20.0f,
+                    Hull = 18.0f,
+                    Shield = 10.0f,
+                    Evasion = 19,
+                    Speed = 44.0f,
+                    TurnRate = 120.0f,
+                    Attack = 4,
+                    Damage = "1d4",
+                    Cooldown = 0.7f,
+                    FireRange = 260.0f,
+                    FireCone = 9.0f,
+                    Xp = 15,
+                    Bounty = 60,
+                    Bolt = new Projectile
+                    {
+                        Speed = 150.0f,
+                        Range = 320.0f,
+                        Length = 6.0f,
+                        Width = 0.45f,
+                        Color = new Rgba(0.4f, 2.6f, 0.6f, 1.0f),
+                        Muzzle = new ProjectileFlash
+                        {
+                            Size = 3.0f,
+                            Life = 0.07f,
+                        },
+                        Impact = new ProjectileFlash
+                        {
+                            Size = 8.0f,
+                            Life = 0.2f,
+                        },
+                        Prewarm = 6,
+                    },
+                    DangerMin = 1,
+                    Close = 70.0f,
+                    Pass = 25.0f,
+                },
+                new RogueShip
+                {
+                    Id = "raider",
+                    Name = "Rogue Raider",
+                    Skin = "lordshadow",
+                    Length = 24.0f,
+                    Hull = 40.0f,
+                    Shield = 30.0f,
+                    Armor = 1,
+                    Evasion = 17,
+                    Speed = 34.0f,
+                    TurnRate = 85.0f,
+                    Attack = 5,
+                    Damage = "1d6",
+                    Cooldown = 0.85f,
+                    FireRange = 300.0f,
+                    FireCone = 8.0f,
+                    Xp = 30,
+                    Bounty = 120,
+                    Bolt = new Projectile
+                    {
+                        Speed = 140.0f,
+                        Range = 350.0f,
+                        Length = 7.0f,
+                        Width = 0.6f,
+                        Color = new Rgba(3.0f, 1.2f, 0.2f, 1.0f),
+                        Muzzle = new ProjectileFlash
+                        {
+                            Size = 4.0f,
+                            Life = 0.08f,
+                        },
+                        Impact = new ProjectileFlash
+                        {
+                            Size = 10.0f,
+                            Life = 0.25f,
+                        },
+                        Prewarm = 6,
+                    },
+                    DangerMin = 1,
+                    Close = 90.0f,
+                    Pass = 30.0f,
+                },
+                new RogueShip
+                {
+                    Id = "gunship",
+                    Name = "Rogue Gunship",
+                    Skin = "snaz12",
+                    Length = 32.0f,
+                    Hull = 80.0f,
+                    Shield = 40.0f,
+                    Armor = 3,
+                    Evasion = 14,
+                    Speed = 24.0f,
+                    TurnRate = 50.0f,
+                    Attack = 6,
+                    Damage = "2d6",
+                    Cooldown = 1.4f,
+                    FireRange = 360.0f,
+                    FireCone = 11.0f,
+                    Xp = 60,
+                    Bounty = 260,
+                    Bolt = new Projectile
+                    {
+                        Speed = 120.0f,
+                        Range = 400.0f,
+                        Length = 8.0f,
+                        Width = 1.4f,
+                        Color = new Rgba(3.2f, 0.3f, 1.6f, 1.0f),
+                        Muzzle = new ProjectileFlash
+                        {
+                            Size = 6.0f,
+                            Life = 0.1f,
+                        },
+                        Impact = new ProjectileFlash
+                        {
+                            Size = 14.0f,
+                            Life = 0.35f,
+                        },
+                        Prewarm = 6,
+                    },
+                    DangerMin = 3,
+                    Close = 140.0f,
+                    Pass = 45.0f,
+                },
+            },
+            Satellite = new Satellite
+            {
+                Distance = 16.0f,
+                Radius = 5.0f,
+                Seconds = 30.0f,
+                Size = 14.0f,
+                Waves = 2,
+                WaveSeconds = 16.0f,
+                FirstWave = 4.0f,
+                Approach = "Fly out to the satellite: get inside its ring of lights",
+                Uplinking = "Uplink: hold close to the satellite",
+                OutOfRange = "Out of range: get back to the satellite",
+                Done = "Data's in. Dock at the station to get paid",
+            },
+            Restore = new MemoryRestore
+            {
+                RebuildShare = 0.4f,
+                HullValue = 2000,
+                Fee = 150,
+                DestroyedText = "HULL BREACH. Memory chip uplinking to the station...",
+                Seconds = 4.0f,
+                Lines =
+                {
+                    new StationCallLine
+                    {
+                        Speaker = "Dispatch",
+                        Text = "Easy, pilot. You're in a fresh body; the chip had you as of your last dock.",
+                        Seconds = 4.0f,
+                    },
+                    new StationCallLine
+                    {
+                        Speaker = "Dispatch",
+                        Text = "The yard rebuilt your ship. Rebuild and restore came to {bill} credits: you're at {credits}.",
+                        Seconds = 5.0f,
+                    },
+                },
+            },
+            Debt = new DebtRules
+            {
+                Collections = 500,
+                GameOver = 1000,
+                PerLevel = 250,
+                DebtText = "In debt: jobs pay it down",
+                CollectionsText = "Collections: the outfitter won't sell to you until you're back above {limit} cr",
+                GameOverTitle = "Repossessed",
+                GameOverText = "Your debts came due. The creditors took your ship, your body and your memory chip, and sold the lot at auction. This run is over.",
+                OutfitterLocked = "Collections hold: no sales until you pay your debt down",
             },
         };
 
@@ -3085,6 +3285,21 @@ namespace LuckyNumbers.Model
                     Target = 3,
                     TargetPerDanger = 1,
                 },
+                new JobType
+                {
+                    Kind = JobKind.Uplink,
+                    Title = "Satellite uplink for {client}",
+                    Brief = "{client} needs the data off a relay satellite out past the station. Rogue ships have been sniffing round it.",
+                    Objective = "Fly out to the satellite and hold close while it uploads; fight off the rogues, then dock",
+                    Pay = 450,
+                    PayPerDanger = 200,
+                    DangerMin = 1,
+                    DangerMax = 4,
+                    Target = 1,
+                    TargetPerDanger = 1,
+                    UplinkSeconds = 30.0f,
+                    UplinkSecondsPerDanger = 5.0f,
+                },
             },
             Offers = 3,
             Clients =
@@ -4555,6 +4770,7 @@ namespace LuckyNumbers.Model
                         },
                         Prewarm = 4,
                     },
+                    Damage = "1d4",
                 },
                 new ShipGun
                 {
@@ -4581,6 +4797,7 @@ namespace LuckyNumbers.Model
                         },
                         Prewarm = 8,
                     },
+                    Damage = "2d8",
                 },
                 new ShipGun
                 {
@@ -4607,6 +4824,7 @@ namespace LuckyNumbers.Model
                         },
                         Prewarm = 24,
                     },
+                    Damage = "1d3",
                 },
             },
         };
@@ -6889,7 +7107,7 @@ namespace LuckyNumbers.Model
                     Name = "Reinforced Gear",
                     Tier = UpgradeTier.Common,
                     Description = "Heavier struts, softer dampers.",
-                    Effect = "+15% landing toughness per level",
+                    Effect = "+15% landing toughness and hull per level",
                     Costs =
                     {
                         300,
@@ -6897,6 +7115,39 @@ namespace LuckyNumbers.Model
                         1200,
                     },
                     Toughness = 1.15f,
+                },
+                new ShipUpgrade
+                {
+                    Id = "plating",
+                    Name = "Heavy Plating",
+                    Tier = UpgradeTier.Common,
+                    Description = "Bolted-on ablative plates. Shrugs off small hits; the ship feels every kilo.",
+                    Effect = "+30% armour per level - but -5% speed and agility per level",
+                    Costs =
+                    {
+                        450,
+                        1000,
+                        1800,
+                    },
+                    Speed = 0.95f,
+                    Agility = 0.95f,
+                    Armor = 1.3f,
+                },
+                new ShipUpgrade
+                {
+                    Id = "shield_cap",
+                    Name = "Shield Capacitor",
+                    Tier = UpgradeTier.Common,
+                    Description = "A bigger buffer for the deflector. It drinks from the same tank as the engines.",
+                    Effect = "+25% shield per level - but -6% fuel efficiency per level",
+                    Costs =
+                    {
+                        500,
+                        1100,
+                        2000,
+                    },
+                    Efficiency = 0.94f,
+                    Shield = 1.25f,
                 },
                 new ShipUpgrade
                 {
@@ -7042,6 +7293,23 @@ namespace LuckyNumbers.Model
                     Agility = 0.85f,
                     Toughness = 1.3f,
                     Payout = 1.5f,
+                },
+                new ShipUpgrade
+                {
+                    Id = "aegis",
+                    Name = "Aegis Projector",
+                    Tier = UpgradeTier.Exotic,
+                    Description = "A frigate's deflector, crammed into a fighter. Nothing gets through. Nothing turns quickly either.",
+                    Effect = "x2 shield, x1.3 armour - but x0.8 speed, x0.75 agility",
+                    Tag = "Military surplus",
+                    Costs =
+                    {
+                        8000,
+                    },
+                    Speed = 0.8f,
+                    Agility = 0.75f,
+                    Shield = 2.0f,
+                    Armor = 1.3f,
                 },
             },
             CommonTitle = "Station Outfitter",

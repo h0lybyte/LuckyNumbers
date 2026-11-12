@@ -4,7 +4,9 @@
 # (content/planet.txtpb landing.hover), 1 = baseline; each ship's six add up to about 6, so none is simply best.
 #   speed       top speed (forward, strafe, climb)      agility     turn/roll rates, how fast it speeds up and stops
 #   fuel        tank size (x fuel.capacity)             efficiency  fuel per second of thrust divides by it
-#   toughness   landing gear: touchdown limits x it     firepower   gun fire rate
+#   toughness   landing gear: touchdown limits x it,    firepower   gun fire rate
+#               and the hull in space combat
+#   shield, armor  (optional, 1 if unset) space combat's shield points and armour (content/dogfight.txtpb)
 # Placeholder values; tune with gameplay.
 
 fuel {
@@ -19,20 +21,20 @@ fuel {
 
 guns {
   id: "basic_laser" name: "Basic laser rifle"
-  cooldown: 0.28 impulse: 40
+  cooldown: 0.28 impulse: 40 damage: "1d4"
   bolt { speed: 150 range: 450 length: 9 width: 0.5 color { r: 2.6 g: 0.35 b: 0.3 a: 1 }
          muzzle { size: 4 life: 0.07 } impact { size: 10 life: 0.25 } prewarm: 4 }   # prewarm: per barrel
 }
 # Black-market guns (content/upgrades.txtpb): the Plasma Lance and the Prism Repeater.
 guns {
   id: "plasma_lance" name: "Plasma lance"
-  cooldown: 0.75 impulse: 260
+  cooldown: 0.75 impulse: 260 damage: "2d8"   # slow, but punches through armour
   bolt { speed: 95 range: 520 length: 6 width: 2.2 color { r: 0.4 g: 3.2 b: 1.2 a: 1 }
          muzzle { size: 3 life: 0.12 } impact { size: 14 life: 0.45 } prewarm: 8 }
 }
 guns {
   id: "prism_repeater" name: "Prism repeater"
-  cooldown: 0.11 impulse: 22
+  cooldown: 0.11 impulse: 22 damage: "1d3"    # a storm that shields soak and armour shrugs off
   bolt { speed: 210 range: 400 length: 7 width: 0.35 color { r: 2.2 g: 0.5 b: 3.4 a: 1 }
          muzzle { size: 5 life: 0.05 } impact { size: 8 life: 0.2 } prewarm: 24 }
 }

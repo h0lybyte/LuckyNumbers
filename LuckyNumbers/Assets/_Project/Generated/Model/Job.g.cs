@@ -27,6 +27,10 @@ namespace LuckyNumbers.Model
         /// Bring back one named relic from the wreck's cargo.
         /// </summary>
         Retrieve = 3,
+        /// <summary>
+        /// Out round the station (GameScene.Orbit): upload a satellite's data while rogue ships attack (content/dogfight.txtpb).
+        /// </summary>
+        Uplink = 4,
     }
 
     /// <summary>
@@ -101,6 +105,13 @@ namespace LuckyNumbers.Model
         /// </summary>
         public int Target { get; set; }
         public int TargetPerDanger { get; set; }
+        /// <summary>
+        /// Uplink: upload seconds (0: DogfightConfig.satellite.seconds), plus per danger; waves of rogues (0: the
+        /// satellite's), plus one more every two danger levels. `target` / `target_per_danger`: rogues per wave.
+        /// </summary>
+        public float UplinkSeconds { get; set; }
+        public float UplinkSecondsPerDanger { get; set; }
+        public int Waves { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public JobType Clone() => (JobType)MemberwiseClone();

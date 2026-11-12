@@ -41,6 +41,8 @@ namespace LuckyNumbers.Core
                 Efficiency = Or(found?.Efficiency, basis.Efficiency),
                 Toughness = Or(found?.Toughness, basis.Toughness),
                 Firepower = Or(found?.Firepower, basis.Firepower),
+                Shield = Or(found?.Shield, basis.Shield),
+                Armor = Or(found?.Armor, basis.Armor),
             };
             stats.Guns.AddRange(found != null && found.Guns.Count > 0 ? found.Guns : basis.Guns);
             Cache[skin] = stats;

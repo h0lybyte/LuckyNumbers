@@ -88,6 +88,8 @@ namespace LuckyNumbers.Station
             _state.Efficiency.Value = s.Efficiency;
             _state.Toughness.Value = s.Toughness;
             _state.Firepower.Value = s.Firepower;
+            _state.Shield.Value = s.Shield;
+            _state.Armor.Value = s.Armor;
             _state.Payout.Value = ShipUpgrades.Payout(_ship);
             var guns = new List<string>();
             foreach (var id in s.Guns) guns.Add(PlayerShipStats.Gun(id)?.Name ?? id);

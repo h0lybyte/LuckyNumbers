@@ -22,6 +22,10 @@ namespace LuckyNumbers.Planet
         /// <summary>Shots fired (the page's crosshair flashes on a change).</summary>
         public int Shots { get; private set; }
 
+        /// <summary>A bolt hit something: which gun fired it, where, and the IDamageable it hit (or null). Space combat
+        /// (Station.Dogfight) rolls the damage here; unset, hits are only logged.</summary>
+        public Action<ShipGun, RaycastHit, IDamageable> Hit;
+
         public ShipGuns(ShipView ship)
         {
             _ship = ship;
@@ -71,7 +75,7 @@ namespace LuckyNumbers.Planet
                     From = from, Direction = dir, Speed = p.Speed + Mathf.Max(0f, carry), Range = p.Range,
                     Length = p.Length, Width = p.Width, Color = Tint(p),
                     ImpactSize = impact, ImpactLife = impactLife, ImpactLift = 0.05f, Impulse = gun.Impulse,
-                    Source = "ship", Ignore = _ship.Pivot, Sink = this,   // never your own hull
+                    Source = "ship", Ignore = _ship.Pivot, Sink = this, Tag = gun,   // never your own hull
                 });
                 var (size, life) = p.Muzzle.Of(p.Width, 4f, 0.07f);
                 _field.Flash(from, size, life, Tint(p));
@@ -83,8 +87,11 @@ namespace LuckyNumbers.Planet
 
         public void Tick(float dt) => _field.Tick(dt);
 
-        void IBoltSink.OnBoltHit(in BoltShot shot, in RaycastHit hit, IDamageable target, float travelled) =>
-            Debug.Log($"[Guns] bolt hit {hit.collider.name} after {travelled:0} m");
+        void IBoltSink.OnBoltHit(in BoltShot shot, in RaycastHit hit, IDamageable target, float travelled)
+        {
+            if (Hit != null && shot.Tag is ShipGun gun) Hit(gun, hit, target);
+            else Debug.Log($"[Guns] bolt hit {hit.collider.name} after {travelled:0} m");
+        }
 
         static Color Tint(Projectile p) => p.Tint(new Color(2.6f, 0.35f, 0.3f));
 
