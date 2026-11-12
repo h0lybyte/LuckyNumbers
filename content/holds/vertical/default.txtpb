@@ -1,0 +1,27 @@
+# proto-file: luckynumbers/v1/hold_vertical.proto
+# proto-message: luckynumbers.v1.VerticalRules
+# Stairs between storeys, great shafts through the deep, and their hoists.
+
+# ---- stairs ----
+stair_chance: 0.6
+stairs_max: 2
+flight_min: 3
+flight_max: 4
+replace_shaft_chance: 0.35
+timber_chance: 0.5
+
+# ---- great shafts: one candidate per 3 x 3 regions per band of 6 regions down ----
+great_spacing: 3
+great_chance: 0.7
+great_band: 6
+great_regions_min: 2
+great_regions_max: 5
+great_size: 3
+landing_every: 2
+
+# ---- hoist ----
+hoist_speed: 3
+hoist_call_distance: 3.5
+hoist_board_prompt: "E  hoist down · Shift+E up"
+hoist_ride_prompt: "W/S up/down · E next landing down · Shift+E up"
+hoist_call_prompt: "E  call the hoist"

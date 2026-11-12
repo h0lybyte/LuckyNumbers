@@ -16,6 +16,8 @@ mines_ref: "holds/mines/deep"
 life_ref: "holds/life/default"
 # The top of the hold: the gate, the great hall and its rooms (region y 1 over x, z 0).
 hall_ref: "holds/hall/default"
+# Stairs, great shafts and their hoists.
+vertical_ref: "holds/vertical/default"
 
 # Warm lantern light baked into the vertex colours; ambient keeps unlit stone just readable.
 lantern_radius: 9
