@@ -185,13 +185,13 @@ behind 1 armour, so it lasts about 4 seconds at full accuracy, or about 8 at 50%
 | `Station/RogueBrain.cs` | the rogues' pilot state machine and attack tokens |
 | `Station/SpaceNav.cs` | routing round the station, hull avoidance, line of sight |
 | `Station/RogueFlight.cs` | the rogues' flight model: bank and pull, eased rates, energy |
-
-## Later
-
-- Squadrons on both sides: wingmen flying with you against enemy squads. The attack tokens and flanking already
-  give enemy groups some shape.
 | `Station/OrbitPresenter.cs` | guns, the satellite, the memory restore |
 | `Station/StationPresenter.cs` | uplink launch, the payout on docking, the restore call, game over |
 | `Core/DebtWatch.cs` | debt tiers |
 | `Core/SavePresenter.cs` | `RunEnded` wipes the slot |
 | `web/src/dogfight.tsx` | HUD, debt chip, game-over card |
+
+## Later
+
+- Squadrons on both sides: wingmen flying with you against enemy squads. The attack tokens and flanking already
+  give enemy groups some shape.
