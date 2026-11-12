@@ -295,21 +295,29 @@ namespace LuckyNumbers.Editor
         }
 
         /// <summary>
-        /// The monster models (Prefabs/Monsters, SceneBuilder.BakeMonsters), built as CombatPresenter builds them
-        /// (MonsterView.CreateModel), posed from 4 clips (idle, run, attack, fall) seen from its front-left, to
-        /// Logs/preview-monster.png. Logs its hitbox against its mesh's bounds and which way it faces.
+        /// A monster model (Prefabs/Monsters, SceneBuilder.BakeMonsters), built as CombatPresenter builds it
+        /// (MonsterView.CreateModel) with its MonsterType's size and clips (content/combat.txtpb; -lnMonster &lt;id&gt;,
+        /// default the aberration), posed from 4 of them (idle, run, attack, die) seen from its front-left, to
+        /// Logs/preview-monster.png (another id: preview-monster-&lt;id&gt;.png), and the same poses from its VAT bake to
+        /// ...-vat.png. Logs its hitbox against its mesh's bounds and which way it faces.
         /// </summary>
         [MenuItem("LuckyNumbers/Preview/Render Monster")]
         public static void RenderMonster()
         {
+            var id = "aberration";
+            var cli = System.Environment.GetCommandLineArgs();
+            for (var i = 0; i < cli.Length - 1; i++) if (cli[i] == "-lnMonster") id = cli[i + 1];
+            LuckyNumbers.Model.MonsterType type = null;
+            foreach (var m in LuckyNumbers.Model.GameContent.Combat.Monsters) if (m.Id == id) type = m;
+            if (type == null || string.IsNullOrEmpty(type.Model)) throw new System.Exception($"no modelled monster '{id}' in content/combat.txtpb");
+            var suffix = id == "aberration" ? "" : $"-{id}";
             EditorSceneManager.OpenScene("Assets/_Project/Scenes/Planet.unity", OpenSceneMode.Single);
             Physics.SyncTransforms();
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Monsters/aberration.prefab")
-                         ?? throw new System.Exception("Prefabs/Monsters/aberration.prefab missing (tools/ln.py scenes)");
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/_Project/Prefabs/Monsters/{type.Model}.prefab")
+                         ?? throw new System.Exception($"Prefabs/Monsters/{type.Model}.prefab missing (tools/ln.py scenes)");
             var template = new[] { prefab.GetComponent<LuckyNumbers.Planet.MonsterRig>() };
-            var clips = new LuckyNumbers.Model.MonsterClips { Idle = "idle", Walk = "walk_limp", Run = "walk_fast", Attack = "attack_lunge",
-                                                              Hit = "knee_hit_recover", Die = "fall_forward" };
-            var size = new Vector3(0.7f, 1.85f, 0.6f);
+            var clips = type.Clips;
+            var size = new Vector3(type.Size.X, type.Size.Y, type.Size.Z);
             var view = LuckyNumbers.Planet.MonsterView.CreateModel(template[0].name, template[0], size, clips);
             var origin = new Vector3(0f, 1000f, 0f);
             view.transform.position = origin + Vector3.up * size.y * 0.5f;
@@ -328,7 +336,7 @@ namespace LuckyNumbers.Editor
             cam.transform.LookAt(origin + Vector3.up * 0.95f);
             var sheet = new Texture2D(Width, Height, TextureFormat.RGB24, false);
             var rt = new RenderTexture(Width / 2, Height / 2, 24, RenderTextureFormat.ARGB32);
-            var poses = new[] { ("idle", 0.3f), ("walk_fast", 0.5f), ("attack_lunge", 0.45f), ("fall_forward", 1f) };
+            var poses = new[] { (clips.Idle, 0.3f), (clips.Run, 0.5f), (clips.Attack, 0.45f), (clips.Die, 1f) };
             for (var k = 0; k < poses.Length; k++)
             {
                 rig.Pose(poses[k].Item1, rig.Length(poses[k].Item1) * poses[k].Item2);   // the game's PlayableGraph, not SampleAnimation
@@ -366,7 +374,7 @@ namespace LuckyNumbers.Editor
                 foreach (var r in rig.GetComponentsInChildren<SkinnedMeshRenderer>()) r.enabled = true;
             }
             sheet.Apply();
-            var outPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", "preview-monster.png"));
+            var outPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", $"preview-monster{suffix}.png"));
             File.WriteAllBytes(outPath, sheet.EncodeToPNG());
             Debug.Log($"[ShaderPreview] wrote {outPath}");
 
@@ -399,7 +407,7 @@ namespace LuckyNumbers.Editor
                 }
                 Object.DestroyImmediate(go);
                 sheet.Apply();
-                var vatPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", "preview-monster-vat.png"));
+                var vatPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", $"preview-monster{suffix}-vat.png"));
                 File.WriteAllBytes(vatPath, sheet.EncodeToPNG());
                 Debug.Log($"[ShaderPreview] wrote {vatPath} ({vat.Vertices} vertices, {vat.BoneCount} bones, {vat.Clips.Length} clips, {vat.Bones.width}x{vat.Bones.height} {vat.Bones.format})");
             }

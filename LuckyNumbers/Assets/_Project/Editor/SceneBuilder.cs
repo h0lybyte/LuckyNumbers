@@ -467,7 +467,7 @@ namespace LuckyNumbers.Editor
         /// A monster's model template (off): Art/Characters/&lt;folder&gt;/&lt;name&gt;.fbx (baked by
         /// tools/blender/export_&lt;name&gt;.py) with its skin &lt;name&gt;_body.png on the Ship shader, every take as a
         /// clip and each clip's stride speed from &lt;name&gt;.json. Turned so it faces +Z: its front is worked out from
-        /// its hips (thigh_l to thigh_r is its right), whatever axes the FBX came in with.
+        /// its hips (thigh_l to thigh_r, or thigh.L to thigh.R, is its right), whatever axes the FBX came in with.
         /// </summary>
         static MonsterRig MonsterModel(Transform parent, string name, string folder)
         {
@@ -507,16 +507,21 @@ namespace LuckyNumbers.Editor
                 foreach (var b in strides) if (b.name == MonsterRig.Short(clip.name)) speed = b.speed;
                 speeds.Add(speed);
             }
-            Transform Bone(string bone)
+            // Where a bone is in the skin's bind pose (world): the model's own transforms can hold a clip's first frame
+            // instead (the skeleton's FBX comes in posed as its death's start, hips yawed 13 deg).
+            Vector3? Bone(string bone)
             {
-                foreach (var t in model.GetComponentsInChildren<Transform>(true)) if (t.name == bone) return t;
+                foreach (var s in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                    for (var i = 0; i < s.bones.Length; i++)
+                        if (s.bones[i] != null && s.bones[i].name == bone)
+                            return s.transform.TransformPoint(s.sharedMesh.bindposes[i].inverse.GetColumn(3));
                 return null;
             }
-            var left = Bone("thigh_l");
-            var right = Bone("thigh_r");
+            var left = Bone("thigh_l") ?? Bone("thigh.L");   // the aberration's names; the skeleton's (Rigify)
+            var right = Bone("thigh_r") ?? Bone("thigh.R");
             if (left != null && right != null)
             {
-                var side = Vector3.ProjectOnPlane(right.position - left.position, Vector3.up);
+                var side = Vector3.ProjectOnPlane(right.Value - left.Value, Vector3.up);
                 var front = Vector3.Cross(side, Vector3.up);
                 var turn = Vector3.SignedAngle(front, Vector3.forward, Vector3.up);
                 model.transform.localRotation = Quaternion.Euler(0f, turn, 0f) * model.transform.localRotation;
@@ -540,7 +545,7 @@ namespace LuckyNumbers.Editor
         const string MonsterPrefabsDir = "Assets/_Project/Prefabs/Monsters";
 
         /// <summary>Monsters with a model: (MonsterType.model, its folder in Art/Characters).</summary>
-        static readonly (string name, string folder)[] MonsterModels = { ("aberration", "Aberration") };
+        static readonly (string name, string folder)[] MonsterModels = { ("aberration", "Aberration"), ("skeleton", "Skeleton") };
 
         /// <summary>
         /// Every monster's model as a prefab in Prefabs/Monsters (the Monsters Addressables group, see

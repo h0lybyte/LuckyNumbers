@@ -57,6 +57,19 @@ monsters {
   clips { idle: "idle" walk: "walk_limp" run: "walk_fast" attack: "attack_lunge" hit: "knee_hit_recover" die: "fall_forward" }
 }
 
+# Modelled: "PSX Skeleton" by Vinrax (Art/Characters/Skeleton), animated with Quaternius' Universal Animation Library
+# (CC0, retargeted by tools/blender/export_skeleton.py; see CREDITS.md). A hunched bone frame that shambles about and
+# breaks into a jog when it sees you, raking with its claws; brittle (low hp) but common. Its hitbox is its body
+# (1.6 m tall). Chases at 4 m/s (a walking player still pulls away): UAL's jog strides 6 m/s, so it plays at 0.67x,
+# a loping bound; its amble (a quarter of that) is the shamble's own 1.05 m/s stride, at 0.96x.
+monsters {
+  id: "skeleton" name: "Rattleframe" hp: 12 armor: 11 attack: 3 damage: "1d6+1"
+  speed: 4.0 size { x: 0.6 y: 1.6 z: 0.5 } color { r: 0.85 g: 0.8 b: 0.68 a: 1 }
+  reach: 1.5 sight: 17 cooldown: 1.8 xp: 110 danger_min: 1 weight: 2
+  model: "skeleton"
+  clips { idle: "zombie_idle" walk: "zombie_walk" run: "jog" attack: "zombie_scratch" hit: "hit_chest" die: "death" }
+}
+
 rescue {
   fee: 250
   downed_text: "You're down. A rescue drone is on its way..."

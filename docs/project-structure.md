@@ -8,6 +8,8 @@ LuckyNumbers/            Unity project
     Art/Models/CargoShip/ museum freighter (Vaportrash, CC BY): cargo_ship.fbx (part per material), Textures/, cargo_ship_collision.obj
     Art/Characters/Arms/ first-person arms rig + 18 clips (DrillImpact, CC0)
     Art/Characters/Aberration/ monster: baked FBX + clips, skin, stride speeds (Rafael Martins; tools/blender/export_aberration.py)
+    Art/Characters/Skeleton/ monster: Vinrax's PSX skeleton with Quaternius UAL clips retargeted onto it, same layout
+                         (tools/blender/export_skeleton.py, run by `ln.py bake-monsters` from art-src/)
     Art/Vat/             monsters' clips as bone-matrix animation textures + skinning mesh (Editor/VatBaker, from
                          ln.py scenes); MonsterCrowd draws every monster instanced from them (Shaders/MonsterVat)
     Art/Fonts/Exo2/      UI font + SDF assets

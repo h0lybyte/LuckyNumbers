@@ -30,6 +30,14 @@ Lucky Numbers is made with the work of these people. Thank you.
   https://rafaelmarrtins.itch.io/aberration-psx-horror-creature
   Changes: baked from the pack's glTF into one FBX (tools/blender/export_aberration.py) with root motion cut to in-place clips and each clip's stride speed recorded; the stray helper sphere dropped. The raw pack is kept out of this repo.
   (`LuckyNumbers/Assets/_Project/Art/Characters/Aberration/`)
+- **Rattleframe (the skeleton you fight on planets: mesh, rig and skin)**: "PSX Skeleton Character" by **Vinrax** (Free to use in projects with credit)
+  https://vinrax.itch.io/psx-skeleton-character
+  Changes: baked from the pack's glTF into one FBX with animations retargeted onto its rig (tools/blender/export_skeleton.py); the stray helper sphere dropped; its own texture kept. The raw pack is kept out of this repo.
+  (`LuckyNumbers/Assets/_Project/Art/Characters/Skeleton/`)
+- **Rattleframe's animations (idle, shamble, jog, claw swipe, flinch, death), retargeted onto the skeleton**: "Universal Animation Library and Universal Animation Library 2" by **Quaternius** ([CC0, public domain](https://creativecommons.org/publicdomain/zero/1.0/))
+  https://quaternius.com
+  Clips used: Zombie_Idle_Loop, Zombie_Walk_Fwd_Loop, Zombie_Scratch (UAL 2); Jog_Fwd_Loop, Hit_Chest, Death01 (UAL 1). Retargeted onto Vinrax's skeleton with root motion cut to in-place clips and stride speeds recorded (tools/blender/export_skeleton.py).
+  (`LuckyNumbers/Assets/_Project/Art/Characters/Skeleton/skeleton.fbx`)
 - **Space station corridors and rooms (cream panels, leaning walls, ribs, portholes, doorways, deck)**: "PSX Starship Kit Free" by **heyheythere** ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/))
   https://heyheythere.itch.io/psx-starship-kit-free
   Changes: an alpha channel added to atlas.png as a light mask and the atlas packed with the station kit's into one (Art/Models/CombinedKit, tools/kitmask.py), RGB unchanged; room walls derived from the corridor walls with their lean cut back, corner fillers, window panes drawn as clear glass and door leaves slid in the shader, at build time.

@@ -67,6 +67,25 @@ sections {
     path: "LuckyNumbers/Assets/_Project/Art/Characters/Aberration/"
   }
   credits {
+    what: "Rattleframe (the skeleton you fight on planets: mesh, rig and skin)"
+    title: "PSX Skeleton Character"
+    author: "Vinrax"
+    license: "Free to use in projects with credit"
+    url: "https://vinrax.itch.io/psx-skeleton-character"
+    notes: "Changes: baked from the pack's glTF into one FBX with animations retargeted onto its rig (tools/blender/export_skeleton.py); the stray helper sphere dropped; its own texture kept. The raw pack is kept out of this repo."
+    path: "LuckyNumbers/Assets/_Project/Art/Characters/Skeleton/"
+  }
+  credits {
+    what: "Rattleframe's animations (idle, shamble, jog, claw swipe, flinch, death), retargeted onto the skeleton"
+    title: "Universal Animation Library and Universal Animation Library 2"
+    author: "Quaternius"
+    license: "CC0, public domain"
+    url: "https://quaternius.com"
+    license_url: "https://creativecommons.org/publicdomain/zero/1.0/"
+    notes: "Clips used: Zombie_Idle_Loop, Zombie_Walk_Fwd_Loop, Zombie_Scratch (UAL 2); Jog_Fwd_Loop, Hit_Chest, Death01 (UAL 1). Retargeted onto Vinrax's skeleton with root motion cut to in-place clips and stride speeds recorded (tools/blender/export_skeleton.py)."
+    path: "LuckyNumbers/Assets/_Project/Art/Characters/Skeleton/skeleton.fbx"
+  }
+  credits {
     what: "Space station corridors and rooms (cream panels, leaning walls, ribs, portholes, doorways, deck)"
     title: "PSX Starship Kit Free"
     author: "heyheythere"
