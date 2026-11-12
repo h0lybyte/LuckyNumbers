@@ -95,6 +95,24 @@ message SystemGenerator {
   repeated string sky_refs = 36 [(ln.ref) = "skies"];
   // Empty space between neighbouring orbits (inner apoapsis + moons .. outer periapsis - moons), world units.
   float min_orbit_gap = 34;
+  // How this universe's ground is shaped when you walk on a planet (each generated planet and moon gets it).
+  GroundProfile ground = 39;
+  string ground_ref = 40 [(ln.ref) = "ground"];
+}
+
+// Terrain rules for walking on a planet (the crash site's endless ground). One universe's worlds share a profile,
+// so each universe can have its own kind of land.
+message GroundProfile {
+  // Hill height (metres) and noise scale (bigger = busier), the same function everywhere so chunks meet.
+  float height = 1;
+  float noise_scale = 2;
+  // Near the crash site: the share of the hills kept (0 = dead flat, 1 = no flattening), and a big slow octave
+  // (rolling hills on the horizon): its height and how much bigger than the main hills it is.
+  float site_relief = 3;
+  float swell_height = 4;
+  float swell_scale = 5;
+  // Surface colour noise scale (detail on the ground texture).
+  float surface_noise_scale = 6;
 }
 
 // One entity of the universe: a planet or a star sphere.
@@ -116,6 +134,8 @@ message CelestialBody {
   string galaxy_ref = 10 [(ln.ref) = "galaxy"];
   // Optional: orbit another body (listed earlier). radius 0 = static at `position`.
   Orbit orbit = 5;
+  // Walking terrain on this body (generated bodies get their generator's profile; shared, don't modify).
+  GroundProfile ground = 11;
 }
 
 // Keplerian orbit around another body (listed earlier). radius = semi-major axis.

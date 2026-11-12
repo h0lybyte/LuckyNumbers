@@ -5,8 +5,7 @@
 backdrop_ref: "space/systems/home"
 
 # Endless ground: 5 x 5 chunks of 48 m follow you (haze hides the far edge).
-ground_height: 14
-ground_noise_scale: 0.016
+# The terrain's shape comes from the universe (its generator's ground profile, e.g. space/grounds/rolling).
 chunk_size: 48
 chunk_resolution: 33
 view_chunks: 3
@@ -14,11 +13,6 @@ view_chunks: 3
 far_chunk_scale: 4
 far_resolution: 24
 far_view_chunks: 4
-# Gentle dunes round the wreck (a third of the hills), big rolling swells further out.
-site_relief: 0.35
-swell_height: 22
-swell_scale: 0.22
-surface_noise_scale: 0.12
 
 walk_speed: 4.5
 sprint_speed: 8
