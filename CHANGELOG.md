@@ -4,6 +4,34 @@ Releases are driven by this file: the **top `## x.y.z` entry is the game version
 Bumping it on `main` builds the Web player, uploads it to itch.io with that version,
 and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version does not rebuild.
 
+## 0.4.0 (2026-11-12)
+
+- Space combat outside the station. Lasers fire real bolts, and a bolt that hits rolls d20 + your gunnery
+  against the target's evasion for a graze, hit, strong hit or crit. Every ship has a shield that recharges,
+  armour that cuts each hit, and a hull
+- Rogue pilots fly like fighters: they bank into turns, make attack runs, break off, flank you and run to
+  recharge. They route round the station and never fly through it or your ship
+- Satellite uplink jobs on Dispatch's board: fly out to a relay and hold position while it uploads, as rogue
+  waves come at you. Five tiers from Routine (700 cr) to Black site (3,300 cr). The dangerous ones have rogues
+  waiting at the relay and an ambush from behind mid-upload. Kills pay bounties on top
+- You're half human, half cyborg. When your ship is destroyed, your memory chip wakes you at the station in a
+  new body and Dispatch bills you for the rebuild. Credits can go negative, and if you fall too far into debt
+  the creditors take your chip: game over, and the save is gone
+- Ship upgrades: the Outfitter and the Black Market in the docking bay sell parts for speed, handling, fuel,
+  shields, armour and payouts, plus new guns (Plasma Lance, Prism Repeater). Heavier defences slow the ship
+- The Emberdeep: a second universe of red stars and forge worlds, chosen on the title. Its planets have
+  dwarven holds. Walk in through the gate to a great hall, then down into endless mines with ladders, stairs,
+  great shafts with hoists, locked doors and keys, levers, sealed depths, drop shafts, relic strongboxes and
+  creatures
+- New monsters: the Rattleframe skeleton and the Plague Arcanist, who keeps its distance and lobs plague
+  flasks that splash where they land
+- A working Settings panel on the title: look speed, invert look, render quality and a frame-rate meter
+- The station view now orbits with its planet, and planets move round their stars a third as fast
+- Runs better on phones and low-end machines: phone-friendly textures, a turn-sideways prompt, less
+  per-frame work and garbage, a low-end render tier and a 1 GB memory cap
+- Fixes: the barrel roll spins the ship, not the camera; one standoff card at a time; the monsters-left count
+  drops when one flees
+
 ## 0.3.4 (2026-11-11)
 
 - perf(planet): build ground chunks in Burst jobs, cook colliders off main thread
