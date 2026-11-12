@@ -360,6 +360,7 @@ CHARACTERS = PROJECT / "Assets" / "_Project" / "Art" / "Characters"
 MONSTER_BAKES = {
     "skeleton": ("export_skeleton.py", ["Skeleton/skeleton.glb", "Skeleton/skeleton_d.png",
                                         "UAL/AnimationLibrary_Unity_Standard.fbx", "UAL/UAL2_Standard.fbx"], "Skeleton"),
+    "arcanist": ("export_arcanist.py", ["PlagueArcanist/Plague Arcanist.rar"], "Arcanist"),
 }
 
 

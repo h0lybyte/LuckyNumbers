@@ -70,6 +70,19 @@ monsters {
   clips { idle: "zombie_idle" walk: "zombie_walk" run: "jog" attack: "zombie_scratch" hit: "hit_chest" die: "death" }
 }
 
+# Modelled: "Plague Arcanist" by imaginais (Art/Characters/Arcanist, its Mixamo clips; tools/blender/export_arcanist.py,
+# see CREDITS.md). A beaked hedge-mage in a crouched caster's stance: fragile (low hp, light armour) and weak up close
+# (a palm shove), but it spots you from far off; its spell (cast: both hands thrust out and held) is for range. Its
+# hitbox is its crouched body (1.75 m). Chases at 3.4 m/s: the pack's sprint strides 3.82 m/s, so it plays at 0.89x;
+# its amble (a quarter) is the hunched creep's 1.70 m/s stride at 0.5x. Cooldown outlasts its 2.3 s strike.
+monsters {
+  id: "arcanist" name: "Plague Arcanist" hp: 16 armor: 11 attack: 2 damage: "1d4"
+  speed: 3.4 size { x: 0.6 y: 1.75 z: 0.5 } color { r: 0.3 g: 0.28 b: 0.26 a: 1 }
+  reach: 1.5 sight: 24 cooldown: 2.4 xp: 130 danger_min: 2 weight: 1
+  model: "arcanist"
+  clips { idle: "idle" walk: "creep" run: "run" attack: "palm_strike" cast: "channel" hit: "flinch" die: "collapse" }
+}
+
 rescue {
   fee: 250
   downed_text: "You're down. A rescue drone is on its way..."

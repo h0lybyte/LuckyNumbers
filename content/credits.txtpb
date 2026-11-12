@@ -86,6 +86,15 @@ sections {
     path: "LuckyNumbers/Assets/_Project/Art/Characters/Skeleton/skeleton.fbx"
   }
   credits {
+    what: "Plague Arcanist (the beaked caster you fight on planets: mesh, rig, skin and animations)"
+    title: "Plague Arcanist - Retro PS1 Low Poly Magic Character"
+    author: "imaginais"
+    license: "Free to use, commercial projects included (the author's reply on the asset page); credit appreciated"
+    url: "https://imaginais.itch.io/plague-arcanist-retro-ps1-low-poly-magic-character"
+    notes: "Its animations are Mixamo's (mixamo.com takes on a Mixamo rig): fine to use in a game, not to redistribute as raw files, so only the bake is here. Changes: baked into one FBX (tools/blender/export_arcanist.py): scaled to metres, grounded, clips named and cut from the pack's takes (its death and flinch made from the ground slam and the leap's crouch), stride speeds recorded; its five textures packed into one 512 atlas. The raw pack is kept out of this repo."
+    path: "LuckyNumbers/Assets/_Project/Art/Characters/Arcanist/"
+  }
+  credits {
     what: "Space station corridors and rooms (cream panels, leaning walls, ribs, portholes, doorways, deck)"
     title: "PSX Starship Kit Free"
     author: "heyheythere"

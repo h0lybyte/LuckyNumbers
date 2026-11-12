@@ -38,6 +38,10 @@ Lucky Numbers is made with the work of these people. Thank you.
   https://quaternius.com
   Clips used: Zombie_Idle_Loop, Zombie_Walk_Fwd_Loop, Zombie_Scratch (UAL 2); Jog_Fwd_Loop, Hit_Chest, Death01 (UAL 1). Retargeted onto Vinrax's skeleton with root motion cut to in-place clips and stride speeds recorded (tools/blender/export_skeleton.py).
   (`LuckyNumbers/Assets/_Project/Art/Characters/Skeleton/skeleton.fbx`)
+- **Plague Arcanist (the beaked caster you fight on planets: mesh, rig, skin and animations)**: "Plague Arcanist - Retro PS1 Low Poly Magic Character" by **imaginais** (Free to use, commercial projects included (the author's reply on the asset page); credit appreciated)
+  https://imaginais.itch.io/plague-arcanist-retro-ps1-low-poly-magic-character
+  Its animations are Mixamo's (mixamo.com takes on a Mixamo rig): fine to use in a game, not to redistribute as raw files, so only the bake is here. Changes: baked into one FBX (tools/blender/export_arcanist.py): scaled to metres, grounded, clips named and cut from the pack's takes (its death and flinch made from the ground slam and the leap's crouch), stride speeds recorded; its five textures packed into one 512 atlas. The raw pack is kept out of this repo.
+  (`LuckyNumbers/Assets/_Project/Art/Characters/Arcanist/`)
 - **Space station corridors and rooms (cream panels, leaning walls, ribs, portholes, doorways, deck)**: "PSX Starship Kit Free" by **heyheythere** ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/))
   https://heyheythere.itch.io/psx-starship-kit-free
   Changes: an alpha channel added to atlas.png as a light mask and the atlas packed with the station kit's into one (Art/Models/CombinedKit, tools/kitmask.py), RGB unchanged; room walls derived from the corridor walls with their lean cut back, corner fillers, window panes drawn as clear glass and door leaves slid in the shader, at build time.

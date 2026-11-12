@@ -478,6 +478,35 @@ namespace LuckyNumbers.Model
                         Die = "death",
                     },
                 },
+                new MonsterType
+                {
+                    Id = "arcanist",
+                    Name = "Plague Arcanist",
+                    Hp = 16,
+                    Armor = 11,
+                    Attack = 2,
+                    Damage = "1d4",
+                    Speed = 3.4f,
+                    Size = new Vec3(0.6f, 1.75f, 0.5f),
+                    Color = new Rgba(0.3f, 0.28f, 0.26f, 1.0f),
+                    Reach = 1.5f,
+                    Sight = 24.0f,
+                    Cooldown = 2.4f,
+                    Xp = 130,
+                    DangerMin = 2,
+                    Weight = 1.0f,
+                    Model = "arcanist",
+                    Clips = new MonsterClips
+                    {
+                        Idle = "idle",
+                        Walk = "creep",
+                        Run = "run",
+                        Attack = "palm_strike",
+                        Hit = "flinch",
+                        Die = "collapse",
+                        Cast = "channel",
+                    },
+                },
             },
             Count = 1,
             CountPerDanger = 1,
@@ -739,6 +768,16 @@ namespace LuckyNumbers.Model
                             LicenseUrl = "https://creativecommons.org/publicdomain/zero/1.0/",
                             Notes = "Clips used: Zombie_Idle_Loop, Zombie_Walk_Fwd_Loop, Zombie_Scratch (UAL 2); Jog_Fwd_Loop, Hit_Chest, Death01 (UAL 1). Retargeted onto Vinrax's skeleton with root motion cut to in-place clips and stride speeds recorded (tools/blender/export_skeleton.py).",
                             Path = "LuckyNumbers/Assets/_Project/Art/Characters/Skeleton/skeleton.fbx",
+                        },
+                        new Credit
+                        {
+                            What = "Plague Arcanist (the beaked caster you fight on planets: mesh, rig, skin and animations)",
+                            Title = "Plague Arcanist - Retro PS1 Low Poly Magic Character",
+                            Author = "imaginais",
+                            License = "Free to use, commercial projects included (the author's reply on the asset page); credit appreciated",
+                            Url = "https://imaginais.itch.io/plague-arcanist-retro-ps1-low-poly-magic-character",
+                            Notes = "Its animations are Mixamo's (mixamo.com takes on a Mixamo rig): fine to use in a game, not to redistribute as raw files, so only the bake is here. Changes: baked into one FBX (tools/blender/export_arcanist.py): scaled to metres, grounded, clips named and cut from the pack's takes (its death and flinch made from the ground slam and the leap's crouch), stride speeds recorded; its five textures packed into one 512 atlas. The raw pack is kept out of this repo.",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Characters/Arcanist/",
                         },
                         new Credit
                         {

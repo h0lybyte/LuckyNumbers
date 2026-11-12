@@ -66,11 +66,12 @@ namespace LuckyNumbers.Editor
         [MenuItem(Root + "Step Out at the Ship", priority = 3)] static void Ship() => Warp("ship");
         [MenuItem(Root + "Spawn Monster/Aberration", priority = 20)] static void Aberration() => Warp("monster:aberration");
         [MenuItem(Root + "Spawn Monster/Skeleton", priority = 20)] static void Skeleton() => Warp("monster:skeleton");
+        [MenuItem(Root + "Spawn Monster/Arcanist", priority = 20)] static void Arcanist() => Warp("monster:arcanist");
         [MenuItem(Root + "Spawn Monster/Random", priority = 21)] static void Monster() => Warp("monster");
 
         [MenuItem(Root + "Go to Planet", true)] [MenuItem(Root + "Go to the Hold Mines", true)] [MenuItem(Root + "Land the Ship", true)]
         [MenuItem(Root + "Step Out at the Wreck", true)] [MenuItem(Root + "Step Out at the Ship", true)]
-        [MenuItem(Root + "Spawn Monster/Aberration", true)] [MenuItem(Root + "Spawn Monster/Skeleton", true)] [MenuItem(Root + "Spawn Monster/Random", true)]
+        [MenuItem(Root + "Spawn Monster/Aberration", true)] [MenuItem(Root + "Spawn Monster/Skeleton", true)] [MenuItem(Root + "Spawn Monster/Arcanist", true)] [MenuItem(Root + "Spawn Monster/Random", true)]
         [MenuItem(Root + "Universe/Home", true)] [MenuItem(Root + "Universe/The Emberdeep", true)] [MenuItem(Root + "Universe/Next", true)]
         static bool Validate() => Playing();
     }

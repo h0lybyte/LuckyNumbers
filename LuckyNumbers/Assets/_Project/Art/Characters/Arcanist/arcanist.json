@@ -1,0 +1,39 @@
+{
+  "clips": [
+    {
+      "name": "channel",
+      "seconds": 4.3,
+      "speed": 0.0
+    },
+    {
+      "name": "collapse",
+      "seconds": 1.4,
+      "speed": 0.0
+    },
+    {
+      "name": "creep",
+      "seconds": 1.1333,
+      "speed": 1.7041
+    },
+    {
+      "name": "flinch",
+      "seconds": 0.6667,
+      "speed": 0.0
+    },
+    {
+      "name": "idle",
+      "seconds": 1.8333,
+      "speed": 0.0
+    },
+    {
+      "name": "palm_strike",
+      "seconds": 2.3,
+      "speed": 0.0
+    },
+    {
+      "name": "run",
+      "seconds": 0.7333,
+      "speed": 3.8162
+    }
+  ]
+}

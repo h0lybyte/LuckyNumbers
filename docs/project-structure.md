@@ -10,6 +10,8 @@ LuckyNumbers/            Unity project
     Art/Characters/Aberration/ monster: baked FBX + clips, skin, stride speeds (Rafael Martins; tools/blender/export_aberration.py)
     Art/Characters/Skeleton/ monster: Vinrax's PSX skeleton with Quaternius UAL clips retargeted onto it, same layout
                          (tools/blender/export_skeleton.py, run by `ln.py bake-monsters` from art-src/)
+    Art/Characters/Arcanist/ monster: imaginais' Plague Arcanist (Mixamo rig and clips), its 5 skins in one atlas
+                         (tools/blender/export_arcanist.py, from art-src/'s rar)
     Art/Vat/             monsters' clips as bone-matrix animation textures + skinning mesh (Editor/VatBaker, from
                          ln.py scenes); MonsterCrowd draws every monster instanced from them (Shaders/MonsterVat)
     Art/Fonts/Exo2/      UI font + SDF assets
