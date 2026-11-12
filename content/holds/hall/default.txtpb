@@ -12,7 +12,7 @@ hall_length_min: 15
 hall_length_max: 19
 aisle_width: 2
 pillar_spacing: 2
-lantern_spacing: 4
+lantern_spacing: 3
 hall_palette: "hall"
 corridor_palette: "room"
 

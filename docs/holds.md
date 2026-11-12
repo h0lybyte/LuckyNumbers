@@ -48,6 +48,22 @@ Structures on and under dwarven worlds: a cell grid, meshed into chunks, skinned
   the one below come from a hash of that pair.
 - `MineGenerator.Region(seed, region, config, allocator)` digs one region (`Scripts/Hold/MineGenerator.cs`). Edge
   openings sit 3+ cells from corners; east-west edges on a region's lowest level always have one, so nothing is
-  sealed. `MineGenerator.ShaftBelow(seed, (x, 1, z), ...)` says where region y 0's shaft up would meet the hold.
-- Check: `-executeMethod LuckyNumbers.Editor.MineCheck.Run` (seams, shafts, connectivity, determinism, timing);
-  ASCII maps in `LuckyNumbers/Logs/mines-ascii.txt`.
+  sealed. Above region y 0 is the hold's top, so there the shaft rule is fixed: only region (0,0,0) has a shaft up,
+  always, at `MineGenerator.Entrance(seed, ...)` (hashed, 2..cells-3); the hall's stair drops onto it.
+- Check: `-executeMethod LuckyNumbers.Editor.MineCheck.Run` (seams, shafts, entrance, connectivity, determinism,
+  timing); ASCII maps in `LuckyNumbers/Logs/mines-ascii.txt`.
+
+## Hall (the hold's top)
+
+- Rules: `HallRules` (`proto/luckynumbers/v1/hold_hall.proto`), content `content/holds/hall/default.txtpb`.
+- `HallGenerator.Generate(seed, config, ...)` (`Scripts/Hold/HallGenerator.cs`) lays out region (0, 1, 0); every other
+  region at y >= 1 is solid rock (`HallGenerator.Rock`). Plan: a Gate on the region edge farthest from the entrance
+  column, a two-storey passage, the great hall (aisles, two pillar rows, a tall nave; lanterns low in the aisles and
+  high in the nave), then the stair room round `MineGenerator.Entrance` and the other rooms one wall apart, each
+  joined by a door through a single wall or the shortest corridor. Validated (`HallGenerator.Validate`: margin, gate
+  edge, doors between two walls, one shaft at the entrance, level 1 only air over open-above cells, all reachable
+  from the gate) and re-rolled until it passes. `HallPlan` keeps the gate cells, outward direction, spawn and shaft.
+- Scene: `HallSource` (IRegionSource, top regions), `HallSpawn` (always just inside the gate, facing in),
+  `HallGatePresenter` (prompt near the gate; into its outer edge: fade, `HoldTrip.Leaving`, Planet scene).
+- Check: `-executeMethod LuckyNumbers.Editor.HallCheck.Run` (200 seeds; ASCII in `Logs/hall-ascii.txt`). Renders:
+  `-executeMethod LuckyNumbers.Editor.HallPreview.Render` (graphics) -> `Logs/preview-hall.png`, `preview-hall-top.png`.

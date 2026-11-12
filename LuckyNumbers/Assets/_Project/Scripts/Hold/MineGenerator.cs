@@ -79,15 +79,27 @@ namespace LuckyNumbers.Hold
 
         /// <summary>
         /// Whether the region `upper` has a shaft down into the region below it, and where (local x, z; the upper's
-        /// level 0 gets ShaftDown there, the lower's top level ShaftUp). For region y = 0 called with (x, 1, z) this is
-        /// where the hold above can drop its way into the mines.
+        /// level 0 gets ShaftDown there, the lower's top level ShaftUp). Above region y 0 is the hold's top (the hall,
+        /// region y 1, and solid rock round it), so there the rule is fixed: only the entrance column (0, 1, 0) has a
+        /// shaft, always (see <see cref="Entrance"/>); every other region y 0 has none up.
         /// </summary>
         public static bool ShaftBelow(uint seed, int3 upper, in MineParams p, out int2 cell)
         {
             var rng = Rng(Hash(seed, TagShaft, upper.x, upper.y, upper.z, 0));
             var has = rng.NextFloat() < p.ShaftChance;
             cell = rng.NextInt2(new int2(2), new int2(p.Cells - 2));
+            if (upper.y == 1) has = upper.x == 0 && upper.z == 0;
             return has;
+        }
+
+        /// <summary>
+        /// The way into the mines from the hall: mine region (0,0,0) always has a ShaftUp on its top level at this local
+        /// (x, z) (hashed from the seed, 2..cells-3), and the hall's stair room puts its ShaftDown over it.
+        /// </summary>
+        public static int2 Entrance(uint seed, in MineParams p)
+        {
+            ShaftBelow(seed, new int3(0, 1, 0), p, out var cell);
+            return cell;
         }
 
         /// <summary>

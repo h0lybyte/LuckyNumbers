@@ -1500,7 +1500,7 @@ namespace LuckyNumbers.Model
                 HallLengthMax = 19,
                 AisleWidth = 2,
                 PillarSpacing = 2,
-                LanternSpacing = 4,
+                LanternSpacing = 3,
                 HallPalette = "hall",
                 CorridorPalette = "room",
                 Rooms =

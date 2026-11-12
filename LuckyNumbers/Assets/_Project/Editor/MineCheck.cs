@@ -91,6 +91,25 @@ namespace LuckyNumbers.Editor
                 if (down && up) shaftPairs++;
             }
 
+            // The hold's entrance: region (0,0,0) always has its shaft up at MineGenerator.Entrance (the hall's stair drops
+            // onto it); no other region at depth 0 has one (only rock above them).
+            var entrance = MineGenerator.Entrance(Seed, p);
+            for (var z = 0; z < 3; z++)
+            for (var x = 0; x < 3; x++)
+            for (var cz = 0; cz < n; cz++)
+            for (var cx = 0; cx < n; cx++)
+            {
+                var up = grids[0, z, x].Get(new int3(cx, levels - 1, cz)).Kind == CellKind.ShaftUp;
+                var expect = x == 1 && z == 1 && cx == entrance.x && cz == entrance.y;
+                if (up != expect) Fail($"entrance: region ({x - 1},0,{z - 1}) cell {cx},{cz} top-level shaft up {up}, expected {expect}");
+            }
+            for (var s = 1u; s <= 64u; s++)
+            {
+                var e = MineGenerator.Entrance(s, p);
+                if (!MineGenerator.ShaftBelow(s, new int3(0, 1, 0), p, out _)) Fail($"entrance: seed {s} has no shaft up");
+                if (math.any(e < 2) || math.any(e > n - 3)) Fail($"entrance: seed {s} at {e} too near the edge");
+            }
+
             // Connectivity, margin, and stats per region.
             int walkable = 0, lanterns = 0, pillars = 0, openings = 0;
             for (var d = 0; d < 2; d++)
@@ -138,7 +157,7 @@ namespace LuckyNumbers.Editor
                       $"({100.0 * walkable / (18 * n * n * levels):F1}%), {openings} edge mouths, {seamOpenings} matched seam cells, " +
                       $"{shaftPairs} depth shafts, {lanterns} lanterns, {pillars} props");
             Debug.Log($"[MineCheck] timing: {ms:F2} ms/region (3x3x2 block), {batchMs:F2} ms/region (64 more)");
-            Debug.Log(failures == 0 ? "[MineCheck] PASS seams, shafts, connectivity, determinism" : $"[MineCheck] {failures} failure(s)");
+            Debug.Log(failures == 0 ? "[MineCheck] PASS seams, shafts, entrance, connectivity, determinism" : $"[MineCheck] {failures} failure(s)");
             if (Application.isBatchMode) EditorApplication.Exit(failures == 0 ? 0 : 1);
         }
 
