@@ -91,12 +91,21 @@ namespace LuckyNumbers.Model
         /// </summary>
         public readonly ReactiveProperty<float> Fuel = new ReactiveProperty<float>();
         public readonly ReactiveProperty<float> FuelMax = new ReactiveProperty<float>();
+        /// <summary>
+        /// Upgrades bought at the outfitter (content/upgrades.txtpb), each "id|level".
+        /// </summary>
+        public readonly ObservableList<string> Upgrades = new ObservableList<string>();
+        /// <summary>
+        /// The dice drive's roll for this launch (rerolled every time you leave the station; 0 = none yet).
+        /// </summary>
+        public readonly ReactiveProperty<uint> Dice = new ReactiveProperty<uint>();
 
         public void Dispose()
         {
             Skin.Dispose();
             Fuel.Dispose();
             FuelMax.Dispose();
+            Dice.Dispose();
         }
     }
 
