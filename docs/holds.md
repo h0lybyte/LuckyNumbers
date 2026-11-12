@@ -21,6 +21,13 @@ Structures on and under dwarven worlds: a cell grid, meshed into chunks, skinned
 - Faces: floor, ceiling (unless OpenAbove), and a wall wherever a walkable cell meets Solid; door frames in trim;
   pillars as boxes. Texture slice per face from the cell's palette (`HoldPalettes.Resolve`).
 - Vertex: position, normal, uv (u, v, slice) and colour (baked lantern light + ambient).
+- Code: `HoldMesher.Build(grid, palettes, config)` (or `Schedule(...)` then `Complete()`): one Burst job per chunk,
+  then Mesh.MeshData. Face rules (`HoldRules`: Linked, HasWall, HasFloor, HasCeiling) are shared with anything that
+  must agree with the mesh. Vertex stream (40 bytes): Position float3, Normal float3, Color UNorm8x4 (light rgb, a 1),
+  TexCoord0 float3 (u, v, slice); UVs world-aligned, 1 tile per cell_size metres. 32-bit indices.
+- No floor/ceiling between two cells that are one space: lower has OpenAbove, upper is ShaftDown, or lower is ShaftUp.
+- Colliders (world-space boxes per chunk): whole Solid cells that carry a wall (merged runs per level), floor slabs
+  (1 m thick over rock, 0.1 m over a room), pillar shafts. Self-test: `LuckyNumbers.Editor.HoldMesherCheck.Run`.
 
 ## Mines (the endless deep)
 
