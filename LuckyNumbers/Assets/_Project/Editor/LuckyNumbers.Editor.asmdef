@@ -16,7 +16,10 @@
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.Addressables",
         "Unity.Addressables.Editor",
-        "Unity.ResourceManager"
+        "Unity.ResourceManager",
+        "LuckyNumbers.Hold",
+        "Unity.Mathematics",
+        "Unity.Collections"
     ],
     "includePlatforms": [
         "Editor"
