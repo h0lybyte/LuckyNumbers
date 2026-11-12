@@ -45,6 +45,13 @@ Lucky Numbers is made with the work of these people. Thank you.
   Changes: split into one FBX per weapon, modifiers baked, centred and scaled to metres (tools/blender/export_weapons.py).
   (`LuckyNumbers/Assets/_Project/Art/Models/Weapons/LICENSE.txt`)
 
+## Textures
+
+- **Dwarven hold surfaces (stone, slate, wood, metal, doors, windows, tapestries, lanterns), for the dwarven worlds' structures**: "Delven Textures" by **Bradley D. (Strideh)** (Free for free and commercial games, with attribution; not for resale or AI training)
+  https://strideh.itch.io/delven
+  True-colour set (v1.2) only. Changes: the '{' prefix on cutout textures dropped (they live in Cutout/).
+  (`LuckyNumbers/Assets/_Project/Art/Textures/Delven/LICENSE.txt`)
+
 ## Shaders
 
 - **Planet shader look**: "Simple 2D Planet shader" by **Ikkemcwood** (Shadertoy)

@@ -1,0 +1,30 @@
+Strideh's Delven Textures
+v1.2
+
+
+# LICENSE:
+
+You MAY:
+ - Use these textures in both free or commercial projects
+ - Distribute these textures​ in open source projects (with attribution)
+ - Modify these textures​ to suit your own needs
+
+You may NOT:
+ - Sell these textures, modified or unmodified, as your own standalone assets
+ - Use these assets for generative AI training or associated purposes
+
+
+I would appreciate attribution in any of the use cases. For example, anything along these lines:
+
+ Delven Textures by Bradley D. (https://strideh.itch.io)
+
+ Delven Textures used with modification, originally by Bradley D. (https://strideh.itch.io)
+
+
+If you're unsure about their use, please just ask!
+
+
+# CONTACT:
+Bradley D.
+https://strideh.itch.io
+@strideh.bsky.social

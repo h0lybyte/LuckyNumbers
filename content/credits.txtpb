@@ -105,6 +105,19 @@ sections {
 }
 
 sections {
+  name: "Textures"
+  credits {
+    what: "Dwarven hold surfaces (stone, slate, wood, metal, doors, windows, tapestries, lanterns), for the dwarven worlds' structures"
+    title: "Delven Textures"
+    author: "Bradley D. (Strideh)"
+    license: "Free for free and commercial games, with attribution; not for resale or AI training"
+    url: "https://strideh.itch.io/delven"
+    notes: "True-colour set (v1.2) only. Changes: the '{' prefix on cutout textures dropped (they live in Cutout/)."
+    path: "LuckyNumbers/Assets/_Project/Art/Textures/Delven/LICENSE.txt"
+  }
+}
+
+sections {
   name: "Shaders"
   credits {
     what: "Planet shader look"

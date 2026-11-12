@@ -733,6 +733,23 @@ namespace LuckyNumbers.Model
                 },
                 new CreditSection
                 {
+                    Name = "Textures",
+                    Credits =
+                    {
+                        new Credit
+                        {
+                            What = "Dwarven hold surfaces (stone, slate, wood, metal, doors, windows, tapestries, lanterns), for the dwarven worlds' structures",
+                            Title = "Delven Textures",
+                            Author = "Bradley D. (Strideh)",
+                            License = "Free for free and commercial games, with attribution; not for resale or AI training",
+                            Url = "https://strideh.itch.io/delven",
+                            Notes = "True-colour set (v1.2) only. Changes: the '{' prefix on cutout textures dropped (they live in Cutout/).",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Textures/Delven/LICENSE.txt",
+                        },
+                    },
+                },
+                new CreditSection
+                {
                     Name = "Shaders",
                     Credits =
                     {
