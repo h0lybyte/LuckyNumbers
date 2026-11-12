@@ -55,6 +55,7 @@ namespace LuckyNumbers.Station
         ShipGuns _guns;
         Dogfight _fight;
         GameObject _rogueTemplate;
+        Vector3? _satellite;   // a satellite job's relay
         bool _lockClick, _canFire, _destroyed;
 
         ShipView _ship;
@@ -121,12 +122,19 @@ namespace LuckyNumbers.Station
             _guns = new ShipGuns(_ship) { Layer = Layers.Local };
             _guns.Arm(_stats);
             // Dev (the page's inspector): "rogues" sends one at you, dead ahead (so you can try your guns at once);
-            // "uplink" finishes the satellite's upload; "dock" docks at once (for trying a job's payout).
+            // "uplink" finishes the satellite's upload; "dock" docks at once (for trying a job's payout);
+            // "satellite" puts you beside the relay.
             _subscriptions.Add(_warps.Subscribe(e =>
             {
                 if (e.To == "rogues" && _fight != null && !_fight.Destroyed)
                     _fight.SpawnWave(1, 2, _flight.Position + _flight.Rotation * Vector3.forward * 320f, 0f, 30f);
                 if (e.To == "uplink") _fight?.FinishUplink();                          // the satellite's upload, done
+                if (e.To == "satellite" && _satellite.HasValue && !_destroyed)           // beside the relay, facing it
+                {
+                    _flight.Position = _satellite.Value + _out * (Length * 2f) + Vector3.up * Length;
+                    _flight.Rotation = Quaternion.LookRotation(_satellite.Value - _flight.Position, Vector3.up);
+                    _flight.Stop();
+                }
                 if (e.To == "dock" && _ready && !_leaving && !_destroyed) Dock().Forget();   // straight back in
             }));
             _view.FlightCamera.gameObject.SetActive(true);
@@ -389,14 +397,15 @@ namespace LuckyNumbers.Station
             var dir = Quaternion.Euler(rng.NextFloat(-12f, 12f), rng.NextFloat(-50f, 50f), 0f) * _out;
             var at = _beacon + dir * (Length * math.max(4f, s.Distance));
             var radius = Length * math.max(1f, s.Radius);
+            _satellite = at;
             var view = _orbit.Satellite(at, math.max(2f, s.Size), radius);
             Layers.Set(view.gameObject, Layers.Local);
             var type = UplinkType();
-            var danger = onJob ? math.max(1, _job.Danger.Value) : 2;
+            var danger = onJob ? math.max(1, _job.Danger.Value) : 3;   // practice: Hostile (one waiting, one ambush)
             var seconds = (type != null && type.UplinkSeconds > 0f ? type.UplinkSeconds : s.Seconds) + (type?.UplinkSecondsPerDanger ?? 0f) * danger;
             var waves = (type != null && type.Waves > 0 ? type.Waves : s.Waves) + danger / 2;
-            var perWave = onJob ? math.max(1, _job.Goal.Value) : 2;
-            _fight.StartUplink(at, view, radius, seconds, waves, perWave, danger, onJob);
+            var perWave = onJob ? math.max(1, _job.Goal.Value) : 2;   // the tier caps it
+            _fight.StartUplink(at, view, radius, seconds, waves, perWave, danger, onJob, Jobs.UplinkTier(danger));
         }
 
         static JobType UplinkType()

@@ -2008,3 +2008,21 @@ kbd {
 .game-over-card p { margin: 0 0 16px; line-height: 1.5; }
 .sheet-heritage { margin-top: 2px; font-size: 11px; color: var(--neon); letter-spacing: 0.08em; text-transform: uppercase; }
 .dogfight-mode { color: var(--warn); font-weight: 600; }
+.dogfight-tier { color: var(--bad); }
+.dogfight-alert {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  transform: translateX(-50%);
+  max-width: calc(100% - 2 * var(--gap));
+  padding: 8px 18px;
+  border: 1px solid var(--bad);
+  background: var(--scan), rgba(30, 4, 8, 0.88);
+  color: var(--bad);
+  font: 700 16px var(--font-mono);
+  letter-spacing: 0.12em;
+  pointer-events: none;
+  animation: dogfight-alert 0.5s steps(2, end) 4;
+}
+@keyframes dogfight-alert { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .dogfight-alert { animation: none; } }

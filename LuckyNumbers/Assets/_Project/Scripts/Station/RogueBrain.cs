@@ -55,6 +55,9 @@ namespace LuckyNumbers.Station
 
         public RogueState State { get; private set; } = RogueState.Patrol;
 
+        /// <summary>Set: it patrols until you're this close (m), not its type's aggro_range (rogues lying in wait).</summary>
+        public float AggroOverride;
+
         public RogueBrain(RogueShip type, AttackTokens tokens, ref Random rng)
         {
             _t = type;
@@ -63,7 +66,7 @@ namespace LuckyNumbers.Station
         }
 
         float Close => math.max(20f, _t.Close);
-        float Aggro => _t.AggroRange > 0f ? _t.AggroRange : 800f;
+        float Aggro => AggroOverride > 0f ? AggroOverride : _t.AggroRange > 0f ? _t.AggroRange : 800f;
 
         /// <summary>Where to go, how fast (x its speed), and whether it may shoot (if it's lined up).</summary>
         public (Vector3 goal, float speed, bool fire) Think(in RogueSenses s, ref Random rng)

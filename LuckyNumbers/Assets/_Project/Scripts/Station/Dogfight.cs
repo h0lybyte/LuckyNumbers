@@ -34,7 +34,7 @@ namespace LuckyNumbers.Station
             public Quaternion Rotation;
             public float Hull, Shield, Ready, HitAt = -99f;
             public int Barrel;
-            public bool Dead;
+            public bool Dead, Waiting;   // Waiting: lying in wait at the satellite (the ambush is sprung once it moves)
         }
 
         static DogfightConfig C => GameContent.Dogfight;
@@ -70,6 +70,9 @@ namespace LuckyNumbers.Station
         Transform _satelliteView;
         float _radius, _seconds, _uploaded;
         int _waves, _perWave, _wave, _danger;
+        UplinkTier _tier;
+        bool _ambushed;
+        float _alertUntil;
 
         /// <summary>Your hull is gone (set once; OrbitPresenter plays the memory restore).</summary>
         public bool Destroyed { get; private set; }
@@ -141,8 +144,11 @@ namespace LuckyNumbers.Station
         /// rogues as it goes (danger picks which kinds). `forJob`: done sets the job done (false: the dev fight).
         /// </summary>
         public void StartUplink(Vector3 position, Transform view, float radius, float seconds, int waves, int perWave,
-                                int danger, bool forJob)
+                                int danger, bool forJob, UplinkTier tier = null)
         {
+            _tier = tier;
+            _ambushed = false;
+            if (tier is { WaveSize: > 0 }) perWave = math.min(perWave, tier.WaveSize);
             _uplink = true;
             _forJob = forJob;
             _satellite = position;
@@ -158,7 +164,18 @@ namespace LuckyNumbers.Station
             _state.UplinkJob.Value = true;
             _state.Waves.Value = _waves;
             _state.Wave.Value = 0;
-            Debug.Log($"[Dogfight] satellite {Vector3.Distance(position, _playerPos):0} m out: {_seconds:0} s upload, " +
+            _state.Tier.Value = tier?.Name ?? "";
+            // Lying in wait: circling the satellite, until you come close (or shoot one).
+            if (tier is { Waiting: > 0 })
+            {
+                var range = math.max(2f, tier.AmbushRange) * _length;
+                foreach (var r in SpawnAt(tier.Waiting, danger, position, radius * 0.6f, radius * 1.4f))
+                {
+                    r.Waiting = true;
+                    r.Brain.AggroOverride = range;
+                }
+            }
+            Debug.Log($"[Dogfight] tier {tier?.Name ?? "-"} (waiting {tier?.Waiting ?? 0}, ambush {tier?.Ambush ?? 0} at {tier?.AmbushAt ?? 0:0.##}); satellite {Vector3.Distance(position, _playerPos):0} m out: {_seconds:0} s upload, " +
                       $"{_waves} wave(s) of {_perWave}, danger {_danger}");
         }
 
@@ -175,7 +192,14 @@ namespace LuckyNumbers.Station
         /// <summary>`count` rogues (kinds by `danger`) `near`..`far` metres out from `around`, turned to face you.</summary>
         public void SpawnWave(int count, int danger, Vector3 around, float near = 300f, float far = 420f)
         {
-            if (C == null || C.Rogues.Count == 0) return;
+            SpawnAt(count, danger, around, near, far);
+            Debug.Log($"[Dogfight] wave: {count} rogue(s) at danger {danger}");
+        }
+
+        List<Rogue> SpawnAt(int count, int danger, Vector3 around, float near, float far)
+        {
+            var spawned = new List<Rogue>();
+            if (C == null || C.Rogues.Count == 0) return spawned;
             var kinds = new List<RogueShip>();
             foreach (var r in C.Rogues) if (r.DangerMin <= danger) kinds.Add(r);
             if (kinds.Count == 0) kinds.Add(C.Rogues[0]);
@@ -185,13 +209,13 @@ namespace LuckyNumbers.Station
                 var dir = (Vector3)_rng.NextFloat3Direction();
                 dir.y *= 0.35f;   // mostly round the horizon, not from straight above
                 var at = around + dir.normalized * _rng.NextFloat(near, math.max(near, far));
-                Spawn(type, at);
+                spawned.Add(Spawn(type, at));
             }
             _state.Hostiles.Value = Alive();
-            Debug.Log($"[Dogfight] wave: {count} rogue(s) at danger {danger}");
+            return spawned;
         }
 
-        void Spawn(RogueShip type, Vector3 at)
+        Rogue Spawn(RogueShip type, Vector3 at)
         {
             var go = Object.Instantiate(_template);
             go.name = $"Rogue {type.Name}";
@@ -217,6 +241,15 @@ namespace LuckyNumbers.Station
             view.SetHeat(0f, 1.2f);
             _rogues.Add(r);
             _byCollider[box] = r;
+            return r;
+        }
+
+        /// <summary>A warning for the page to flash for a few seconds.</summary>
+        void Alert(string text)
+        {
+            _state.Alert.Value = text;
+            _alertUntil = Time.time + 3.5f;
+            Debug.Log($"[Dogfight] alert: {text}");
         }
 
         /// <summary>One frame: the rogues fly and shoot, shields recharge, the upload runs; then the page's state.</summary>
@@ -236,6 +269,12 @@ namespace LuckyNumbers.Station
                 Fly(r, dt, playerPos, playerVel);
             }
             Separate(playerPos);
+            // The ones lying in wait: once one moves on you, the ambush is sprung.
+            var sprung = false;
+            foreach (var r in _rogues)
+                if (r.Waiting && !r.Dead && r.Brain.State != RogueState.Patrol) { r.Waiting = false; sprung = true; }
+            if (sprung) Alert("AMBUSH: rogues at the satellite!");
+            if (_alertUntil > 0f && Time.time > _alertUntil) { _alertUntil = 0f; _state.Alert.Value = ""; }
             if (_uplink) Upload(dt, playerPos);
             _field.Tick(dt);
             if (_satelliteView != null) _satelliteView.Rotate(Vector3.up, 6f * dt, UnityEngine.Space.World);
@@ -392,6 +431,14 @@ namespace LuckyNumbers.Station
                     _state.Wave.Value = _wave;
                     // A ramp: the first wave is one ship, each after it one more, up to the job's size.
                     SpawnWave(math.min(_wave, _perWave), _danger, _satellite);
+                }
+                // The tier's ambush: partway through, rogues come at you from behind.
+                if (!_ambushed && _tier is { Ambush: > 0 } && _uploaded >= _seconds * math.saturate(_tier.AmbushAt))
+                {
+                    _ambushed = true;
+                    var behind = playerPos - _player.Pivot.forward * 260f;
+                    SpawnAt(_tier.Ambush, _danger, behind, 0f, 60f);
+                    Alert("AMBUSH: behind you!");
                 }
                 if (_uploaded >= _seconds)
                 {
@@ -581,6 +628,8 @@ namespace LuckyNumbers.Station
             _state.UplinkJob.Value = false;
             _state.Target.Value = "";
             _state.Hostiles.Value = 0;
+            _state.Alert.Value = "";
+            _state.Tier.Value = "";
         }
     }
 }

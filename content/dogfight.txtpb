@@ -11,6 +11,19 @@ attackers: 2          # rogues on an attack run at once; the rest flank
 lookahead: 1.6        # s of travel a rogue looks ahead for the hull
 clearance: 18         # m it keeps off the hull
 
+# Satellite jobs by danger: name, pay on top of the job's, rogues waiting at the satellite (they jump you inside
+# ambush_range ship lengths of it), an ambush from behind at ambush_at of the upload, and the biggest wave.
+uplink_tiers { danger: 1 name: "Routine"    pay_bonus: 0    waiting: 0                    ambush: 0                 wave_size: 1
+               blurb: "Quiet sector. A rogue or two might wander by." }
+uplink_tiers { danger: 2 name: "Contested"  pay_bonus: 250  waiting: 1 ambush_range: 7    ambush: 0                 wave_size: 2
+               blurb: "Something's been parked by the relay. Expect company when you get there." }
+uplink_tiers { danger: 3 name: "Hostile"    pay_bonus: 600  waiting: 1 ambush_range: 8    ambush: 1 ambush_at: 0.5  wave_size: 2
+               blurb: "Rogues are working this lane. They'll try to cut in behind you mid-upload." }
+uplink_tiers { danger: 4 name: "Ambush"     pay_bonus: 1100 waiting: 2 ambush_range: 9    ambush: 2 ambush_at: 0.4  wave_size: 3
+               blurb: "Our last pilot didn't come back. They're waiting for whoever comes next." }
+uplink_tiers { danger: 5 name: "Black site" pay_bonus: 1800 waiting: 2 ambush_range: 10   ambush: 3 ambush_at: 0.35 wave_size: 3
+               blurb: "Off the books, well guarded, and the pay says it all." }
+
 defense {
   hull: 40            # x toughness
   shield: 30          # x ShipStats.shield
