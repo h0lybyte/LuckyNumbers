@@ -184,7 +184,7 @@ namespace LuckyNumbers.Hold
                     var cell = grid.Get(new int3(nb.x, c.y, nb.y));
                     prev[ni] = at.x + n * at.y;
                     if (HoldNav.Standable(cell) && cell.Kind != CellKind.ShaftDown && cell.Kind != CellKind.ShaftUp) { found = ni; break; }
-                    if (cell.Kind == CellKind.Solid) queue.Add(nb);
+                    if (cell.Kind == CellKind.Solid && !NearGreatShaft(grid, new int3(nb.x, c.y, nb.y))) queue.Add(nb);
                 }
             }
             if (found >= 0)
@@ -199,8 +199,10 @@ namespace LuckyNumbers.Hold
 
         /// <summary>
         /// At a band's bottom depth every way down is sealed: each ShaftDown on level 0 (into the region below) and any
-        /// GreatShaft cell there gets a Seal fixture (Data, Link: the band). A seal must not cut the region in two
-        /// (a tunnel may run through the shaft's cell): if it would, the ring round it is dug out (props cleared).
+        /// GreatShaft cell there that runs on down (no floor bit; with seal_every = VerticalRules.great_band great
+        /// shafts never cross a seal, so this is a safety net) gets a Seal fixture (Data, Link: the band). A seal must
+        /// not cut the region in two (a tunnel may run through the shaft's cell), with doors open or shut (puzzle keys
+        /// stay reachable): if it would, the ring round it is dug out (props cleared).
         /// </summary>
         static void Seals(int3 region, in MineParams p, ref HoldGrid grid)
         {
@@ -209,6 +211,9 @@ namespace LuckyNumbers.Hold
             var start = Start(grid);
             var seen = new NativeArray<bool>(grid.Cells.Length, Allocator.Temp);
             var before = FloodOpen(grid, start, seen);
+            var shutSeen = new NativeArray<bool>(grid.Cells.Length, Allocator.Temp);
+            var shutBefore = HoldNav.Flood(grid, start, true, shutSeen);
+            var shutBlocked = 0;
             var first = grid.Fixtures.Length;
             var blockedReached = 0;
             for (var z = 0; z < grid.Size.z; z++)
@@ -217,15 +222,18 @@ namespace LuckyNumbers.Hold
                 var c = new int3(x, 0, z);
                 var cell = grid.Get(c);
                 if (cell.Kind != CellKind.ShaftDown && cell.Kind != CellKind.GreatShaft) continue;
+                if (cell.Kind == CellKind.GreatShaft && GreatShaftCell.Floor(cell)) continue;   // its bottom: no way on
                 if (cell.Kind == CellKind.ShaftDown)
                 {
                     cell.Reserved |= DepthCells.SealBit;
                     grid.Set(c, cell);
                 }
                 if (seen[grid.Index(c)]) blockedReached++;
+                if (shutSeen[grid.Index(c)]) shutBlocked++;
                 grid.Fixtures.Add(new HoldFixture { Kind = FixtureKind.Seal, Cell = c, Link = (ushort)band, Data = band });
             }
-            if (FloodOpen(grid, start, seen) != before - blockedReached)
+            var shutNow = HoldNav.Flood(grid, start, true, shutSeen);
+            if (FloodOpen(grid, start, seen) != before - blockedReached || shutNow != shutBefore - shutBlocked)
             {
                 for (var f = first; f < grid.Fixtures.Length; f++) Ring(ref grid, grid.Fixtures[f].Cell);
                 before = FloodOpen(grid, start, seen);   // (the ring added cells; nothing should be cut off now)
@@ -236,6 +244,7 @@ namespace LuckyNumbers.Hold
                     Debug.LogWarning($"[MinePasses] region {region}: a seal still cuts the region ({before}/{all - blockedReached})");
             }
             seen.Dispose();
+            shutSeen.Dispose();
         }
 
         /// <summary>Dig (or clear the props of) the eight cells round c on its level, so its neighbours join round it.</summary>
@@ -249,9 +258,19 @@ namespace LuckyNumbers.Hold
                 var r = c + new int3(dx, 0, dz);
                 if (r.x < 1 || r.z < 1 || r.x > grid.Size.x - 2 || r.z > grid.Size.z - 2) continue;
                 var cell = grid.Get(r);
+                if (NearGreatShaft(grid, r)) continue;   // a great shaft's ring stays rock off its landings
                 if (cell.Kind == CellKind.Solid) grid.Set(r, new HoldCell { Kind = CellKind.Mine, Palette = palette });
                 else if ((cell.Flags & CellFlags.Pillar) != 0) { cell.Flags &= ~CellFlags.Pillar; grid.Set(r, cell); }
             }
+        }
+
+        /// <summary>A GreatShaft cell within Chebyshev 1 of c on its level (its ring: rock except at landings).</summary>
+        static bool NearGreatShaft(in HoldGrid g, int3 c)
+        {
+            for (var dz = -1; dz <= 1; dz++)
+            for (var dx = -1; dx <= 1; dx++)
+                if (g.Get(c + new int3(dx, 0, dz)).Kind == CellKind.GreatShaft) return true;
+            return false;
         }
 
         /// <summary>
@@ -322,6 +341,8 @@ namespace LuckyNumbers.Hold
             var seen = new NativeArray<bool>(grid.Cells.Length, Allocator.Temp);
             var open = FloodOpen(grid, start, seen);
             var shut = HoldNav.Flood(grid, start, true, seen);
+            // And without riding a great shaft: its landings stay joined to the mines by tunnels (VerticalCheck).
+            var walk = FloodOpen(grid, start, seen, true);
             var placed = 0;
             for (var k = 0; k < candidates.Length && k < 32 && placed < want; k++)
             {
@@ -332,7 +353,12 @@ namespace LuckyNumbers.Hold
                 // The cell was reached both ways (a plain tunnel cell next to two standable ones on a connected region).
                 var openNow = FloodOpen(grid, start, seen);
                 var shutNow = openNow == open - 1 ? HoldNav.Flood(grid, start, true, seen) : -1;
-                if (openNow == open - 1 && shutNow == shut - 1) { open = openNow; shut = shutNow; placed++; }
+                var walkNow = shutNow == shut - 1 ? FloodOpen(grid, start, seen, true) : -1;
+                if (openNow == open - 1 && shutNow == shut - 1 && (walkNow == walk - 1 || walkNow == walk))
+                {
+                    // (walk - 1: the cell was on the tunnel-only walk; walk: it was only reached over the shaft)
+                    open = openNow; shut = shutNow; walk = walkNow; placed++;
+                }
                 else grid.Set(c, was);
             }
             seen.Dispose();
@@ -389,8 +415,11 @@ namespace LuckyNumbers.Hold
 
         static int3 CellAt(in HoldGrid g, int i) => new(i % g.Size.x, i / (g.Size.x * g.Size.z), i / g.Size.x % g.Size.z);
 
-        /// <summary>HoldNav.Flood with doors and gates open but seals shut (the region as you walk it before its key).</summary>
-        public static int FloodOpen(in HoldGrid g, int3 from, NativeArray<bool> seen)
+        /// <summary>
+        /// HoldNav.Flood with doors and gates open but seals shut (the region as you walk it before its key);
+        /// noGreat: great shaft cells shut too (tunnels and stairs only).
+        /// </summary>
+        public static int FloodOpen(in HoldGrid g, int3 from, NativeArray<bool> seen, bool noGreat = false)
         {
             for (var i = 0; i < seen.Length; i++) seen[i] = false;
             if (!g.InBounds(from) || !HoldNav.Standable(g.Get(from))) return 0;
@@ -411,6 +440,7 @@ namespace LuckyNumbers.Hold
                     if (!g.InBounds(to)) continue;
                     var i = g.Index(to);
                     if (seen[i] || blocked[i] || !HoldNav.Standable(g.Get(to))) continue;
+                    if (noGreat && g.Get(to).Kind == CellKind.GreatShaft) continue;
                     seen[i] = true;
                     queue.Add(to);
                 }

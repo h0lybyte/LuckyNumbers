@@ -33,7 +33,8 @@ message DepthRules {
 
   // ---- depth seals ----
   // Every this many depths the way down is sealed (band b: depths b*seal_every .. b*seal_every + seal_every - 1;
-  // the seals are in its bottom depth's regions, over every shaft down). 0: no seals.
+  // the seals are in its bottom depth's regions, over every shaft down). 0: no seals. Keep it equal to
+  // VerticalRules.great_band (same band formula), so great shafts never cross a seal (DepthCheck asserts it).
   int32 seal_every = 10;
   // Regions per band that hold its key (hashed; one always on the band's top depth, row z 0).
   int32 keys_per_band = 11;

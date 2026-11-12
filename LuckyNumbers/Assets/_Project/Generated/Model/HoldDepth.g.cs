@@ -51,7 +51,8 @@ namespace LuckyNumbers.Model
         /// <summary>
         /// ---- depth seals ----
         /// Every this many depths the way down is sealed (band b: depths b*seal_every .. b*seal_every + seal_every - 1;
-        /// the seals are in its bottom depth's regions, over every shaft down). 0: no seals.
+        /// the seals are in its bottom depth's regions, over every shaft down). 0: no seals. Keep it equal to
+        /// VerticalRules.great_band (same band formula), so great shafts never cross a seal (DepthCheck asserts it).
         /// </summary>
         public int SealEvery { get; set; }
         /// <summary>

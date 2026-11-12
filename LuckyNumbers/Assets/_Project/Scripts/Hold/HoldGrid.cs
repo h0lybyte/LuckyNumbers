@@ -22,9 +22,18 @@ namespace LuckyNumbers.Hold
         ShaftUp,
         /// <summary>Mine tunnel or chamber: rough walls, timber supports.</summary>
         Mine,
-        /// <summary>A flight of steps climbing one storey (HoldCell.Reserved: direction and step index; see HoldNav).</summary>
+        /// <summary>
+        /// A flight of steps climbing one storey: its cells on the lower storey are steps (with OpenAbove), the cells
+        /// over them the open well. HoldCell.Reserved (StairCell in MinePasses.Vertical.cs): bits 0-1 direction up the
+        /// flight (0 +x, 1 -x, 2 +z, 3 -z), bits 2-4 the cell's index from the bottom, bit 5 timber (else stone),
+        /// bit 7 well. You walk on from the cell before index 0 and off onto the upper-storey cell past the last (HoldNav).
+        /// </summary>
         Stair,
-        /// <summary>A great shaft: open through many storeys and regions (no floors, no ceilings), with a hoist.</summary>
+        /// <summary>
+        /// A great shaft: open through many storeys and regions (no floors, no ceilings), with a hoist. HoldCell.Reserved
+        /// (GreatShaftCell): bit 0 floor (bottom storey), bit 1 ceiling (top), bits 2-3 dock side, bits 4-5 / 6-7 x / z
+        /// index in the footprint.
+        /// </summary>
         GreatShaft,
         /// <summary>A collapse: blocks the way like rock, but drawn as a rubble heap from the cells beside it.</summary>
         Rubble,
@@ -68,7 +77,9 @@ namespace LuckyNumbers.Hold
         Portcullis,
         /// <summary>A lever on a wall (Dir: the wall it's on).</summary>
         Lever,
-        /// <summary>A hoist (lift cage) in a great shaft; Data: how many storeys it serves below this cell.</summary>
+        /// <summary>A hoist (lift cage) in a great shaft, one per region it passes, on the footprint's low corner at the
+        /// region's top level (Dir: dock side); Data: bits 0-15 how many storeys it serves below this cell, bits 16+
+        /// which of this region's levels have a landing.</summary>
         Hoist,
         /// <summary>A depth seal: a great door closing the way deeper until its band's seal key is found.</summary>
         Seal,
@@ -155,6 +166,7 @@ namespace LuckyNumbers.Hold
             var slice = new Dictionary<string, int>();
             for (var i = 0; i < textures.Layers.Count; i++) slice[textures.Layers[i]] = i;
             int Of(string layer) => !string.IsNullOrEmpty(layer) && slice.TryGetValue(layer, out var s) ? s : -1;
+            VerticalKit.Configure(textures);   // stair treads and hoist ironwork slices for the mesher jobs
             var result = new NativeArray<PaletteLayers>(math.max(1, textures.Palettes.Count), allocator);
             for (var i = 0; i < textures.Palettes.Count; i++)
             {

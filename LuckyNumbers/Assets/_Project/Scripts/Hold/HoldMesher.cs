@@ -119,10 +119,12 @@ namespace LuckyNumbers.Hold
     /// <summary>The face rules, shared by the mesher jobs and anything that must agree with the mesh (tests, navigation).</summary>
     public static class HoldRules
     {
-        /// <summary>Lower and upper are one space: no floor/ceiling between them (OpenAbove, or a shaft).</summary>
+        /// <summary>Lower and upper are one space: no floor/ceiling between them (OpenAbove, a shaft, a great shaft;
+        /// a stair's steps carry OpenAbove under their well).</summary>
         public static bool Linked(HoldCell lower, HoldCell upper) =>
             lower.Walkable && upper.Walkable &&
-            ((lower.Flags & CellFlags.OpenAbove) != 0 || upper.Kind == CellKind.ShaftDown || lower.Kind == CellKind.ShaftUp);
+            ((lower.Flags & CellFlags.OpenAbove) != 0 || upper.Kind == CellKind.ShaftDown || lower.Kind == CellKind.ShaftUp ||
+             lower.Kind == CellKind.GreatShaft && upper.Kind == CellKind.GreatShaft);
 
         /// <summary>Walkable cell c has a wall on side dir (horizontal unit): Solid there, except a Gate's way out.</summary>
         public static bool HasWall(in HoldGrid g, int3 c, int3 dir)
@@ -138,6 +140,9 @@ namespace LuckyNumbers.Hold
         /// </summary>
         public static bool HasFloor(in HoldGrid g, int3 c)
         {
+            // A great shaft runs on through region seams: floor only on its bottom storey (GreatShaftCell bits).
+            var cell = g.Get(c);
+            if (cell.Kind == CellKind.GreatShaft) return GreatShaftCell.Floor(cell);
             var below = c - new int3(0, 1, 0);
             if (!g.InBounds(below) && g.Get(c).Kind == CellKind.ShaftDown) return false;
             return !Linked(g.Get(below), g.Get(c));
@@ -145,6 +150,8 @@ namespace LuckyNumbers.Hold
 
         public static bool HasCeiling(in HoldGrid g, int3 c)
         {
+            var cell = g.Get(c);
+            if (cell.Kind == CellKind.GreatShaft) return GreatShaftCell.Ceiling(cell);
             var above = c + new int3(0, 1, 0);
             if (!g.InBounds(above) && g.Get(c).Kind == CellKind.ShaftUp) return false;
             return !Linked(g.Get(c), g.Get(above));

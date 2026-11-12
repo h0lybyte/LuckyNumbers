@@ -20,6 +20,8 @@ hall_ref: "holds/hall/default"
 depth_ref: "holds/depth/default"
 # Locked doors + keys, portcullises + levers in the mines.
 puzzles_ref: "holds/puzzles/default"
+# Stairs, great shafts and their hoists.
+vertical_ref: "holds/vertical/default"
 
 # Warm lantern light baked into the vertex colours; ambient keeps unlit stone just readable.
 lantern_radius: 9

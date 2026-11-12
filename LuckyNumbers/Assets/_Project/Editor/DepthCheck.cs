@@ -31,6 +31,8 @@ namespace LuckyNumbers.Editor
             var failures = 0;
             void Fail(string why) { failures++; if (failures <= 60) Debug.LogError($"[DepthCheck] FAIL {why}"); }
             if (p.SealEvery <= 0) Fail("seal_every is 0: no bands to check");
+            var great = config.Vertical?.GreatBand ?? 0;
+            if (great > 0 && great != p.SealEvery) Fail($"seal_every {p.SealEvery} != vertical great_band {great}: a great shaft could bypass a seal");
             var a = p.KeyArea;
             var depths = Bands * math.max(1, p.SealEvery);
             int drops = 0, rubble = 0, seals = 0, keys = 0, regions = 0;
@@ -70,7 +72,7 @@ namespace LuckyNumbers.Editor
                     {
                         var c = new int3(x, 0, z);
                         var cell = g.Get(c);
-                        var way = cell.Kind == CellKind.ShaftDown || cell.Kind == CellKind.GreatShaft;
+                        var way = cell.Kind == CellKind.ShaftDown || cell.Kind == CellKind.GreatShaft && !GreatShaftCell.Floor(cell);
                         var has = HasFixture(g, c, FixtureKind.Seal);
                         if (isSealed && way && !has) Fail($"{name}: way down at {c} not sealed");
                         if (!isSealed && has) Fail($"{name}: seal at {c} off a band bottom");

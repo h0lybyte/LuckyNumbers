@@ -116,8 +116,9 @@ Structures on and under dwarven worlds: a cell grid, meshed into chunks, skinned
 
 - Rules: `DepthRules` (`proto/luckynumbers/v1/hold_depth.proto`), content `content/holds/depth/default.txtpb`; pass
   `Scripts/Hold/MinePasses.Depth.cs`, kit `Scripts/Hold/HoldMesher.Depth.cs`, scene `Scripts/HoldScene/DepthPresenter.cs`.
-- Depth = -region.y; band = depth / `seal_every` (4: depths 0-3, 4-7, ...). `MinePasses.SealedBelow`: a band's bottom
-  depth (3, 7, 11 ...). There every ShaftDown on level 0 (and any GreatShaft cell there) gets a Seal fixture (Data,
+- Depth = -region.y; band = depth / `seal_every` (6, = vertical `great_band`, so great shafts never cross a seal:
+  depths 0-5, 6-11, ...). `MinePasses.SealedBelow`: a band's bottom depth (5, 11, 17 ...). There every ShaftDown on
+  level 0 (and any GreatShaft cell there without its floor bit) gets a Seal fixture (Data,
   Link: band) and ShaftDown cells `DepthCells.SealBit`; no drops out of those regions. A seal never cuts its region:
   if it would, the ring round it is dug out.
 - Keys: `MinePasses.KeyRegion(seed, band, i)` for i < `keys_per_band`, x, z in -`key_area`..`key_area`; key 0 always on
@@ -132,15 +133,46 @@ Structures on and under dwarven worlds: a cell grid, meshed into chunks, skinned
   still reaches every other cell from the west seam with doors open and with them shut.
 - Kit (`ChunkMesher.KitDepth`): a jagged rubble heap (wall-stone faces, gravel tops, a snapped prop) in each walkable
   cell beside Rubble; a broken timber rail (sill, posts, one of three breaks) on every approach side of a drop lip; a
-  winch beam (posts where its ends are open) over a sealed shaft. Runtime pieces (`DepthKit`, HoldKit material): the
+  winch beam (a corner-post frame where an end is open) over a sealed shaft. Runtime pieces (`DepthKit`, HoldKit material): the
   seal hatch (iron-banded cap, the great door on top, collider until opened; winches up on two chains), the drop's
   warning plaque (the yellow rune), the key's plinth (key itself: a PLACEHOLDER block).
 - Scene: `FirstPersonPresenter.Landed` (impact speed; not on ladders) -> drop height min(v^2 / 2g, height since last
   footing) past `safe_fall` (4.2 m: a shaft's 3 m is safe) x `fall_damage_per_metre` -> `HoldHurt` -> DeepCreatures'
   TakeDamage (Stamina, HP, rescue at 0). E at a seal with its band's key opens it; keys and opened seals last for the
-  visit. First time in a band: "Depth 4: the Old Works". Dev warps: `seal`, `key`, `drop`, `collapse`, `sealkey`.
+  visit. First time in a band: "Depth 6: the Old Works". Dev warps: `seal`, `key`, `drop`, `collapse`, `sealkey`.
 - Creatures: bites at depth d do x min(1, `bite_scale` + `bite_scale_per_depth` d) (HoldLife; 0.55 at depth 1, 0.7 at
   2, full from 4) and attack less max(0, `attack_shallow` - d); aberrations from depth 3.
-- Check: `-executeMethod LuckyNumbers.Editor.DepthCheck.Run` (5 seeds, x, z -2..2, depths 0..11: drops agree, nothing
+- Check: `-executeMethod LuckyNumbers.Editor.DepthCheck.Run` (5 seeds, x, z -2..2, three bands (depths 0..17): drops agree, nothing
   cut off, seals complete, a reachable key per band, determinism). Render: `LuckyNumbers.Editor.DepthPreview.Render`
   (graphics) -> `Logs/preview-depth.png`.
+
+## Stairs, great shafts, hoists (Vertical pass)
+
+- Rules: `VerticalRules` (`proto/luckynumbers/v1/hold_vertical.proto`), content `content/holds/vertical/default.txtpb`.
+  Code: `MinePasses.Vertical.cs` (pass, `StairCell` / `GreatShaftCell` encodings, `GreatShaft`), `HoldNav.Stairs.cs`,
+  `HoldMesher.Vertical.cs` (kit, `VerticalKit` slices via SharedStatic, `HoistKit` meshes), `HoldScene/HoistPresenter.cs`.
+- Stairs: per storey pair (stair_chance, up to stairs_max) a flight of flight_min..flight_max cells (4 treads each,
+  rise storey / (4 * len) <= 0.4 m step offset) cut through untouched rock: steps on the lower storey (Stair + OpenAbove),
+  the well over them (Stair, well bit), walk on from the plain mine cell before step 0 and off onto the plain mine cell
+  past the last step, upper storey. Reserved: bits 0-1 direction up, 2-4 index, 5 timber, 7 well. A lantern over the
+  top. Then (replace_shaft_chance) one of that pair's internal shafts is filled in if the region stays connected.
+  Mesh: treads + risers (dlv_stonestp1a or dlv_woodstp1a), one collider box per tread, a lintel over the well's foot.
+- Great shafts: `MinePasses.GreatShaftOf(seed, group, band)`: group = region (x, z) / great_spacing, band = -region.y /
+  great_band; hash(seed, group, band) says whether (great_chance), which region column, how many regions
+  (great_regions_min..max) from where in the band, dock side, and the footprint (great_size square, 3..cells-3-size),
+  re-rolled until 2+ cells clear of every region-to-region shaft along it. Every region in the column computes the same.
+  Cells: GreatShaft, Reserved bits 0 floor (bottom storey only), 1 ceiling (top only), 2-3 dock, 4-7 footprint x/z.
+  Landings: every landing_every storeys from the top, the bottom, and any storey the dig had touched the footprint or
+  its ring: a ring of mine floor round the footprint, two lanterns, a tunnel from the dock side to the nearest mine
+  cell. Mesh: corner posts, walings, iron guide rails, wall lanterns, the headframe and pulley at the top; railings on
+  landing edges (colliders), an iron gateway at the dock's middle. One Hoist fixture per region (footprint corner, top
+  level; Data: storeys below | landing mask << 16).
+- Hoist (`HoistPresenter`): shafts tracked by (group, band) from their first shown region, kept for the visit (cage,
+  cable, gates don't stream). Cage: HoistKit mesh (HoldKit material), kinematic box colliders, own lamp; starts at the
+  top. On it: E down to the next landing, Shift+E up; riding (`FirstPersonPresenter.Climbing`, the presenter moves the
+  body with the cage) W/S drive it and it settles at the next landing that way, E / Shift+E retarget. At a landing
+  with the cage elsewhere: E calls it. Each landing's gate (collider) lifts while the cage stands there.
+  Dev: `LN.send('DevWarpRequested', {to: 'shaft'})` (nearest great shaft's top landing), `{to: 'stairs'}`.
+- Check: `-executeMethod LuckyNumbers.Editor.VerticalCheck.Run` (5 seeds: flights, shafts along their length, landings
+  joined, hoist fixtures, seams, connectivity, determinism, a mesh build). Renders: `tools/ln.py preview stairs`
+  (Editor/VerticalPreview.cs) -> `Logs/preview-stairs.png`, `preview-greatshaft.png`, `preview-greatshaft-up.png`.

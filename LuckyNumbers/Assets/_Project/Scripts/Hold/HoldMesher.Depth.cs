@@ -189,8 +189,11 @@ namespace LuckyNumbers.Hold
             {
                 var e = alongX ? new int3(sign, 0, 0) : new int3(0, 0, sign);
                 if (HoldRules.HasWall(G, c, e)) continue;
-                // A post on the open end's floor (just outside this cell), carrying the beam.
-                SideBox(c, e, -0.2f, -0.02f, 0.44f, 0.56f, 0f, top, timber, true, false);
+                // A timber frame on the open end (posts in its corners, a lintel under the ceiling) carrying the beam:
+                // the way in stays clear.
+                SideBox(c, e, -0.18f, -0.02f, 0f, 0.07f, 0f, top - 0.3f, timber, true, false);
+                SideBox(c, e, -0.18f, -0.02f, 0.93f, 1f, 0f, top - 0.3f, timber, true, false);
+                SideBox(c, e, -0.2f, 0f, 0f, 1f, top - 0.3f, top, timber, false, false);
             }
         }
     }

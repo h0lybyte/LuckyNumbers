@@ -17,8 +17,9 @@ collapses_min: 1
 collapses_max: 3
 collapses_from_depth: 0
 
-# ---- depth seals: every 4 depths (seals in depths 3, 7, 11 ...) ----
-seal_every: 4
+# ---- depth seals: every 6 depths (seals in depths 5, 11, 17 ...); keep equal to vertical great_band so no great
+# shaft crosses a seal ----
+seal_every: 6
 keys_per_band: 3
 key_area: 2
 band_title: "Depth {depth}: {name}"
