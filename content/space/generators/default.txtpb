@@ -35,8 +35,8 @@ moon_orbit_min: 3
 moon_orbit_max: 6
 moon_hill_fraction: 0.5
 
-# Period = k * radius^1.5: home (~170) takes ~15 min, like the old hand-made one.
-seconds_per_orbit_unit: 0.4
+# Period = k * radius^1.5: home (~170) takes ~45 min, moons a few minutes (x3 slower than 0.4: calmer skies).
+seconds_per_orbit_unit: 1.2
 max_eccentricity: 0.1
 max_inclination_degrees: 7
 

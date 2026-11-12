@@ -5,7 +5,7 @@
 # one at the ship (E) when you're about to leave.
 # Fills: {client} {planet} {target} {count} {pay}. Placeholder values; tune with gameplay.
 
-offers: 3
+offers: 4   # one of each kind (salvage, retrieve, clear, uplink)
 clients: ["the Meridian Museum", "Halden Salvage Co.", "a private collector", "the Survey Office", "Station Command"]
 
 first_title: "Mayday: museum freighter"
