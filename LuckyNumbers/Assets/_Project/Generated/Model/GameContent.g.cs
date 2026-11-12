@@ -2653,6 +2653,7 @@ namespace LuckyNumbers.Model
             ChaseDistance = 1.45f,
             ChaseHeight = 0.42f,
             ReadoutSeconds = 0.15f,
+            TouchHint = "Left stick: thrust and strafe - right stick: aim - Lift / Down - Roll ◀ ▶ - Boost - Brake\nFly slowly into the docking beacon at the bay, then Use to dock",
         };
 
         /// <summary>From <c>content/planet.txtpb</c>.</summary>
@@ -3555,6 +3556,7 @@ namespace LuckyNumbers.Model
                 OpenSeconds = 1.6f,
                 CloseSeconds = 0.8f,
                 ShipColor = new Rgba(0.3f, 0.9f, 1.0f, 1.0f),
+                TouchHint = "White: you - cyan: ship - orange: wreck - drag to turn - Close map when you're done",
             },
             Landing = new FlightLanding
             {
@@ -3649,7 +3651,10 @@ namespace LuckyNumbers.Model
                 TakeoffHint = "Space to lift off - fly anywhere, land with C - climb above 260 m and press E to go back to the station",
                 LeavePrompt = "E: break orbit and fly back to the station",
                 Ceiling = 1.6f,
+                TouchHint = "Left stick: thrust and strafe - right stick: aim - Lift / Down - Roll ◀ ▶ - Boost - Brake. Stop over the green pad, hold Down to land.",
+                TouchTakeoffHint = "Lift to rise off the ground - fly anywhere, land with Down - climb above 260 m and press Use to go back to the station",
             },
+            TouchHint = "Left stick to move - right stick to look - Run - Jump - Use to pick up, Fire to throw - Map",
         };
 
         /// <summary>From <c>content/player.txtpb</c>.</summary>
@@ -3677,6 +3682,7 @@ namespace LuckyNumbers.Model
             OrbitDistance = 2.6f,
             OrbitDegreesPerSecond = 18.0f,
             ReadoutSeconds = 0.15f,
+            TouchHint = "Left stick: thrust and strafe - right stick: aim - Lift / Down - Roll ◀ ▶ - Boost - Brake\nView: camera - Skin: next skin - Menu: back to the station",
         };
 
         /// <summary>From <c>content/ships.txtpb</c>.</summary>
@@ -5048,7 +5054,9 @@ namespace LuckyNumbers.Model
                 Targets = 3,
                 Crates = 6,
                 Hint = "E picks up a weapon - click fires / swings - E puts it down - V side view",
+                TouchHint = "Use picks up a weapon - Fire fires / swings - Use puts it down",
             },
+            TouchHint = "Left stick to move - right stick to look - Use to use things",
         };
 
         /// <summary>From <c>content/title.txtpb</c>.</summary>

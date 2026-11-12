@@ -61,9 +61,14 @@ namespace LuckyNumbers.Planet
         readonly ISubscriber<FlightHudReady> _hudReady;
         readonly PlayerVoyage _voyage;
         readonly IPublisher<SceneChangeRequested> _scenes;
-        // Flying about: boarded after landing (`_roaming`), still lifting clear of the ground (`_clearing`: no touchdown
-        // or crash yet), breaking orbit and fading out (`_exiting`); where it was last parked (a crash restarts there).
-        bool _roaming, _clearing, _exiting, _boarding;
+        /// <summary>
+        /// Flying about: boarded after landing (Roaming), still lifting clear of the ground (Clearing: no touchdown or
+        /// crash yet), climbing in (Boarding), breaking orbit and fading out (Exiting). Roaming and Clearing start together.
+        /// </summary>
+        [Flags] enum Flight : byte { None = 0, Roaming = 1, Clearing = 2, Exiting = 4, Boarding = 8 }
+        Flight _flight;
+        bool Is(Flight f) => (_flight & f) != 0;
+        // Where it was last parked (a crash restarts there).
         Vector3 _parked;
         readonly ISubscriber<InputActionPerformed> _actions;
         IDisposable _actionSubscription;
@@ -148,7 +153,7 @@ namespace LuckyNumbers.Planet
         float MaxVertical => L.MaxTouchdownVertical * Tough;
         float MaxHorizontal => L.MaxTouchdownHorizontal * Tough;
         float MaxTilt => L.MaxTouchdownTilt * Tough;
-        bool CanLeave => _phase == Phase.Flying && !_exiting && !_boarding && L.OrbitAltitude > 0f && _altitude >= L.OrbitAltitude;
+        bool CanLeave => _phase == Phase.Flying && !Is(Flight.Exiting | Flight.Boarding) && L.OrbitAltitude > 0f && _altitude >= L.OrbitAltitude;
         Vector3 Wreck => _view.Wreck.Pivot.position;
         // How high the pivot sits standing on its landing legs (the touchdown gear points are their feet).
         float GearDrop => L.ShipLength * 0.15f;
@@ -178,7 +183,7 @@ namespace LuckyNumbers.Planet
             _site.Follow(Ship.Pivot, _view.FlightCamera.transform);
             for (var t = 0f; t < 1f; t += Time.deltaTime) { _view.Fade(1f - t); await UniTask.Yield(ct); }
             _view.Fade(0f);
-            if (!_pageHud) _view.Hint(L.Hint, 1f);   // the page's HUD has its own controls card
+            if (!_pageHud) _view.Hint(Controls.Pick(L.Hint, L.TouchHint), 1f);   // the page's HUD has its own controls card
             _done = new UniTaskCompletionSource();
             await _done.Task.AttachExternalCancellation(ct);
         }
@@ -186,7 +191,7 @@ namespace LuckyNumbers.Planet
         /// <summary>Back to the start: up high, some way off, heading for the wreck (seeded bearing).</summary>
         void Restart()
         {
-            if (_roaming)
+            if (Is(Flight.Roaming))
             {
                 // Crashed flying about: hovering above where you last parked, enough fuel to set down again.
                 if (F != null) _playerShip.Fuel.Value = math.max(_playerShip.Fuel.Value, _playerShip.FuelMax.Value * ShipUpgrades.RechargeTo(_playerShip, F.RechargeTo));
@@ -253,7 +258,7 @@ namespace LuckyNumbers.Planet
             var look = steering ? new Vector2(_input.Look.Value.X, _input.Look.Value.Y) : Vector2.zero;
             var move = _input.Move.Value;
             // Guns: hold the button and the barrels fire in turn (carried along at the ship's forward speed).
-            if (pressed && _canFire && !_boarding && !_clearing) _guns?.TryFire(Vector3.Dot(_velocity, _rotation * Vector3.forward));
+            if (pressed && _canFire && !Is(Flight.Boarding | Flight.Clearing)) _guns?.TryFire(Vector3.Dot(_velocity, _rotation * Vector3.forward));
             _dry = F != null && _playerShip.Fuel.Value <= 0f;
             _demand = 0f;
 
@@ -347,11 +352,11 @@ namespace LuckyNumbers.Planet
             var top = L.OrbitAltitude * math.max(1f, L.Ceiling);
             if (L.OrbitAltitude > 0f && altitude > top && _velocity.y > 0f) _velocity.y = math.max(0f, _velocity.y - (altitude - top + 2f) * 4f * dt);
             // Lifting off: no touchdown (you're sitting on the ground) or bumps until the gear is well clear.
-            if (_clearing)
+            if (Is(Flight.Clearing))
             {
                 if (lowest > math.max(2f, L.ShipLength * 0.12f))
                 {
-                    _clearing = false;
+                    _flight &= ~Flight.Clearing;
                     Ship.GearUp();   // well clear: fold the legs
                 }
                 else lowest = float.MaxValue;
@@ -370,7 +375,7 @@ namespace LuckyNumbers.Planet
                 return;
             }
             // Hitting anything solid (the wreck, a boulder) in the air is a crash too.
-            var n = _clearing ? 0 : Physics.OverlapSphereNonAlloc(_position, half * 0.45f, _hits, ~0, QueryTriggerInteraction.Ignore);
+            var n = Is(Flight.Clearing) ? 0 : Physics.OverlapSphereNonAlloc(_position, half * 0.45f, _hits, ~0, QueryTriggerInteraction.Ignore);
             for (var i = 0; i < n; i++)
             {
                 if (Array.IndexOf(_ownColliders, _hits[i]) >= 0 || _hits[i].GetComponentInParent<GroundView>() != null) continue;
@@ -400,7 +405,7 @@ namespace LuckyNumbers.Planet
                 _state.Landed.Value = false;
                 _state.Assisted.Value = Assisted || HoverShip;
                 _state.HoverShip.Value = HoverShip;
-                _state.Roaming.Value = _roaming;
+                _state.Roaming.Value = Is(Flight.Roaming);
                 _state.OrbitAltitude.Value = L.OrbitAltitude;
                 _state.CanLeave.Value = CanLeave;
                 _state.Fuel.Value = _playerShip.Fuel.Value;
@@ -531,7 +536,7 @@ namespace LuckyNumbers.Planet
             var forward = move.Y > 0.1f ? H.MaxSpeed * sp * boost * move.Y : move.Y < -0.1f ? H.ReverseSpeed * sp * move.Y : 0f;
             var side = math.abs(move.X) > 0.1f ? H.StrafeSpeed * sp * move.X : 0f;
             // Flying about, Shift boosts the climb too (orbit is a long way up).
-            var vertical = _input.Lifting.Value ? H.ClimbSpeed * sp * (_roaming ? boost : 1f) : descending ? -H.DescendSpeed : 0f;
+            var vertical = _input.Lifting.Value ? H.ClimbSpeed * sp * (Is(Flight.Roaming) ? boost : 1f) : descending ? -H.DescendSpeed : 0f;
             var target = _input.Braking.Value ? Vector3.zero : _rotation * new Vector3(side, vertical, forward);
             // Dry: no thrust, just the reserve cells letting you straight down, slowly (keys do nothing).
             if (_dry) target = Vector3.down * math.max(0.5f, F.EmptyDescent);
@@ -678,7 +683,7 @@ namespace LuckyNumbers.Planet
         void Land(Vector3 normal)
         {
             _phase = Phase.Landed;
-            _clearing = false;   // still roaming if you were: board again to fly on
+            _flight &= ~Flight.Clearing;   // still roaming if you were: board again to fly on
             _state.CanLeave.Value = false;
             _state.Flying.Value = false;
             _state.Landed.Value = true;
@@ -721,7 +726,7 @@ namespace LuckyNumbers.Planet
             _firstPerson.Unlock(ControlLock.Vehicle);
             for (var t = 0f; t < 0.6f; t += Time.deltaTime) { _view.Fade(1f - t / 0.6f); await UniTask.Yield(); }
             _view.Fade(0f);
-            _view.Hint(_config.Hint, 1f);
+            _view.Hint(Controls.Pick(_config.Hint, _config.TouchHint), 1f);
             if (_landings++ == 0)   // the first landing only
                 foreach (var line in L.LandedLines) await DialogueLine.Play(line, _view.Dialogue, default);
             _done?.TrySetResult();
@@ -731,7 +736,7 @@ namespace LuckyNumbers.Planet
 
         public string BoardPrompt(Vector3 feet)
         {
-            if (_phase != Phase.Landed || _boarding || !_firstPerson.Active || L.OrbitAltitude <= 0f) return "";
+            if (_phase != Phase.Landed || Is(Flight.Boarding) || !_firstPerson.Active || L.OrbitAltitude <= 0f) return "";
             // From the hull (its bounds), not the middle: a 24 m ship can be boarded from any side.
             var hull = Ship.Hull;
             var flat = new Vector3(feet.x, hull.center.y, feet.z);
@@ -744,14 +749,14 @@ namespace LuckyNumbers.Planet
 
         public void Board()
         {
-            if (_phase != Phase.Landed || _boarding) return;
+            if (_phase != Phase.Landed || Is(Flight.Boarding)) return;
             BoardAsync().Forget();
         }
 
         /// <summary>Fade, and you're back in the cockpit (the chase camera), sitting where you parked; Space lifts off.</summary>
         async UniTaskVoid BoardAsync()
         {
-            _boarding = true;
+            _flight |= Flight.Boarding;
             _firstPerson.Lock(ControlLock.Vehicle);
             _view.Hint("", 0f);
             for (var t = 0f; t < 0.4f; t += Time.deltaTime) { _view.Fade(t / 0.4f); await UniTask.Yield(); }
@@ -766,7 +771,7 @@ namespace LuckyNumbers.Planet
             _pitch = _bank = _yawRate = _pitchRate = 0f;
             var flatForward = Vector3.ProjectOnPlane(_rotation * Vector3.forward, Vector3.up).normalized;
             _camPos = _position - flatForward * (L.ShipLength * L.ChaseDistance) + Vector3.up * (L.ShipLength * L.ChaseHeight);
-            _roaming = _clearing = true;
+            _flight |= Flight.Roaming | Flight.Clearing;
             _phase = Phase.Flying;
             _phaseTime = 0f;
             _state.Landed.Value = false;
@@ -774,14 +779,14 @@ namespace LuckyNumbers.Planet
                       $"(fuel {_playerShip.Fuel.Value:0}/{_playerShip.FuelMax.Value:0})");
             for (var t = 0f; t < 0.6f; t += Time.deltaTime) { _view.Fade(1f - t / 0.6f); await UniTask.Yield(); }
             _view.Fade(0f);
-            if (!_pageHud) _view.Hint(L.TakeoffHint, 1f);
-            _boarding = false;
+            if (!_pageHud) _view.Hint(Controls.Pick(L.TakeoffHint, L.TouchTakeoffHint), 1f);
+            _flight &= ~Flight.Boarding;
         }
 
         /// <summary>Breaking orbit (E, high enough): the sky fades to white and you're back at the station, docked.</summary>
         async UniTaskVoid ExitAsync()
         {
-            _exiting = true;
+            _flight |= Flight.Exiting;
             Debug.Log($"[Landing] breaking orbit at {_altitude:0} m: back to the station");
             for (var t = 0f; t < 1.2f; t += Time.deltaTime) { _view.Fade(t / 1.2f); await UniTask.Yield(); }
             _view.Fade(1f);
@@ -795,7 +800,7 @@ namespace LuckyNumbers.Planet
         /// <summary>Burn fuel for the thrust asked for this frame (idle just to stay up); the skin's efficiency divides it.</summary>
         void Burn(float dt)
         {
-            if (F == null || _dry || _clearing && _demand <= 0f) return;
+            if (F == null || _dry || Is(Flight.Clearing) && _demand <= 0f) return;
             var burn = (F.IdleBurn + F.ThrustBurn * _demand) / math.max(0.1f, _stats.Efficiency);
             var before = _playerShip.Fuel.Value;
             _playerShip.Fuel.Value = math.max(0f, before - burn * dt);

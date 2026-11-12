@@ -35,4 +35,6 @@ message FlightSchoolScene {
   float orbit_degrees_per_second = 14;
   // How often the jets readout refreshes (seconds).
   float readout_seconds = 15;
+  // On a touch screen (PointerLock.Touch), in place of the keyboard / mouse line above; empty: that one.
+  string touch_hint = 16;
 }

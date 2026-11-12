@@ -74,7 +74,12 @@ namespace LuckyNumbers.Planet
         float _reportAt = float.MaxValue;   // when to toast how well the hands settled on what they just picked up
 
         float _yaw, _pitch, _vertical, _stride, _moving, _landDip, _errorLogAt, _sprint, _air, _crouch, _awakeAt = -1f;
-        bool _jump, _interact, _wasGrounded = true, _wasPressed, _lockSeen;
+        /// <summary>Presses since they were last used (Jump, Interact), set by the input subscription.</summary>
+        [System.Flags] enum Press : byte { None = 0, Jump = 1, Interact = 2 }
+        Press _press;
+        bool _wasGrounded = true, _wasPressed, _lockSeen;
+        bool Pressed(Press p) => (_press & p) != 0;
+        void Use(Press p) => _press &= ~p;
         Vector3 _sway, _lean;
 
         // Touch: per hand, how far in (0..1) and where.
@@ -168,8 +173,8 @@ namespace LuckyNumbers.Planet
         {
             _subscription = _actions.Subscribe(e =>
             {
-                if (e.Action == InputAction.Jump) _jump = true;
-                if (e.Action == InputAction.Interact) _interact = true;
+                if (e.Action == InputAction.Jump) _press |= Press.Jump;
+                if (e.Action == InputAction.Interact) _press |= Press.Interact;
             });
             if (_config.Hands != null) _arms.Init(_config.Hands);
             _arms.Play(_config.IdleClip);
@@ -180,7 +185,7 @@ namespace LuckyNumbers.Planet
         public void Tick()
         {
             var dt = Time.deltaTime;
-            if (!Active || dt <= 0f) { _jump = _interact = false; return; }
+            if (!Active || dt <= 0f) { _press = Press.None; return; }
             if (_awakeAt < 0f) _awakeAt = Time.time;
 
             // Pointer lock: browsers need a click; Esc releases it. A click while locked throws.
@@ -206,8 +211,8 @@ namespace LuckyNumbers.Planet
             if (_reaching != null && _reachT < 0.5f) wish += StepIn(_reaching.position) / math.max(0.1f, speed);   // step in to grab
 
             if (grounded && _vertical < 0f) _vertical = -2f;                 // stick to slopes
-            if (_jump && grounded && _reaching == null) _vertical = _config.JumpSpeed;
-            _jump = false;
+            if (Pressed(Press.Jump) && grounded && _reaching == null) _vertical = _config.JumpSpeed;
+            Use(Press.Jump);
             _vertical -= _config.Gravity * dt;
             body.Move((wish * speed + Vector3.up * _vertical) * dt);
             body.transform.rotation = yawRot;
@@ -254,7 +259,7 @@ namespace LuckyNumbers.Planet
             _armsShift = Vector3.Lerp(_armsShift, _weapon != null && _held != null ? _weapon.ArmsShift : Vector3.zero, 1f - math.exp(-8f * dt));
             _arms.Pose(_viewBob + _armsShift, _viewTilt);
             Hands(dt, click);
-            _interact = false;
+            Use(Press.Interact);
         }
 
         /// <summary>Horizontal velocity (m/s) to close in until within arm's length of a point.</summary>
@@ -341,10 +346,10 @@ namespace LuckyNumbers.Planet
             var hold = eye.position + eye.forward * 0.42f + eye.right * 0.17f - eye.up * 0.19f;
 
             EquippedGun(eye);
-            if (_interact && InteractElsewhere && (_held == _equipped || (_held == null && _holstered))) _interact = false;   // E's for that
-            if (_interact && _held != null && _held == _equipped) { Holster(); _holstered = true; _interact = false; }
-            if (_interact && _held != null && _throwT < 0f) { Release(Vector3.zero); _interact = false; }
-            if (_interact && _held == null && _reaching == null && _throwT < 0f)
+            if (Pressed(Press.Interact) && InteractElsewhere && (_held == _equipped || (_held == null && _holstered))) Use(Press.Interact);   // E's for that
+            if (Pressed(Press.Interact) && _held != null && _held == _equipped) { Holster(); _holstered = true; Use(Press.Interact); }
+            if (Pressed(Press.Interact) && _held != null && _throwT < 0f) { Release(Vector3.zero); Use(Press.Interact); }
+            if (Pressed(Press.Interact) && _held == null && _reaching == null && _throwT < 0f)
             {
                 if (!FindPebble(eye, out var pebble))
                 {
@@ -522,7 +527,7 @@ namespace LuckyNumbers.Planet
             _arms.SetTriggerFinger(Right, true);
             Grasp(rb, true, Left, Right);
             Debug.Log($"[Hands] {(_drawing ? "drew" : "picked up")} {rb.name}");
-            Toast(rb, _drawing ? "drew" : "picked up", _drawing ? "equipped - E holsters it" : $"gun - scale {gun.HeldScale:0.00}, arms shift {gun.ArmsShift.x * 100f:0} cm");
+            Toast(rb, _drawing ? "drew" : "picked up", _drawing ? $"equipped - {Controls.Use} holsters it" : $"gun - scale {gun.HeldScale:0.00}, arms shift {gun.ArmsShift.x * 100f:0} cm");
         }
 
         void GrabMelee(Rigidbody rb, MeleeView blade, Transform eye)
@@ -644,7 +649,7 @@ namespace LuckyNumbers.Planet
                 _arms.SetPose(Right, null);
                 rb.gameObject.SetActive(false);
                 Debug.Log($"[Hands] holstered {rb.name}");
-                Toast(rb, "holstered", "E draws it");
+                Toast(rb, "holstered", $"{Controls.Use} draws it");
                 _reportAt = float.MaxValue;
                 return;
             }

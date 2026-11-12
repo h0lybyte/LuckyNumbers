@@ -50,6 +50,7 @@ orbit_diameters: 1.8
 spawn_yaw: 0
 next: GAME_SCENE_INTRO
 hint: "WASD to move - mouse to look - E to use things"
+touch_hint: "Left stick to move - right stick to look - Use to use things"
 ceiling_light_every: 2
 
 # Light modes. Lights keep their painted colour when on; off, they go grey-dark and the station dims;
@@ -248,6 +249,7 @@ range {
   targets: 3
   crates: 6
   hint: "E picks up a weapon - click fires / swings - E puts it down - V side view"
+  touch_hint: "Use picks up a weapon - Fire fires / swings - Use puts it down"
 }
 
 # --- Coming back from the planet ---

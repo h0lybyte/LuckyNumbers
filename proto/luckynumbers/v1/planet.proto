@@ -101,6 +101,8 @@ message PlanetScene {
   // Arrival in your own ship: you fly it in and land it near the wreck (fully piloted). Unset = the old
   // arrival (waking up beside the wreck).
   FlightLanding landing = 53;
+  // On a touch screen (PointerLock.Touch), in place of the keyboard / mouse line above; empty: that one.
+  string touch_hint = 60;
 }
 
 // Piloting your fighter down to the crash site. Metres, seconds, m/s, m/s^2, degrees.
@@ -155,6 +157,9 @@ message FlightLanding {
   string takeoff_hint = 31;
   string leave_prompt = 32;
   float ceiling = 33;
+  // On a touch screen (PointerLock.Touch), in place of the keyboard / mouse line above; empty: that one.
+  string touch_hint = 34;
+  string touch_takeoff_hint = 35;
 }
 
 // Six-axis ship controls with flight assist: the mouse aims the nose (yaw, pitch), Q/E roll; W/S thrust
@@ -317,6 +322,8 @@ message PlanetMap {
   float close_seconds = 18;
   // Your landed ship's marker (the crash marker only shows where there's a wreck).
   Rgba ship_color = 19;
+  // On a touch screen (PointerLock.Touch), in place of the keyboard / mouse line above; empty: that one.
+  string touch_hint = 20;
 }
 
 // The planet map (M): open from the moment it starts opening until it has fully closed.

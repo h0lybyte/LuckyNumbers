@@ -1626,10 +1626,9 @@ kbd {
   pointer-events: none;
 }
 .touch-top {
-  position: absolute;
+  position: absolute;   /* top left: clear of the flight steps and the pad compass (top centre / right) */
   top: max(10px, env(safe-area-inset-top));
-  left: 50%;
-  transform: translateX(-50%);
+  left: max(10px, env(safe-area-inset-left));
   display: flex;
   gap: 8px;
   pointer-events: none;
