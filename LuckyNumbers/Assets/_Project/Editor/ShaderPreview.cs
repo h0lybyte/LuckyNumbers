@@ -369,6 +369,40 @@ namespace LuckyNumbers.Editor
             var outPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", "preview-monster.png"));
             File.WriteAllBytes(outPath, sheet.EncodeToPNG());
             Debug.Log($"[ShaderPreview] wrote {outPath}");
+
+            // The same poses from its VAT bake (MonsterVat, SceneBuilder.BakeMonsters), as MonsterCrowd draws them in play:
+            // LuckyNumbers/MonsterVat on the bake's static mesh, at the model's origin, to Logs/preview-monster-vat.png.
+            var vat = template[0].Vat;
+            if (vat == null) Debug.LogWarning("[ShaderPreview] monster has no VAT bake (tools/ln.py scenes)");
+            else
+            {
+                foreach (var r in rig.GetComponentsInChildren<Renderer>()) r.enabled = false;
+                var go = new GameObject("VatPose");
+                go.transform.position = origin;   // the model's origin: the collider's bottom (MonsterView's lift)
+                go.AddComponent<MeshFilter>().sharedMesh = vat.Mesh;
+                var mr = go.AddComponent<MeshRenderer>();
+                mr.sharedMaterial = vat.Material;
+                var props = new MaterialPropertyBlock();
+                for (var k = 0; k < poses.Length; k++)
+                {
+                    var clip = vat.Clips[vat.Index(poses[k].Item1)];
+                    var f = LuckyNumbers.Planet.MonsterVat.Frames(clip, clip.Length * poses[k].Item2);
+                    props.SetVector("_VatA", new Vector4(f.x, f.y, f.z, 1f));
+                    props.SetVector("_VatB", new Vector4(f.x, f.y, f.z, k == 2 ? 0.6f : 0f));   // the attack also shows a hit flash
+                    mr.SetPropertyBlock(props);
+                    var request = new RenderPipeline.StandardRequest { destination = rt };
+                    if (RenderPipeline.SupportsRenderRequest(cam, request)) RenderPipeline.SubmitRenderRequest(cam, request);
+                    else { cam.targetTexture = rt; cam.Render(); }
+                    RenderTexture.active = rt;
+                    sheet.ReadPixels(new Rect(0, 0, Width / 2, Height / 2), (k % 2) * Width / 2, (1 - k / 2) * Height / 2);
+                    RenderTexture.active = null;
+                }
+                Object.DestroyImmediate(go);
+                sheet.Apply();
+                var vatPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Logs", "preview-monster-vat.png"));
+                File.WriteAllBytes(vatPath, sheet.EncodeToPNG());
+                Debug.Log($"[ShaderPreview] wrote {vatPath} ({vat.Vertices} vertices, {vat.BoneCount} bones, {vat.Clips.Length} clips, {vat.Bones.width}x{vat.Bones.height} {vat.Bones.format})");
+            }
         }
 
         /// <summary>

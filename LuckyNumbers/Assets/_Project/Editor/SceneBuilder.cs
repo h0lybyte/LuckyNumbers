@@ -515,7 +515,21 @@ namespace LuckyNumbers.Editor
         /// Every monster's model as a prefab in Prefabs/Monsters (the Monsters Addressables group, see
         /// AddressablesSetup.Rules), saved off like the scene templates were; CombatPresenter loads them by
         /// MonsterType.model and MonsterView.CreateModel copies one per monster. Prefabs nothing names anymore go.
+        /// Each also gets its clips baked to vertex animation textures (VatBaker: the clips content/combat.txtpb's
+        /// monsters of that model play), referenced by its MonsterRig, so they ride in the same bundle and
+        /// MonsterCrowd draws them instanced.
         /// </summary>
+        /// <summary>The clips the monsters of model `name` play (content/combat.txtpb); every clip if none names it.</summary>
+        static System.Collections.Generic.IEnumerable<string> MonsterClipsOf(string name, MonsterRig rig)
+        {
+            var wanted = new System.Collections.Generic.List<string>();
+            foreach (var m in LuckyNumbers.Model.GameContent.Combat?.Monsters ?? new())
+                if (m.Model == name && m.Clips != null)
+                    wanted.AddRange(new[] { m.Clips.Idle, m.Clips.Walk, m.Clips.Run, m.Clips.Attack, m.Clips.Hit, m.Clips.Die });
+            wanted.RemoveAll(string.IsNullOrEmpty);
+            return wanted.Count > 0 ? wanted : rig.ClipNames;
+        }
+
         public static void BakeMonsters()
         {
             if (!AssetDatabase.IsValidFolder("Assets/_Project/Prefabs")) AssetDatabase.CreateFolder("Assets/_Project", "Prefabs");
@@ -524,6 +538,10 @@ namespace LuckyNumbers.Editor
             foreach (var (name, folder) in MonsterModels)
             {
                 var rig = MonsterModel(null, name, folder);
+                var skin = rig.GetComponentInChildren<Renderer>(true).sharedMaterial;
+                var vatMaterial = MaterialAsset($"MonsterVat_{name}", "LuckyNumbers/MonsterVat");
+                rig.SetVat(VatBaker.Bake(rig, name, MonsterClipsOf(name, rig), skin, vatMaterial));
+                EditorUtility.SetDirty(rig);
                 PrefabUtility.SaveAsPrefabAsset(rig.gameObject, $"{MonsterPrefabsDir}/{name}.prefab");
                 Object.DestroyImmediate(rig.gameObject);
                 names.Add(name);
