@@ -7,7 +7,7 @@ using Random = Unity.Mathematics.Random;
 namespace LuckyNumbers.HoldScene
 {
     /// <summary>Where in a region a cache sits: a chamber's wall, or the far end of a dead-end spur.</summary>
-    public enum LifeSpot : byte { Chamber, DeadEnd }
+    public enum LifeSpot : byte { Chamber, DeadEnd, Locked }
 
     /// <summary>A strongbox: its world cell, the wall it's pushed against (xz unit step), and what's inside.</summary>
     public struct CachePlan
@@ -34,7 +34,7 @@ namespace LuckyNumbers.HoldScene
     /// </summary>
     public static class HoldLifePlan
     {
-        const uint CacheTag = 0xCAC4Eu, CreatureTag = 0xC4EA7u;
+        const uint CacheTag = 0xCAC4Eu, CreatureTag = 0xC4EA7u, RewardTag = 0x4E3A4Du;
         static readonly int2[] Four = { new(1, 0), new(-1, 0), new(0, 1), new(0, -1) };
 
         /// <summary>Regions down from the top (region y 0: 0, y -3: 3).</summary>
@@ -47,9 +47,11 @@ namespace LuckyNumbers.HoldScene
             return cell.Walkable && cell.Kind != CellKind.ShaftDown && cell.Kind != CellKind.ShaftUp && (cell.Flags & CellFlags.Pillar) == 0;
         }
 
-        /// <summary>A creature may step from one cell to the next (same level, both standable).</summary>
+        /// <summary>A creature may step from one cell to the next (same level, both standable). Not through a
+        /// doorway: the puzzles' doors and portcullises (MinePasses.Puzzles) stand in Door cells.</summary>
         public static bool Passable(HoldCell cell) =>
-            cell.Walkable && cell.Kind != CellKind.ShaftDown && cell.Kind != CellKind.ShaftUp && (cell.Flags & CellFlags.Pillar) == 0;
+            cell.Walkable && cell.Kind != CellKind.ShaftDown && cell.Kind != CellKind.ShaftUp && cell.Kind != CellKind.Door &&
+            (cell.Flags & CellFlags.Pillar) == 0;
 
         /// <summary>Clear of shafts (Chebyshev 1, this level and the ones above / below) and two cells in from the edge.</summary>
         public static bool Clear(in HoldGrid g, int3 c)
@@ -185,10 +187,31 @@ namespace LuckyNumbers.HoldScene
             var depth = Depth(region);
             var chambers = Chambers(g);
             var taken = new HashSet<int3>();
+            var max = math.max(0, life.CachesMax);
+
+            // Nothing on a fixture's cell (doors, keys, levers: MinePasses). Behind each locked door, first, the
+            // pass's reward spot gets a strongbox rolled as if deeper (its own hash, so the others roll as before).
+            if (g.Fixtures.IsCreated)
+            {
+                foreach (var f in g.Fixtures) taken.Add(f.Cell);
+                var rewards = Rng(seed, RewardTag, region);
+                foreach (var f in g.Fixtures)
+                {
+                    if (!MinePasses.PuzzleReward(g, f, out var spot, out var bonus)) continue;
+                    var loot = rewards.NextFloat();
+                    var item = rewards.NextUInt();
+                    if (caches.Count >= max || !Mine(g, spot) || !Standable(g, spot) || !Clear(g, spot) || taken.Contains(spot)) continue;
+                    var wall = int2.zero;
+                    foreach (var d in Four)
+                        if (!g.Get(spot + new int3(d.x, 0, d.y)).Walkable) { wall = d; break; }
+                    if (wall.Equals(int2.zero)) continue;
+                    taken.Add(spot);
+                    caches.Add(Cache(life, depth + bonus, g.ToWorld(spot), wall, LifeSpot.Locked, loot, item));
+                }
+            }
 
             // Caches: each chamber, then each dead end, rolls once; a chamber's box goes against its wall.
             var rng = Rng(seed, CacheTag, region);
-            var max = math.max(0, life.CachesMax);
             var chamberChance = Chance(life.CacheChamberChance, life.CacheChancePerDepth, depth, 0.95f);
             var endChance = Chance(life.CacheDeadEndChance, life.CacheChancePerDepth, depth, 0.95f);
             var wallCells = new List<(int3, int2)>();

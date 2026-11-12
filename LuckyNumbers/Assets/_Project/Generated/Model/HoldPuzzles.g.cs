@@ -10,10 +10,74 @@ using R3;
 namespace LuckyNumbers.Model
 {
     /// <summary>
-    /// Puzzles in the mines: locked doors and their keys, portcullises and their levers.
+    /// Puzzles in the mines: locked doors and their keys, portcullises and their levers (MinePasses.Puzzles places them,
+    /// PuzzlePresenter builds and works them). Depth is regions down (region y 0: depth 0). A door or gate goes on a
+    /// chokepoint: a one-wide tunnel cell between two walls whose removal cuts off a pocket of the region with no opening
+    /// or shaft in it; its key / lever lies on the open side, reachable without passing any door or gate.
     /// </summary>
     public sealed class PuzzleRules
     {
+        /// <summary>
+        /// ---- placement (per region) ----
+        /// Each of up to doors_max tries places a locked door with this chance (plus per depth, capped at door_chance_max).
+        /// </summary>
+        public float DoorChance { get; set; }
+        public float DoorChancePerDepth { get; set; }
+        public float DoorChanceMax { get; set; }
+        public int DoorsMax { get; set; }
+        /// <summary>
+        /// The same for portcullises (each with its lever).
+        /// </summary>
+        public float GateChance { get; set; }
+        public float GateChancePerDepth { get; set; }
+        public float GateChanceMax { get; set; }
+        public int GatesMax { get; set; }
+        /// <summary>
+        /// The pocket a door or gate closes off: at least / at most this many walkable cells.
+        /// </summary>
+        public int BehindMinCells { get; set; }
+        public int BehindMaxCells { get; set; }
+        /// <summary>
+        /// A key lies key_min..key_max steps (cells walked) from its door (farther only if nothing fits); dead ends and
+        /// chambers are preferred.
+        /// </summary>
+        public int KeyMinCells { get; set; }
+        public int KeyMaxCells { get; set; }
+        /// <summary>
+        /// A lever is on a wall this many steps from its gate.
+        /// </summary>
+        public int LeverMinCells { get; set; }
+        public int LeverMaxCells { get; set; }
+        /// <summary>
+        /// Behind a locked door: a strongbox (HoldLifePlan) whose find is rolled as if this many regions deeper.
+        /// </summary>
+        public int RewardDepthBonus { get; set; }
+        /// <summary>
+        /// ---- interaction (PuzzlePresenter) ----
+        /// Reach (metres, flat) to pick up a key, work a door or lever.
+        /// </summary>
+        public float Reach { get; set; }
+        public string KeyName { get; set; }
+        public string PickupPrompt { get; set; }
+        /// <summary>
+        /// Shown when you pick a key up ("{count}": keys you now carry).
+        /// </summary>
+        public string PickupText { get; set; }
+        public string UnlockPrompt { get; set; }
+        /// <summary>
+        /// At a locked door without its key.
+        /// </summary>
+        public string LockedText { get; set; }
+        public string LeverPrompt { get; set; }
+        /// <summary>
+        /// At a portcullis that's still down.
+        /// </summary>
+        public string GateText { get; set; }
+        /// <summary>
+        /// Animation times (seconds).
+        /// </summary>
+        public float DoorSwingSeconds { get; set; }
+        public float GateRaiseSeconds { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public PuzzleRules Clone() => (PuzzleRules)MemberwiseClone();
