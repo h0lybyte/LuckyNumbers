@@ -10,23 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
-  m_Name: Spikes
+  m_Name: Monsters
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
-  m_GroupName: Spikes
-  m_GUID: 042025fffe57b465a9209dbf16023ec8
+  m_GroupName: Monsters
+  m_GUID: d8daeaffa4f674a6f8af12e8308605f5
   m_SerializeEntries:
-  - m_GUID: 594fda05a5e04f918010cb1bad893d9c
-    m_Address: spike/smoke-cube
+  - m_GUID: 04c462d26a8334321b8a1a9fbfe9c6d8
+    m_Address: monster/aberration
     m_ReadOnly: 0
     m_SerializedLabels:
-    - Station
+    - Planet
     FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: b9d3571235561429c802157337c555a1, type: 2}
   m_SchemaSet:
     m_Schemas:
-    - {fileID: 11400000, guid: f8161df06cc284393bfef41469f851da, type: 2}
+    - {fileID: 11400000, guid: 8fc3aae17b163470daa21e89d72a3996, type: 2}
     m_SchemaDisplayOrder:
-    - Spikes_BundledAssetGroupSchema
+    - Monsters_BundledAssetGroupSchema
   m_IncludeInBuild: 1
   m_IncludeInBuildMigrated: 1

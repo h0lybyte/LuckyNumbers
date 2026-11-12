@@ -295,7 +295,7 @@ namespace LuckyNumbers.Editor
         }
 
         /// <summary>
-        /// The Planet scene's monster models (MonsterTemplates), built as CombatPresenter builds them
+        /// The monster models (Prefabs/Monsters, SceneBuilder.BakeMonsters), built as CombatPresenter builds them
         /// (MonsterView.CreateModel), posed from 4 clips (idle, run, attack, fall) seen from its front-left, to
         /// Logs/preview-monster.png. Logs its hitbox against its mesh's bounds and which way it faces.
         /// </summary>
@@ -304,8 +304,9 @@ namespace LuckyNumbers.Editor
         {
             EditorSceneManager.OpenScene("Assets/_Project/Scenes/Planet.unity", OpenSceneMode.Single);
             Physics.SyncTransforms();
-            var template = Object.FindObjectsByType<LuckyNumbers.Planet.MonsterRig>(FindObjectsInactive.Include);
-            if (template.Length == 0) throw new System.Exception("no MonsterRig template in Planet.unity");
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Project/Prefabs/Monsters/aberration.prefab")
+                         ?? throw new System.Exception("Prefabs/Monsters/aberration.prefab missing (tools/ln.py scenes)");
+            var template = new[] { prefab.GetComponent<LuckyNumbers.Planet.MonsterRig>() };
             var clips = new LuckyNumbers.Model.MonsterClips { Idle = "idle", Walk = "walk_limp", Run = "walk_fast", Attack = "attack_lunge",
                                                               Hit = "knee_hit_recover", Die = "fall_forward" };
             var size = new Vector3(0.7f, 1.85f, 0.6f);

@@ -76,6 +76,9 @@ namespace LuckyNumbers.Planet
         readonly List<Monster> _monsters = new();
         readonly List<IDisposable> _subscriptions = new();
         readonly CancellationTokenSource _cts = new();
+        readonly AssetScope _assets;   // monsters' models (Prefabs/Monsters, the Monsters group), released with the scene
+        readonly Dictionary<string, MonsterRig> _models = new();   // by MonsterType.model
+        bool _modelsReady;             // loaded (or failed: those monsters are placeholder blocks)
         Bolts _bolts;
         Material _bodyMaterial;   // monsters: the relics' lit material (it's in the build), tinted per monster
         float _onFootFor;         // a moment's grace after you step out before anything comes for you
@@ -96,8 +99,9 @@ namespace LuckyNumbers.Planet
                                IPublisher<PlayerDamaged> damaged, IPublisher<PlayerDied> died, IPublisher<CharacterXpGained> xp,
                                IPublisher<SceneChangeRequested> scenes, ISubscriber<DevWarpRequested> warps,
                                EncounterState encounter, ISubscriber<EncounterChoice> choices, IPublisher<ItemHandled> handled,
-                               IPublisher<FindRolled> foundRolls)
+                               IPublisher<FindRolled> foundRolls, AssetScope assets)
         {
+            _assets = assets;
             _handled = handled;
             _foundRolls = foundRolls;
             _encounter = encounter;
@@ -131,6 +135,7 @@ namespace LuckyNumbers.Planet
             _state.Armor.Value = PlayerArmor();
             _firstPerson.ShotCheck = HeldShot;   // a held gun's shots at a monster roll as they're fired
             StartEncounters();
+            LoadModelsAsync(_cts.Token).Forget();   // while you fly in: nothing spawns before you're on foot
             // Dev (the page's inspector): "monster" drops one a few metres ahead of you ("monster:<id>": that one).
             _subscriptions.Add(_warps.Subscribe(e =>
             {
@@ -156,7 +161,7 @@ namespace LuckyNumbers.Planet
         {
             var dt = Time.deltaTime;
             if (dt <= 0f || C == null) return;
-            if (!_spawned && _site.Built && _firstPerson.Active) SpawnSite();
+            if (!_spawned && _modelsReady && _site.Built && _firstPerson.Active) SpawnSite();
             _bolts?.Tick(dt);
             if (_down) return;
             if (TickEncounters()) return;   // a card is open: time stands still
@@ -173,6 +178,34 @@ namespace LuckyNumbers.Planet
         }
 
         // ---- Spawning -------------------------------------------------------------------------------------------
+
+        /// <summary>Every model a monster type names, side by side; one that's missing or fails stays a placeholder.</summary>
+        async UniTaskVoid LoadModelsAsync(CancellationToken ct)
+        {
+            var loads = new List<UniTask>();
+            foreach (var type in C?.Monsters ?? new())
+            {
+                var name = type.Model;
+                if (string.IsNullOrEmpty(name) || _models.ContainsKey(name)) continue;
+                _models[name] = null;
+                if (!AssetKeys.Monster.TryGetValue(name, out var key))
+                {
+                    Debug.LogWarning($"[Combat] no model '{name}' for {type.Id} (Prefabs/Monsters; rebuild with tools/ln.py scenes)");
+                    continue;
+                }
+                loads.Add(LoadModel(name, key, ct));
+            }
+            try { await UniTask.WhenAll(loads); }
+            catch (OperationCanceledException) { return; }
+            _modelsReady = true;
+        }
+
+        async UniTask LoadModel(string name, AssetKey<GameObject> key, CancellationToken ct)
+        {
+            try { _models[name] = (await _assets.LoadAsync(key, ct)).GetComponent<MonsterRig>(); }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception e) { Debug.LogWarning($"[Combat] {e.Message}; {name} stays a placeholder"); }
+        }
 
         void SpawnSite()
         {
@@ -220,7 +253,7 @@ namespace LuckyNumbers.Planet
         void Spawn(MonsterType type, Vector3 at, bool aggro)
         {
             var size = new Vector3(type.Size.X > 0f ? type.Size.X : 1f, type.Size.Y > 0f ? type.Size.Y : 1f, type.Size.Z > 0f ? type.Size.Z : 1f);
-            var model = _view.MonsterModel(type.Model);
+            _models.TryGetValue(type.Model ?? "", out var model);   // not loaded yet (a dev spawn): a placeholder
             var view = model != null
                 ? MonsterView.CreateModel(type.Id, model, size, type.Clips)
                 : MonsterView.Create(type.Id, size, new Color(type.Color.R, type.Color.G, type.Color.B, 1f), _bodyMaterial);

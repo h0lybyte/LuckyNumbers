@@ -29,6 +29,7 @@ namespace LuckyNumbers.Editor
             BakeWeapons();               // Prefabs/Weapons: addressable, loaded by WeaponRack (not baked into scenes)
             BakeShips();                 // Prefabs/Ships: hulls, fitted by ShipYard into the scenes' shells
             BakeRelics();                // Prefabs/Relics: named relics' models, loaded by RelicsPresenter at the crash site
+            BakeMonsters();              // Prefabs/Monsters: monsters' models, loaded by CombatPresenter on Planet
             AddressablesSetup.Apply();   // their addresses and AssetKeys, before any scene is built
             var starfield = MaterialAsset("Starfield", "LuckyNumbers/Starfield");
             var planet = MaterialAsset("Planet3D", "LuckyNumbers/Planet3D");
@@ -228,14 +229,7 @@ namespace LuckyNumbers.Editor
             relicBeam.gameObject.SetActive(false);
             Assign(view, ("wreck", wreck), ("fighter", fighter), ("flightCamera", flightCam), ("wreckBeacon", beam.transform),
                    ("landingPad", pad.transform), ("amuletTemplate", amulet), ("vaseTemplate", vase), ("relicBeamTemplate", relicBeam));
-            var vso = new SerializedObject(view);
-            // Monsters' models (off; CombatPresenter copies one per monster whose MonsterType.model names it).
-            var monsterRoot = new GameObject("MonsterTemplates").transform;
-            var monsterModels = vso.FindProperty("monsterModels");
-            var monsters = new[] { MonsterModel(monsterRoot, "aberration", "Aberration") };
-            monsterModels.arraySize = monsters.Length;
-            for (var i = 0; i < monsters.Length; i++) monsterModels.GetArrayElementAtIndex(i).objectReferenceValue = monsters[i];
-            vso.ApplyModifiedPropertiesWithoutUndo();
+            // Monsters' models: Prefabs/Monsters (BakeMonsters), loaded by CombatPresenter, not baked in here.
             Scopes<PlanetScope>();
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Planet.unity");
         }
@@ -510,6 +504,36 @@ namespace LuckyNumbers.Editor
             EditorUtility.SetDirty(rig);
             model.SetActive(false);
             return rig;
+        }
+
+        const string MonsterPrefabsDir = "Assets/_Project/Prefabs/Monsters";
+
+        /// <summary>Monsters with a model: (MonsterType.model, its folder in Art/Characters).</summary>
+        static readonly (string name, string folder)[] MonsterModels = { ("aberration", "Aberration") };
+
+        /// <summary>
+        /// Every monster's model as a prefab in Prefabs/Monsters (the Monsters Addressables group, see
+        /// AddressablesSetup.Rules), saved off like the scene templates were; CombatPresenter loads them by
+        /// MonsterType.model and MonsterView.CreateModel copies one per monster. Prefabs nothing names anymore go.
+        /// </summary>
+        public static void BakeMonsters()
+        {
+            if (!AssetDatabase.IsValidFolder("Assets/_Project/Prefabs")) AssetDatabase.CreateFolder("Assets/_Project", "Prefabs");
+            if (!AssetDatabase.IsValidFolder(MonsterPrefabsDir)) AssetDatabase.CreateFolder("Assets/_Project/Prefabs", "Monsters");
+            var names = new System.Collections.Generic.List<string>();
+            foreach (var (name, folder) in MonsterModels)
+            {
+                var rig = MonsterModel(null, name, folder);
+                PrefabUtility.SaveAsPrefabAsset(rig.gameObject, $"{MonsterPrefabsDir}/{name}.prefab");
+                Object.DestroyImmediate(rig.gameObject);
+                names.Add(name);
+            }
+            foreach (var guid in AssetDatabase.FindAssets("t:Prefab", new[] { MonsterPrefabsDir }))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!names.Contains(System.IO.Path.GetFileNameWithoutExtension(path))) AssetDatabase.DeleteAsset(path);
+            }
+            AssetDatabase.SaveAssets();
         }
 
         const string RelicPrefabsDir = "Assets/_Project/Prefabs/Relics";
