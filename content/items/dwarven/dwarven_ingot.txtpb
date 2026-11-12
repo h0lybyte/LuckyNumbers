@@ -1,0 +1,12 @@
+# proto-file: luckynumbers/v1/inventory.proto
+# proto-message: luckynumbers.v1.ItemDef
+# Found in the dwarven hold's mines (a strongbox, content/holds/life/default.txtpb). No model yet: a placeholder block.
+
+id: "dwarven_ingot"
+name: "Tarnished ingot"
+kind: ITEM_KIND_RELIC
+description: "A bar of dull deep-iron, stamped with a clan rune worn almost smooth."
+shape: "##"
+bulk: 0.8
+value: 120
+color { r: 0.45 g: 0.42 b: 0.4 a: 1 }

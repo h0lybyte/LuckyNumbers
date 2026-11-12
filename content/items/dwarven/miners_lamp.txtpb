@@ -1,0 +1,12 @@
+# proto-file: luckynumbers/v1/inventory.proto
+# proto-message: luckynumbers.v1.ItemDef
+# Found in the dwarven hold's mines (a strongbox, content/holds/life/default.txtpb). No model yet: a placeholder block.
+
+id: "miners_lamp"
+name: "Old miner's lamp"
+kind: ITEM_KIND_RELIC
+description: "Brass and cracked glass. Someone carried it down here a long time ago."
+shape: "#/#"
+bulk: 0.5
+value: 90
+color { r: 0.85 g: 0.62 b: 0.3 a: 1 }

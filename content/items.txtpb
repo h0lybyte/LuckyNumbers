@@ -124,6 +124,10 @@ items {
 
 item_refs: ["items/relics/zhang_heng_water_amulet", "items/relics/pliny_roman_vase", "items/relics/nezahualcoyotl_aztec_block"]
 
+# ---- dwarven finds: the hold's strongboxes (content/holds/life/default.txtpb), sold to the museum like relics ----
+
+item_refs: ["items/dwarven/dwarven_ingot", "items/dwarven/rune_shard", "items/dwarven/miners_lamp", "items/dwarven/deep_tankard", "items/dwarven/clan_seal", "items/dwarven/forge_heart", "items/dwarven/ancestor_mask", "items/dwarven/deep_king_crown"]
+
 # ---- starting kits (CharacterClass.id): gear goes straight into its slot -------------------------------------------------------------------------
 
 kits { class_id: "ace"     items: ["carbine", "sidearm", "jacket", "gloves", "medpatch", "medpatch", "ping"] }

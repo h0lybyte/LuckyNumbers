@@ -1,0 +1,12 @@
+# proto-file: luckynumbers/v1/inventory.proto
+# proto-message: luckynumbers.v1.ItemDef
+# Found in the dwarven hold's mines (a strongbox, content/holds/life/default.txtpb). No model yet: a placeholder block.
+
+id: "clan_seal"
+name: "Clan seal"
+kind: ITEM_KIND_RELIC
+description: "A ring-seal of black stone. It still presses a crisp mark."
+shape: "#"
+bulk: 0.2
+value: 600
+color { r: 0.2 g: 0.2 b: 0.24 a: 1 }

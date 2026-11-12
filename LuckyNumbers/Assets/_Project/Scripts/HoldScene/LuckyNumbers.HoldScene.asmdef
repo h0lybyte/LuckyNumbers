@@ -8,6 +8,7 @@
         "LuckyNumbers.Model.Unity",
         "LuckyNumbers.Core",
         "LuckyNumbers.Planet",
+        "LuckyNumbers.Intro",
         "VContainer",
         "MessagePipe",
         "R3.Unity",
