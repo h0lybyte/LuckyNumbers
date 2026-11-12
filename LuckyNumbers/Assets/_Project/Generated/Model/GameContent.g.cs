@@ -6235,8 +6235,20 @@ namespace LuckyNumbers.Model
             Settings = new SettingsPanel
             {
                 Title = "Settings",
-                Body = "Coming soon.",
                 BackLabel = "Back",
+                SensitivityLabel = "Look speed",
+                InvertLabel = "Invert look up/down",
+                QualityLabel = "Render quality",
+                QualityNames =
+                {
+                    "Low",
+                    "Medium",
+                    "High",
+                },
+                FpsLabel = "Show frame rate",
+                ResetLabel = "Defaults",
+                OnLabel = "On",
+                OffLabel = "Off",
             },
             Dice = new DiceRoller
             {

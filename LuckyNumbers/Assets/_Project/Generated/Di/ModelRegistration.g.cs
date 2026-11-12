@@ -92,6 +92,7 @@ namespace LuckyNumbers.Model
             builder.Register<ShipPicker>(Lifetime.Singleton);
             builder.Register<PlayerVoyage>(Lifetime.Singleton);
             builder.Register<SaveSlots>(Lifetime.Singleton);
+            builder.Register<GameSettings>(Lifetime.Singleton);
             builder.Register<DiceState>(Lifetime.Singleton);
             builder.Register<UniverseState>(Lifetime.Singleton);
             builder.Register<Outfitter>(Lifetime.Singleton);

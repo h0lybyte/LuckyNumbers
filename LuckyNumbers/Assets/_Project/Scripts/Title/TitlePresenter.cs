@@ -35,6 +35,7 @@ namespace LuckyNumbers.Title
         readonly ICharacterSetup _character;
         readonly IShipPicker _hangar;
         readonly ISaveSlots _saves;
+        readonly GameSettings _settings;
         readonly CompositeDisposable _disposables = new();
         readonly System.Threading.CancellationTokenSource _cts = new();
         bool _settingsOpen, _leaving;
@@ -46,8 +47,9 @@ namespace LuckyNumbers.Title
                               IPublisher<MenuItemSelected> menuPublisher, ISubscriber<MenuItemSelected> menu,
                               IPublisher<SceneChangeRequested> sceneRequests,
                               ISpaceDirector space, CameraHandoff handoff, ICharacterSetup character,
-                              IShipPicker hangar, ISaveSlots saves)
+                              IShipPicker hangar, ISaveSlots saves, GameSettings settings)
         {
+            _settings = settings;
             _saves = saves;
             _hangar = hangar;
             _character = character;
@@ -72,7 +74,7 @@ namespace LuckyNumbers.Title
                 var action = item.Action;
                 _view.AddMenuButton(item.Label, () => _menuPublisher.Publish(new MenuItemSelected(action)));
             }
-            _view.SetSettings(content.Settings.Title, content.Settings.Body, content.Settings.BackLabel, CloseSettings);
+            BindSettings(content.Settings);
             _view.ShowSettings(false);
             _view.SetCredits(GameContent.Credits, CloseSettings, url => { Debug.Log($"[Title] open {url}"); Application.OpenURL(url); });
             _view.ShowCredits(false);
@@ -185,6 +187,23 @@ namespace LuckyNumbers.Title
             }
             _uiAlpha = to;
             _view.SetUiAlpha(to);
+        }
+
+        /// <summary>The Settings panel edits GameSettings (Core/SettingsPresenter saves and applies each change).</summary>
+        void BindSettings(SettingsPanel labels)
+        {
+            var s = _settings;
+            _view.SetSettings(labels, SettingsPresenter.MinSensitivity, SettingsPresenter.MaxSensitivity,
+                onSensitivity: v => s.LookSensitivity.Value = Mathf.Round(v * 20f) / 20f,   // 0.05 steps
+                onInvert: () => s.InvertY.Value = !s.InvertY.Value,
+                onQuality: i => s.Quality.Value = RenderQuality.Low + i,
+                onFps: () => s.ShowFps.Value = !s.ShowFps.Value,
+                onReset: () => SettingsPresenter.Reset(s),
+                onBack: CloseSettings);
+            Observable.CombineLatest(s.LookSensitivity, s.InvertY, s.Quality, s.ShowFps,
+                    (look, invert, quality, fps) => (look, invert, quality, fps))
+                .Subscribe(v => _view.ShowSettingsValues(v.look, v.invert, (int)v.quality - (int)RenderQuality.Low, v.fps))
+                .AddTo(_disposables);
         }
 
         /// <summary>Close whichever panel is open (Settings or Credits).</summary>

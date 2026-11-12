@@ -1,11 +1,13 @@
-// ?ln-fps: a small frame-rate readout (top centre) for checking a device by eye, e.g. on a phone, where there's no
+// ?ln-fps, or Settings > Show frame rate (GameSettings.show_fps): a small frame-rate readout (top centre) for checking a device by eye, e.g. on a phone, where there's no
 // devtools to hand. Unity renders once per animation frame, so the page's frame rate is the game's. Updates twice
 // a second: average fps, the median and 95th-percentile frame time, and the texture format the page chose.
 import { useEffect, useState } from "react";
+import { useLNState } from "./ln";
 
-const on = typeof location !== "undefined" && new URLSearchParams(location.search).has("ln-fps");
+const query = typeof location !== "undefined" && new URLSearchParams(location.search).has("ln-fps");
 
 export function FpsMeter() {
+  const on = query || (useLNState("GameSettings")?.showFps ?? false);
   const [text, setText] = useState("");
   useEffect(() => {
     if (!on) return;
@@ -28,8 +30,11 @@ export function FpsMeter() {
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, []);
+    return () => {
+      cancelAnimationFrame(raf);
+      setText("");
+    };
+  }, [on]);
   if (!on || !text) return null;
   return <div className="fps-meter">{text}</div>;
 }
