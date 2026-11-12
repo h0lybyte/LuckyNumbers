@@ -1645,7 +1645,7 @@ namespace LuckyNumbers.Model
                         Monster = "aberration",
                         Weight = 3.0f,
                         WeightPerDepth = 0.5f,
-                        MinDepth = 1,
+                        MinDepth = 3,
                     },
                     new HoldCreature
                     {
@@ -1675,8 +1675,59 @@ namespace LuckyNumbers.Model
                 PathCells = 600,
                 WanderSteps = 6,
                 GraceSeconds = 4.0f,
+                BiteScale = 0.4f,
+                BiteScalePerDepth = 0.15f,
+                AttackShallow = 3,
             },
             ClimbSpeed = 2.2f,
+            Depth = new DepthRules
+            {
+                SafeFall = 4.2f,
+                FallDamagePerMetre = 3.0f,
+                FallSource = "a long fall",
+                DropChance = 0.4f,
+                DropsFromDepth = 1,
+                DropPrompt = "A long drop. No ladder: no way back up here.",
+                CollapsesMin = 1,
+                CollapsesMax = 3,
+                SealEvery = 4,
+                KeysPerBand = 3,
+                KeyArea = 2,
+                Bands =
+                {
+                    new DepthBand
+                    {
+                        Name = "the Upper Workings",
+                        Blurb = "Worked out long ago. The ladders still hold.",
+                    },
+                    new DepthBand
+                    {
+                        Name = "the Old Works",
+                        Blurb = "The clans dug here before the hall was cut. Mind the shafts.",
+                    },
+                    new DepthBand
+                    {
+                        Name = "the Hollow Seams",
+                        Blurb = "Galleries that ring when you walk them. Something lives in the echoes.",
+                    },
+                    new DepthBand
+                    {
+                        Name = "the Ember Roads",
+                        Blurb = "Warm stone, iron rails, and nobody left to ride them.",
+                    },
+                    new DepthBand
+                    {
+                        Name = "the Nameless Deep {n}",
+                        Blurb = "No dwarf wrote down what they found this far down.",
+                    },
+                },
+                BandTitle = "Depth {depth}: {name}",
+                SealLocked = "Sealed. The key of {name} lies somewhere in these depths.",
+                SealPrompt = "E  unseal the way down",
+                KeyPrompt = "E  take the seal key of {name}",
+                KeyText = "The seal key of {name}. It opens the great hatches at depth {depth}.",
+                UseDistance = 1.9f,
+            },
         };
 
         /// <summary>From <c>content/intro.txtpb</c>.</summary>

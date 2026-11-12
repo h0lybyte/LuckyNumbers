@@ -66,7 +66,7 @@ namespace LuckyNumbers.HoldScene
         readonly IPublisher<SceneChangeRequested> _scenes;
         readonly AssetScope _assets;
         readonly List<Creature> _creatures = new();
-        IDisposable _warpSub;
+        IDisposable _warpSub, _hurtSub;
 
         /// <summary>Dev (LN.send('DevWarpRequested', {to: 'creature'})): stand 3-6 cells from the nearest creature, in its sight.</summary>
         void WarpToCreature()
@@ -119,9 +119,11 @@ namespace LuckyNumbers.HoldScene
                              PlayerHealth health, CharacterSheet sheet, IInventory pack, PlayerVoyage voyage, CombatState state,
                              IPublisher<CombatRoll> rolls, IPublisher<PlayerDamaged> damaged, IPublisher<PlayerDied> died,
                              IPublisher<CharacterXpGained> xp, IPublisher<SceneChangeRequested> scenes, AssetScope assets,
-                             ISubscriber<DevWarpRequested> warps)
+                             ISubscriber<DevWarpRequested> warps, ISubscriber<HoldHurt> hurts)
         {
             _warpSub = warps.Subscribe(e => { if (e.To == "creature") WarpToCreature(); });
+            // Other hurts down here (DepthPresenter's falls) take the same road as a bite: Stamina, HP, the rescue.
+            _hurtSub = hurts.Subscribe(e => { if (!_down && e.Amount > 0) TakeDamage(e.Amount, e.Source ?? "a fall"); });
             _world = world;
             _player = player;
             _firstPerson = firstPerson;
@@ -476,11 +478,15 @@ namespace LuckyNumbers.HoldScene
             c.Brain.Cooldown = math.max(0.3f, c.Type.Cooldown);
             c.View.Attack();
             var armor = PlayerArmor();
-            var (d20, total, hit, crit, fumble) = Dice.Attack(c.Type.Attack, armor, ref _rng);
+            // Softer near the top (HoldLife bite_scale, attack_shallow): early depths are for learning the fight.
+            var depth = HoldLifePlan.Depth(c.Region);
+            var attack = c.Type.Attack - math.max(0, Life.AttackShallow - depth);
+            var (d20, total, hit, crit, fumble) = Dice.Attack(attack, armor, ref _rng);
             var damage = hit ? Dice.Roll(c.Type.Damage, ref _rng, crit) : 0;
-            _rolls.Publish(new CombatRoll(c.Type.Name, "You", d20, c.Type.Attack, total, armor, hit, crit, fumble, damage, c.Type.Damage, false, "bite",
+            if (hit && Life.BiteScale > 0f) damage = math.max(1, (int)math.round(damage * math.min(1f, Life.BiteScale + Life.BiteScalePerDepth * depth)));
+            _rolls.Publish(new CombatRoll(c.Type.Name, "You", d20, attack, total, armor, hit, crit, fumble, damage, c.Type.Damage, false, "bite",
                                           false, false, ""));
-            Debug.Log($"[HoldLife] {c.Type.Name} bites: d20 {d20} + {c.Type.Attack} = {total} vs {armor}: {(hit ? $"hit, {damage}" : "miss")}");
+            Debug.Log($"[HoldLife] {c.Type.Name} bites (depth {depth}): d20 {d20} + {attack} = {total} vs {armor}: {(hit ? $"hit, {damage}" : "miss")}");
             if (hit) TakeDamage(damage, c.Type.Name);
         }
 
@@ -645,6 +651,7 @@ namespace LuckyNumbers.HoldScene
         public void Dispose()
         {
             _warpSub?.Dispose();
+            _hurtSub?.Dispose();
             _world.RegionShown -= Shown;
             _world.RegionHidden -= Hidden;
             _cts.Cancel();

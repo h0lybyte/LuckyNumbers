@@ -82,6 +82,13 @@ namespace LuckyNumbers.Model
         /// Seconds in the deep before anything comes for you (like the planet's grace on foot).
         /// </summary>
         public float GraceSeconds { get; set; }
+        /// <summary>
+        /// Softer near the top: a bite's damage x min(1, bite_scale + bite_scale_per_depth * depth) (rounded, at least 1;
+        /// bite_scale 0: full damage everywhere), and its attack bonus less max(0, attack_shallow - depth).
+        /// </summary>
+        public float BiteScale { get; set; }
+        public float BiteScalePerDepth { get; set; }
+        public int AttackShallow { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public HoldLife Clone() => (HoldLife)MemberwiseClone();

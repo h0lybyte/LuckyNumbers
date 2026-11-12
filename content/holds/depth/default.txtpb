@@ -1,0 +1,35 @@
+# proto-file: luckynumbers/v1/hold_depth.proto
+# proto-message: luckynumbers.v1.DepthRules
+# Pacing the deep: falls, drop shafts, collapses, and the seals every few depths. Placeholder numbers.
+
+# ---- falling: one storey (3 m) is safe, a drop shaft's two storeys (6 m) hurt ----
+safe_fall: 4.2
+fall_damage_per_metre: 3
+fall_source: "a long fall"
+
+# ---- drop shafts: no ladder, two storeys down, one way ----
+drop_chance: 0.4
+drops_from_depth: 1
+drop_prompt: "A long drop. No ladder: no way back up here."
+
+# ---- collapses: rubble across tunnels that have a way round ----
+collapses_min: 1
+collapses_max: 3
+collapses_from_depth: 0
+
+# ---- depth seals: every 4 depths (seals in depths 3, 7, 11 ...) ----
+seal_every: 4
+keys_per_band: 3
+key_area: 2
+band_title: "Depth {depth}: {name}"
+seal_locked: "Sealed. The key of {name} lies somewhere in these depths."
+seal_prompt: "E  unseal the way down"
+key_prompt: "E  take the seal key of {name}"
+key_text: "The seal key of {name}. It opens the great hatches at depth {depth}."
+use_distance: 1.9
+
+bands { name: "the Upper Workings" blurb: "Worked out long ago. The ladders still hold." }
+bands { name: "the Old Works" blurb: "The clans dug here before the hall was cut. Mind the shafts." }
+bands { name: "the Hollow Seams" blurb: "Galleries that ring when you walk them. Something lives in the echoes." }
+bands { name: "the Ember Roads" blurb: "Warm stone, iron rails, and nobody left to ride them." }
+bands { name: "the Nameless Deep {n}" blurb: "No dwarf wrote down what they found this far down." }

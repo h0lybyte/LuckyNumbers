@@ -2,8 +2,66 @@ syntax = "proto3";
 
 package luckynumbers.v1;
 
+import "ln/options.proto";
+
 option csharp_namespace = "LuckyNumbers.Model";
 
-// Pacing the deep: depth seals every few regions, drop shafts, collapsed tunnels, falling.
+// Pacing the deep: depth seals every few regions, drop shafts, collapsed tunnels, falling (docs/holds.md, "Depth").
+// Depth = regions down (region y 0: depth 0). A band is `seal_every` depths; its bottom depth's ways down are sealed
+// until you carry that band's seal key, which lies in one of a few regions of the band near the hold's column.
 message DepthRules {
+  // ---- falling (Hold scene only) ----
+  // A drop up to this many metres is unhurt (one storey is 3 m; a drop shaft falls two).
+  float safe_fall = 1;
+  // Damage per metre past safe_fall (rounded, at least 1), through the creatures' path: Stamina, then HP.
+  float fall_damage_per_metre = 2;
+  // What hurt you (the damage log, the rescue's cause).
+  string fall_source = 3;
+
+  // ---- drop shafts: a shaft between regions with no ladder, falling on through the region below ----
+  // Chance a region-to-region shaft is a drop (hash of the pair, so both regions agree).
+  float drop_chance = 4;
+  // No drops out of regions above this depth.
+  int32 drops_from_depth = 5;
+  // Shown beside a drop's lip.
+  string drop_prompt = 6;
+
+  // ---- collapses: tunnel cells filled with rubble, only where the region stays connected round them ----
+  int32 collapses_min = 7;
+  int32 collapses_max = 8;
+  int32 collapses_from_depth = 9;
+
+  // ---- depth seals ----
+  // Every this many depths the way down is sealed (band b: depths b*seal_every .. b*seal_every + seal_every - 1;
+  // the seals are in its bottom depth's regions, over every shaft down). 0: no seals.
+  int32 seal_every = 10;
+  // Regions per band that hold its key (hashed; one always on the band's top depth, row z 0).
+  int32 keys_per_band = 11;
+  // Keys lie in regions with x and z in -key_area..key_area (round the hold's column).
+  int32 key_area = 12;
+  // The bands, from the top; past the last, the last repeats ("{n}": its band number, from 1).
+  repeated DepthBand bands = 13;
+  // First time in a band: "{depth}" (its top depth), "{name}".
+  string band_title = 14;
+  // At a seal without its key ("{name}": the band), with it, and at a key.
+  string seal_locked = 15;
+  string seal_prompt = 16;
+  string key_prompt = 17;
+  // Picked up: said by the suit ("{name}", "{depth}": the sealed depth).
+  string key_text = 18;
+  // Reach to use a seal or take a key (metres, flat).
+  float use_distance = 19;
+}
+
+message DepthBand {
+  string name = 1;
+  string blurb = 2;
+}
+
+// Something in the hold hurt you that isn't a creature (a fall): DeepCreatures takes it off Stamina, then HP, and
+// sends you to the rescue at 0 HP, as for a bite.
+message HoldHurt {
+  option (ln.event) = true;
+  int32 amount = 1;
+  string source = 2;
 }
