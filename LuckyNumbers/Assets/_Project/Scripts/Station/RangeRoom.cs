@@ -154,6 +154,10 @@ namespace LuckyNumbers.Station
                                   Vector3.one * size, new Color(0.62f, 0.42f, 0.16f));
                 var body = crate.AddComponent<Rigidbody>();
                 body.mass = 2f;
+                var blob = BlobSpec.Centred(Vector3.one * size);   // a soft blob straight down, on whatever it rests on
+                blob.Probe = true;
+                blob.Minor = true;
+                BlobCaster.Attach(crate, blob);
                 _crates.Add(crate.GetComponent<Collider>());
             }
             var count = Math.Max(1, config.Targets);

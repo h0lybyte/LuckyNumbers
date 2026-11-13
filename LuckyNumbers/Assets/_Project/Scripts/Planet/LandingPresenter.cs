@@ -168,6 +168,8 @@ namespace LuckyNumbers.Planet
             Ship.Show(PlayerShipSkin.Current(_playerShip), L.ShipLength);
             Ship.GearUp(instant: true);                            // coming in from orbit: legs tucked away
             _ownColliders = Ship.Pivot.GetComponentsInChildren<Collider>(true);
+            CrashSitePresenter.ShadowShip(Ship, L.ShipLength);              // its blob shadow: the landing cue
+            BlobShadows.Current.View = _view.FlightCamera;                  // blobs fade and cull for the chase camera while it's on
             _stats = PlayerShipStats.Of(_playerShip);
             PlayerShipStats.EnsureFuel(_playerShip);
             _arrivalFuel = _playerShip.Fuel.Value;
@@ -197,6 +199,8 @@ namespace LuckyNumbers.Planet
             _site = site;
             Ship.Show(PlayerShipSkin.Current(_playerShip), L.ShipLength);
             _ownColliders = Ship.Pivot.GetComponentsInChildren<Collider>(true);
+            CrashSitePresenter.ShadowShip(Ship, L.ShipLength);              // its blob shadow: the landing cue
+            BlobShadows.Current.View = _view.FlightCamera;                  // blobs fade and cull for the chase camera while it's on
             _stats = PlayerShipStats.Of(_playerShip);
             PlayerShipStats.EnsureFuel(_playerShip);
             _guns?.Dispose();

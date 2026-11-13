@@ -447,6 +447,7 @@ namespace LuckyNumbers.HoldScene
         {
             var hop = c.Brain.Hunting && !c.View.Modelled ? math.abs(math.sin(Time.time * 9f + c.Size.x * 13f)) * c.Size.y * 0.12f : 0f;
             c.View.transform.SetPositionAndRotation(c.Position + Vector3.up * hop, Quaternion.Euler(0f, c.Heading, 0f));
+            c.View.Grounded(c.Position.y - c.Size.y * 0.5f);   // its blob shadow on its cell's floor (it keeps to its level)
         }
 
         void Fade(Creature c)

@@ -123,6 +123,7 @@ namespace LuckyNumbers.HoldScene
             glint.SetParent(root, false);
             glint.localPosition = new Vector3(0.18f, BoxSize.y + 0.22f, 0.05f);
 
+            BlobCaster.Attach(root.gameObject, new BlobSpec { Size = BoxSize }).SetGround(at.y);   // a soft blob on the floor under it
             var cache = new Cache { Plan = plan, Root = root, Lid = hinge, Glint = glint, At = at };
             if (_opened.Contains(plan.Cell)) SetOpen(cache);
             return cache;

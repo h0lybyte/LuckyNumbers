@@ -132,6 +132,7 @@ namespace LuckyNumbers.Planet
             try { await _curtain.Opened; }
             catch (OperationCanceledException) { return; }
             if (ct.IsCancellationRequested) return;
+            if (HasWreck) ShadowShip(_wreck, _config.WreckLength);   // its hull is in now
             if (_trip.Leaving.Value)
             {
                 _trip.Leaving.Value = false;
@@ -140,6 +141,21 @@ namespace LuckyNumbers.Planet
             }
             if (_config.Landing != null) _arrival.ArriveAsync(this, ct).Forget();
             else WakeAsync(ct).Forget();
+        }
+
+        /// <summary>
+        /// A ship's blob shadow (the wreck here, your fighter in LandingPresenter): its hull's box, or one `length` long
+        /// if the hull isn't in; it shows from content/shadows.txtpb ship_fade_height up and is seen further.
+        /// </summary>
+        public static void ShadowShip(ShipView ship, float length)
+        {
+            if (ship == null || ship.Pivot == null) return;
+            if (!BlobSpec.Fit(ship.Pivot, ship.HullRenderers, out var spec) || spec.Size.z < 0.1f)
+                spec = new BlobSpec { Size = new Vector3(length * 0.6f, length * 0.25f, length), Bottom = -length * 0.12f };
+            spec.Probe = true;
+            spec.FadeHeight = BlobShadows.Tune.ShipFadeHeight;
+            spec.FarScale = BlobShadows.Tune.ShipFarScale;
+            BlobCaster.Attach(ship.Pivot.gameObject, spec);
         }
 
         void Build(UniverseSeedChanged roll)
@@ -198,6 +214,8 @@ namespace LuckyNumbers.Planet
                 Debug.Log($"[Planet] hold gate at ({Gate.Position.x:0}, {Gate.Position.z:0}), {math.length(new float2(Gate.Position.x, Gate.Position.z)):0} m out");
             }
             _ground.Stream(Vector3.zero, int.MaxValue);   // everything around the spawn, now
+            BlobShadows.Current.Ground = _ground;   // blob shadows lie on this terrain, swept away from its sun
+            BlobShadows.Current.Sunlit = true;
 
             // Boulders: squashed, tilted spheres half sunk into the ground; the first right beside your path.
             for (var i = 0; i < _config.Boulders; i++)
@@ -238,6 +256,10 @@ namespace LuckyNumbers.Planet
                 body.mass = 0.4f;
                 body.interpolation = RigidbodyInterpolation.Interpolate;
                 body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;   // thrown fast
+                var blob = BlobSpec.Centred(pebble.transform.localScale);
+                blob.Probe = true;
+                blob.Minor = true;
+                BlobCaster.Attach(pebble, blob);
             }
 
             // Sky: the roll's nebula sky, hazed by this planet's atmosphere near the horizon.
