@@ -61,7 +61,16 @@ namespace LuckyNumbers.Station
         public readonly struct Box
         {
             public readonly Vector3 Center, Size;
-            public Box(Vector3 center, Vector3 size) { Center = center; Size = size; }
+            public readonly Quaternion Rotation;
+            /// <summary>Axis-aligned unless <see cref="Rotation"/> is set (StationView gives those their own object).</summary>
+            public readonly bool Turned;
+            public Box(Vector3 center, Vector3 size, Quaternion? rotation = null)
+            {
+                Center = center;
+                Size = size;
+                Rotation = rotation ?? Quaternion.identity;
+                Turned = rotation.HasValue;
+            }
         }
 
         // Piece names = the kits' FBX file names. Everything is the starship kit's cream panels: corridors lean in,
@@ -176,6 +185,7 @@ namespace LuckyNumbers.Station
                         // The rail is modelled on the wall's centre line: bring it out to the wall's face (0.1 m in).
                         if (handrails && next != Kind.Window)
                             Pieces.Add(new Piece(Handrail, Kit.Starship, edge - new Vector3(dir.x, 0, dir.y) * 0.1f, turn, cell));
+                        LeanBox(edge, dir);
                     }
                     else if (levels > 1)
                     {
@@ -212,7 +222,8 @@ namespace LuckyNumbers.Station
             // Deck: one slab under the whole plan (walls keep you inside), not one per cell.
             var span = new Vector3(Width * Cell, 0.1f, Depth * Cell);
             var middle = new Vector3(Width * Cell / 2f, 0f, Depth * Cell / 2f);
-            Boxes.Add(new Box(middle - Vector3.up * 0.05f, span));   // (no ceiling slab: a jump never reaches 3 m)
+            Boxes.Add(new Box(middle - Vector3.up * 0.05f, span));
+            CeilingBoxes();
 
             // Convex corridor corners: a grid vertex with corridor on three sides and something solid on the fourth.
             // The two walls round the solid cell end there, leaning away from each other: fill the gap (and post it).
@@ -357,6 +368,47 @@ namespace LuckyNumbers.Station
             }
             var lintel = centre + Vector3.up * ((DoorHeight + Height) / 2f);
             Boxes.Add(new Box(lintel, Size(across, DoorWidth, Height - DoorHeight, facing, WallThickness)));
+        }
+
+        /// <summary>
+        /// Ceilings: a slab over every walkable cell at its own height (3 m, or the top of a tall room). A jump alone
+        /// stops short of 3 m, but not off a crate or bench. One box per run of cells along X at the same height.
+        /// </summary>
+        void CeilingBoxes()
+        {
+            const float thick = 0.2f;
+            for (var z = 0; z < Depth; z++)
+            for (var x = 0; x < Width;)
+            {
+                var cell = new Vector2Int(x, z);
+                if (!Walkable(_cells[x, z])) { x++; continue; }
+                var levels = Levels(cell);
+                var end = x + 1;
+                while (end < Width && Walkable(_cells[end, z]) && Levels(new Vector2Int(end, z)) == levels) end++;
+                var y = Height * levels + thick / 2f;
+                var centre = new Vector3((x + end) * Cell / 2f, y, (z + 0.5f) * Cell);
+                Boxes.Add(new Box(centre, new Vector3((end - x) * Cell, thick, Cell)));
+                x = end;
+            }
+        }
+
+        /// <summary>
+        /// A corridor wall's lean (2.3 m up, 0.1 m out from the edge, to 3 m up, 0.6 m out): a slab along its
+        /// underside, so a jump beside the wall hits the panel instead of putting your head (and the camera) in it.
+        /// </summary>
+        void LeanBox(Vector3 edge, Vector2Int dir)
+        {
+            const float thick = 0.2f;
+            var inward = -new Vector3(dir.x, 0, dir.y);
+            var low = edge + inward * 0.1f + Vector3.up * 2.3f;
+            var high = edge + inward * 0.6f + Vector3.up * Height;
+            var slope = high - low;
+            var length = slope.magnitude;
+            var up = slope / length;
+            var face = Vector3.Cross(up, Vector3.Cross(inward, up)).normalized;   // the underside's normal (in, down)
+            if (Vector3.Dot(face, Vector3.down) < 0f) face = -face;
+            var centre = (low + high) / 2f - face * (thick / 2f);
+            Boxes.Add(new Box(centre, new Vector3(Cell, length, thick), Quaternion.LookRotation(face, up)));
         }
 
         void WallBox(Vector3 edge, Vector2Int dir)

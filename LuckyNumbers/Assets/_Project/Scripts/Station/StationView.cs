@@ -285,8 +285,15 @@ namespace LuckyNumbers.Station
             colliders.transform.SetParent(transform, false);
             foreach (var box in Plan.Boxes)
             {
-                var b = colliders.AddComponent<BoxCollider>();
-                b.center = box.Center;
+                var host = colliders;
+                if (box.Turned)
+                {
+                    host = new GameObject("lean collider");
+                    host.transform.SetParent(colliders.transform, false);
+                    host.transform.SetLocalPositionAndRotation(box.Center, box.Rotation);
+                }
+                var b = host.AddComponent<BoxCollider>();
+                b.center = box.Turned ? Vector3.zero : box.Center;
                 b.size = box.Size;
             }
             // Solid props: a box from the model's bounds, turned with it.
