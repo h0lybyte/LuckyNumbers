@@ -20,7 +20,8 @@ namespace LuckyNumbers.HoldScene
     /// Creatures in the mines (HoldLife.creatures: combat.txtpb monster types), placed by HoldLifePlan in a region's
     /// chambers as it's shown and gone with it (RegionHidden). Each keeps to its own region's cells: it wanders a few
     /// steps at a time along walkable cells, notices you within `sight` when it can see you (a ray to your eyes), then
-    /// chases along a cell-graph path (breadth-first on the grid, no NavMesh) and bites from `reach`.
+    /// chases down a flow field toward your cell (one Burst breadth-first search per region level, shared by every
+    /// creature chasing on it; no NavMesh) and bites from `reach`.
     ///
     /// The fight is the crash site's (CombatPresenter), reused piece by piece rather than the presenter itself (that
     /// one is tied to the crash site: wreck, ground, jobs, encounters): MonsterView / MonsterRig / MonsterBrain for
@@ -44,8 +45,8 @@ namespace LuckyNumbers.HoldScene
             public int Hp;
             public MonsterBrain Brain;
             public readonly List<int2> Path = new();   // local xz cells on its level, next first
-            public int2 PathTo = new(-1, -1);
-            public float RepathAt;
+            public FlowField Field;                    // the chase steps in Path came from (null: they're a wander's)
+            public int FieldVersion;
             public readonly Queue<int> Incoming = new();
         }
 
@@ -66,6 +67,11 @@ namespace LuckyNumbers.HoldScene
         readonly IPublisher<SceneChangeRequested> _scenes;
         readonly AssetScope _assets;
         readonly List<Creature> _creatures = new();
+        readonly Dictionary<int4, FlowField> _fields = new();   // (region, level) -> the way to your cell there
+        readonly Dictionary<int4, float> _fieldAt = new();
+        readonly List<int4> _gone = new();
+        const float Refield = 0.6f;   // rebuilt at least this often while used (rubble cleared, doors opened)
+        const int FieldSteps = 4;     // steps a creature takes from the field at a time
         IDisposable _warpSub, _hurtSub;
 
         /// <summary>Dev (LN.send('DevWarpRequested', {to: 'creature'})): stand 3-6 cells from the nearest creature, in its sight.</summary>
@@ -169,6 +175,14 @@ namespace LuckyNumbers.HoldScene
         void Hidden(int3 region)
         {
             _pending.Remove(region);
+            _gone.Clear();
+            foreach (var key in _fields.Keys) if (key.xyz.Equals(region)) _gone.Add(key);
+            foreach (var key in _gone)
+            {
+                _fields[key].Dispose();
+                _fields.Remove(key);
+                _fieldAt.Remove(key);
+            }
             for (var i = _creatures.Count - 1; i >= 0; i--)
             {
                 if (!_creatures[i].Region.Equals(region)) continue;
@@ -355,6 +369,7 @@ namespace LuckyNumbers.HoldScene
                 c.Wait -= dt;
                 if (c.Wait > 0f) return 0f;
                 c.Wait = _rng.NextFloat(1.5f, 5f);
+                c.Field = null;
                 var level = LevelOf(c);
                 var at = LocalXZ(c.Position, c.Grid);
                 var back = new int2(int.MinValue, 0);
@@ -381,7 +396,7 @@ namespace LuckyNumbers.HoldScene
             return FollowPath(c, c.Type.Speed * 0.3f, dt);
         }
 
-        /// <summary>After you: straight at you when you're in view and close, else along a breadth-first path to your cell.</summary>
+        /// <summary>After you: straight at you when you're in view and close, else down the level's flow field to your cell.</summary>
         float Chase(Creature c, Vector3 me, float flat, float dt)
         {
             var level = LevelOf(c);
@@ -390,15 +405,31 @@ namespace LuckyNumbers.HoldScene
             var myLevel = _world.CellOf(me + Vector3.up * 0.2f).y - c.Grid.Origin.y;
             var reachable = myLevel == level && PassableLocal(c.Grid, level, target);
             if (!reachable) { c.Path.Clear(); return Walk(c, me, c.Type.Speed, dt); }   // another level or region: as close as it gets
-            if (!target.Equals(c.PathTo) || Time.time >= c.RepathAt || c.Path.Count == 0)
+            var field = FieldTo(c, level, target);
+            if (c.Field != field || c.FieldVersion != field.Version || c.Path.Count == 0)
             {
-                c.PathTo = target;
-                c.RepathAt = Time.time + 0.6f;
-                CellPaths.Find(c.Grid, level, LocalXZ(c.Position, c.Grid), target, Life.PathCells > 0 ? Life.PathCells : 600, c.Path);
-                if (c.Path.Count > 0 && c.Path[0].Equals(LocalXZ(c.Position, c.Grid))) c.Path.RemoveAt(0);
+                c.Field = field;
+                c.FieldVersion = field.Version;
+                c.Path.Clear();
+                var at = LocalXZ(c.Position, c.Grid);
+                for (var s = 0; s < FieldSteps && field.Step(at, out var next); s++) c.Path.Add(at = next);
             }
             if (c.Path.Count == 0) return Walk(c, me, c.Type.Speed, dt);
             return FollowPath(c, c.Type.Speed, dt);
+        }
+
+        /// <summary>The way to `goal` on `level` of c's region: built once for everyone chasing there, again when the goal moves.</summary>
+        FlowField FieldTo(Creature c, int level, int2 goal)
+        {
+            var key = new int4(c.Region, level);
+            if (!_fields.TryGetValue(key, out var field)) _fields[key] = field = new FlowField();
+            _fieldAt.TryGetValue(key, out var at);
+            if (!field.IsCreated || !field.Goal.Equals(goal) || field.Level != level || Time.time >= at + Refield)
+            {
+                field.Build(c.Grid, level, goal, Life.PathCells > 0 ? Life.PathCells : 600);
+                _fieldAt[key] = Time.time;
+            }
+            return field;
         }
 
         float FollowPath(Creature c, float speed, float dt)
@@ -662,6 +693,8 @@ namespace LuckyNumbers.HoldScene
             if (_firstPerson.ShotCheck == HeldShot) _firstPerson.ShotCheck = null;
             _bolts?.Dispose();
             foreach (var c in _creatures) if (c.View != null) UnityEngine.Object.Destroy(c.View.gameObject);
+            foreach (var field in _fields.Values) field.Dispose();
+            _fields.Clear();
         }
     }
 

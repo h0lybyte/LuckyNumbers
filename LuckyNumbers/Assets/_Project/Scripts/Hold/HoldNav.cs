@@ -15,6 +15,11 @@ namespace LuckyNumbers.Hold
     {
         public static bool Standable(HoldCell c) => c.Walkable && (c.Flags & CellFlags.Pillar) == 0;
 
+        /// <summary>A creature may step from one cell to the next (same level, both roamable). Not through a doorway:
+        /// the puzzles' doors and portcullises (MinePasses.Puzzles) stand in Door cells; not into a shaft.</summary>
+        public static bool Roamable(HoldCell c) =>
+            Standable(c) && c.Kind != CellKind.ShaftDown && c.Kind != CellKind.ShaftUp && c.Kind != CellKind.Door;
+
         /// <summary>Every cell index reachable from `from` (local); returns how many. `seen` must be Cells.Length.</summary>
         public static int Flood(in HoldGrid g, int3 from, bool fixturesClosed, NativeArray<bool> seen)
         {

@@ -47,11 +47,8 @@ namespace LuckyNumbers.HoldScene
             return cell.Walkable && cell.Kind != CellKind.ShaftDown && cell.Kind != CellKind.ShaftUp && (cell.Flags & CellFlags.Pillar) == 0;
         }
 
-        /// <summary>A creature may step from one cell to the next (same level, both standable). Not through a
-        /// doorway: the puzzles' doors and portcullises (MinePasses.Puzzles) stand in Door cells.</summary>
-        public static bool Passable(HoldCell cell) =>
-            cell.Walkable && cell.Kind != CellKind.ShaftDown && cell.Kind != CellKind.ShaftUp && cell.Kind != CellKind.Door &&
-            (cell.Flags & CellFlags.Pillar) == 0;
+        /// <summary>A creature may step from one cell to the next: HoldNav.Roamable (shared with the Burst FlowField).</summary>
+        public static bool Passable(HoldCell cell) => HoldNav.Roamable(cell);
 
         /// <summary>Clear of shafts (Chebyshev 1, this level and the ones above / below) and two cells in from the edge.</summary>
         public static bool Clear(in HoldGrid g, int3 c)
