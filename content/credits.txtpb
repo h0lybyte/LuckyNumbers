@@ -133,6 +133,18 @@ sections {
 }
 
 sections {
+  name: "Music"
+  credits {
+    what: "Title music (menu, character creation and the hangar)"
+    title: "Break Beat Jazz Fusion"
+    author: "Rory_Donovan"
+    license: "Made for Lucky Numbers (game jam), used with permission"
+    url: "https://liamt15.itch.io"
+    path: "LuckyNumbers/Assets/_Project/Art/Music/BreakBeatJazzFusion.mp3"
+  }
+}
+
+sections {
   name: "Textures"
   credits {
     what: "Dwarven hold surfaces (stone, slate, wood, metal, doors, windows, tapestries, lanterns), for the dwarven worlds' structures"

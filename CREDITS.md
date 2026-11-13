@@ -57,6 +57,12 @@ Lucky Numbers is made with the work of these people. Thank you.
   Changes: split into one FBX per weapon, modifiers baked, centred and scaled to metres (tools/blender/export_weapons.py).
   (`LuckyNumbers/Assets/_Project/Art/Models/Weapons/LICENSE.txt`)
 
+## Music
+
+- **Title music (menu, character creation and the hangar)**: "Break Beat Jazz Fusion" by **Rory_Donovan** (Made for Lucky Numbers (game jam), used with permission)
+  https://liamt15.itch.io
+  (`LuckyNumbers/Assets/_Project/Art/Music/BreakBeatJazzFusion.mp3`)
+
 ## Textures
 
 - **Dwarven hold surfaces (stone, slate, wood, metal, doors, windows, tapestries, lanterns), for the dwarven worlds' structures**: "Delven Textures" by **Bradley D. (Strideh)** (Free for free and commercial games, with attribution; not for resale or AI training)

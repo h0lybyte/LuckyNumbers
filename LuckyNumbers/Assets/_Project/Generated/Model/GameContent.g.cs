@@ -915,6 +915,22 @@ namespace LuckyNumbers.Model
                 },
                 new CreditSection
                 {
+                    Name = "Music",
+                    Credits =
+                    {
+                        new Credit
+                        {
+                            What = "Title music (menu, character creation and the hangar)",
+                            Title = "Break Beat Jazz Fusion",
+                            Author = "Rory_Donovan",
+                            License = "Made for Lucky Numbers (game jam), used with permission",
+                            Url = "https://liamt15.itch.io",
+                            Path = "LuckyNumbers/Assets/_Project/Art/Music/BreakBeatJazzFusion.mp3",
+                        },
+                    },
+                },
+                new CreditSection
+                {
                     Name = "Textures",
                     Credits =
                     {
