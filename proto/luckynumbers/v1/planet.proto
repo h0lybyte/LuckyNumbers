@@ -98,6 +98,35 @@ message PlanetScene {
   string touch_hint = 60;
   // In universes with holds (Universe.holds): the surface gate into the hold, near where you land.
   SurfaceGate gate = 61;
+
+  // On-foot movement feel (also the station and holds, which clone these settings).
+  // Ground acceleration and braking, steering in the air (m/s^2; ground 0 = instant, the old feel), and seconds
+  // to ease from walk to run speed.
+  float ground_accel = 62;
+  float ground_decel = 63;
+  float air_accel = 64;
+  float sprint_ramp_seconds = 65;
+  // One scale on every camera motion below and the head bob (0 = a still camera, 1 = as tuned): for a future
+  // comfort setting. The arms keep their own sway.
+  float camera_motion = 66;
+  // Head bob shape: 0 = smooth (sin^2), 1 = a sharp footfall at each step (|sin|, the old bob).
+  float bob_shape = 67;
+  // Camera roll (degrees): strafing at run speed, turning at 180 deg/s (clamped at twice that), and each step.
+  float strafe_roll_degrees = 68;
+  float turn_roll_degrees = 69;
+  float step_roll_degrees = 70;
+  // Head dip on a spring: metres per m/s of landing speed (above a light step), at most land_dip_max; a small
+  // dip as you jump; the spring's frequency (Hz) and damping ratio (under 1 bounces back a little).
+  float land_dip_per_speed = 71;
+  float land_dip_max = 72;
+  float jump_dip = 73;
+  float dip_spring_hz = 74;
+  float dip_damping = 75;
+  // Breathing when standing (metres of head rise, breaths per second at rest; faster and deeper after a run).
+  float breath_amount = 76;
+  float breath_rate = 77;
+  // Field of view widens this much (degrees) at full run.
+  float sprint_fov_kick = 78;
 }
 
 // A hold's gate set into the ground (Planet/SurfaceGatePresenter): a stone facade with a dark doorway, two lanterns and

@@ -4587,6 +4587,23 @@ namespace LuckyNumbers.Model
                 LanternIntensity = 6.0f,
                 LanternRange = 14.0f,
             },
+            GroundAccel = 38.0f,
+            GroundDecel = 28.0f,
+            AirAccel = 7.0f,
+            SprintRampSeconds = 0.35f,
+            CameraMotion = 1.0f,
+            BobShape = 0.35f,
+            StrafeRollDegrees = 1.4f,
+            TurnRollDegrees = 0.6f,
+            StepRollDegrees = 0.25f,
+            LandDipPerSpeed = 0.012f,
+            LandDipMax = 0.14f,
+            JumpDip = 0.025f,
+            DipSpringHz = 2.4f,
+            DipDamping = 0.55f,
+            BreathAmount = 0.006f,
+            BreathRate = 0.28f,
+            SprintFovKick = 4.0f,
         };
 
         /// <summary>From <c>content/player.txtpb</c>.</summary>
