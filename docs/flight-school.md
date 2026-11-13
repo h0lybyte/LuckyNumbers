@@ -22,6 +22,8 @@ The HUD shows speed, height, the camera, every lit flame with its share (`main_l
 
 **Tuning:**
 - **The school:** `content/school.txtpb` (`school.proto`) holds the ship lengths, the freighter's handling, the deck and the cameras.
+- **The feel:** `planet.txtpb` `landing.feel` sets the camera's spring, lead and roll, the rumble, and the hull's bank
+  and bob ([flight-feel.md](flight-feel.md)).
 - **The jets:** `content/engines.txtpb` sets the jets themselves. Check them in the school, or with `ln.py preview exhaust`.
 
 Code: `Planet/FlightSchoolPresenter.cs`, scene `FlightSchool` (`SceneBuilder.BuildFlightSchool`), deck shader

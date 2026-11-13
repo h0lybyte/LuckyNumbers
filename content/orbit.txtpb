@@ -27,3 +27,20 @@ shake_offset: 0.05
 shake_decay: 1.4
 fov_kick: 7
 dust: 140
+
+# Alive: traffic crossing far off, debris tumbling round the hull, blinking lights, a turning radar mast; the
+# station turns slowly in its orbit and the planet shifts a little as you fly (parallax).
+life {
+  traffic: 2
+  traffic_distance: 14     # ship lengths past the hull at the nearest
+  traffic_speed: 90        # m/s
+  traffic_seconds: 14
+  debris: 40
+  debris_radius: 14        # ship lengths deep round the hull
+  debris_size: 0.18        # ship lengths at most
+  debris_spin: 25
+  blink_seconds: 1.6
+  spin: 0.35               # degrees a second
+  parallax: 0.04           # of the planet's diameter, at the edge of range
+  radar_spin: 30
+}

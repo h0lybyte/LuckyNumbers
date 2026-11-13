@@ -275,9 +275,69 @@ namespace LuckyNumbers.Model
         /// </summary>
         public string TouchHint { get; set; }
         public string TouchTakeoffHint { get; set; }
+        /// <summary>
+        /// How flying feels on screen (Planet/ChaseCamera, Planet/ShipSway): the chase camera's lag, lead and roll, the
+        /// engines' rumble, and the hull's bank and idle bob. Shared by the planet, the Flight School and outside the station.
+        /// </summary>
+        public FlightFeel Feel { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public FlightLanding Clone() => (FlightLanding)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// Flight feel: what the camera and the hull do on top of the flight model (looks only: aim, hits and physics stay
+    /// on the steady ship). Lengths are ship lengths; rates are per second; 0 turns a part off.
+    /// </summary>
+    public sealed class FlightFeel
+    {
+        /// <summary>
+        /// Chase camera: it springs after its spot (critically damped, `follow_seconds` to catch up: the lag grows with
+        /// speed), aims `look_ahead` ship lengths into a turn at full turn rate (eased at `look_ahead_rate`), and its up
+        /// eases after the ship's at `roll_lag`. `roll_follow`: on the level cameras (the planet, the Flight School), the
+        /// share of the ship's roll the view takes (space, with no ground, takes all of it).
+        /// </summary>
+        public float FollowSeconds { get; set; }
+        public float LookAhead { get; set; }
+        public float LookAheadRate { get; set; }
+        public float RollLag { get; set; }
+        public float RollFollow { get; set; }
+        /// <summary>
+        /// The view widens with speed: degrees at top speed (outside the station boost adds orbit.txtpb's fov_kick).
+        /// </summary>
+        public float SpeedFov { get; set; }
+        /// <summary>
+        /// Engine rumble while boosting or thrusting hard: at most `rumble_angle` degrees and `rumble_offset` ship
+        /// lengths, smooth noise at `rumble_frequency`.
+        /// </summary>
+        public float RumbleAngle { get; set; }
+        public float RumbleOffset { get; set; }
+        public float RumbleFrequency { get; set; }
+        /// <summary>
+        /// The hull banks into turns and strafes: degrees of roll per degree/s of yaw, degrees at full strafe speed, at
+        /// most `max_bank`, eased at `bank_rate`.
+        /// </summary>
+        public float BankPerYaw { get; set; }
+        public float StrafeBank { get; set; }
+        public float MaxBank { get; set; }
+        public float BankRate { get; set; }
+        /// <summary>
+        /// Hovering or slow (below `bob_speed` of top speed), the hull bobs `bob` ship lengths over `bob_seconds` and
+        /// wobbles `bob_degrees`.
+        /// </summary>
+        public float Bob { get; set; }
+        public float BobSeconds { get; set; }
+        public float BobDegrees { get; set; }
+        public float BobSpeed { get; set; }
+        /// <summary>
+        /// The planet's landing approach: below `approach_altitude` m and slow, the chase camera rises `approach_height`
+        /// ship lengths and looks down past the ship, so the ground and the pad come into view.
+        /// </summary>
+        public float ApproachAltitude { get; set; }
+        public float ApproachHeight { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public FlightFeel Clone() => (FlightFeel)MemberwiseClone();
     }
 
     /// <summary>

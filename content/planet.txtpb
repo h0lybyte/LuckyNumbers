@@ -184,6 +184,29 @@ landing {
     camera_bank: 0.3
     cushion_height: 5
   }
+  # Feel (looks only, shared with the Flight School and outside the station): camera lag, lead into turns and
+  # roll, speed widening the view, engine rumble, the hull banking and bobbing; the landing approach camera.
+  feel {
+    follow_seconds: 0.18     # the camera springs after its spot; the lag grows with speed
+    look_ahead: 0.35         # ship lengths it aims into a turn at full turn rate
+    look_ahead_rate: 4
+    roll_lag: 8              # its up eases after the ship's
+    roll_follow: 0.3         # level cameras: share of the ship's roll the view takes
+    speed_fov: 5             # degrees wider at top speed (the planet keeps assist.speed_fov)
+    rumble_angle: 0.35       # degrees, boosting / thrusting hard
+    rumble_offset: 0.004     # ship lengths
+    rumble_frequency: 22
+    bank_per_yaw: 0.18       # degrees of roll per degree/s of yaw (90 deg/s: 16 degrees)
+    strafe_bank: 10          # degrees at full strafe
+    max_bank: 24
+    bank_rate: 5
+    bob: 0.012               # ship lengths, hovering or slow
+    bob_seconds: 3.4
+    bob_degrees: 0.8
+    bob_speed: 0.25          # of top speed: faster, no bob
+    approach_altitude: 30    # m: low and slow, the camera rises to show the ground
+    approach_height: 0.35
+  }
   landed_text: "Landed."
   crashed_text: "Too hard. Try again."
   landed_lines { speaker: "You" text: "Down in one piece. Now, where's that cargo?" duration_seconds: 3.5 chars_per_second: 30 }

@@ -24,6 +24,15 @@ namespace LuckyNumbers.Planet
         /// <summary>How to pose the hull: Rotation with the barrel roll's spin on it. Cameras follow Rotation (steady).</summary>
         public Quaternion Pose => Rotation * _barrel.Offset;
 
+        /// <summary>Pose with a look-only `tilt` (ShipSway: bank, wobble) under the barrel roll.</summary>
+        public Quaternion PoseWith(Quaternion tilt) => Rotation * tilt * _barrel.Offset;
+
+        /// <summary>Turn rate now (degrees/s: x pitch nose down, y yaw right, z roll left), for the camera's lead and the bank.</summary>
+        public Vector3 Spin => _spin;
+
+        /// <summary>How hard the engines work, 0..1 (boosting 1, a hard brake 0.6, speeding up 0.25): the camera's rumble.</summary>
+        public float Rumble { get; private set; }
+
         static FlightLanding L => GameContent.Planet.Landing;
         static FlightHover H => L.Hover;
 
@@ -33,6 +42,7 @@ namespace LuckyNumbers.Planet
         public void Stop()
         {
             Velocity = _spin = _jetSpin = Vector3.zero;
+            Rumble = 0f;
             _barrel.Cancel();
         }
 
@@ -83,6 +93,7 @@ namespace LuckyNumbers.Planet
             if (change.magnitude > rate) change = change.normalized * rate;
             Velocity += change;
             Position += Velocity * dt;
+            Rumble = boost > 1f && move.Y > 0.1f ? 1f : input.Braking.Value && Velocity.sqrMagnitude > 4f ? 0.6f : pushing ? 0.25f : 0f;
 
             // Jets, as on the planet: this frame's change of velocity, plus holding the ship up and its speed.
             ship.SetHeat(0f, 0.6f + 0.9f * (Velocity.magnitude / math.max(1f, H.MaxSpeed * sp)) * boost + (pushing ? 0.5f : 0.2f));

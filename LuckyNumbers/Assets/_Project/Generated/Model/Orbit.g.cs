@@ -71,8 +71,52 @@ namespace LuckyNumbers.Model
         public float ShakeDecay { get; set; }
         public float FovKick { get; set; }
         public int Dust { get; set; }
+        /// <summary>
+        /// Space round the station, alive: traffic, debris, its lights and its turn.
+        /// </summary>
+        public OrbitLife Life { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public OrbitScene Clone() => (OrbitScene)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// Outside the station, things moving (Station/OrbitLife): no gameplay, looks only, cheap.
+    /// </summary>
+    public sealed class OrbitLife
+    {
+        /// <summary>
+        /// Traffic: up to `traffic` ships at once (fighter skins) crossing past the station `traffic_distance` ship lengths
+        /// out (nearest pass, plus the hull), at `traffic_speed` m/s, one every `traffic_seconds` (about: x0.5 to x1.5).
+        /// </summary>
+        public int Traffic { get; set; }
+        public float TrafficDistance { get; set; }
+        public float TrafficSpeed { get; set; }
+        public float TrafficSeconds { get; set; }
+        /// <summary>
+        /// Debris (PLACEHOLDER_debris: instanced cubes) tumbling in a shell round the hull, `debris_radius` ship lengths
+        /// deep, `debris_size` ship lengths across at most, tumbling at up to `debris_spin` degrees a second.
+        /// </summary>
+        public int Debris { get; set; }
+        public float DebrisRadius { get; set; }
+        public float DebrisSize { get; set; }
+        public float DebrisSpin { get; set; }
+        /// <summary>
+        /// Navigation lights (PLACEHOLDER_nav_light) on the hull's top corners: a blink every `blink_seconds`.
+        /// </summary>
+        public float BlinkSeconds { get; set; }
+        /// <summary>
+        /// The station turns in its orbit (degrees a second: the planet and stars wheel slowly round it), and the space
+        /// camera moves with you (`parallax`: share of the planet's diameter at the edge of `range`), so the planet shifts.
+        /// </summary>
+        public float Spin { get; set; }
+        public float Parallax { get; set; }
+        /// <summary>
+        /// A radar mast on the roof (PLACEHOLDER_radar_mast), turning at `radar_spin` degrees a second.
+        /// </summary>
+        public float RadarSpin { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public OrbitLife Clone() => (OrbitLife)MemberwiseClone();
     }
 }
