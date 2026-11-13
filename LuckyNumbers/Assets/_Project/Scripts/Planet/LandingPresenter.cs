@@ -382,7 +382,18 @@ namespace LuckyNumbers.Planet
                     _flight &= ~Flight.Clearing;
                     Ship.GearUp();   // well clear: fold the legs
                 }
-                else lowest = float.MaxValue;
+                else
+                {
+                    // Not a touchdown, but the ground still holds you: sinking (C, a dry tank) or drifting into a
+                    // slope before you're clear would otherwise sink the ship through it, and Clearing would never end.
+                    if (lowest < 0f)
+                    {
+                        _position.y -= lowest;
+                        var up = Vector3.Dot(_velocity, normal);
+                        if (up < 0f) _velocity -= normal * up;
+                    }
+                    lowest = float.MaxValue;
+                }
             }
             if (lowest <= 0f)
             {
