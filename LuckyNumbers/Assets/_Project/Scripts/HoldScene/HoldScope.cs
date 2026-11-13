@@ -25,6 +25,9 @@ namespace LuckyNumbers.HoldScene
             builder.RegisterComponentInHierarchy<PlanetView>();
             builder.RegisterComponentInHierarchy<HoldView>();
             builder.Register<HoldWorld>(Lifetime.Singleton);
+            // The on-foot E arbiter, borrowed from the Planet scene: its prompts go on the hold's shared line.
+            builder.RegisterEntryPoint<InteractionPresenter>();
+            builder.Register<IPromptLine, HoldPromptLine>(Lifetime.Singleton);
             // Region sources and spawns are asked in this order: specific ones first, the mines (claim / answer
             // everything) last.
             // The hold's top (gate, great hall; rock round it), and the spawn inside its gate.

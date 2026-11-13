@@ -62,10 +62,11 @@ namespace LuckyNumbers.Planet
     /// Built once at runtime from boxes in one mesh with the hold's own material (HoldKit: uv0 = (u, v, slice), vertex
     /// colour = baked light), so it matches the hold below. Near the doorway "E  enter the hold"; E, or walking on into the
     /// dark, takes you down: HoldTrip.from_surface, then the Hold scene. Back out (HoldTrip.leaving), CrashSitePresenter
-    /// stands you at the foot of the steps.
+    /// stands you at the foot of the steps. Dev: LN.send('DevWarpRequested', {to: 'gate'}) stands you in the doorway's
+    /// prompt, facing in.
     /// </summary>
     [Presenter]
-    public sealed class SurfaceGatePresenter : ITickable, IInteractable, IDisposable
+    public sealed class SurfaceGatePresenter : IStartable, ITickable, IInteractable, IDisposable
     {
         readonly ICrashSite _site;
         readonly GroundView _ground;
@@ -75,6 +76,8 @@ namespace LuckyNumbers.Planet
         readonly PlanetScene _config;
         readonly HoldTrip _trip;
         readonly IPublisher<SceneChangeRequested> _scenes;
+        readonly ISubscriber<DevWarpRequested> _warps;
+        IDisposable _warpSub;
         GameObject _root;
         Material _material;
         bool _built, _entering;
@@ -84,7 +87,8 @@ namespace LuckyNumbers.Planet
 
         [Inject]
         public SurfaceGatePresenter(ICrashSite site, GroundView ground, PlayerView player, PlanetView view, IFirstPerson firstPerson,
-                                    PlanetScene config, HoldTrip trip, IPublisher<SceneChangeRequested> scenes)
+                                    PlanetScene config, HoldTrip trip, IPublisher<SceneChangeRequested> scenes,
+                                    ISubscriber<DevWarpRequested> warps)
         {
             _site = site;
             _ground = ground;
@@ -94,6 +98,25 @@ namespace LuckyNumbers.Planet
             _config = config;
             _trip = trip;
             _scenes = scenes;
+            _warps = warps;
+        }
+
+        public void Start() => _warpSub = _warps.Subscribe(e => { if (e.To == "gate") Warp(); });
+
+        /// <summary>Dev: in front of the doorway, inside its prompt, facing in (on foot only).</summary>
+        void Warp()
+        {
+            if (_root == null || _entering || !_firstPerson.Active) { Debug.LogWarning("[Gate] dev: no gate here (or not on foot)"); return; }
+            var rot = _site.Gate.Rotation;
+            var at = _site.Gate.Position + rot * new Vector3(0f, 0f, G.PromptDistance * 0.5f);
+            at.y = _ground.SurfaceAt(at) + 0.15f;
+            var yaw = (rot * Quaternion.Euler(0f, 180f, 0f)).eulerAngles.y;   // into the doorway (-z)
+            var body = _player.Body;
+            body.enabled = false;
+            body.transform.SetPositionAndRotation(at, Quaternion.Euler(0f, yaw, 0f));
+            body.enabled = true;
+            _firstPerson.Look(yaw, 0f);
+            Debug.Log("[Gate] dev warp to the doorway");
         }
 
         public void Tick()
@@ -166,6 +189,7 @@ namespace LuckyNumbers.Planet
 
         public void Dispose()
         {
+            _warpSub?.Dispose();
             if (_material != null) UnityEngine.Object.Destroy(_material);
         }
     }

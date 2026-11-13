@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using LuckyNumbers.Hold;
 using LuckyNumbers.Model;
+using LuckyNumbers.Planet;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -9,6 +10,20 @@ using VContainer;
 
 namespace LuckyNumbers.HoldScene
 {
+    /// <summary>InteractionPresenter's prompt on the hold's shared line (HoldWorld.Prompt, cleared every frame).</summary>
+    public sealed class HoldPromptLine : IPromptLine
+    {
+        readonly HoldWorld _world;
+
+        [Inject]
+        public HoldPromptLine(HoldWorld world) => _world = world;
+
+        public void Show(string prompt)
+        {
+            if (!string.IsNullOrEmpty(prompt)) _world.Prompt = prompt;
+        }
+    }
+
     /// <summary>
     /// Fills a region of the deep. The first registered source that claims a region generates it. MinesSource
     /// claims everything, so HoldScope registers it last; register others (e.g. the hall at the top) before it.

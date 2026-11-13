@@ -21,10 +21,10 @@ namespace LuckyNumbers.HoldScene
     /// unlock a door with the key of the same link (it's used up; without it the prompt says the key's somewhere in
     /// these tunnels), pull a lever (its portcullis rises). For this visit, picked keys stay picked (world cell), keys
     /// carried stay carried (region + link), and opened doors, raised gates and pulled levers stay so (world cell),
-    /// however often their region streams out and back in.
+    /// however often their region streams out and back in. E and the prompts go through InteractionPresenter.
     /// </summary>
     [Presenter]
-    public sealed class PuzzlePresenter : IStartable, ITickable, IDisposable
+    public sealed class PuzzlePresenter : IInteractable, IStartable, ITickable, IDisposable
     {
         sealed class Thing
         {
@@ -41,7 +41,6 @@ namespace LuckyNumbers.HoldScene
         readonly PlayerView _player;
         readonly FirstPersonPresenter _firstPerson;
         readonly PlanetView _ui;
-        readonly ISubscriber<InputActionPerformed> _actions;
         readonly Dictionary<int3, List<Thing>> _byRegion = new();
         readonly HashSet<int3> _picked = new();         // world cells of keys taken this visit
         readonly HashSet<int4> _carried = new();        // (region xyz, link) of keys in hand
@@ -50,22 +49,20 @@ namespace LuckyNumbers.HoldScene
         readonly HoldMeshSettings _mesh;
         readonly Color _glint;
         PuzzleKit.Slices _slices;
-        IDisposable _sub;
         Light _light;
-        bool _press, _claimedE;
+        Thing _near;          // this frame's nearest in reach (facing it, unless it's a key)
+        float _nearDistance;
 
         static PuzzleRules Rules => GameContent.Hold.Puzzles;
 
         [Inject]
-        public PuzzlePresenter(HoldWorld world, HoldView view, PlayerView player, FirstPersonPresenter firstPerson, PlanetView ui,
-                               ISubscriber<InputActionPerformed> actions)
+        public PuzzlePresenter(HoldWorld world, HoldView view, PlayerView player, FirstPersonPresenter firstPerson, PlanetView ui)
         {
             _world = world;
             _view = view;
             _player = player;
             _firstPerson = firstPerson;
             _ui = ui;
-            _actions = actions;
             var c = world.Config;
             _mesh = HoldMeshSettings.From(c);
             _glint = new Color(c.LanternR, c.LanternG, c.LanternB) * 2.2f;
@@ -77,7 +74,6 @@ namespace LuckyNumbers.HoldScene
 
         public void Start()
         {
-            _sub = _actions.Subscribe(e => { if (e.Action == InputAction.Interact) _press = true; });
             _light = new GameObject("Key glint light").AddComponent<Light>();
             _light.type = LightType.Point;
             _light.color = _glint / 2.2f;
@@ -120,8 +116,6 @@ namespace LuckyNumbers.HoldScene
 
         public void Tick()
         {
-            var press = _press;
-            _press = false;
             var rules = Rules;
             var dt = Time.deltaTime;
             var time = Time.time;
@@ -168,34 +162,54 @@ namespace LuckyNumbers.HoldScene
                 _light.intensity = 1.1f + 0.4f * Mathf.Sin(time * 3.1f);
             }
 
-            var actionable = near != null && (near.Fixture.Kind != FixtureKind.LockedDoor || Has(near)) && near.Fixture.Kind != FixtureKind.Portcullis;
-            if (actionable) { _firstPerson.InteractElsewhere = true; _claimedE = true; }
-            else if (_claimedE) { _firstPerson.InteractElsewhere = false; _claimedE = false; }
-            if (near == null || !_firstPerson.Active) return;
+            _near = near;
+            _nearDistance = best;
+        }
 
-            switch (near.Fixture.Kind)
+        // ---- IInteractable: pick up a key, unlock a door you've its key for, pull a lever; else what's said -----
+
+        bool Usable(Thing t) => t.Fixture.Kind switch
+        {
+            FixtureKind.Key or FixtureKind.Lever => true,
+            FixtureKind.LockedDoor => Has(t),
+            _ => false,
+        };
+
+        public bool Offer(Vector3 feet, out Interaction offer)
+        {
+            offer = default;
+            var near = _near;
+            if (near == null || near.Done) return false;
+            var priority = near.Fixture.Kind == FixtureKind.Key ? InteractionPriority.Pickup
+                : Usable(near) ? InteractionPriority.Place : InteractionPriority.Info;
+            offer = new Interaction(near, priority, _nearDistance, Usable(near));
+            return true;
+        }
+
+        public string Prompt(object key)
+        {
+            if (key is not Thing t) return "";
+            var rules = Rules;
+            switch (t.Fixture.Kind)
             {
-                case FixtureKind.Key:
-                    _world.Prompt = rules?.PickupPrompt ?? "E  pick up the key";
-                    if (press) PickUp(near);
-                    break;
+                case FixtureKind.Key: return rules?.PickupPrompt ?? "E  pick up the key";
                 case FixtureKind.LockedDoor:
-                    if (!Has(near))
-                    {
-                        var text = rules?.LockedText ?? "Locked: the key is somewhere in these tunnels";
-                        _world.Prompt = _carried.Count > 0 ? $"{text} (your {Plural(_carried.Count)} won't fit)" : text;
-                        break;
-                    }
-                    _world.Prompt = rules?.UnlockPrompt ?? "E  unlock the door";
-                    if (press) Unlock(near);
-                    break;
-                case FixtureKind.Lever:
-                    _world.Prompt = rules?.LeverPrompt ?? "E  pull the lever";
-                    if (press) Pull(near);
-                    break;
-                case FixtureKind.Portcullis:
-                    _world.Prompt = rules?.GateText ?? "A portcullis: there's a lever somewhere near";
-                    break;
+                    if (Has(t)) return rules?.UnlockPrompt ?? "E  unlock the door";
+                    var text = rules?.LockedText ?? "Locked: the key is somewhere in these tunnels";
+                    return _carried.Count > 0 ? $"{text} (your {Plural(_carried.Count)} won't fit)" : text;
+                case FixtureKind.Lever: return rules?.LeverPrompt ?? "E  pull the lever";
+                default: return rules?.GateText ?? "A portcullis: there's a lever somewhere near";
+            }
+        }
+
+        public void Interact(object key)
+        {
+            if (key is not Thing t || t.Done || !Usable(t)) return;
+            switch (t.Fixture.Kind)
+            {
+                case FixtureKind.Key: PickUp(t); break;
+                case FixtureKind.LockedDoor: Unlock(t); break;
+                case FixtureKind.Lever: Pull(t); break;
             }
         }
 
@@ -252,8 +266,6 @@ namespace LuckyNumbers.HoldScene
         {
             _world.RegionShown -= Shown;
             _world.RegionHidden -= Hidden;
-            if (_claimedE) _firstPerson.InteractElsewhere = false;
-            _sub?.Dispose();
             _cts.Cancel();
             _cts.Dispose();
             foreach (var list in _byRegion.Values) foreach (var t in list) t.Parts.Destroy();

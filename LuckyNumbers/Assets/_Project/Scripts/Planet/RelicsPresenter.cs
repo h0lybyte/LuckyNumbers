@@ -377,7 +377,7 @@ namespace LuckyNumbers.Planet
         void Warp(string to)
         {
             if (!_spawned || !_firstPerson.Active) return;
-            if (to is "find" or "standoff" or "defend" || to?.StartsWith("monster") == true || to?.StartsWith("defend:") == true) return;   // CombatPresenter's
+            if (to is "find" or "standoff" or "defend" or "gate" || to?.StartsWith("monster") == true || to?.StartsWith("defend:") == true) return;   // CombatPresenter's
             if (to == "salvage") to = "wreck";   // WreckSalvagePresenter starts a practice job; you go and flag it
             var me = _player.Body.transform.position;
             Vector3? target = null;

@@ -21,11 +21,14 @@ namespace LuckyNumbers.HoldScene
     /// warning plate and a prompt, depth seals are iron hatches (collider) over every way down at a band's bottom that
     /// open (E) once you carry the band's seal key, keys lie on plinths in a few regions of each band, and the first
     /// time you enter a band its name shows. Keys held and seals opened last for this visit.
+    /// E and the prompts go through InteractionPresenter (IInteractable): Tick finds what's nearest, Offer hands it over.
     /// Dev: LN.send('DevWarpRequested', {to: 'seal' | 'key' | 'drop' | 'collapse' | 'sealkey'}).
     /// </summary>
     [Presenter]
-    public sealed class DepthPresenter : IStartable, ITickable, IDisposable
+    public sealed class DepthPresenter : IInteractable, IStartable, ITickable, IDisposable
     {
+        static readonly object Lip = new();   // the drop warning (said only)
+
         sealed class Seal
         {
             public int Band;
@@ -65,7 +68,6 @@ namespace LuckyNumbers.HoldScene
         readonly PlanetView _ui;
         readonly PlanetScene _walk;
         readonly IPublisher<HoldHurt> _hurt;
-        readonly ISubscriber<InputActionPerformed> _actions;
         readonly ISubscriber<DevWarpRequested> _warps;
         readonly MineParams _p;
         readonly Dictionary<int3, Placed> _byRegion = new();
@@ -74,18 +76,18 @@ namespace LuckyNumbers.HoldScene
         readonly HashSet<int3> _taken = new();        // world cells of taken keys
         readonly HashSet<int> _bandsSeen = new();
         readonly CancellationTokenSource _cts = new();
-        IDisposable _sub, _warpSub;
+        IDisposable _warpSub;
         Mesh _hatch, _chain, _plate, _plinth;
         Light _glint;
-        bool _press, _claimedE;
         float _top = float.NaN;
+        object _near;       // this frame's nearest: a Key, a Seal, Lip, or null
+        float _nearDistance;
 
         static DepthRules R => GameContent.Hold.Depth ?? new DepthRules();
 
         [Inject]
         public DepthPresenter(HoldWorld world, HoldView view, HoldPresenter hold, PlayerView player, FirstPersonPresenter firstPerson,
-                              PlanetView ui, PlanetScene walk, IPublisher<HoldHurt> hurt, ISubscriber<InputActionPerformed> actions,
-                              ISubscriber<DevWarpRequested> warps)
+                              PlanetView ui, PlanetScene walk, IPublisher<HoldHurt> hurt, ISubscriber<DevWarpRequested> warps)
         {
             _world = world;
             _view = view;
@@ -95,7 +97,6 @@ namespace LuckyNumbers.HoldScene
             _ui = ui;
             _walk = walk;
             _hurt = hurt;
-            _actions = actions;
             _warps = warps;
             _p = MineParams.From(world.Config);
             // Now, not in Start: HoldPresenter's Start may show the first region before ours runs.
@@ -106,7 +107,6 @@ namespace LuckyNumbers.HoldScene
 
         public void Start()
         {
-            _sub = _actions.Subscribe(e => { if (e.Action == InputAction.Interact) _press = true; });
             _warpSub = _warps.Subscribe(e => Warp(e.To));
             _glint = new GameObject("Seal key glint light").AddComponent<Light>();
             _glint.type = LightType.Point;
@@ -256,8 +256,7 @@ namespace LuckyNumbers.HoldScene
 
         public void Tick()
         {
-            var press = _press;
-            _press = false;
+            _near = null;
             var body = _player.Body;
             var me = body.transform.position;
             // Fall height: the highest point since you last stood (or held a ladder).
@@ -304,25 +303,37 @@ namespace LuckyNumbers.HoldScene
             _glint.enabled = glint != null;
             if (glint != null) _glint.transform.position = glint.Glint.position;
 
-            var canUse = key != null || (seal != null && _keys.Contains(seal.Band));
-            if (canUse) { _firstPerson.InteractElsewhere = true; _claimedE = true; }
-            else if (_claimedE) { _firstPerson.InteractElsewhere = false; _claimedE = false; }
+            if (key != null) { _near = key; _nearDistance = bestKey; }
+            else if (seal != null) { _near = seal; _nearDistance = bestSeal; }
+            else if (nearLip) { _near = Lip; _nearDistance = 0f; }
+        }
 
-            if (key != null)
+        // ---- IInteractable: a key to take, a seal to open (with its band's key), else what's said ----------------
+
+        public bool Offer(Vector3 feet, out Interaction offer)
+        {
+            offer = _near switch
             {
-                _world.Prompt = Fill(R.KeyPrompt ?? "E  take the seal key of {name}", key.Band);
-                if (press) TakeKey(key);
-            }
-            else if (seal != null)
-            {
-                if (_keys.Contains(seal.Band))
-                {
-                    _world.Prompt = R.SealPrompt ?? "E  unseal the way down";
-                    if (press) OpenSeal(seal);
-                }
-                else _world.Prompt = Fill(R.SealLocked ?? "Sealed. The key of {name} lies somewhere in these depths.", seal.Band);
-            }
-            else if (nearLip) _world.Prompt = R.DropPrompt ?? "A long drop.";
+                Key => new Interaction(_near, InteractionPriority.Pickup, _nearDistance),
+                Seal s when _keys.Contains(s.Band) => new Interaction(_near, InteractionPriority.Place, _nearDistance),
+                Seal or { } => new Interaction(_near, InteractionPriority.Info, _nearDistance, usable: false),
+                null => default,
+            };
+            return _near != null;
+        }
+
+        public string Prompt(object key) => key switch
+        {
+            Key k => Fill(R.KeyPrompt ?? "E  take the seal key of {name}", k.Band),
+            Seal s when _keys.Contains(s.Band) => R.SealPrompt ?? "E  unseal the way down",
+            Seal s => Fill(R.SealLocked ?? "Sealed. The key of {name} lies somewhere in these depths.", s.Band),
+            _ => R.DropPrompt ?? "A long drop.",
+        };
+
+        public void Interact(object key)
+        {
+            if (key is Key k && !_taken.Contains(k.Cell)) TakeKey(k);
+            else if (key is Seal s && !s.Open && _keys.Contains(s.Band)) OpenSeal(s);
         }
 
         static float Flat(Vector3 a, Vector3 b) => Vector2.Distance(new Vector2(a.x, a.z), new Vector2(b.x, b.z));
@@ -507,8 +518,6 @@ namespace LuckyNumbers.HoldScene
             _world.RegionShown -= Shown;
             _world.RegionHidden -= Hidden;
             _firstPerson.Landed -= Landed;
-            if (_claimedE) _firstPerson.InteractElsewhere = false;
-            _sub?.Dispose();
             _warpSub?.Dispose();
             _cts.Cancel();
             _cts.Dispose();
