@@ -36,6 +36,11 @@ namespace LuckyNumbers.Model
         /// (content/combat.txtpb defend). `target` / `target_per_danger`: the waves; the beacon destroyed fails the job.
         /// </summary>
         Defend = 5,
+        /// <summary>
+        /// Out round the station (GameScene.Orbit): a circuit race against AI pilots, mystery cubes on the line
+        /// (content/race.txtpb). `target` / `target_per_danger`: laps. Paid by place.
+        /// </summary>
+        Race = 6,
     }
 
     /// <summary>

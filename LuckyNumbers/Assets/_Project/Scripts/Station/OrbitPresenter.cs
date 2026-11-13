@@ -29,6 +29,10 @@ namespace LuckyNumbers.Station
     /// uploads; docking with it done gets you paid (the station's homecoming). Dev: ?ln-dogfight starts a practice
     /// uplink with no job. Hull at 0: the memory restore (your chip wakes you at the station, the rebuild billed,
     /// into debt if need be: StationArrival.Restored).
+    ///
+    /// On a race job (JobKind.Race), or ?ln-race for a practice one, the circuit takes over instead (Station/Race,
+    /// content/race.txtpb): a seeded loop of gates out from the bay, the rivals on the grid with you, mystery cubes to
+    /// roll for; guns cold, no rogues. Finished, you're back at the station (Dispatch pays by place).
     /// </summary>
     public sealed class OrbitPresenter : IStartable, ITickable, ILateTickable, IDisposable
     {
@@ -52,6 +56,8 @@ namespace LuckyNumbers.Station
         readonly IPublisher<CombatRoll> _rolls;
         readonly IPublisher<CharacterXpGained> _xp;
         readonly ISubscriber<DevWarpRequested> _warps;
+        readonly RaceState _raceState;
+        Race _race;
         ShipGuns _guns;
         Dogfight _fight;
         SpaceDust _dust;
@@ -81,8 +87,10 @@ namespace LuckyNumbers.Station
                               PlayerVoyage voyage, ISpaceDirector space, StationScene config,
                               ISubscriber<InputActionPerformed> actions, IPublisher<SceneChangeRequested> scenes,
                               CharacterSheet sheet, PlayerJob job, DogfightState dogfight, IInventory pack,
-                              IPublisher<CombatRoll> rolls, IPublisher<CharacterXpGained> xp, ISubscriber<DevWarpRequested> warps)
+                              IPublisher<CombatRoll> rolls, IPublisher<CharacterXpGained> xp, ISubscriber<DevWarpRequested> warps,
+                              RaceState raceState)
         {
+            _raceState = raceState;
             _sheet = sheet;
             _job = job;
             _dogfight = dogfight;
@@ -107,7 +115,7 @@ namespace LuckyNumbers.Station
             _view.Fade(1f);
             _view.Dialogue(null, null, 0);
             _view.MapHint(null);
-            _view.Hint(Controls.Pick(O.Hint, O.TouchHint), 1f);
+            _view.Hint(RaceMode && R != null ? Controls.Pick(R.Hint, R.TouchHint) : Controls.Pick(O.Hint, O.TouchHint), 1f);
             _view.Wreck.Hide();
             _subscriptions.Add(_actions.Subscribe(e =>
             {
@@ -140,6 +148,9 @@ namespace LuckyNumbers.Station
                     _flight.Stop();
                 }
                 if (e.To == "dock" && _ready && !_leaving && !_destroyed) Dock().Forget();   // straight back in
+                // Racing: "race-roll" (or "race-roll:<cube id>") rolls a cube for you; "race-finish" takes the line now.
+                if (e.To != null && e.To.StartsWith("race-roll")) _race?.DevRoll(e.To.Length > 10 ? e.To.Substring(10) : "");
+                if (e.To == "race-finish") _race?.DevFinish();
             }));
             _view.FlightCamera.gameObject.SetActive(true);
             SetUp(_cts.Token).Forget();
@@ -162,7 +173,8 @@ namespace LuckyNumbers.Station
             _flight.Stop();
             _camPos = _flight.Position + _out * (Length * O.ChaseDistance) + Vector3.up * (Length * O.ChaseHeight);
             _ship.Pose(_flight.Position, _flight.Pose);
-            Fight();
+            if (RaceMode && R != null) StartRace();
+            else Fight();
             _ready = true;
             Debug.Log($"[Orbit] ready: {_stats.Name} off the bay of station {_space.Seed}, {_hull.Count} hull blocks"); // marker for ln.py webshot
         }
@@ -281,9 +293,15 @@ namespace LuckyNumbers.Station
 
             if (!_leaving && !_destroyed)
             {
-                _flight.Step(_input, dt, _stats.Speed, _stats.Agility, level: false, _ship);
-                KeepOutOfHull();
-                Shoot();
+                if (_race != null && _race.Frozen) _flight.Stop();   // on the grid: the countdown
+                else
+                {
+                    var factor = _race?.SpeedFactor ?? 1f;
+                    _flight.Step(_input, dt, _stats.Speed * factor, _stats.Agility, level: false, _ship);
+                    if (_race != null) RaceThrust(dt, factor);
+                }
+                if (_race == null || !_race.Phased) KeepOutOfHull();
+                if (_race == null) Shoot();   // guns cold in a race: the cubes are the weapons
             }
             if (!_destroyed) _ship.Pose(_flight.Position, _flight.Pose);
             if (_fight != null)
@@ -292,6 +310,13 @@ namespace LuckyNumbers.Station
                 if (!_destroyed) _flight.Velocity += _fight.TakeKick();   // bounced off a rogue
                 _trauma += _fight.TakeJolt();
                 if (_fight.Destroyed && !_destroyed) Restore().Forget();
+            }
+            if (_race != null && !_leaving)
+            {
+                _race.Tick(dt);
+                if (interact && _race.OffCourse) _race.Rescue();
+                else if (interact) _race.Leave();
+                if (_race.ReadyToLeave) Dock().Forget();
             }
             Physics.SyncTransforms();   // the hitboxes where the ships are now, for this frame's bolts
             _guns?.Tick(dt);
@@ -304,7 +329,8 @@ namespace LuckyNumbers.Station
             _orbit.BeaconScale(1f + 0.06f * _pulse * Mathf.Sin(Time.time * 6f));
             string message = null;
             if (inside) message = slow ? O.DockPrompt : O.SlowPrompt;
-            else if (Vector3.Distance(_flight.Position, _centre) > Length * math.max(5f, O.Range)) message = "Far out: turn back to the station";
+            else if (_race == null && Vector3.Distance(_flight.Position, _centre) > Length * math.max(5f, O.Range)) message = "Far out: turn back to the station";
+            else if (_race != null && _race.OffCourse) message = "Off course - E: back to the last gate";
             if (inside && slow && interact && !_leaving && !_destroyed) Dock().Forget();
 
             if (!_destroyed && (Time.time >= _readoutAt || _leaving))
@@ -313,8 +339,11 @@ namespace LuckyNumbers.Station
                 var toBeacon = Vector3.Distance(_flight.Position, _beacon);
                 var defence = _fight == null ? "" : $"   SHIELD {_dogfight.Shield.Value:0}/{_dogfight.ShieldMax.Value:0}   HULL {_dogfight.Hull.Value:0}/{_dogfight.HullMax.Value:0}";
                 var uplink = _dogfight.UplinkJob.Value ? $"\n{_dogfight.Objective.Value}  ({_dogfight.Uplink.Value * 100f:0}%, satellite {_dogfight.SatelliteDistance.Value:0} m)" : "";
-                _view.Flight($"{O.Title}   {_stats.Name}   {speed:0} m/s   docking beacon {toBeacon:0} m{defence}{uplink}",
-                             _leaving || _destroyed ? null : message);
+                var line = _race != null
+                    ? $"{R.Title}   {_stats.Name}   {speed:0} m/s   LAP {_raceState.Lap.Value}/{_raceState.Laps.Value}   " +
+                      $"P{_raceState.Place.Value}/{_raceState.Racers.Value}   next gate {_raceState.NextGate.Value:0} m"
+                    : $"{O.Title}   {_stats.Name}   {speed:0} m/s   docking beacon {toBeacon:0} m{defence}{uplink}";
+                _view.Flight(line, _leaving || _destroyed ? null : message);
             }
         }
 
@@ -422,6 +451,40 @@ namespace LuckyNumbers.Station
             _scenes.Publish(new SceneChangeRequested(GameScene.Station));
         }
 
+        // ---- racing ----------------------------------------------------------------------------------------------
+
+        static RaceConfig R => GameContent.Race;
+        static bool DevRace => (Application.absoluteURL ?? "").Contains("ln-race");
+        bool RaceMode => _job.Active.Value && _job.Kind.Value == JobKind.Race || DevRace;
+
+        /// <summary>
+        /// The circuit (Station/Race): its start line out from the beacon, the loop heading away from the station, seeded
+        /// by your universe and the job. Laps: the job's goal (practice: the config's).
+        /// </summary>
+        void StartRace()
+        {
+            var onJob = _job.Active.Value && _job.Kind.Value == JobKind.Race;
+            var seed = _space.Seed ^ (_job.Seed.Value * 0x9E3779B9u) ^ ((uint)_voyage.Trips.Value * 0x85EBCA6Bu) ^ 0x5ACEu;
+            var laps = onJob && _job.Goal.Value > 0 ? _job.Goal.Value : math.max(1, R.Laps);
+            var danger = onJob ? math.max(1, _job.Danger.Value) : 2;
+            var start = _beacon + _out * math.max(Length * 4f, R.Track?.StartDistance ?? 300f);
+            _race = new Race(_flight, _ship, _rogueTemplate, Length, _space.Seed, seed, laps, danger, !onJob, start, _out, _hull,
+                             _raceState, _job, _xp);
+            _camPos = _flight.Position - _flight.Rotation * Vector3.forward * (Length * O.ChaseDistance) + Vector3.up * (Length * O.ChaseHeight);
+            _ship.Pose(_flight.Position, _flight.Pose);
+        }
+
+        /// <summary>Racing trim: an extra push toward top speed while you thrust forward (content/race.txtpb accel).</summary>
+        void RaceThrust(float dt, float factor)
+        {
+            if (R.Accel <= 0f || _input.Move.Value.Y <= 0.1f || _input.Braking.Value) return;
+            var fwd = _flight.Rotation * Vector3.forward;
+            var boost = _input.Sprinting.Value ? math.max(1f, GameContent.Planet?.Landing?.Hover?.Boost ?? 1.5f) : 1f;
+            var top = HoverFlight.TopSpeed(math.max(0.1f, _stats.Speed * factor)) * boost * _input.Move.Value.Y;
+            var along = Vector3.Dot(_flight.Velocity, fwd);
+            if (along < top) _flight.Velocity += fwd * math.min(top - along, R.Accel * dt);
+        }
+
         // ---- space combat ----------------------------------------------------------------------------------------
 
         static bool DevDogfight => (Application.absoluteURL ?? "").Contains("ln-dogfight");
@@ -502,6 +565,7 @@ namespace LuckyNumbers.Station
 
         public void Dispose()
         {
+            _race?.Dispose();
             _fight?.Dispose();
             _dust?.Dispose();
             _guns?.Dispose();

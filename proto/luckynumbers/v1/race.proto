@@ -1,0 +1,199 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+import "luckynumbers/v1/common.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Circuit racing round the station (content/race.txtpb; GameScene.Orbit, Station/Race). A seeded loop of gates out
+// in space, you and `rivals` AI pilots, `laps` laps. Mystery cubes sit in rows across the line: fly through one and it
+// rolls d20 + your bonus (lucky number, and a catch-up bonus the further back you are); the cube's colour picks the
+// table and the total picks the effect (a boost, shield charges, an EMP, a warp...). A natural 1 backfires on any
+// cube; a natural 20 gets the cube's best. Guns stay cold: the cubes are the only weapons. Placed: paid by
+// `pay_shares` of the job's pay. Dev: ?ln-race races a practice circuit with no job.
+message RaceConfig {
+  option (ln.config) = true;
+  // AI pilots on the grid (not counting you); laps when no job sets them (the job's goal does).
+  int32 rivals = 1;
+  int32 laps = 2;
+  // Your top speed in a race, as a share of your normal one (racing trim). Rivals scale with it too.
+  float speed_scale = 3;
+  RaceTrackRules track = 4;
+  // The rivals: names and fighter skins, picked in turn (seeded) for the grid.
+  repeated RacePilot pilots = 5;
+  repeated MysteryCube cubes = 6;
+  RaceRoll roll = 7;
+  // A natural 1 on any cube: this instead of the cube's table.
+  CubeOutcome fumble = 8;
+  // The job's pay by place (1st first: 1 = all of it); past the list, nothing (and the job isn't done).
+  repeated float pay_shares = 9;
+  // XP by place (1st first).
+  repeated int32 xp = 10;
+  // Seconds of countdown on the grid; after you cross the line, seconds before you're back at the station (E: at
+  // once); after the winner finishes, seconds before the race closes (still out there: did not finish).
+  float countdown = 11;
+  float finish_seconds = 12;
+  float dnf_seconds = 13;
+  RaceAi ai = 14;
+  // The top line and the controls under it (touch: on a touch screen).
+  string title = 15;
+  string hint = 16;
+  string touch_hint = 17;
+  // A shield charge soaks one hostile effect (EMP, zap, mine, a swap); the most you can hold.
+  int32 max_shields = 18;
+  // Extra push (m/s²) toward top speed while you thrust forward, so a racing launch doesn't crawl.
+  float accel = 19;
+}
+
+// The circuit: `points` control points round a loop of `radius` m (each jittered in and out by `radius_jitter` of
+// it, and up and down by `height` m), a smooth curve through them (Catmull-Rom), gates every `gate_spacing` m along it.
+// The start line is `start_distance` m out from the docking beacon, the loop running away from the station.
+message RaceTrackRules {
+  int32 points = 1;
+  float radius = 2;
+  float radius_jitter = 3;
+  float height = 4;
+  float gate_spacing = 5;
+  // Gate frame, m across (fly through inside it).
+  float gate_size = 6;
+  float start_distance = 7;
+  // A row of cubes every `cube_every` gates (halfway between two), `cube_row` across, each `cube_size` m; a cube
+  // taken comes back after `cube_respawn` s.
+  int32 cube_every = 8;
+  int32 cube_row = 9;
+  float cube_size = 10;
+  float cube_respawn = 11;
+  // Rocks along the course (placeholder blocks): how many, their size (m), and how far off the line (m, at least
+  // the gate's half-width so the line itself stays clear).
+  int32 hazards = 12;
+  float hazard_size_min = 13;
+  float hazard_size_max = 14;
+  float hazard_spread = 15;
+}
+
+// The rivals' pilot (Station/Race): each follows the line `lookahead` m ahead, in its own lane (`lane` of the gate's
+// half-width off the middle), flying like a rogue (Station/RogueFlight). Its pace is a share of the baseline
+// fighter's boosted top speed (rolled `pace_min`..`pace_max`, plus `pace_per_danger` a danger level over 1);
+// `rubber_band` shares faster when it's 1000 m behind you, slower when ahead (in between: in proportion).
+message RaceAi {
+  float pace_min = 1;
+  float pace_max = 2;
+  float pace_per_danger = 3;
+  float turn_rate = 4;
+  float lookahead = 5;
+  float rubber_band = 6;
+  float lane = 7;
+  // Ship length, m.
+  float length = 8;
+  // Chance (0..1) it swerves to take a cube in its row.
+  float cube_seek = 9;
+}
+
+message RacePilot {
+  string name = 1;
+  // A fighter skin (Art/Models/Fighter/Skins file name).
+  string skin = 2;
+}
+
+// What a cube's roll can do.
+enum RaceEffect {
+  RACE_EFFECT_UNSPECIFIED = 0;
+  // Nothing happens (the roll fizzled).
+  RACE_EFFECT_NOTHING = 1;
+  // Top speed x `power` for `seconds`, and a kick forward.
+  RACE_EFFECT_BOOST = 2;
+  // `count` shield charges.
+  RACE_EFFECT_SHIELD = 3;
+  // Everyone else within `radius` m slowed to `power` of their speed for `seconds`.
+  RACE_EFFECT_EMP = 4;
+  // The racer just ahead (or the leader: `leader`) slowed to `power` for `seconds`.
+  RACE_EFFECT_ZAP = 5;
+  // A mine dropped behind: the next rival through `radius` m of it slowed to `power` for `seconds`.
+  RACE_EFFECT_MINE = 6;
+  // Ghost through ships and rocks for `seconds`, and nothing hostile lands.
+  RACE_EFFECT_PHASE = 7;
+  // Jump `count` gates ahead.
+  RACE_EFFECT_WARP = 8;
+  // Backfire: you're slowed to `power` for `seconds`.
+  RACE_EFFECT_STALL = 9;
+  // Change places with the racer just ahead.
+  RACE_EFFECT_SWAP = 10;
+}
+
+message CubeOutcome {
+  // The lowest roll total that gets this (the highest `min` at or under the total wins).
+  int32 min = 1;
+  RaceEffect effect = 2;
+  // The feed's name for it ("Turbo").
+  string name = 3;
+  float power = 4;
+  float seconds = 5;
+  int32 count = 6;
+  float radius = 7;
+  bool leader = 8;
+}
+
+// A mystery cube's colour: how often it turns up (`weight`) and its table.
+message MysteryCube {
+  string id = 1;
+  string name = 2;
+  // HDR (blooms).
+  Rgba color = 3;
+  float weight = 4;
+  repeated CubeOutcome outcomes = 5;
+  // A natural 20: this (unset: the top of the table).
+  CubeOutcome nat20 = 6;
+}
+
+// d20 + your lucky number's share (0..`luck_max`) + `catch_up_per_place` for each place behind the leader (at most
+// `catch_up_max`). Rivals get the catch-up bonus too, not the luck.
+message RaceRoll {
+  int32 luck_max = 1;
+  int32 catch_up_per_place = 2;
+  int32 catch_up_max = 3;
+}
+
+// The race, for the page's HUD (Station/Race). `standings`: "place|name|lap|you|done" per racer, leader first.
+// `feed`: the latest cube rolls, oldest first, "who|cube|colour hex|d20|bonus|total|effect|you". `roll`: your last
+// roll, "cube|colour hex|d20|bonus|total|effect|what it did" (`roll_seq` counts them, so the page replays its card).
+message RaceState {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  bool active = 1;
+  // No job (?ln-race): no pay.
+  bool practice = 2;
+  int32 lap = 3;
+  int32 laps = 4;
+  int32 gate = 5;
+  int32 gates = 6;
+  int32 place = 7;
+  int32 racers = 8;
+  // Seconds left on the grid (0: racing).
+  float countdown = 9;
+  bool finished = 10;
+  float time = 11;
+  float best_lap = 12;
+  repeated string standings = 13;
+  repeated string feed = 14;
+  string roll = 15;
+  int32 roll_seq = 16;
+  int32 shields = 17;
+  // Your effects running now, "Turbo 2.1 s · Phase 0.8 s".
+  string effects = 18;
+  // A big line across the middle ("GO!", "WRONG WAY"); "" none.
+  string banner = 19;
+  // Metres to the next gate.
+  float next_gate = 20;
+  // The finish card: your place and what it paid.
+  string result = 21;
+  int32 payout = 22;
+  float speed = 23;
+  // Where the next gate is from your nose: `gate_angle` degrees clockwise from straight up on screen, `gate_off`
+  // degrees off the nose (the page points an arrow at it once it's off to the side).
+  float gate_angle = 24;
+  float gate_off = 25;
+  // Far off the line: E puts you back at the last gate.
+  bool off_course = 26;
+}

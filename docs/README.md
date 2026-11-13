@@ -10,4 +10,5 @@
 - [items.md](items.md): items, relics, weapons, equipment (design)
 - [flight-school.md](flight-school.md): test-flying the ships (station console, `?ln-flight`)
 - [dogfight.md](dogfight.md): space combat, satellite jobs, memory restore, debt (`?ln-dogfight`)
+- [race.md](race.md): circuit racing, rivals, mystery cubes and their dice (`?ln-race`)
 - Decisions: [0001 WebGPU + WebGL 2 fallback](decisions/0001-webgpu-with-webgl2-fallback.md), [0002 CHANGELOG releases](decisions/0002-changelog-driven-releases.md)

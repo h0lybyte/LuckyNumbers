@@ -21,6 +21,9 @@ enum JobKind {
   // On foot at the wreck: plant a beacon and hold it while it charges, wave after wave of monsters coming for it
   // (content/combat.txtpb defend). `target` / `target_per_danger`: the waves; the beacon destroyed fails the job.
   JOB_KIND_DEFEND = 5;
+  // Out round the station (GameScene.Orbit): a circuit race against AI pilots, mystery cubes on the line
+  // (content/race.txtpb). `target` / `target_per_danger`: laps. Paid by place.
+  JOB_KIND_RACE = 6;
 }
 
 // Work from Dispatch (content/jobs.txtpb). Your first job is the museum freighter's mayday (the station's own call

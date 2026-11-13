@@ -85,9 +85,9 @@ namespace LuckyNumbers.Station
         string _orbitBody = "";
         static JobConfig J => GameContent.Jobs;
         // The first trip plays the intro cutscene (StationScene.next); later ones fly straight down, or (a satellite
-        // job) out round the station.
-        GameScene NextScene => _voyage.Trips.Value == 0 ? _config.Next : OnUplink ? GameScene.Orbit : GameScene.Planet;
-        bool OnUplink => _job.Active.Value && _job.Kind.Value == JobKind.Uplink;
+        // job, a race) out round the station.
+        GameScene NextScene => _voyage.Trips.Value == 0 ? _config.Next : OnOrbitJob ? GameScene.Orbit : GameScene.Planet;
+        bool OnOrbitJob => _job.Active.Value && _job.Kind.Value is JobKind.Uplink or JobKind.Race;
         readonly DebtState _debt;
         readonly IPublisher<RunEnded> _runEnded;
         // Later trips need a job from the board first.
@@ -396,8 +396,8 @@ namespace LuckyNumbers.Station
             _orbitOffset = _orbitPosition - (Vector3)at;
             _space.Camera.nearClipPlane = math.max(0.001f, diameter * 0.01f);
             _inSpace = true;
-            // Back from a planet, or docked from a satellite job: Dispatch settles it. Destroyed: the memory restore.
-            if (_arrival == StationArrival.Planet || _arrival == StationArrival.Orbit && OnUplink) Homecoming();
+            // Back from a planet, or docked from a satellite job or a race: Dispatch settles it. Destroyed: the memory restore.
+            if (_arrival == StationArrival.Planet || _arrival == StationArrival.Orbit && OnOrbitJob) Homecoming();
             else if (_arrival == StationArrival.Restored) Restored();
             Debug.Log($"[Station] ready: orbiting {target} \"{_planet}\" (seed {_space.Seed})"); // marker for ln.py webshot
         }
@@ -595,9 +595,9 @@ namespace LuckyNumbers.Station
             _state.Caller.Value = _caller;
             Debug.Log($"[Station] back from the planet: {sold.Count} relic(s) sold for {total} cr ({_voyage.Credits.Value} cr total)");
             var lines = new List<StationCallLine>(sold.Count > 0 ? home.PaidLines : home.EmptyLines);
-            if (sold.Count == 0 && OnUplink)
+            if (sold.Count == 0 && OnOrbitJob)
             {
-                // A satellite job: nothing for the museum, Dispatch settles the job.
+                // A satellite job or a race: nothing for the museum, Dispatch settles the job.
                 lines.Clear();
                 _caller = "Dispatch";
                 _state.Caller.Value = _caller;
@@ -657,7 +657,7 @@ namespace LuckyNumbers.Station
                         Text = (l.Text ?? "").Replace("{bill}", _voyage.RestoreBill.Value.ToString("N0"))
                                              .Replace("{credits}", _voyage.Credits.Value.ToString("N0")),
                     });
-            if (OnUplink)
+            if (OnOrbitJob)
             {
                 lines.AddRange(J.FailedLines);
                 Debug.Log($"[Station] job \"{_job.Title.Value}\" failed: ship destroyed");

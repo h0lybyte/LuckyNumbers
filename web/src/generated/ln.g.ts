@@ -46,7 +46,8 @@ export type JobKind =
   | "Clear"
   | "Retrieve"
   | "Uplink"
-  | "Defend";
+  | "Defend"
+  | "Race";
 
 /**
  * Why the player can't walk and look right now, one bit per owner. Each system sets and clears only its own bit
@@ -481,6 +482,51 @@ export interface PlayerVoyage {
 }
 
 /**
+ * The race, for the page's HUD (Station/Race). `standings`: "place|name|lap|you|done" per racer, leader first.
+ * `feed`: the latest cube rolls, oldest first, "who|cube|colour hex|d20|bonus|total|effect|you". `roll`: your last
+ * roll, "cube|colour hex|d20|bonus|total|effect|what it did" (`roll_seq` counts them, so the page replays its card).
+ */
+export interface RaceState {
+  active: boolean;
+  /** No job (?ln-race): no pay. */
+  practice: boolean;
+  lap: number;
+  laps: number;
+  gate: number;
+  gates: number;
+  place: number;
+  racers: number;
+  /** Seconds left on the grid (0: racing). */
+  countdown: number;
+  finished: boolean;
+  time: number;
+  bestLap: number;
+  standings: string[];
+  feed: string[];
+  roll: string;
+  rollSeq: number;
+  shields: number;
+  /** Your effects running now, "Turbo 2.1 s · Phase 0.8 s". */
+  effects: string;
+  /** A big line across the middle ("GO!", "WRONG WAY"); "" none. */
+  banner: string;
+  /** Metres to the next gate. */
+  nextGate: number;
+  /** The finish card: your place and what it paid. */
+  result: string;
+  payout: number;
+  speed: number;
+  /**
+   * Where the next gate is from your nose: `gate_angle` degrees clockwise from straight up on screen, `gate_off`
+   * degrees off the nose (the page points an arrow at it once it's off to the side).
+   */
+  gateAngle: number;
+  gateOff: number;
+  /** Far off the line: E puts you back at the last gate. */
+  offCourse: boolean;
+}
+
+/**
  * Save slots (Core/SavePresenter). Play on the title opens the page's picker: an empty slot starts a new character
  * there (creation, the hangar, then the station), a filled one continues it (its universe, sheet, pack, ship, credits
  * and job come back and you wake at the station). The run then saves to its slot on every scene change and every
@@ -889,6 +935,7 @@ export interface WebStates {
   PlayerControl: PlayerControl;
   ShipPicker: ShipPicker;
   PlayerVoyage: PlayerVoyage;
+  RaceState: RaceState;
   SaveSlots: SaveSlots;
   GameSettings: GameSettings;
   DiceState: DiceState;
@@ -953,4 +1000,4 @@ export interface WebEvents {
 /** Events the page may publish into the game. */
 export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "CharacterCallsignRequested" | "SceneChangeRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "SaveSlotsReady" | "SaveSlotPicked" | "SaveSlotDeleteRequested" | "SettingsChanged" | "SettingsReset" | "SettingsToggled" | "MenuItemSelected" | "UniverseSelected" | "UpgradeBuyRequested" | "OutfitterCloseRequested";
 
-export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "DefendState", "CombatState", "DogfightState", "DebtState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "PlayerControl", "ShipPicker", "PlayerVoyage", "SaveSlots", "GameSettings", "DiceState", "UniverseState", "Outfitter"] as const;
+export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "DefendState", "CombatState", "DogfightState", "DebtState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "PlayerControl", "ShipPicker", "PlayerVoyage", "RaceState", "SaveSlots", "GameSettings", "DiceState", "UniverseState", "Outfitter"] as const;
