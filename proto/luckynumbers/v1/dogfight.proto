@@ -29,6 +29,24 @@ message DogfightConfig {
   float clearance = 9;
   // Satellite jobs by danger (1..5): what each tier is called, pays on top and throws at you.
   repeated UplinkTier uplink_tiers = 10;
+  // Ships hitting each other or the station's hull (Station/Impacts).
+  Collisions collisions = 11;
+  // The rogues' simulation rate (steps a second; it runs at this fixed rate and is drawn in between). 0: 60.
+  float sim_rate = 12;
+}
+
+// A crash does damage by its closing speed (along the contact, so a scrape costs little): (closing - `min_speed`) x
+// `damage_per_speed`, scaled by how big the other thing is next to you (`hull_size` for the station, else the
+// lengths' ratio, kept within 0.5..2). Through shield, armour and hull like a bolt. Both ships bounce apart
+// (`restitution` of the closing speed comes back; the scrape keeps `scrape` of its speed along the face). The same
+// pair (or you and the hull) can't take damage again for `cooldown` s, so grinding along a wall isn't a death sentence.
+message Collisions {
+  float min_speed = 1;
+  float damage_per_speed = 2;
+  float restitution = 3;
+  float scrape = 4;
+  float hull_size = 5;
+  float cooldown = 6;
 }
 
 // A satellite job's tier (its danger). The board's title and brief fill {tier} and {tier_blurb}. `waiting`: rogues
@@ -115,6 +133,9 @@ message RogueShip {
   float aggression = 24;
   float evade_hull = 25;
   float retreat_hull = 26;
+  // 0..1: how good its pilot is. Better pilots react sooner (seconds to notice you on its tail or lined up on it:
+  // 0.9 at 0, 0.2 at 1), dodge harder and aim truer (spread x 1.6 at 0, x 0.6 at 1). 0 reads as 0.5.
+  float skill = 27;
 }
 
 // A satellite job (JobKind.UPLINK): a data satellite out from the station; stay within `radius` of it for the job's

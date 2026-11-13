@@ -20,3 +20,10 @@ range: 40
 chase_distance: 1.45
 chase_height: 0.42
 readout_seconds: 0.15
+
+# Feel: shake (degrees, ship lengths, fade a second), boost widens the view (degrees), dust motes for speed.
+shake_angle: 2.5
+shake_offset: 0.05
+shake_decay: 1.4
+fov_kick: 7
+dust: 140

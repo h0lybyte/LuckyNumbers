@@ -38,4 +38,12 @@ message OrbitScene {
   float readout_seconds = 13;
   // On a touch screen (PointerLock.Touch), in place of the keyboard / mouse line above; empty: that one.
   string touch_hint = 14;
+  // Camera shake (trauma: hits and crashes add to it, it fades at `shake_decay` a second; the shake is trauma
+  // squared): at most `shake_angle` degrees and `shake_offset` ship lengths. `fov_kick`: degrees the view widens
+  // at full boost speed. `dust`: motes drifting round you (count), so speed reads in empty space; 0 = none.
+  float shake_angle = 15;
+  float shake_offset = 16;
+  float shake_decay = 17;
+  float fov_kick = 18;
+  int32 dust = 19;
 }

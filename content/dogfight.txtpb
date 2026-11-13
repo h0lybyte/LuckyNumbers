@@ -10,6 +10,10 @@
 attackers: 2          # rogues on an attack run at once; the rest flank
 lookahead: 1.6        # s of travel a rogue looks ahead for the hull
 clearance: 18         # m it keeps off the hull
+sim_rate: 60          # rogue flight steps a second (drawn smoothly in between)
+
+# Crashes: damage by closing speed above min_speed; bounce and scrape; one hit per pair per cooldown.
+collisions { min_speed: 10 damage_per_speed: 0.35 restitution: 0.35 scrape: 0.85 hull_size: 1.5 cooldown: 0.4 }
 
 # Satellite jobs by danger: name, pay on top of the job's, rogues waiting at the satellite (they jump you inside
 # ambush_range ship lengths of it), an ambush from behind at ambush_at of the upload, and the biggest wave.
@@ -48,7 +52,7 @@ rogues {
   speed: 44 turn_rate: 120 close: 70 pass: 25
   attack: 4 damage: "1d4" cooldown: 0.7 fire_range: 260 fire_cone: 9
   xp: 15 bounty: 60 danger_min: 1
-  aggro_range: 700 attack_seconds: 3 aggression: 0.7 evade_hull: 0.6 retreat_hull: 0.25   # darts in, jinks, bolts
+  aggro_range: 700 attack_seconds: 3 aggression: 0.7 evade_hull: 0.6 retreat_hull: 0.25 skill: 0.55   # darts in, jinks, bolts
   bolt { speed: 150 range: 320 length: 6 width: 0.45 color { r: 0.4 g: 2.6 b: 0.6 a: 1 }
          muzzle { size: 3 life: 0.07 } impact { size: 8 life: 0.2 } prewarm: 6 }
 }
@@ -58,7 +62,7 @@ rogues {
   speed: 34 turn_rate: 85 close: 90 pass: 30
   attack: 5 damage: "1d6" cooldown: 0.85 fire_range: 300 fire_cone: 8
   xp: 30 bounty: 120 danger_min: 1
-  aggro_range: 800 attack_seconds: 4 aggression: 0.5 evade_hull: 0.4 retreat_hull: 0
+  aggro_range: 800 attack_seconds: 4 aggression: 0.5 evade_hull: 0.4 retreat_hull: 0 skill: 0.5
   bolt { speed: 140 range: 350 length: 7 width: 0.6 color { r: 3 g: 1.2 b: 0.2 a: 1 }
          muzzle { size: 4 life: 0.08 } impact { size: 10 life: 0.25 } prewarm: 6 }
 }
@@ -68,7 +72,7 @@ rogues {
   speed: 24 turn_rate: 50 close: 140 pass: 45
   attack: 6 damage: "2d6" cooldown: 1.4 fire_range: 360 fire_cone: 11
   xp: 60 bounty: 260 danger_min: 3
-  aggro_range: 900 attack_seconds: 6 aggression: 0.85 evade_hull: 0 retreat_hull: 0   # a brawler: stays on you
+  aggro_range: 900 attack_seconds: 6 aggression: 0.85 evade_hull: 0 retreat_hull: 0 skill: 0.7   # a brawler: stays on you
   bolt { speed: 120 range: 400 length: 8 width: 1.4 color { r: 3.2 g: 0.3 b: 1.6 a: 1 }
          muzzle { size: 6 life: 0.1 } impact { size: 14 life: 0.35 } prewarm: 6 }
 }

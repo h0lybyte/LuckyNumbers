@@ -40,9 +40,37 @@ namespace LuckyNumbers.Model
         /// Satellite jobs by danger (1..5): what each tier is called, pays on top and throws at you.
         /// </summary>
         public List<UplinkTier> UplinkTiers { get; } = new List<UplinkTier>();
+        /// <summary>
+        /// Ships hitting each other or the station's hull (Station/Impacts).
+        /// </summary>
+        public Collisions Collisions { get; set; }
+        /// <summary>
+        /// The rogues' simulation rate (steps a second; it runs at this fixed rate and is drawn in between). 0: 60.
+        /// </summary>
+        public float SimRate { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public DogfightConfig Clone() => (DogfightConfig)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// A crash does damage by its closing speed (along the contact, so a scrape costs little): (closing - `min_speed`) x
+    /// `damage_per_speed`, scaled by how big the other thing is next to you (`hull_size` for the station, else the
+    /// lengths' ratio, kept within 0.5..2). Through shield, armour and hull like a bolt. Both ships bounce apart
+    /// (`restitution` of the closing speed comes back; the scrape keeps `scrape` of its speed along the face). The same
+    /// pair (or you and the hull) can't take damage again for `cooldown` s, so grinding along a wall isn't a death sentence.
+    /// </summary>
+    public sealed class Collisions
+    {
+        public float MinSpeed { get; set; }
+        public float DamagePerSpeed { get; set; }
+        public float Restitution { get; set; }
+        public float Scrape { get; set; }
+        public float HullSize { get; set; }
+        public float Cooldown { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public Collisions Clone() => (Collisions)MemberwiseClone();
     }
 
     /// <summary>
@@ -178,6 +206,11 @@ namespace LuckyNumbers.Model
         public float Aggression { get; set; }
         public float EvadeHull { get; set; }
         public float RetreatHull { get; set; }
+        /// <summary>
+        /// 0..1: how good its pilot is. Better pilots react sooner (seconds to notice you on its tail or lined up on it:
+        /// 0.9 at 0, 0.2 at 1), dodge harder and aim truer (spread x 1.6 at 0, x 0.6 at 1). 0 reads as 0.5.
+        /// </summary>
+        public float Skill { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public RogueShip Clone() => (RogueShip)MemberwiseClone();
