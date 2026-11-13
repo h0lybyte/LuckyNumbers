@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Blob shadows (Planet/BlobShadows, content/shadows.txtpb): the game has no shadow maps, so everything that stands on
+// the ground (monsters, you on foot, ships, props, relics, hold creatures and chests) gets a soft dark patch under it,
+// all in one instanced draw. Under a sun (the crash site) each blob follows its body's footprint and is swept away
+// from the sun, longer and fainter the lower it is; indoors (the hold, the station) it's a soft blob straight down.
+// Unset (0) fields fall back to the defaults in BlobShadows.
+message BlobShadowConfig {
+  option (ln.config) = true;
+  // Full strength out to fade_near from the camera, gone by fade_far (metres). Big casters (ships) reach further.
+  float fade_near = 1;
+  float fade_far = 2;
+  // Low-end devices (Rendering/LowEnd): both fade distances times this, and minor casters (pebbles, crates) off.
+  float low_end_distance = 3;
+  // Blob size over the caster's footprint (1: exactly the footprint; the soft edge eats into it).
+  float spread = 4;
+  // The soft edge, as a share of the blob's radius (0..1).
+  float softness = 5;
+  // How dark the blob's body gets (0..1) and the extra contact core under the feet (0..1, added on top).
+  float body_strength = 6;
+  float core_strength = 7;
+  // The core's size, as a share of the blob's radius.
+  float core_size = 8;
+  // Sun: the blob is swept away from the sun by sun_stretch x the caster's height x cot(sun elevation), at most
+  // max_sweep x its height; cot is capped at max_cot (a sun on the horizon doesn't fling it across the map).
+  float sun_stretch = 9;
+  float max_sweep = 10;
+  float max_cot = 11;
+  // Strength with the sun on the horizon (straight overhead: 1); the sweep's far end fades to tip_fade of its root.
+  float low_sun_fade = 12;
+  float tip_fade = 13;
+  // Lifted off the ground (a hop, a jump, a hovering relic): at fade_height (the caster's own height unless it says)
+  // the blob is gone; on the way it shrinks to rise_shrink of its size and its edge softens by rise_soften.
+  float rise_shrink = 14;
+  float rise_soften = 15;
+  // You on foot: the blob under your own feet (first person: seen when you look down). Strength 0..1.
+  float player_strength = 16;
+  // Ships (your fighter landing, the wreck): gone this far above the ground (m), and their fade distances times far_scale.
+  float ship_fade_height = 17;
+  float ship_far_scale = 18;
+}

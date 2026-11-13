@@ -195,11 +195,28 @@ namespace LuckyNumbers.Planet
             _arms.Play(_config.IdleClip);
             _arms.SetLife(_config.ArmBreathDegrees, _config.ArmSwingDegrees, _config.FingerFidgetDegrees);
             _arms.SetFeel(_config.SprintPump, _config.AirRaiseDegrees);
+            // Your blob shadow (BlobShadows): under your feet when you look down, swept away from the sun outdoors.
+            var body = _player.Body;
+            if (body != null)
+            {
+                var scale = body.transform.lossyScale.y;
+                var height = body.height * scale;
+                _blob = BlobCaster.Attach(body.gameObject, new BlobSpec
+                {
+                    Size = new Vector3(body.radius * 2f * scale, height, body.radius * 1.4f * scale),
+                    Bottom = body.center.y * scale - height * 0.5f,
+                    Strength = BlobShadows.Tune.PlayerStrength,
+                    Probe = true,
+                });
+            }
         }
+
+        BlobCaster _blob;
 
         public void Tick()
         {
             var dt = Time.deltaTime;
+            _blob?.SetHidden((Locks & ControlLock.Vehicle) != 0);   // in your ship's seat: no body on the ground
             if (!Active || dt <= 0f)
             {
                 _press = Press.None;

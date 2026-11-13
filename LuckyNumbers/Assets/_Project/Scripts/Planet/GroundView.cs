@@ -278,7 +278,7 @@ namespace LuckyNumbers.Planet
 
         public float HeightAt(Vector3 world) => Height(new float2(world.x, world.z));
 
-        /// <summary>The terrain's height function, for Burst jobs (MonsterBlobs bends its blobs to it).</summary>
+        /// <summary>The terrain's height function, for Burst jobs (BlobShadows bends its blobs to it).</summary>
         public GroundShape Shape => _shape;
 
         /// <summary>

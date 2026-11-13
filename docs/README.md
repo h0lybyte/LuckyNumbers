@@ -11,5 +11,6 @@
 - [flight-school.md](flight-school.md): test-flying the ships (station console, `?ln-flight`)
 - [flight-feel.md](flight-feel.md): chase camera, hull bank and bob, life round the station (tunables)
 - [ambience.md](ambience.md): ambient motion: motes, wreck sparks, cloud shadows, fliers, lantern flicker
+- [shadows.md](shadows.md): blob shadows (fake shadows, no shadow maps): who casts one, tunables, cost
 - [dogfight.md](dogfight.md): space combat, satellite jobs, memory restore, debt (`?ln-dogfight`)
 - Decisions: [0001 WebGPU + WebGL 2 fallback](decisions/0001-webgpu-with-webgl2-fallback.md), [0002 CHANGELOG releases](decisions/0002-changelog-driven-releases.md)

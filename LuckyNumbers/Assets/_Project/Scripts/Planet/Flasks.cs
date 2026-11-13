@@ -55,7 +55,7 @@ namespace LuckyNumbers.Planet
             _field = new BoltField("Flask", prewarm, false, BoltLook.Glow);
             if (_stainMaterial == null)
             {
-                var blob = Resources.Load<Material>("MonsterBlob");
+                var blob = Resources.Load<Material>("BlobShadow");
                 if (blob != null)
                 {
                     _stainMaterial = new Material(blob) { name = "FlaskStain", enableInstancing = true };

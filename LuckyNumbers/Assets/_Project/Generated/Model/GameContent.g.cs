@@ -4754,6 +4754,29 @@ namespace LuckyNumbers.Model
             TouchHint = "Left stick: thrust and strafe - right stick: aim - Lift / Down - Roll ◀ ▶ - Boost - Brake\nView: camera - Skin: next skin - Menu: back to the station",
         };
 
+        /// <summary>From <c>content/shadows.txtpb</c>.</summary>
+        public static readonly BlobShadowConfig Shadows = new BlobShadowConfig
+        {
+            FadeNear = 16.0f,
+            FadeFar = 28.0f,
+            LowEndDistance = 0.7f,
+            Spread = 1.5f,
+            Softness = 0.55f,
+            BodyStrength = 0.7f,
+            CoreStrength = 0.45f,
+            CoreSize = 0.5f,
+            SunStretch = 0.5f,
+            MaxSweep = 1.5f,
+            MaxCot = 2.5f,
+            LowSunFade = 0.55f,
+            TipFade = 0.35f,
+            RiseShrink = 0.75f,
+            RiseSoften = 0.35f,
+            PlayerStrength = 0.8f,
+            ShipFadeHeight = 18.0f,
+            ShipFarScale = 3.0f,
+        };
+
         /// <summary>From <c>content/ships.txtpb</c>.</summary>
         public static readonly ShipConfig Ships = new ShipConfig
         {
