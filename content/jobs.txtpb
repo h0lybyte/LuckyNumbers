@@ -6,7 +6,7 @@
 # Fills: {client} {planet} {target} {count} {pay} ({count}: Clear's kills, Defend's waves). Placeholder values; tune
 # with gameplay.
 
-offers: 5   # one of each kind (salvage, retrieve, clear, uplink, defend)
+offers: 6   # one of each kind (salvage, retrieve, clear, uplink, defend, race)
 clients: ["the Meridian Museum", "Halden Salvage Co.", "a private collector", "the Survey Office", "Station Command"]
 
 first_title: "Mayday: museum freighter"
@@ -61,4 +61,12 @@ types {
   objective: "Plant the beacon at the wreck on {planet} (E) and hold it through {count} waves"
   pay: 700 pay_per_danger: 300 danger_min: 1 danger_max: 4
   target: 2 target_per_danger: 1     # waves: 3 at danger 1 ... 6 at danger 4 (content/combat.txtpb defend horde)
+}
+types {
+  kind: JOB_KIND_RACE
+  title: "Circuit race for {client}"
+  brief: "{client} is running a race round the station: ten pilots, {count} laps, mystery cubes on the line. {pay} credits to the winner, less for a podium."
+  objective: "Race {count} laps through the gates; fly through the mystery cubes to roll for an edge"
+  pay: 400 pay_per_danger: 200 danger_min: 1 danger_max: 5   # x the place's share (content/race.txtpb pay_shares)
+  target: 2 target_per_danger: 0     # laps
 }

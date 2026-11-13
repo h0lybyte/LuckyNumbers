@@ -10,6 +10,7 @@ import { OutfitterPanel } from "./outfitter";
 import { PayoutBanner } from "./counter";
 import { CombatHud } from "./combat";
 import { DebtChip, DogfightHud, GameOverCard } from "./dogfight";
+import { RaceHud } from "./race";
 import { EncounterCard } from "./encounter";
 import { CharacterSheetGate } from "./sheet";
 import { HangarGate } from "./hangar";
@@ -28,7 +29,8 @@ export function App({ dock }: { dock: HTMLElement | null }) {
   // ?ln-board: the station between jobs, beside your ship (E opens the job board);
   // ?ln-outfitter: the station's outfitter, open, with test credits if you have none;
   // ?ln-flight: straight to the Flight School (test-flying the ships, their jets); ?ln-orbit: outside the station;
-  // ?ln-dogfight: outside the station with a practice satellite uplink and rogue waves (no job needed).
+  // ?ln-dogfight: outside the station with a practice satellite uplink and rogue waves (no job needed);
+  // ?ln-race: outside the station on a practice circuit race (no job, no pay).
   // ?ln-planet: straight to the planet (you fly in and land at the crash site); ?ln-hold: the mines under a dwarven hold.
   // ?ln-universe=<id> (content/universes.txtpb, e.g. emberdeep): that universe first, then any of the above.
   useEffect(() => {
@@ -38,7 +40,7 @@ export function App({ dock }: { dock: HTMLElement | null }) {
     if (universe) LN.send("UniverseSelected", { id: universe, step: 0 });
     if (q.has("ln-range") || q.has("ln-board") || q.has("ln-outfitter")) LN.send("SceneChangeRequested", { target: "Station" });
     else if (q.has("ln-flight")) LN.send("SceneChangeRequested", { target: "FlightSchool" });
-    else if (q.has("ln-orbit") || q.has("ln-dogfight")) LN.send("SceneChangeRequested", { target: "Orbit" });
+    else if (q.has("ln-orbit") || q.has("ln-dogfight") || q.has("ln-race")) LN.send("SceneChangeRequested", { target: "Orbit" });
     else if (q.has("ln-planet")) LN.send("SceneChangeRequested", { target: "Planet" });
     else if (q.has("ln-hold")) LN.send("SceneChangeRequested", { target: "Hold" });
   }, [ready]);
@@ -126,6 +128,7 @@ function StationHudGate() {
     return (
       <>
         <DogfightHud />
+        <RaceHud />
         <JobLine />
       </>
     );

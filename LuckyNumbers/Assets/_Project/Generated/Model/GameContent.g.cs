@@ -3570,8 +3570,20 @@ namespace LuckyNumbers.Model
                     Target = 2,
                     TargetPerDanger = 1,
                 },
+                new JobType
+                {
+                    Kind = JobKind.Race,
+                    Title = "Circuit race for {client}",
+                    Brief = "{client} is running a race round the station: ten pilots, {count} laps, mystery cubes on the line. {pay} credits to the winner, less for a podium.",
+                    Objective = "Race {count} laps through the gates; fly through the mystery cubes to roll for an edge",
+                    Pay = 400,
+                    PayPerDanger = 200,
+                    DangerMin = 1,
+                    DangerMax = 5,
+                    Target = 2,
+                },
             },
-            Offers = 5,
+            Offers = 6,
             Clients =
             {
                 "the Meridian Museum",
@@ -4731,6 +4743,344 @@ namespace LuckyNumbers.Model
         {
             MaxHealth = 100,
             ShipSkin = "idolknight",
+        };
+
+        /// <summary>From <c>content/race.txtpb</c>.</summary>
+        public static readonly RaceConfig Race = new RaceConfig
+        {
+            Rivals = 10,
+            Laps = 2,
+            SpeedScale = 1.6f,
+            Track = new RaceTrackRules
+            {
+                Points = 9,
+                Radius = 1100.0f,
+                RadiusJitter = 0.3f,
+                Height = 160.0f,
+                GateSpacing = 260.0f,
+                GateSize = 110.0f,
+                StartDistance = 300.0f,
+                CubeEvery = 3,
+                CubeRow = 4,
+                CubeSize = 9.0f,
+                CubeRespawn = 6.0f,
+                Hazards = 36,
+                HazardSizeMin = 20.0f,
+                HazardSizeMax = 70.0f,
+                HazardSpread = 220.0f,
+            },
+            Pilots =
+            {
+                new RacePilot
+                {
+                    Name = "Vexa Morrow",
+                    Skin = "krulspeld1",
+                },
+                new RacePilot
+                {
+                    Name = "Dax Halloran",
+                    Skin = "lordshadow",
+                },
+                new RacePilot
+                {
+                    Name = "Juno Pike",
+                    Skin = "krulspeld3",
+                },
+                new RacePilot
+                {
+                    Name = "Old Brannick",
+                    Skin = "nmt3000",
+                },
+                new RacePilot
+                {
+                    Name = "Sable Quist",
+                    Skin = "psionic",
+                },
+                new RacePilot
+                {
+                    Name = "Teo Varga",
+                    Skin = "snazf1",
+                },
+                new RacePilot
+                {
+                    Name = "Mira Kessel",
+                    Skin = "cubik",
+                },
+                new RacePilot
+                {
+                    Name = "Rook Adeyemi",
+                    Skin = "freelancer",
+                },
+                new RacePilot
+                {
+                    Name = "Lark Ostrander",
+                    Skin = "krulspeld5",
+                },
+                new RacePilot
+                {
+                    Name = "Pim Calloway",
+                    Skin = "robin",
+                },
+                new RacePilot
+                {
+                    Name = "Hask the Quiet",
+                    Skin = "shadee",
+                },
+                new RacePilot
+                {
+                    Name = "Nell Fairweather",
+                    Skin = "jodomatis",
+                },
+            },
+            Cubes =
+            {
+                new MysteryCube
+                {
+                    Id = "green",
+                    Name = "Spark",
+                    Color = new Rgba(0.3f, 2.4f, 0.5f, 1.0f),
+                    Weight = 4.0f,
+                    Outcomes =
+                    {
+                        new CubeOutcome
+                        {
+                            Min = 1,
+                            Effect = RaceEffect.Boost,
+                            Name = "Nudge",
+                            Power = 1.2f,
+                            Seconds = 2.0f,
+                        },
+                        new CubeOutcome
+                        {
+                            Min = 8,
+                            Effect = RaceEffect.Shield,
+                            Name = "Shield",
+                            Count = 1,
+                        },
+                        new CubeOutcome
+                        {
+                            Min = 13,
+                            Effect = RaceEffect.Boost,
+                            Name = "Turbo",
+                            Power = 1.45f,
+                            Seconds = 3.0f,
+                        },
+                        new CubeOutcome
+                        {
+                            Min = 18,
+                            Effect = RaceEffect.Boost,
+                            Name = "Overdrive",
+                            Power = 1.65f,
+                            Seconds = 4.0f,
+                        },
+                    },
+                    Nat20 = new CubeOutcome
+                    {
+                        Effect = RaceEffect.Boost,
+                        Name = "Afterburner",
+                        Power = 1.9f,
+                        Seconds = 5.0f,
+                    },
+                },
+                new MysteryCube
+                {
+                    Id = "blue",
+                    Name = "Static",
+                    Color = new Rgba(0.3f, 0.9f, 3.0f, 1.0f),
+                    Weight = 3.0f,
+                    Outcomes =
+                    {
+                        new CubeOutcome
+                        {
+                            Min = 1,
+                            Effect = RaceEffect.Mine,
+                            Name = "Mine",
+                            Power = 0.5f,
+                            Seconds = 2.5f,
+                            Radius = 45.0f,
+                        },
+                        new CubeOutcome
+                        {
+                            Min = 8,
+                            Effect = RaceEffect.Emp,
+                            Name = "EMP",
+                            Power = 0.6f,
+                            Seconds = 2.5f,
+                            Radius = 220.0f,
+                        },
+                        new CubeOutcome
+                        {
+                            Min = 13,
+                            Effect = RaceEffect.Zap,
+                            Name = "Zap",
+                            Power = 0.45f,
+                            Seconds = 3.0f,
+                        },
+                        new CubeOutcome
+                        {
+                            Min = 18,
+                            Effect = RaceEffect.Zap,
+                            Name = "Leader zap",
+                            Power = 0.4f,
+                            Seconds = 3.5f,
+                            Leader = true,
+                        },
+                    },
+                    Nat20 = new CubeOutcome
+                    {
+                        Effect = RaceEffect.Emp,
+                        Name = "Storm",
+                        Power = 0.4f,
+                        Seconds = 3.5f,
+                        Radius = 600.0f,
+                    },
+                },
+                new MysteryCube
+                {
+                    Id = "gold",
+                    Name = "Gilded",
+                    Color = new Rgba(3.0f, 2.2f, 0.3f, 1.0f),
+                    Weight = 1.0f,
+                    Outcomes =
+                    {
+                        new CubeOutcome
+                        {
+                            Min = 1,
+                            Effect = RaceEffect.Boost,
+                            Name = "Turbo",
+                            Power = 1.6f,
+                            Seconds = 3.0f,
+                        },
+                        new CubeOutcome
+                        {
+                            Min = 8,
+                            Effect = RaceEffect.Phase,
+                            Name = "Phase",
+                            Seconds = 4.0f,
+                        },
+                        new CubeOutcome
+                        {
+                            Min = 14,
+                            Effect = RaceEffect.Warp,
+                            Name = "Warp",
+                            Count = 1,
+                        },
+                        new CubeOutcome
+                        {
+                            Min = 19,
+                            Effect = RaceEffect.Warp,
+                            Name = "Long warp",
+                            Count = 2,
+                        },
+                    },
+                    Nat20 = new CubeOutcome
+                    {
+                        Effect = RaceEffect.Warp,
+                        Name = "Fold space",
+                        Count = 3,
+                    },
+                },
+                new MysteryCube
+                {
+                    Id = "red",
+                    Name = "Risk",
+                    Color = new Rgba(3.0f, 0.35f, 0.3f, 1.0f),
+                    Weight = 2.0f,
+                    Outcomes =
+                    {
+                        new CubeOutcome
+                        {
+                            Min = 1,
+                            Effect = RaceEffect.Stall,
+                            Name = "Stall",
+                            Power = 0.4f,
+                            Seconds = 2.5f,
+                        },
+                        new CubeOutcome
+                        {
+                            Min = 7,
+                            Effect = RaceEffect.Nothing,
+                            Name = "Dud",
+                        },
+                        new CubeOutcome
+                        {
+                            Min = 12,
+                            Effect = RaceEffect.Boost,
+                            Name = "Overdrive",
+                            Power = 1.9f,
+                            Seconds = 4.0f,
+                        },
+                        new CubeOutcome
+                        {
+                            Min = 17,
+                            Effect = RaceEffect.Swap,
+                            Name = "Swap",
+                        },
+                    },
+                    Nat20 = new CubeOutcome
+                    {
+                        Effect = RaceEffect.Boost,
+                        Name = "Hyperdrive",
+                        Power = 2.2f,
+                        Seconds = 5.0f,
+                    },
+                },
+            },
+            Roll = new RaceRoll
+            {
+                LuckMax = 2,
+                CatchUpPerPlace = 1,
+                CatchUpMax = 4,
+            },
+            Fumble = new CubeOutcome
+            {
+                Effect = RaceEffect.Stall,
+                Name = "Backfire",
+                Power = 0.35f,
+                Seconds = 2.5f,
+            },
+            PayShares =
+            {
+                1.0f,
+                0.6f,
+                0.4f,
+                0.2f,
+                0.1f,
+            },
+            Xp =
+            {
+                120,
+                80,
+                60,
+                40,
+                30,
+                20,
+                15,
+                10,
+                10,
+                10,
+                10,
+            },
+            Countdown = 3.0f,
+            FinishSeconds = 8.0f,
+            DnfSeconds = 45.0f,
+            Ai = new RaceAi
+            {
+                PaceMin = 0.82f,
+                PaceMax = 0.95f,
+                PacePerDanger = 0.02f,
+                TurnRate = 75.0f,
+                Lookahead = 140.0f,
+                RubberBand = 0.12f,
+                Lane = 0.45f,
+                Length = 24.0f,
+                CubeSeek = 0.5f,
+            },
+            Title = "CIRCUIT RACE",
+            Hint = "W thrust - mouse to steer - Shift boost - fly through the gates in order\nCubes: fly through to roll the dice - guns are cold",
+            TouchHint = "Left stick: thrust - right stick: steer - Boost\nFly through the gates in order; cubes roll the dice",
+            MaxShields = 3,
+            Accel = 14.0f,
         };
 
         /// <summary>From <c>content/school.txtpb</c>.</summary>

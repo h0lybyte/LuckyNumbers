@@ -13,4 +13,5 @@
 - [ambience.md](ambience.md): ambient motion: motes, wreck sparks, cloud shadows, fliers, lantern flicker
 - [shadows.md](shadows.md): blob shadows (fake shadows, no shadow maps): who casts one, tunables, cost
 - [dogfight.md](dogfight.md): space combat, satellite jobs, memory restore, debt (`?ln-dogfight`)
+- [race.md](race.md): circuit racing, rivals, mystery cubes and their dice (`?ln-race`)
 - Decisions: [0001 WebGPU + WebGL 2 fallback](decisions/0001-webgpu-with-webgl2-fallback.md), [0002 CHANGELOG releases](decisions/0002-changelog-driven-releases.md)
