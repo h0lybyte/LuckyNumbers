@@ -7,7 +7,9 @@
         "LuckyNumbers.Model",
         "Unity.Mathematics",
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+        "LuckyNumbers.Hold",
+        "Unity.Collections"
     ],
     "includePlatforms": [
         "Editor"
