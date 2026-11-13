@@ -2164,6 +2164,26 @@ namespace LuckyNumbers.Model
                 KeyText = "The seal key of {name}. It opens the great hatches at depth {depth}.",
                 UseDistance = 1.9f,
             },
+            Ambience = new Ambience
+            {
+                Motes =
+                {
+                    new Motes
+                    {
+                        Count = 160,
+                        LowEndShare = 0.4f,
+                        Box = new Vec3(10.0f, 6.0f, 10.0f),
+                        Size = 0.025f,
+                        Color = new Rgba(1.0f, 0.85f, 0.62f, 0.55f),
+                        Drift = new Vec3(0.03f, -0.015f, 0.02f),
+                        Flutter = 0.3f,
+                        FlutterSpeed = 0.35f,
+                        Twinkle = 0.5f,
+                    },
+                },
+                LanternFlicker = 0.16f,
+                LanternFlickerSpeed = 3.2f,
+            },
         };
 
         /// <summary>From <c>content/intro.txtpb</c>.</summary>
@@ -6860,6 +6880,61 @@ namespace LuckyNumbers.Model
                             SurfaceNoiseScale = 0.12f,
                         },
                     },
+                    Ambience = new Ambience
+                    {
+                        Motes =
+                        {
+                            new Motes
+                            {
+                                Count = 220,
+                                LowEndShare = 0.4f,
+                                Box = new Vec3(24.0f, 12.0f, 24.0f),
+                                Size = 0.05f,
+                                Color = new Rgba(1.0f, 0.96f, 0.82f, 0.6f),
+                                Drift = new Vec3(0.7f, 0.04f, 0.3f),
+                                Flutter = 0.5f,
+                                FlutterSpeed = 0.8f,
+                                Twinkle = 0.3f,
+                                Gust = 1.6f,
+                            },
+                        },
+                        Wreck = new Motes
+                        {
+                            Count = 40,
+                            LowEndShare = 0.5f,
+                            Box = new Vec3(18.0f, 14.0f, 18.0f),
+                            Size = 0.09f,
+                            Color = new Rgba(2.2f, 0.9f, 0.3f, 0.9f),
+                            Drift = new Vec3(0.5f, 1.4f, 0.2f),
+                            Flutter = 0.6f,
+                            FlutterSpeed = 2.2f,
+                            Glow = 1.0f,
+                            Twinkle = 0.7f,
+                            Gust = 1.0f,
+                        },
+                        Clouds = new Clouds
+                        {
+                            Shadow = 0.45f,
+                            Scale = 140.0f,
+                            Cover = 0.45f,
+                            Wind = new Vec2(4.0f, 1.6f),
+                            Softness = 0.35f,
+                        },
+                        Flock = new Flock
+                        {
+                            Birds = 10,
+                            Flocks = 3,
+                            DistanceMin = 110.0f,
+                            DistanceMax = 260.0f,
+                            HeightMin = 40.0f,
+                            HeightMax = 85.0f,
+                            CircleRadius = 26.0f,
+                            Speed = 10.0f,
+                            Wingspan = 2.6f,
+                            FlapSpeed = 4.5f,
+                            Color = new Rgba(0.08f, 0.08f, 0.09f, 1.0f),
+                        },
+                    },
                 },
                 new Universe
                 {
@@ -7202,6 +7277,75 @@ namespace LuckyNumbers.Model
                     },
                     Holds = true,
                     People = "Varrun",
+                    Ambience = new Ambience
+                    {
+                        Motes =
+                        {
+                            new Motes
+                            {
+                                Count = 200,
+                                LowEndShare = 0.4f,
+                                Box = new Vec3(24.0f, 12.0f, 24.0f),
+                                Size = 0.06f,
+                                Color = new Rgba(0.55f, 0.5f, 0.48f, 0.55f),
+                                Drift = new Vec3(0.9f, -0.25f, 0.4f),
+                                Flutter = 0.45f,
+                                FlutterSpeed = 0.9f,
+                                Twinkle = 0.1f,
+                                Gust = 2.0f,
+                            },
+                            new Motes
+                            {
+                                Count = 70,
+                                LowEndShare = 0.4f,
+                                Box = new Vec3(28.0f, 14.0f, 28.0f),
+                                Size = 0.07f,
+                                Color = new Rgba(2.6f, 0.75f, 0.18f, 0.9f),
+                                Drift = new Vec3(1.1f, 0.45f, 0.5f),
+                                Flutter = 0.7f,
+                                FlutterSpeed = 1.8f,
+                                Glow = 1.0f,
+                                Twinkle = 0.75f,
+                                Gust = 2.4f,
+                            },
+                        },
+                        Wreck = new Motes
+                        {
+                            Count = 70,
+                            LowEndShare = 0.5f,
+                            Box = new Vec3(20.0f, 18.0f, 20.0f),
+                            Size = 0.1f,
+                            Color = new Rgba(2.8f, 0.8f, 0.2f, 0.95f),
+                            Drift = new Vec3(0.7f, 1.8f, 0.3f),
+                            Flutter = 0.7f,
+                            FlutterSpeed = 2.4f,
+                            Glow = 1.0f,
+                            Twinkle = 0.8f,
+                            Gust = 1.4f,
+                        },
+                        Clouds = new Clouds
+                        {
+                            Shadow = 0.55f,
+                            Scale = 110.0f,
+                            Cover = 0.5f,
+                            Wind = new Vec2(6.0f, 2.5f),
+                            Softness = 0.25f,
+                        },
+                        Flock = new Flock
+                        {
+                            Birds = 5,
+                            Flocks = 2,
+                            DistanceMin = 140.0f,
+                            DistanceMax = 300.0f,
+                            HeightMin = 55.0f,
+                            HeightMax = 110.0f,
+                            CircleRadius = 45.0f,
+                            Speed = 8.0f,
+                            Wingspan = 5.0f,
+                            FlapSpeed = 1.6f,
+                            Color = new Rgba(0.07f, 0.035f, 0.03f, 1.0f),
+                        },
+                    },
                 },
             },
         };

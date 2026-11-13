@@ -29,6 +29,8 @@ lantern_r: 1
 lantern_g: 0.72
 lantern_b: 0.42
 ambient: 0.18
+# Dust in the lantern light, lantern flicker.
+ambience_ref: "ambience/hold"
 
 # Climbing shafts.
 climb_speed: 2.2
