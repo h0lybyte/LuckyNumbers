@@ -17,3 +17,11 @@ scatter_max: 34
 pickup_distance: 2.2
 pickup_prompt: "E: pick up the {name}"
 use_prompt: "R: use the {name}"
+
+# Salvage jobs: walk up to the wreck and E flags it for processing (the job's done); relics are a bonus on top.
+salvage_distance: 6
+salvage_prompt: "E: flag the wreck for salvage"
+salvage_lines { speaker: "You" text: "Salvage beacon's on. Claim's ours." duration_seconds: 2.5 chars_per_second: 40 }
+salvage_lines { speaker: "Dispatch" text: "Got your tag. The wreck's flagged for processing: our crews take it from here." duration_seconds: 4 chars_per_second: 40 }
+salvage_lines { speaker: "Dispatch" text: "Get back to your ship and fly up to the station to get paid. Grab any relics on the way: they sell too." duration_seconds: 5 chars_per_second: 40 }
+salvaged_prompt: "Wreck flagged for processing - back to your ship"

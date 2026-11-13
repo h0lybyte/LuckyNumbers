@@ -68,6 +68,8 @@ namespace LuckyNumbers.Planet
 
         CargoConfig Config => GameContent.Cargo;
         bool _spawned, _pickup, _claimedE;
+        bool _flagged;        // a Salvage job's wreck, flagged for processing (E beside it): the job's goal
+        float _wreckReach;    // how far the wreck's hull reaches from its pivot, on the ground
         float _slowUntil, _revealUntil;
         bool _revealAll;
         string _prompt = "";
@@ -157,13 +159,18 @@ namespace LuckyNumbers.Planet
                     if (d < best) { best = d; nearDrop = dr; near = null; }
                 }
             }
-            // E: a relic within reach first; else your landed ship, if you're beside it (flies you back out).
-            var board = onFoot && near == null && nearDrop == null ? _fighter.BoardPrompt(me) : "";
+            // E: a relic within reach first; else a Salvage job's wreck (flag it); else your landed ship, if you're
+            // beside it (flies you back out).
+            var atWreck = onFoot && near == null && nearDrop == null && AtWreck(me);
+            var salvage = atWreck && !_flagged;
+            var board = onFoot && near == null && nearDrop == null && !salvage ? _fighter.BoardPrompt(me) : "";
+            var flaggedHint = atWreck && _flagged && board == "";
             // E's for that, not the gun; let go only if it was ours (a Defend job's beacon claims it too).
-            if (near != null || nearDrop != null || board != "") { _firstPerson.InteractElsewhere = true; _claimedE = true; }
+            if (near != null || nearDrop != null || salvage || board != "") { _firstPerson.InteractElsewhere = true; _claimedE = true; }
             else if (_claimedE) { _firstPerson.InteractElsewhere = false; _claimedE = false; }
             if (_pickup && near != null) Take(near);
             else if (_pickup && nearDrop != null) PickUp(nearDrop);
+            else if (_pickup && salvage) FlagWreck();
             else if (_pickup && board != "") _fighter.Board();
             _pickup = false;
 
@@ -176,12 +183,15 @@ namespace LuckyNumbers.Planet
             // text is only built when that thing changes, not every frame you stand next to it.
             var ready = _packState.ReadyName.Value;
             var use = !string.IsNullOrEmpty(ready) && onFoot && _packState.Cooldown.Value <= 0f ? ready : null;
-            var about = nearDrop != null ? nearDrop : near != null ? near : board != "" ? board : (object)use;
+            var about = nearDrop != null ? nearDrop : near != null ? near : salvage ? WreckPrompt
+                      : board != "" ? board : flaggedHint ? FlaggedPrompt : (object)use;
             if (ReferenceEquals(about, _promptFor)) return;
             _promptFor = about;
             var prompt = nearDrop != null ? Fill(Config.PickupPrompt, Label(nearDrop.Item))
                        : near != null ? Fill(Config.PickupPrompt, near.Relic.Name)
+                       : salvage ? Config.SalvagePrompt ?? ""
                        : board != "" ? board
+                       : flaggedHint ? Config.SalvagedPrompt ?? ""
                        : use != null ? Fill(Config.UsePrompt, use) : "";
             if (prompt != _prompt)
             {
@@ -191,11 +201,44 @@ namespace LuckyNumbers.Planet
         }
 
         float _slowScale = 1f;
+        static readonly object WreckPrompt = new(), FlaggedPrompt = new();   // _promptFor's keys for the wreck's prompts
+
+        /// <summary>
+        /// Close to the wreck on a Salvage job (within salvage_distance of its hull, on the ground). Other jobs: the
+        /// wreck's just scenery (a Retrieve wants its one relic; a Clear has no wreck).
+        /// </summary>
+        bool AtWreck(Vector3 me)
+        {
+            if (!_spawned || !_site.HasWreck || !_job.Active.Value || _job.Kind.Value != JobKind.Salvage) return false;
+            if (string.IsNullOrEmpty(Config.SalvagePrompt)) return false;
+            var pivot = _view.Wreck.Pivot.position;
+            var reach = _wreckReach + (Config.SalvageDistance > 0f ? Config.SalvageDistance : 6f);
+            return Vector2.Distance(new Vector2(pivot.x, pivot.z), new Vector2(me.x, me.z)) < reach;
+        }
+
+        /// <summary>E beside the wreck: it's flagged for processing, the job's done; the lines send you back to your ship.</summary>
+        void FlagWreck()
+        {
+            _flagged = true;
+            if (!_job.Done.Value) _job.Done.Value = true;
+            Debug.Log($"[Relics] wreck flagged for processing: {_job.Title.Value} done");
+            SayAsync(Config.SalvageLines, _cts.Token).Forget();
+        }
+
+        async UniTaskVoid SayAsync(List<Dialogue> lines, CancellationToken ct)
+        {
+            try
+            {
+                foreach (var line in lines) await DialogueLine.Play(line, _view.Dialogue, ct);
+            }
+            catch (OperationCanceledException) { }
+        }
 
         /// <summary>Once: load the relics' own models (Addressables), then lay them out.</summary>
         void Spawn()
         {
             _spawned = true;
+            _wreckReach = WreckReach(_view.Wreck.Pivot.position);
             SpawnAsync(_cts.Token).Forget();
         }
 

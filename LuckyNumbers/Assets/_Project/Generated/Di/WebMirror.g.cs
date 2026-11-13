@@ -28,10 +28,10 @@ namespace LuckyNumbers.Model
     {
         public static readonly string[] States =
         {
-            "RelicSite",
-            "CharacterSheet",
             "FlowState",
             "LoadingState",
+            "RelicSite",
+            "CharacterSheet",
             "RangeState",
             "StationState",
             "DefendState",
@@ -63,72 +63,72 @@ namespace LuckyNumbers.Model
         {
             var d = new CompositeDisposable();
             {
-                var s = c.Resolve<RelicSite>();
-                d.Add(s.Lying.Subscribe(_ => sink.MarkState(0)));
-                d.Add(s.Reveal.Subscribe(_ => sink.MarkState(0)));
+                var s = c.Resolve<FlowState>();
+                d.Add(s.Scene.Subscribe(_ => sink.MarkState(0)));
                 sink.MarkState(0);
             }
             {
-                var s = c.Resolve<CharacterSheet>();
-                d.Add(s.Callsign.Subscribe(_ => sink.MarkState(1)));
-                d.Add(s.ClassId.Subscribe(_ => sink.MarkState(1)));
-                d.Add(s.OriginId.Subscribe(_ => sink.MarkState(1)));
-                d.Add(s.Level.Subscribe(_ => sink.MarkState(1)));
-                d.Add(s.Xp.Subscribe(_ => sink.MarkState(1)));
-                d.Add(s.XpNext.Subscribe(_ => sink.MarkState(1)));
-                NotifyCollectionChangedEventHandler<int> hRolled = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(1);
-                s.Rolled.CollectionChanged += hRolled;
-                d.Add(Disposable.Create(() => s.Rolled.CollectionChanged -= hRolled));
-                NotifyCollectionChangedEventHandler<int> hMoved = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(1);
-                s.Moved.CollectionChanged += hMoved;
-                d.Add(Disposable.Create(() => s.Moved.CollectionChanged -= hMoved));
-                NotifyCollectionChangedEventHandler<int> hScores = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(1);
-                s.Scores.CollectionChanged += hScores;
-                d.Add(Disposable.Create(() => s.Scores.CollectionChanged -= hScores));
-                NotifyCollectionChangedEventHandler<int> hMods = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(1);
-                s.Mods.CollectionChanged += hMods;
-                d.Add(Disposable.Create(() => s.Mods.CollectionChanged -= hMods));
-                d.Add(s.Points.Subscribe(_ => sink.MarkState(1)));
-                d.Add(s.CanLower.Subscribe(_ => sink.MarkState(1)));
-                d.Add(s.Locked.Subscribe(_ => sink.MarkState(1)));
-                d.Add(s.Stamina.Subscribe(_ => sink.MarkState(1)));
-                d.Add(s.StaminaMax.Subscribe(_ => sink.MarkState(1)));
-                NotifyCollectionChangedEventHandler<string> hSkills = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(1);
-                s.Skills.CollectionChanged += hSkills;
-                d.Add(Disposable.Create(() => s.Skills.CollectionChanged -= hSkills));
-                d.Add(s.RelicBonus.Subscribe(_ => sink.MarkState(1)));
-                d.Add(s.Seed.Subscribe(_ => sink.MarkState(1)));
-                NotifyCollectionChangedEventHandler<string> hAbilities = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(1);
-                s.Abilities.CollectionChanged += hAbilities;
-                d.Add(Disposable.Create(() => s.Abilities.CollectionChanged -= hAbilities));
-                NotifyCollectionChangedEventHandler<string> hClasses = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(1);
-                s.Classes.CollectionChanged += hClasses;
-                d.Add(Disposable.Create(() => s.Classes.CollectionChanged -= hClasses));
-                NotifyCollectionChangedEventHandler<string> hOrigins = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(1);
-                s.Origins.CollectionChanged += hOrigins;
-                d.Add(Disposable.Create(() => s.Origins.CollectionChanged -= hOrigins));
-                NotifyCollectionChangedEventHandler<int> hAdjust = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(1);
-                s.Adjust.CollectionChanged += hAdjust;
-                d.Add(Disposable.Create(() => s.Adjust.CollectionChanged -= hAdjust));
-                d.Add(s.XpLevelStart.Subscribe(_ => sink.MarkState(1)));
-                d.Add(s.RelicAbility.Subscribe(_ => sink.MarkState(1)));
-                d.Add(s.Setup.Subscribe(_ => sink.MarkState(1)));
-                NotifyCollectionChangedEventHandler<int> hGear = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(1);
-                s.Gear.CollectionChanged += hGear;
-                d.Add(Disposable.Create(() => s.Gear.CollectionChanged -= hGear));
-                d.Add(s.Heritage.Subscribe(_ => sink.MarkState(1)));
-                d.Add(s.HeritageBlurb.Subscribe(_ => sink.MarkState(1)));
+                var s = c.Resolve<LoadingState>();
+                d.Add(s.Progress.Subscribe(_ => sink.MarkState(1)));
+                d.Add(s.Ready.Subscribe(_ => sink.MarkState(1)));
                 sink.MarkState(1);
             }
             {
-                var s = c.Resolve<FlowState>();
-                d.Add(s.Scene.Subscribe(_ => sink.MarkState(2)));
+                var s = c.Resolve<RelicSite>();
+                d.Add(s.Lying.Subscribe(_ => sink.MarkState(2)));
+                d.Add(s.Reveal.Subscribe(_ => sink.MarkState(2)));
                 sink.MarkState(2);
             }
             {
-                var s = c.Resolve<LoadingState>();
-                d.Add(s.Progress.Subscribe(_ => sink.MarkState(3)));
-                d.Add(s.Ready.Subscribe(_ => sink.MarkState(3)));
+                var s = c.Resolve<CharacterSheet>();
+                d.Add(s.Callsign.Subscribe(_ => sink.MarkState(3)));
+                d.Add(s.ClassId.Subscribe(_ => sink.MarkState(3)));
+                d.Add(s.OriginId.Subscribe(_ => sink.MarkState(3)));
+                d.Add(s.Level.Subscribe(_ => sink.MarkState(3)));
+                d.Add(s.Xp.Subscribe(_ => sink.MarkState(3)));
+                d.Add(s.XpNext.Subscribe(_ => sink.MarkState(3)));
+                NotifyCollectionChangedEventHandler<int> hRolled = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(3);
+                s.Rolled.CollectionChanged += hRolled;
+                d.Add(Disposable.Create(() => s.Rolled.CollectionChanged -= hRolled));
+                NotifyCollectionChangedEventHandler<int> hMoved = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(3);
+                s.Moved.CollectionChanged += hMoved;
+                d.Add(Disposable.Create(() => s.Moved.CollectionChanged -= hMoved));
+                NotifyCollectionChangedEventHandler<int> hScores = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(3);
+                s.Scores.CollectionChanged += hScores;
+                d.Add(Disposable.Create(() => s.Scores.CollectionChanged -= hScores));
+                NotifyCollectionChangedEventHandler<int> hMods = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(3);
+                s.Mods.CollectionChanged += hMods;
+                d.Add(Disposable.Create(() => s.Mods.CollectionChanged -= hMods));
+                d.Add(s.Points.Subscribe(_ => sink.MarkState(3)));
+                d.Add(s.CanLower.Subscribe(_ => sink.MarkState(3)));
+                d.Add(s.Locked.Subscribe(_ => sink.MarkState(3)));
+                d.Add(s.Stamina.Subscribe(_ => sink.MarkState(3)));
+                d.Add(s.StaminaMax.Subscribe(_ => sink.MarkState(3)));
+                NotifyCollectionChangedEventHandler<string> hSkills = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(3);
+                s.Skills.CollectionChanged += hSkills;
+                d.Add(Disposable.Create(() => s.Skills.CollectionChanged -= hSkills));
+                d.Add(s.RelicBonus.Subscribe(_ => sink.MarkState(3)));
+                d.Add(s.Seed.Subscribe(_ => sink.MarkState(3)));
+                NotifyCollectionChangedEventHandler<string> hAbilities = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(3);
+                s.Abilities.CollectionChanged += hAbilities;
+                d.Add(Disposable.Create(() => s.Abilities.CollectionChanged -= hAbilities));
+                NotifyCollectionChangedEventHandler<string> hClasses = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(3);
+                s.Classes.CollectionChanged += hClasses;
+                d.Add(Disposable.Create(() => s.Classes.CollectionChanged -= hClasses));
+                NotifyCollectionChangedEventHandler<string> hOrigins = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(3);
+                s.Origins.CollectionChanged += hOrigins;
+                d.Add(Disposable.Create(() => s.Origins.CollectionChanged -= hOrigins));
+                NotifyCollectionChangedEventHandler<int> hAdjust = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(3);
+                s.Adjust.CollectionChanged += hAdjust;
+                d.Add(Disposable.Create(() => s.Adjust.CollectionChanged -= hAdjust));
+                d.Add(s.XpLevelStart.Subscribe(_ => sink.MarkState(3)));
+                d.Add(s.RelicAbility.Subscribe(_ => sink.MarkState(3)));
+                d.Add(s.Setup.Subscribe(_ => sink.MarkState(3)));
+                NotifyCollectionChangedEventHandler<int> hGear = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(3);
+                s.Gear.CollectionChanged += hGear;
+                d.Add(Disposable.Create(() => s.Gear.CollectionChanged -= hGear));
+                d.Add(s.Heritage.Subscribe(_ => sink.MarkState(3)));
+                d.Add(s.HeritageBlurb.Subscribe(_ => sink.MarkState(3)));
                 sink.MarkState(3);
             }
             {
@@ -481,6 +481,31 @@ namespace LuckyNumbers.Model
                 d.Add(s.Armor.Subscribe(_ => sink.MarkState(27)));
                 sink.MarkState(27);
             }
+            d.Add(c.Resolve<ISubscriber<SceneChangeRequested>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("SceneChangeRequested"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<SceneEntered>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("SceneEntered"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<UniverseSeedChanged>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("UniverseSeedChanged"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<CutsceneStepStarted>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("CutsceneStepStarted"), e);
+                sink.EndEvent();
+            }));
+            d.Add(c.Resolve<ISubscriber<CutsceneFinished>>().Subscribe(e =>
+            {
+                Write(sink.BeginEvent("CutsceneFinished"), e);
+                sink.EndEvent();
+            }));
             d.Add(c.Resolve<ISubscriber<RelicRolled>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("RelicRolled"), e);
@@ -531,16 +556,6 @@ namespace LuckyNumbers.Model
                 Write(sink.BeginEvent("CharacterCallsignRequested"), e);
                 sink.EndEvent();
             }));
-            d.Add(c.Resolve<ISubscriber<SceneChangeRequested>>().Subscribe(e =>
-            {
-                Write(sink.BeginEvent("SceneChangeRequested"), e);
-                sink.EndEvent();
-            }));
-            d.Add(c.Resolve<ISubscriber<SceneEntered>>().Subscribe(e =>
-            {
-                Write(sink.BeginEvent("SceneEntered"), e);
-                sink.EndEvent();
-            }));
             d.Add(c.Resolve<ISubscriber<RangeResetRequested>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("RangeResetRequested"), e);
@@ -569,21 +584,6 @@ namespace LuckyNumbers.Model
             d.Add(c.Resolve<ISubscriber<CombatRoll>>().Subscribe(e =>
             {
                 Write(sink.BeginEvent("CombatRoll"), e);
-                sink.EndEvent();
-            }));
-            d.Add(c.Resolve<ISubscriber<UniverseSeedChanged>>().Subscribe(e =>
-            {
-                Write(sink.BeginEvent("UniverseSeedChanged"), e);
-                sink.EndEvent();
-            }));
-            d.Add(c.Resolve<ISubscriber<CutsceneStepStarted>>().Subscribe(e =>
-            {
-                Write(sink.BeginEvent("CutsceneStepStarted"), e);
-                sink.EndEvent();
-            }));
-            d.Add(c.Resolve<ISubscriber<CutsceneFinished>>().Subscribe(e =>
-            {
-                Write(sink.BeginEvent("CutsceneFinished"), e);
                 sink.EndEvent();
             }));
             d.Add(c.Resolve<ISubscriber<RunEnded>>().Subscribe(e =>
@@ -739,10 +739,10 @@ namespace LuckyNumbers.Model
         {
             switch (index)
             {
-                case 0: Write(b, c.Resolve<RelicSite>()); break;
-                case 1: Write(b, c.Resolve<CharacterSheet>()); break;
-                case 2: Write(b, c.Resolve<FlowState>()); break;
-                case 3: Write(b, c.Resolve<LoadingState>()); break;
+                case 0: Write(b, c.Resolve<FlowState>()); break;
+                case 1: Write(b, c.Resolve<LoadingState>()); break;
+                case 2: Write(b, c.Resolve<RelicSite>()); break;
+                case 3: Write(b, c.Resolve<CharacterSheet>()); break;
                 case 4: Write(b, c.Resolve<RangeState>()); break;
                 case 5: Write(b, c.Resolve<StationState>()); break;
                 case 6: Write(b, c.Resolve<DefendState>()); break;
@@ -775,6 +775,9 @@ namespace LuckyNumbers.Model
         {
             switch (name)
             {
+                case "SceneChangeRequested":
+                    c.Resolve<IPublisher<SceneChangeRequested>>().Publish(new SceneChangeRequested(GameSceneParse(Json.Get(o, "target"))));
+                    return true;
                 case "DevWarpRequested":
                     c.Resolve<IPublisher<DevWarpRequested>>().Publish(new DevWarpRequested(Json.Get(o, "to") as string ?? ""));
                     return true;
@@ -798,9 +801,6 @@ namespace LuckyNumbers.Model
                     return true;
                 case "CharacterCallsignRequested":
                     c.Resolve<IPublisher<CharacterCallsignRequested>>().Publish(new CharacterCallsignRequested(Json.Get(o, "callsign") as string ?? ""));
-                    return true;
-                case "SceneChangeRequested":
-                    c.Resolve<IPublisher<SceneChangeRequested>>().Publish(new SceneChangeRequested(GameSceneParse(Json.Get(o, "target"))));
                     return true;
                 case "RangeResetRequested":
                     c.Resolve<IPublisher<RangeResetRequested>>().Publish(new RangeResetRequested());
@@ -886,6 +886,24 @@ namespace LuckyNumbers.Model
                 default:
                     return false;
             }
+        }
+
+        static void Write(StringBuilder b, FlowState s)
+        {
+            b.Append('{');
+            b.Append("\"scene\":");
+            Json.Str(b, GameSceneName(s.Scene.Value));
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, LoadingState s)
+        {
+            b.Append('{');
+            b.Append("\"progress\":");
+            Json.Num(b, s.Progress.Value);
+            b.Append(",\"ready\":");
+            b.Append(s.Ready.Value ? "true" : "false");
+            b.Append('}');
         }
 
         static void Write(StringBuilder b, RelicSite s)
@@ -1057,24 +1075,6 @@ namespace LuckyNumbers.Model
             Json.Str(b, s.Heritage.Value);
             b.Append(",\"heritageBlurb\":");
             Json.Str(b, s.HeritageBlurb.Value);
-            b.Append('}');
-        }
-
-        static void Write(StringBuilder b, FlowState s)
-        {
-            b.Append('{');
-            b.Append("\"scene\":");
-            Json.Str(b, GameSceneName(s.Scene.Value));
-            b.Append('}');
-        }
-
-        static void Write(StringBuilder b, LoadingState s)
-        {
-            b.Append('{');
-            b.Append("\"progress\":");
-            Json.Num(b, s.Progress.Value);
-            b.Append(",\"ready\":");
-            b.Append(s.Ready.Value ? "true" : "false");
             b.Append('}');
         }
 
@@ -1808,6 +1808,56 @@ namespace LuckyNumbers.Model
             b.Append('}');
         }
 
+        static void Write(StringBuilder b, SceneChangeRequested e)
+        {
+            b.Append('{');
+            b.Append("\"target\":");
+            Json.Str(b, GameSceneName(e.Target));
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, SceneEntered e)
+        {
+            b.Append('{');
+            b.Append("\"scene\":");
+            Json.Str(b, GameSceneName(e.Scene));
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, UniverseSeedChanged e)
+        {
+            b.Append('{');
+            b.Append("\"seed\":");
+            Json.Num(b, e.Seed);
+            b.Append(",\"star\":");
+            Json.Num(b, e.Star);
+            b.Append(",\"worlds\":");
+            Json.Num(b, e.Worlds);
+            b.Append(",\"luck\":");
+            Json.Num(b, e.Luck);
+            b.Append(",\"moons\":");
+            Json.Num(b, e.Moons);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, CutsceneStepStarted e)
+        {
+            b.Append('{');
+            b.Append("\"cutsceneId\":");
+            Json.Str(b, e.CutsceneId);
+            b.Append(",\"index\":");
+            Json.Num(b, e.Index);
+            b.Append('}');
+        }
+
+        static void Write(StringBuilder b, CutsceneFinished e)
+        {
+            b.Append('{');
+            b.Append("\"cutsceneId\":");
+            Json.Str(b, e.CutsceneId);
+            b.Append('}');
+        }
+
         static void Write(StringBuilder b, RelicRolled e)
         {
             b.Append('{');
@@ -1898,22 +1948,6 @@ namespace LuckyNumbers.Model
             b.Append('}');
         }
 
-        static void Write(StringBuilder b, SceneChangeRequested e)
-        {
-            b.Append('{');
-            b.Append("\"target\":");
-            Json.Str(b, GameSceneName(e.Target));
-            b.Append('}');
-        }
-
-        static void Write(StringBuilder b, SceneEntered e)
-        {
-            b.Append('{');
-            b.Append("\"scene\":");
-            Json.Str(b, GameSceneName(e.Scene));
-            b.Append('}');
-        }
-
         static void Write(StringBuilder b, RangeResetRequested e)
         {
             b.Append('{');
@@ -1985,40 +2019,6 @@ namespace LuckyNumbers.Model
             b.Append(e.Strong ? "true" : "false");
             b.Append(",\"mods\":");
             Json.Str(b, e.Mods);
-            b.Append('}');
-        }
-
-        static void Write(StringBuilder b, UniverseSeedChanged e)
-        {
-            b.Append('{');
-            b.Append("\"seed\":");
-            Json.Num(b, e.Seed);
-            b.Append(",\"star\":");
-            Json.Num(b, e.Star);
-            b.Append(",\"worlds\":");
-            Json.Num(b, e.Worlds);
-            b.Append(",\"luck\":");
-            Json.Num(b, e.Luck);
-            b.Append(",\"moons\":");
-            Json.Num(b, e.Moons);
-            b.Append('}');
-        }
-
-        static void Write(StringBuilder b, CutsceneStepStarted e)
-        {
-            b.Append('{');
-            b.Append("\"cutsceneId\":");
-            Json.Str(b, e.CutsceneId);
-            b.Append(",\"index\":");
-            Json.Num(b, e.Index);
-            b.Append('}');
-        }
-
-        static void Write(StringBuilder b, CutsceneFinished e)
-        {
-            b.Append('{');
-            b.Append("\"cutsceneId\":");
-            Json.Str(b, e.CutsceneId);
             b.Append('}');
         }
 
