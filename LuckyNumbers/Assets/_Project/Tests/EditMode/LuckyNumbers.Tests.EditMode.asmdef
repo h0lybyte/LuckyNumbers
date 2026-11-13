@@ -3,6 +3,7 @@
     "rootNamespace": "LuckyNumbers.Tests",
     "references": [
         "LuckyNumbers.Planet",
+        "LuckyNumbers.Station",
         "Unity.Mathematics",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
