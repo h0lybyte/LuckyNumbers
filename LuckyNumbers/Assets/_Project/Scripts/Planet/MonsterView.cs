@@ -44,8 +44,8 @@ namespace LuckyNumbers.Planet
         MonsterVat _vat;
         MonsterCrowd.Member _member;
         internal MonsterCrowd.Member CrowdMember => _member;
-        // Its blob shadow (MonsterBlobs), on the ground it's told of (Grounded).
-        MonsterBlobs.Member _blob;
+        // Its blob shadow (BlobShadows), on the ground it's told of (Grounded).
+        BlobShadows.Caster _blob;
 
         public bool Modelled => _rig != null || _member != null;
         /// <summary>Mid-stagger (a hit's clip): it doesn't walk.</summary>
@@ -197,11 +197,11 @@ namespace LuckyNumbers.Planet
 
         void AddBlob(Vector3 size)
         {
-            if (Application.isPlaying) _blob = MonsterBlobs.Current.Add(transform, size);
+            if (Application.isPlaying) _blob = BlobShadows.Current.Add(transform, size);
         }
 
         /// <summary>The ground's height under it, where its blob shadow lies (whoever moves it says, each time).</summary>
-        public void Grounded(float groundY) => _blob?.Blobs.SetGround(_blob, groundY);
+        public void Grounded(float groundY) => _blob?.SetGround(groundY);
 
         /// <summary>A plain tinted placeholder block (no collider, nothing to hit): encounter finds.</summary>
         public static Transform Block(string name, Vector3 size, Color color, Material material)
@@ -228,19 +228,19 @@ namespace LuckyNumbers.Planet
         void OnEnable()
         {
             _member?.Crowd.SetHidden(_member, false);
-            _blob?.Blobs.SetHidden(_blob, false);
+            _blob?.SetHidden(false);
         }
 
         void OnDisable()
         {
             _member?.Crowd.SetHidden(_member, true);
-            _blob?.Blobs.SetHidden(_blob, true);
+            _blob?.SetHidden(true);
         }
 
         void OnDestroy()
         {
             _member?.Crowd.Remove(_member);
-            _blob?.Blobs.Remove(_blob);
+            _blob?.Remove();
         }
 
         void Update()

@@ -135,7 +135,8 @@ namespace LuckyNumbers.Planet
             _state.Armor.Value = PlayerArmor();
             _firstPerson.ShotCheck = HeldShot;   // a held gun's shots at a monster roll as they're fired
             StartEncounters();
-            MonsterBlobs.Current.Ground = _ground;   // blob shadows bend to its terrain
+            BlobShadows.Current.Ground = _ground;   // blob shadows bend to its terrain, under its sun
+            BlobShadows.Current.Sunlit = true;
             LoadModelsAsync(_cts.Token).Forget();   // while you fly in: nothing spawns before you're on foot
             // Dev (the page's inspector): "monster" drops one a few metres ahead of you ("monster:<id>": that one;
             // "monster:<id>:ranged[:N]": as a thrower, CombatPresenter.Ranged).
