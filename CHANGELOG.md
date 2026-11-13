@@ -4,6 +4,26 @@ Releases are driven by this file: the **top `## x.y.z` entry is the game version
 Bumping it on `main` builds the Web player, uploads it to itch.io with that version,
 and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version does not rebuild.
 
+## 0.4.1 (2026-11-13)
+
+- Circuit racing round the station: race jobs on Dispatch's board against ten rival pilots, paid by where you
+  finish. Fly through mystery cubes to roll a d20 for boosts, shields, mines, EMPs, zaps, phasing or warps
+- Defend jobs: plant a beacon on the surface and hold it against waves of monsters
+- Salvage made clear: walk up to the wrecked freighter and press E to flag it for salvage. Dispatch's crews
+  take it from there, and you fly back to the station to get paid. Relics lying round it still sell on top
+- One E prompt at a time on foot, in the open and down in the holds: the nearest thing you can use wins, and
+  the job objective moves to the top left so it no longer hides the prompt
+- The docking bay's launch console now says it is free flight with no landing; jobs leave when you board your
+  ship
+- Livelier feel: smoother first-person movement, a smoother chase camera with hull sway, traffic round the
+  station, ambient motion on worlds and in holds, and soft blob shadows under the player, ships, props and
+  relics
+- Smarter rogue pilots that steer like a flock and can crash. Deep creatures share one pathfinding field, so
+  big chases cost less
+- One Settings panel for the title and in game
+- Fixes: a reboarded ship no longer sinks into the ground; touch sticks step aside while Settings is open; the
+  race start snaps the chase camera
+
 ## 0.4.0 (2026-11-12)
 
 - Space combat outside the station. Lasers fire real bolts, and a bolt that hits rolls d20 + your gunnery

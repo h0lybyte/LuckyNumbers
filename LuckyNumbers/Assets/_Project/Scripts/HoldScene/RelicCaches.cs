@@ -21,9 +21,10 @@ namespace LuckyNumbers.HoldScene
     /// the one glint light. E opens it: its find goes into the pack (IInventory.TryAdd, as the crash site's relics
     /// do), so a Kind RELIC find sells to the museum back at the station. A unique find you already carry falls back
     /// to a lesser tier; no room in the pack and it stays shut. Opened caches stay open for this visit (by world cell).
+    /// E and the prompt go through InteractionPresenter (IInteractable).
     /// </summary>
     [Presenter]
-    public sealed class RelicCaches : IStartable, ITickable, IDisposable
+    public sealed class RelicCaches : IInteractable, IStartable, ITickable, IDisposable
     {
         sealed class Cache
         {
@@ -42,22 +43,21 @@ namespace LuckyNumbers.HoldScene
         readonly PlanetView _ui;
         readonly IInventory _pack;
         readonly IPublisher<CharacterXpGained> _xp;
-        readonly ISubscriber<InputActionPerformed> _actions;
         readonly Dictionary<int3, List<Cache>> _byRegion = new();
         readonly HashSet<int3> _opened = new();   // world cells: this visit's opened caches
         readonly List<CachePlan> _plans = new();
         readonly List<CreaturePlan> _unused = new();
         readonly CancellationTokenSource _cts = new();
-        IDisposable _sub;
         Light _light;
-        bool _press, _claimedE;
+        Cache _near;          // this frame's nearest shut box in reach
+        float _nearDistance;
         Color _lantern;
 
         static HoldLife Life => GameContent.Hold.Life;
 
         [Inject]
         public RelicCaches(HoldWorld world, PlayerView player, FirstPersonPresenter firstPerson, PlanetView ui, IInventory pack,
-                           IPublisher<CharacterXpGained> xp, ISubscriber<InputActionPerformed> actions)
+                           IPublisher<CharacterXpGained> xp)
         {
             _world = world;
             _player = player;
@@ -65,7 +65,6 @@ namespace LuckyNumbers.HoldScene
             _ui = ui;
             _pack = pack;
             _xp = xp;
-            _actions = actions;
             var c = world.Config;
             _lantern = new Color(c.LanternR, c.LanternG, c.LanternB);
             // Now, not in Start: HoldPresenter's Start may show the first region before ours runs.
@@ -75,7 +74,6 @@ namespace LuckyNumbers.HoldScene
 
         public void Start()
         {
-            _sub = _actions.Subscribe(e => { if (e.Action == InputAction.Interact) _press = true; });
             _light = new GameObject("Cache glint light").AddComponent<Light>();
             _light.type = LightType.Point;
             _light.color = _lantern;
@@ -138,8 +136,6 @@ namespace LuckyNumbers.HoldScene
 
         public void Tick()
         {
-            var press = _press;
-            _press = false;
             var me = _player.Body.transform.position;
             Cache near = null, glow = null;
             var reach = Life != null && Life.OpenDistance > 0f ? Life.OpenDistance : 1.8f;
@@ -166,12 +162,25 @@ namespace LuckyNumbers.HoldScene
                 _light.intensity = 1.2f + 0.5f * Mathf.Sin(t * 3.1f);
             }
 
-            // E is ours while a box is in reach (the gun stays put); hand it back once we're not.
-            if (near != null) { _firstPerson.InteractElsewhere = true; _claimedE = true; }
-            else if (_claimedE) { _firstPerson.InteractElsewhere = false; _claimedE = false; }
-            if (near == null || !_firstPerson.Active) return;
-            _world.Prompt = (Life.OpenPrompt ?? "E  open the {name}").Replace("{name}", Life.CacheName ?? "strongbox");
-            if (press) OpenCache(near);
+            _near = near;
+            _nearDistance = best;
+        }
+
+        // ---- IInteractable: E opens the nearest shut box in reach ---------------------------------------------
+
+        public bool Offer(Vector3 feet, out Interaction offer)
+        {
+            offer = default;
+            if (_near == null || _near.Open || Life == null) return false;
+            offer = new Interaction(_near, InteractionPriority.Pickup, _nearDistance);
+            return true;
+        }
+
+        public string Prompt(object key) => (Life.OpenPrompt ?? "E  open the {name}").Replace("{name}", Life.CacheName ?? "strongbox");
+
+        public void Interact(object key)
+        {
+            if (key is Cache c && !c.Open && c.Root != null) OpenCache(c);
         }
 
         void OpenCache(Cache c)
@@ -234,8 +243,6 @@ namespace LuckyNumbers.HoldScene
         {
             _world.RegionShown -= Shown;
             _world.RegionHidden -= Hidden;
-            if (_claimedE) _firstPerson.InteractElsewhere = false;
-            _sub?.Dispose();
             _cts.Cancel();
             _cts.Dispose();
         }

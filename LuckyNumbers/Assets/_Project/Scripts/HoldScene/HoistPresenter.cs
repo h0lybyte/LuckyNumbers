@@ -21,10 +21,14 @@ namespace LuckyNumbers.HoldScene
     /// stops at a landing with its open side on the dock gateway, whose gate is up while it's there; walk off. At a
     /// landing with the cage elsewhere, E calls it. Dev: LN.send('DevWarpRequested', {to: 'shaft'}) puts you at the
     /// nearest great shaft's top landing, {to: 'stairs'} at the foot of the nearest flight of stairs.
+    /// E and the prompts go through InteractionPresenter (IInteractable): E is latched and the next Tick acts on it,
+    /// since riding steps the cage with it.
     /// </summary>
     [Presenter]
-    public sealed class HoistPresenter : IStartable, ITickable, IDisposable
+    public sealed class HoistPresenter : IInteractable, IStartable, ITickable, IDisposable
     {
+        static readonly object BoardKey = new(), CallKey = new(), RideKey = new();
+
         const float OnCageHeight = 0.45f;
         const float GateLift = 2.2f, GateSpeed = 3f;
         const float LampRange = 9f, LampActiveDistance = 45f;
@@ -56,14 +60,14 @@ namespace LuckyNumbers.HoldScene
         readonly PlayerView _player;
         readonly PlayerInput _input;
         readonly HoldView _view;
-        readonly ISubscriber<InputActionPerformed> _actions;
         readonly ISubscriber<DevWarpRequested> _warps;
         readonly MineParams _p;
         readonly Dictionary<int3, Shaft> _shafts = new();
-        IDisposable _sub, _warpSub;
+        IDisposable _warpSub;
         Mesh _cageMesh, _gateMesh, _cableMesh;
         Transform _root;
-        bool _press, _claimedE, _riding;
+        bool _press, _riding;
+        object _offer;        // this frame's: BoardKey, CallKey, RideKey or null
         Shaft _ride;
         int _manual, _lastDir = -1;
 
@@ -74,14 +78,13 @@ namespace LuckyNumbers.HoldScene
 
         [Inject]
         public HoistPresenter(HoldWorld world, FirstPersonPresenter firstPerson, PlayerView player, PlayerInput input, HoldView view,
-                              ISubscriber<InputActionPerformed> actions, ISubscriber<DevWarpRequested> warps)
+                              ISubscriber<DevWarpRequested> warps)
         {
             _world = world;
             _firstPerson = firstPerson;
             _player = player;
             _input = input;
             _view = view;
-            _actions = actions;
             _warps = warps;
             _p = MineParams.From(world.Config);
             // Now, not in Start: HoldPresenter's Start may show the first region before ours runs.
@@ -90,7 +93,6 @@ namespace LuckyNumbers.HoldScene
 
         public void Start()
         {
-            _sub = _actions.Subscribe(e => { if (e.Action == InputAction.Interact) _press = true; });
             _warpSub = _warps.Subscribe(e =>
             {
                 if (e.To == "shaft") WarpToShaft();
@@ -218,30 +220,21 @@ namespace LuckyNumbers.HoldScene
             var feet = (float3)body.transform.position;
             var shift = _input.Sprinting.Value;
 
-            string prompt = null;
-            if (_riding) prompt = Ride(_ride, body, press, shift, dt);
+            _offer = null;
+            if (_riding) _offer = Ride(_ride, body, press, shift, dt) ? RideKey : null;
             else if (_firstPerson.Active && Nearest(feet, out var near))
             {
                 if (!near.Moving && OnCage(near, feet))
                 {
-                    prompt = R.HoistBoardPrompt ?? "E  hoist down · Shift+E up";
+                    _offer = BoardKey;
                     if (press && Next(near, near.Y, shift ? 1 : -1, out var to)) Board(near, to, shift ? 1 : -1);
                 }
                 else if (AtLanding(near, feet, out var level) && (near.Moving || math.abs(near.Y - level * Storey) > 0.02f))
                 {
-                    prompt = R.HoistCallPrompt ?? "E  call the hoist";
+                    _offer = CallKey;
                     if (press) Send(near, level);
                 }
             }
-
-            // E is ours while a hoist prompt is up (the gun stays put); hand it back once it's not.
-            if (prompt != null)
-            {
-                _firstPerson.InteractElsewhere = true;
-                _claimedE = true;
-                if (_firstPerson.Active) _world.Prompt = prompt;
-            }
-            else if (_claimedE) { _firstPerson.InteractElsewhere = false; _claimedE = false; }
 
             foreach (var s in _shafts.Values)
             {
@@ -317,8 +310,24 @@ namespace LuckyNumbers.HoldScene
             Send(s, level);
         }
 
-        /// <summary>Riding: W/S drive it, E / Shift+E retarget; arriving at a landing lets you go.</summary>
-        string Ride(Shaft s, CharacterController body, bool press, bool shift, float dt)
+        // ---- IInteractable: board / call / (riding) retarget; E is latched for the next Tick ----------------------
+
+        public bool Offer(Vector3 feet, out Interaction offer)
+        {
+            offer = _offer == null ? default
+                : new Interaction(_offer, _offer == RideKey ? InteractionPriority.Aboard : InteractionPriority.Place, 0f);
+            return _offer != null;
+        }
+
+        public string Prompt(object key) =>
+            key == RideKey ? R.HoistRidePrompt ?? "W/S up/down · E next landing down · Shift+E up"
+            : key == BoardKey ? R.HoistBoardPrompt ?? "E  hoist down · Shift+E up"
+            : R.HoistCallPrompt ?? "E  call the hoist";
+
+        public void Interact(object key) => _press = true;
+
+        /// <summary>Riding: W/S drive it, E / Shift+E retarget; arriving at a landing lets you go (false).</summary>
+        bool Ride(Shaft s, CharacterController body, bool press, bool shift, float dt)
         {
             var w = _input.Move.Value.Y;
             var lo = s.Bottom * Storey;
@@ -350,10 +359,10 @@ namespace LuckyNumbers.HoldScene
                 _ride = null;
                 _firstPerson.Climbing = false;
                 Debug.Log($"[Hoist] stopped at storey {math.round(s.Y / Storey)}");
-                return null;
+                return false;
             }
             s.Moving = true;
-            return R.HoistRidePrompt ?? "W/S up/down · E next landing down · Shift+E up";
+            return true;
         }
 
         float Step(float y, float target, float dt)
@@ -481,9 +490,7 @@ namespace LuckyNumbers.HoldScene
         public void Dispose()
         {
             _world.RegionShown -= Shown;
-            if (_claimedE) _firstPerson.InteractElsewhere = false;
             if (_riding) _firstPerson.Climbing = false;
-            _sub?.Dispose();
             _warpSub?.Dispose();
             if (_cageMesh != null) UnityEngine.Object.Destroy(_cageMesh);
             if (_gateMesh != null) UnityEngine.Object.Destroy(_gateMesh);

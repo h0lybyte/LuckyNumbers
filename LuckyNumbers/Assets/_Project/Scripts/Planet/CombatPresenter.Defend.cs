@@ -491,6 +491,12 @@ namespace LuckyNumbers.Planet
                 _devWatch = !_devWatch;
                 Debug.Log($"[Defend] dev: the horde {(_devWatch ? "leaves you be" : "comes for you too")}");
             }
+            // "defend:place": the beacon down beside you, not planted, so E plants it (the on-foot prompt path).
+            if (to == "defend:place")
+            {
+                if (_phase == DefendPhase.Ready) Stand(_beaconRadius + math.max(1f, D.PlantDistance) * 0.5f);
+                return;
+            }
             if (_phase == DefendPhase.Ready) Plant();
             if (to == "defend:win" && Holding) { _wave = _waves; Win(); return; }
             if (to == "defend:lose" && Holding) { HurtBeacon(_beaconHp); return; }

@@ -33,6 +33,7 @@ namespace LuckyNumbers.Planet
     /// <summary>Which offer wins when several are in reach.</summary>
     public static class InteractionPriority
     {
+        public const int Aboard = -10;  // riding something (a hoist): its controls before anything you pass
         public const int Pickup = 0;    // a relic or a dropped item at your feet
         public const int Job = 10;      // the job's own thing: flag the wreck, plant the beacon
         public const int Place = 20;    // a way somewhere: the hold's gate, your ship
@@ -56,6 +57,32 @@ namespace LuckyNumbers.Planet
     }
 
     /// <summary>
+    /// Where the winning prompt goes, every frame (empty: nothing on offer). The planet's own hint line; the hold's
+    /// shared prompt (HoldWorld.Prompt, which its climbing hint also writes).
+    /// </summary>
+    public interface IPromptLine
+    {
+        void Show(string prompt);
+    }
+
+    /// <summary>The planet's hint line: written only when the prompt changes (the landing's hints share it).</summary>
+    public sealed class PlanetPromptLine : IPromptLine
+    {
+        readonly PlanetView _view;
+        string _shown = "";
+
+        [Inject]
+        public PlanetPromptLine(PlanetView view) => _view = view;
+
+        public void Show(string prompt)
+        {
+            if (prompt == _shown) return;
+            _shown = prompt;
+            _view.Hint(prompt, prompt == "" ? 0f : 1f);
+        }
+    }
+
+    /// <summary>
     /// The on-foot prompt and what E does with it, for every IInteractable in the scene: the lowest priority in reach
     /// wins (nearest on a tie); its prompt goes in the hint, E goes to it, and the hands keep E otherwise (pebbles).
     /// </summary>
@@ -65,22 +92,22 @@ namespace LuckyNumbers.Planet
         readonly IReadOnlyList<IInteractable> _all;
         readonly IFirstPerson _firstPerson;
         readonly PlayerView _player;
-        readonly PlanetView _view;
+        readonly IPromptLine _line;
         readonly ISubscriber<InputActionPerformed> _actions;
         IDisposable _subscription;
-        bool _press, _claimed;
+        bool _press, _claimed, _shownUsable;
         IInteractable _shownBy;
         object _shownKey;
         string _prompt = "";
 
         [Inject]
-        public InteractionPresenter(IReadOnlyList<IInteractable> all, IFirstPerson firstPerson, PlayerView player, PlanetView view,
+        public InteractionPresenter(IReadOnlyList<IInteractable> all, IFirstPerson firstPerson, PlayerView player, IPromptLine line,
                                     ISubscriber<InputActionPerformed> actions)
         {
             _all = all;
             _firstPerson = firstPerson;
             _player = player;
-            _view = view;
+            _line = line;
             _actions = actions;
         }
 
@@ -115,18 +142,16 @@ namespace LuckyNumbers.Planet
             }
             if (_press && usable) by.Interact(best.Key);
             _press = false;
-            Show(by, best.Key);
-        }
-
-        void Show(IInteractable by, object key)
-        {
-            if (ReferenceEquals(by, _shownBy) && ReferenceEquals(key, _shownKey)) return;
-            _shownBy = by;
-            _shownKey = key;
-            var prompt = by != null ? by.Prompt(key) ?? "" : "";
-            if (prompt == _prompt) return;
-            _prompt = prompt;
-            _view.Hint(prompt, prompt == "" ? 0f : 1f);
+            // The prompt's asked for only when what's on offer changes (or turns usable: a seal once you've its key);
+            // the line gets it every frame.
+            if (!ReferenceEquals(by, _shownBy) || !ReferenceEquals(best.Key, _shownKey) || usable != _shownUsable)
+            {
+                _shownBy = by;
+                _shownKey = best.Key;
+                _shownUsable = usable;
+                _prompt = by != null ? by.Prompt(best.Key) ?? "" : "";
+            }
+            _line.Show(_prompt);
         }
 
         public void Dispose()
