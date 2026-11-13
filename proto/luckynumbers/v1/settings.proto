@@ -6,7 +6,8 @@ import "ln/options.proto";
 
 option csharp_namespace = "LuckyNumbers.Model";
 
-// The player's settings (Core/SettingsPresenter): changed on the title's Settings panel, kept in PlayerPrefs (the
+// The player's settings (Core/SettingsPresenter): changed on the page's one Settings panel (web/src/settings.tsx,
+// opened from the title or in game), kept in PlayerPrefs (the
 // browser's IndexedDB on the web) and applied everywhere: look speed and invert in InputBridge, the render cap in
 // Rendering/RenderResolutionCap, the frame-rate readout on the page.
 message GameSettings {
@@ -20,6 +21,31 @@ message GameSettings {
   RenderQuality quality = 3;
   // The page's frame-rate readout (top centre), as with ?ln-fps.
   bool show_fps = 4;
+  // The Settings panel is open (the page shows it; Unity holds look/fire input and frees the pointer meanwhile).
+  bool open = 5;
+}
+
+// The page changed the settings: the whole set as the panel now has it (Unity clamps and saves each value).
+message SettingsChanged {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  float look_sensitivity = 1;
+  bool invert_y = 2;
+  RenderQuality quality = 3;
+  bool show_fps = 4;
+}
+
+// Back to the defaults (the page's Defaults button).
+message SettingsReset {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+}
+
+// Open or close the Settings panel (the page's gear / Esc menu; Unity's title button sets GameSettings.open itself).
+message SettingsToggled {
+  option (ln.event) = true;
+  option (ln.web_in) = true;
+  bool open = 1;
 }
 
 enum RenderQuality {

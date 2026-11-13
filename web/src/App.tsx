@@ -16,6 +16,7 @@ import { HangarGate } from "./hangar";
 import { SaveSlotsGate } from "./saves";
 import { RotatePrompt, TouchControls, touchDevice } from "./touch";
 import { FpsMeter } from "./fps";
+import { SettingsGate } from "./settings";
 import type { GameScene, InboundEvent, WebEvents } from "./ln";
 
 export function App({ dock }: { dock: HTMLElement | null }) {
@@ -72,6 +73,8 @@ export function App({ dock }: { dock: HTMLElement | null }) {
       <TouchControls />
       <RotatePrompt />
       <FpsMeter />
+      {/* Last: Settings opens over any other panel (gear in game, the title's Settings button). */}
+      <SettingsGate />
       {inspector && dock && createPortal(<Inspector />, dock)}
     </>
   );
@@ -182,7 +185,10 @@ function PointerHint({ locked }: { locked: boolean }) {
           <kbd>Esc</kbd> free mouse
         </>
       ) : (
-        <>Click to look</>
+        <>
+          Click to look<span className="sep">/</span>
+          <kbd>Esc</kbd> settings
+        </>
       )}
     </div>
   );

@@ -479,7 +479,8 @@ export interface SaveSlots {
 }
 
 /**
- * The player's settings (Core/SettingsPresenter): changed on the title's Settings panel, kept in PlayerPrefs (the
+ * The player's settings (Core/SettingsPresenter): changed on the page's one Settings panel (web/src/settings.tsx,
+ * opened from the title or in game), kept in PlayerPrefs (the
  * browser's IndexedDB on the web) and applied everywhere: look speed and invert in InputBridge, the render cap in
  * Rendering/RenderResolutionCap, the frame-rate readout on the page.
  */
@@ -492,6 +493,8 @@ export interface GameSettings {
   quality: RenderQuality;
   /** The page's frame-rate readout (top centre), as with ?ln-fps. */
   showFps: boolean;
+  /** The Settings panel is open (the page shows it; Unity holds look/fire input and frees the pointer meanwhile). */
+  open: boolean;
 }
 
 export interface DiceState {
@@ -795,6 +798,23 @@ export interface SaveSlotDeleteRequested {
   index: number;
 }
 
+/** The page changed the settings: the whole set as the panel now has it (Unity clamps and saves each value). */
+export interface SettingsChanged {
+  lookSensitivity: number;
+  invertY: boolean;
+  quality: RenderQuality;
+  showFps: boolean;
+}
+
+/** Back to the defaults (the page's Defaults button). */
+export interface SettingsReset {
+}
+
+/** Open or close the Settings panel (the page's gear / Esc menu; Unity's title button sets GameSettings.open itself). */
+export interface SettingsToggled {
+  open: boolean;
+}
+
 export interface MenuItemSelected {
   action: MenuAction;
 }
@@ -899,6 +919,9 @@ export interface WebEvents {
   SaveSlotsReady: SaveSlotsReady;
   SaveSlotPicked: SaveSlotPicked;
   SaveSlotDeleteRequested: SaveSlotDeleteRequested;
+  SettingsChanged: SettingsChanged;
+  SettingsReset: SettingsReset;
+  SettingsToggled: SettingsToggled;
   MenuItemSelected: MenuItemSelected;
   UniverseSelected: UniverseSelected;
   UpgradeBuyRequested: UpgradeBuyRequested;
@@ -907,6 +930,6 @@ export interface WebEvents {
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "CharacterCallsignRequested" | "SceneChangeRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "SaveSlotsReady" | "SaveSlotPicked" | "SaveSlotDeleteRequested" | "MenuItemSelected" | "UniverseSelected" | "UpgradeBuyRequested" | "OutfitterCloseRequested";
+export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "CharacterCallsignRequested" | "SceneChangeRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "SaveSlotsReady" | "SaveSlotPicked" | "SaveSlotDeleteRequested" | "SettingsChanged" | "SettingsReset" | "SettingsToggled" | "MenuItemSelected" | "UniverseSelected" | "UpgradeBuyRequested" | "OutfitterCloseRequested";
 
 export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "CombatState", "DogfightState", "DebtState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "PlayerControl", "ShipPicker", "PlayerVoyage", "SaveSlots", "GameSettings", "DiceState", "UniverseState", "Outfitter"] as const;

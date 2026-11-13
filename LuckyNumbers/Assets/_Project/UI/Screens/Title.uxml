@@ -11,16 +11,6 @@
             <ui:Button name="roll" class="ln-button ln-button--small" />
             <ui:Label name="lucky-number" class="ln-lucky" picking-mode="Ignore" />
         </ui:VisualElement>
-        <!-- Settings (labels: content/title.txtpb `settings`; values: GameSettings). Rows are added at runtime. -->
-        <ui:VisualElement name="settings" class="ln-panel ln-panel--settings ln-hidden">
-            <ui:Label name="settings-title" class="ln-panel-title" picking-mode="Ignore" />
-            <ui:Label name="settings-body" class="ln-panel-body" picking-mode="Ignore" />
-            <ui:VisualElement name="settings-rows" class="ln-settings-rows" picking-mode="Ignore" />
-            <ui:VisualElement class="ln-settings-actions" picking-mode="Ignore">
-                <ui:Button name="settings-reset" class="ln-button ln-button--small" />
-                <ui:Button name="settings-back" class="ln-button" />
-            </ui:VisualElement>
-        </ui:VisualElement>
         <!-- Credits (content/credits.txtpb): sections and entries are added at runtime. -->
         <ui:VisualElement name="credits" class="ln-panel ln-panel--tall ln-hidden">
             <ui:Label name="credits-title" class="ln-panel-title" picking-mode="Ignore" />

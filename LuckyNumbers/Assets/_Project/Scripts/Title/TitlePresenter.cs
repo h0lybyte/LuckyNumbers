@@ -13,7 +13,8 @@ using VContainer.Unity;
 namespace LuckyNumbers.Title
 {
     /// <summary>
-    /// Title + preloader. Text, menu and settings come from GameContent.Title (content/title.txtpb);
+    /// Title + preloader. Text and menu come from GameContent.Title (content/title.txtpb);
+    /// Settings opens the page's Settings panel (GameSettings.open; Core/SettingsPresenter);
     /// the universe behind it is SpacePresenter's. Preloads `next`; Play fades the UI, pushes the camera
     /// toward home and hands its pose to the next scene (CameraHandoff) so the switch has no visible cut. Before that,
     /// Play runs character creation (ICharacterSetup: the page's sheet, until Ready), then the hangar (IShipPicker:
@@ -38,7 +39,7 @@ namespace LuckyNumbers.Title
         readonly GameSettings _settings;
         readonly CompositeDisposable _disposables = new();
         readonly System.Threading.CancellationTokenSource _cts = new();
-        bool _settingsOpen, _leaving;
+        bool _creditsOpen, _leaving;
         float _uiAlpha = 1f;   // the title UI's fade (the hangar hides it; the launch fades whatever's left)
 
         [Inject]
@@ -74,9 +75,7 @@ namespace LuckyNumbers.Title
                 var action = item.Action;
                 _view.AddMenuButton(item.Label, () => _menuPublisher.Publish(new MenuItemSelected(action)));
             }
-            BindSettings(content.Settings);
-            _view.ShowSettings(false);
-            _view.SetCredits(GameContent.Credits, CloseSettings, url => { Debug.Log($"[Title] open {url}"); Application.OpenURL(url); });
+            _view.SetCredits(GameContent.Credits, CloseCredits, url => { Debug.Log($"[Title] open {url}"); Application.OpenURL(url); });
             _view.ShowCredits(false);
 
             _flow.Preload(content.Next);
@@ -97,15 +96,16 @@ namespace LuckyNumbers.Title
             {
                 Debug.Log($"[Title] menu: {e.Action}");
                 if (e.Action == MenuAction.Play) Play(content.Next);
-                else if (e.Action == MenuAction.Settings) { _settingsOpen = true; _view.ShowSettings(true); }
-                else if (e.Action == MenuAction.Credits) { _settingsOpen = true; _view.ShowCredits(true); }
+                else if (e.Action == MenuAction.Settings) _settings.Open.Value = true;   // the page's panel
+                else if (e.Action == MenuAction.Credits) { _creditsOpen = true; _view.ShowCredits(true); }
             }).AddTo(_disposables);
 
-            // Keyboard/gamepad: Confirm = Play, Cancel = close the open panel.
+            // Keyboard/gamepad: Confirm = Play, Cancel = close Credits. (While the page's Settings panel is open,
+            // InputBridge holds every press: the page has the keys.)
             _input.Subscribe(e =>
             {
-                if (e.Action == Model.InputAction.Confirm && !_settingsOpen) Play(content.Next);
-                if (e.Action == Model.InputAction.Cancel && _settingsOpen) CloseSettings();
+                if (e.Action == Model.InputAction.Confirm && !_creditsOpen && !_settings.Open.Value) Play(content.Next);
+                if (e.Action == Model.InputAction.Cancel && _creditsOpen) CloseCredits();
             }).AddTo(_disposables);
         }
 
@@ -189,28 +189,9 @@ namespace LuckyNumbers.Title
             _view.SetUiAlpha(to);
         }
 
-        /// <summary>The Settings panel edits GameSettings (Core/SettingsPresenter saves and applies each change).</summary>
-        void BindSettings(SettingsPanel labels)
+        void CloseCredits()
         {
-            var s = _settings;
-            _view.SetSettings(labels, SettingsPresenter.MinSensitivity, SettingsPresenter.MaxSensitivity,
-                onSensitivity: v => s.LookSensitivity.Value = Mathf.Round(v * 20f) / 20f,   // 0.05 steps
-                onInvert: () => s.InvertY.Value = !s.InvertY.Value,
-                onQuality: i => s.Quality.Value = RenderQuality.Low + i,
-                onFps: () => s.ShowFps.Value = !s.ShowFps.Value,
-                onReset: () => SettingsPresenter.Reset(s),
-                onBack: CloseSettings);
-            Observable.CombineLatest(s.LookSensitivity, s.InvertY, s.Quality, s.ShowFps,
-                    (look, invert, quality, fps) => (look, invert, quality, fps))
-                .Subscribe(v => _view.ShowSettingsValues(v.look, v.invert, (int)v.quality - (int)RenderQuality.Low, v.fps))
-                .AddTo(_disposables);
-        }
-
-        /// <summary>Close whichever panel is open (Settings or Credits).</summary>
-        void CloseSettings()
-        {
-            _settingsOpen = false;
-            _view.ShowSettings(false);
+            _creditsOpen = false;
             _view.ShowCredits(false);
         }
 

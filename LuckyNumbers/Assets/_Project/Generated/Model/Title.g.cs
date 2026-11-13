@@ -63,7 +63,6 @@ namespace LuckyNumbers.Model
         /// Buttons, left to right.
         /// </summary>
         public List<MenuItem> Menu { get; } = new List<MenuItem>();
-        public SettingsPanel Settings { get; set; }
         public DiceRoller Dice { get; set; }
         /// <summary>
         /// Play: the UI fades and the camera pushes toward the home planet, then hands over to `next`.
@@ -177,36 +176,6 @@ namespace LuckyNumbers.Model
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public MenuItem Clone() => (MenuItem)MemberwiseClone();
-    }
-
-    /// <summary>
-    /// The title's Settings panel (labels; the values are GameSettings, see settings.proto).
-    /// </summary>
-    public sealed class SettingsPanel
-    {
-        public string Title { get; set; }
-        /// <summary>
-        /// A line under the title ("" for none).
-        /// </summary>
-        public string Body { get; set; }
-        public string BackLabel { get; set; }
-        public string SensitivityLabel { get; set; }
-        public string InvertLabel { get; set; }
-        public string QualityLabel { get; set; }
-        /// <summary>
-        /// Low, Medium, High (the RenderQuality order).
-        /// </summary>
-        public List<string> QualityNames { get; } = new List<string>();
-        public string FpsLabel { get; set; }
-        public string ResetLabel { get; set; }
-        /// <summary>
-        /// On / off, for the toggles.
-        /// </summary>
-        public string OnLabel { get; set; }
-        public string OffLabel { get; set; }
-
-        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
-        public SettingsPanel Clone() => (SettingsPanel)MemberwiseClone();
     }
 
     public readonly struct MenuItemSelected

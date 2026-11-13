@@ -59,10 +59,11 @@ export function TouchControls() {
   const flow = useLNState("FlowState");
   const control = useLNState("PlayerControl");
   const map = useLNState("MapState");
+  const settingsOpen = useLNState("GameSettings")?.open ?? false;
   const scene = flow?.scene;
   const locks = control?.locks ?? [];
   const inGame = scene === "Planet" || scene === "Station" || scene === "FlightSchool" || scene === "Orbit";
-  const paused = locks.some((l) => PAUSING.has(l)) || (map?.open ?? false);
+  const paused = locks.some((l) => PAUSING.has(l)) || (map?.open ?? false) || settingsOpen;
   const show = touchDevice && inGame && !paused;
   const flying = scene === "FlightSchool" || scene === "Orbit" || locks.includes("Vehicle");
 

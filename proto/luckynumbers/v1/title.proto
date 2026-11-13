@@ -25,7 +25,9 @@ message TitleScreen {
   string loading_prompt = 6;
   // Buttons, left to right.
   repeated MenuItem menu = 7;
-  SettingsPanel settings = 8;
+  // 8: the old title Settings panel's labels (the page's Settings panel, web/src/settings.tsx, has its own).
+  reserved 8;
+  reserved "settings";
   DiceRoller dice = 10;
   // Play: the UI fades and the camera pushes toward the home planet, then hands over to `next`.
   float play_transition_seconds = 11;
@@ -107,24 +109,6 @@ enum MenuAction {
 message MenuItem {
   string label = 1;
   MenuAction action = 2;
-}
-
-// The title's Settings panel (labels; the values are GameSettings, see settings.proto).
-message SettingsPanel {
-  string title = 1;
-  // A line under the title ("" for none).
-  string body = 2;
-  string back_label = 3;
-  string sensitivity_label = 4;
-  string invert_label = 5;
-  string quality_label = 6;
-  // Low, Medium, High (the RenderQuality order).
-  repeated string quality_names = 7;
-  string fps_label = 8;
-  string reset_label = 9;
-  // On / off, for the toggles.
-  string on_label = 10;
-  string off_label = 11;
 }
 
 message MenuItemSelected {
