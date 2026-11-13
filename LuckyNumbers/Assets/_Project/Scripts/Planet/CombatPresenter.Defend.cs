@@ -33,7 +33,8 @@ namespace LuckyNumbers.Planet
     /// per spawn), and every monster is kept apart from the rest by <see cref="MonsterSeparation"/>.
     ///
     /// Dev (the page's inspector): "defend" plants a beacon at the wreck now (no Defend job needed), "defend:wave:N"
-    /// skips to wave N, "defend:win" / "defend:lose" end it.
+    /// skips to wave N, "defend:stand:N" stands you N m off it, "defend:heal" fills its hp, "defend:watch" has the horde
+    /// leave you be (to watch or measure it), "defend:win" / "defend:lose" end it.
     /// </summary>
     public sealed partial class CombatPresenter
     {
@@ -41,8 +42,8 @@ namespace LuckyNumbers.Planet
 
         /// <summary>Space kept round each monster's body in the crowd (m).</summary>
         const float Spacing = 0.15f;
-        /// <summary>The fastest the crowd shoves a monster aside (m/s).</summary>
-        const float ShoveSpeed = 3f;
+        /// <summary>The fastest the crowd shoves a monster aside (m/s): faster than any walks, so the ones behind can't squeeze into the front.</summary>
+        const float ShoveSpeed = 8f;
 
         readonly DefendState _defend;
         readonly ISubscriber<InputActionPerformed> _actions;
@@ -59,6 +60,7 @@ namespace LuckyNumbers.Planet
         float _charge, _restLeft, _spawnClock, _beaconFlash;
         int _waiting, _hordeAlive, _hordeKilled, _waveKilled, _hordeSpawned;
         bool _plantPress, _plantPrompting, _claimedE;
+        bool _devWatch;   // dev "defend:watch": the horde leaves you be (only the beacon), to watch or measure it
         // ?ln-perf: the separation's cost, summed between reports.
         long _sepTicks, _sepMaxTicks;
         int _sepFrames, _peakHorde;
@@ -135,7 +137,7 @@ namespace LuckyNumbers.Planet
             var box = root.gameObject.AddComponent<BoxCollider>();
             box.center = new Vector3(0f, size.y * 0.5f, 0f);
             box.size = size;
-            var pillar = MonsterView.Block("PLACEHOLDER_beacon_pillar", size, new Color(0.18f, 0.2f, 0.24f), _bodyMaterial);
+            var pillar = MonsterView.Block("PLACEHOLDER_beacon_pillar", size, new Color(0.32f, 0.34f, 0.4f), _bodyMaterial);
             pillar.SetParent(root, false);
             pillar.localPosition = new Vector3(0f, size.y * 0.5f, 0f);
             var core = MonsterView.Block("PLACEHOLDER_beacon_core", new Vector3(size.x * 1.3f, 0.45f, size.z * 1.3f), Color.white, _bodyMaterial);
@@ -331,7 +333,7 @@ namespace LuckyNumbers.Planet
         {
             var toYou = Vector2.Distance(new Vector2(me.x, me.z), new Vector2(m.Position.x, m.Position.z));
             var toBeacon = math.max(0f, Vector2.Distance(new Vector2(_beaconAt.x, _beaconAt.z), new Vector2(m.Position.x, m.Position.z)) - _beaconRadius);
-            return MonsterBrain.TargetBeacon(ref m.Brain, toYou, onFoot && !_down, toBeacon);
+            return MonsterBrain.TargetBeacon(ref m.Brain, toYou, onFoot && !_down && !_devWatch, toBeacon);
         }
 
         // ---- Hurting the beacon ---------------------------------------------------------------------------------
@@ -482,23 +484,53 @@ namespace LuckyNumbers.Planet
         // ---- Dev ------------------------------------------------------------------------------------------------
 
         /// <summary>
-        /// Dev: "defend": a beacon at the wreck, planted now (no Defend job needed: a dev one at danger 3, or the job's);
-        /// "defend:wave:N": that wave now (planting first if need be); "defend:win" / "defend:lose": the end.
+        /// Dev: "defend": a beacon at the wreck, planted now (no Defend job needed: a dev one at danger 3, or the job's),
+        /// and you 7 m off it, facing it; "defend:wave:N": that wave now (planting first if need be); "defend:stand:N":
+        /// you N m off it, facing it (70: past the ring they come from, so they all go for the beacon: to watch them);
+        /// "defend:heal": the beacon's hp full (a long test); "defend:watch": the horde leaves you be, only the beacon
+        /// (again: back to you too); "defend:win" / "defend:lose": the end.
         /// </summary>
         void DevDefend(string to)
         {
             if (D == null || !_spawned) { Debug.LogWarning("[Defend] dev: not yet (on foot at the site first)"); return; }
-            if (_beacon == null) PlaceBeacon();
+            var placed = _beacon == null;
+            if (placed) PlaceBeacon();
             if (_beacon == null) return;
+            const string stand = "defend:stand:";
+            if (to.StartsWith(stand) && float.TryParse(to.Substring(stand.Length), System.Globalization.NumberStyles.Float,
+                                                      System.Globalization.CultureInfo.InvariantCulture, out var metres)) Stand(metres);
+            else if (placed) Stand(7f);
+            if (to == "defend:watch")
+            {
+                _devWatch = !_devWatch;
+                Debug.Log($"[Defend] dev: the horde {(_devWatch ? "leaves you be" : "comes for you too")}");
+            }
             if (_phase == DefendPhase.Ready) Plant();
             if (to == "defend:win" && Holding) { _wave = _waves; Win(); return; }
             if (to == "defend:lose" && Holding) { HurtBeacon(_beaconHp); return; }
+            if (to == "defend:heal" && Holding) { _beaconHp = _beaconMax; _defend.Hp.Value = _beaconHp; Debug.Log("[Defend] dev: beacon healed"); return; }
             const string wave = "defend:wave:";
             if (to.StartsWith(wave) && int.TryParse(to.Substring(wave.Length), out var n) && Holding)
             {
                 Debug.Log($"[Defend] dev: to wave {n}");
                 StartWave(n);
             }
+        }
+
+        /// <summary>Dev: you `metres` off the beacon on your side of it, looking at it (on foot only).</summary>
+        void Stand(float metres)
+        {
+            if (!_firstPerson.Active) return;
+            var body = _player.Body;
+            var away = Vector3.ProjectOnPlane(body.transform.position - _beaconAt, Vector3.up);
+            var at = _beaconAt + (away.sqrMagnitude > 1f ? away.normalized : Vector3.back) * math.max(2f, metres);
+            at.y = _ground.SurfaceAt(at) + 0.15f;
+            var yaw = Mathf.Atan2(_beaconAt.x - at.x, _beaconAt.z - at.z) * Mathf.Rad2Deg;
+            body.enabled = false;
+            body.transform.SetPositionAndRotation(at, Quaternion.Euler(0f, yaw, 0f));
+            body.enabled = true;
+            _firstPerson.Look(yaw, math.clamp(80f / math.max(2f, metres), 2f, 10f));
+            Debug.Log($"[Defend] dev: you stand {metres:0} m off the beacon");
         }
 
         void DisposeDefend()

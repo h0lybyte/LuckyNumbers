@@ -21,6 +21,24 @@ namespace LuckyNumbers.Tests
         // ---- DefendWaves --------------------------------------------------------------------------------------
 
         [Test]
+        public void Board_OffersADefend_ItsGoalTheWaves()
+        {
+            // The real content (content/jobs.txtpb, content/combat.txtpb): five offers, one of each kind.
+            var jobs = GameContent.Jobs;
+            Station.Jobs.Offer defend = null;
+            for (var round = 0; round < 4 && defend == null; round++)
+                foreach (var o in Station.Jobs.Roll(jobs, GameContent.Cargo, 0x5EEDu, round, new[] { "a", "b", "c" }))
+                    if (o.Type.Kind == JobKind.Defend) { defend = o; break; }
+            Assert.IsNotNull(defend, "a Defend job on the board");
+            var type = defend.Type;
+            Assert.AreEqual(type.Target + type.TargetPerDanger * defend.Danger, defend.Goal, "its goal: the waves");
+            StringAssert.Contains(defend.Goal.ToString(), defend.Brief, "the brief says how many");
+            Assert.AreEqual(defend.Goal, DefendWaves.Waves(GameContent.Combat.Defend, defend.Goal, defend.Danger));
+            foreach (var m in GameContent.Combat.Defend.Mix)
+                Assert.IsTrue(GameContent.Combat.Monsters.Exists(t => t.Id == m.Monster), $"the mix's {m.Monster} is a monster");
+        }
+
+        [Test]
         public void Waves_TheJobsGoal_ElseTheConfigs()
         {
             var d = Config();
