@@ -14,6 +14,7 @@ LuckyNumbers/            Unity project
                          (tools/blender/export_arcanist.py, from art-src/'s rar)
     Art/Vat/             monsters' clips as bone-matrix animation textures + skinning mesh (Editor/VatBaker, from
                          ln.py scenes); MonsterCrowd draws every monster instanced from them (Shaders/MonsterVat)
+    Art/Shaders/BlobShadow.shader  fake shadows under everything on the ground (Planet/BlobShadows, docs/shadows.md)
     Art/Fonts/Exo2/      UI font + SDF assets
     Editor/              WebBuild, SceneBuilder (+ VatBaker), ShaderPreview, FontSetup, ArtImport (model/skin import rules)
     link.xml             keeps reflection-built assemblies through code stripping
