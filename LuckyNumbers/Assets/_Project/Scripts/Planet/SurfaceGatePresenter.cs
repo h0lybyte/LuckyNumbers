@@ -65,7 +65,7 @@ namespace LuckyNumbers.Planet
     /// stands you at the foot of the steps.
     /// </summary>
     [Presenter]
-    public sealed class SurfaceGatePresenter : ITickable, IDisposable
+    public sealed class SurfaceGatePresenter : ITickable, IInteractable, IDisposable
     {
         readonly ICrashSite _site;
         readonly GroundView _ground;
@@ -75,17 +75,16 @@ namespace LuckyNumbers.Planet
         readonly PlanetScene _config;
         readonly HoldTrip _trip;
         readonly IPublisher<SceneChangeRequested> _scenes;
-        readonly IDisposable _subscription;
         GameObject _root;
         Material _material;
-        bool _built, _entering, _press, _prompting;
+        bool _built, _entering;
+        static readonly object Door = new();
 
         SurfaceGate G => _config.Gate;
 
         [Inject]
         public SurfaceGatePresenter(ICrashSite site, GroundView ground, PlayerView player, PlanetView view, IFirstPerson firstPerson,
-                                    PlanetScene config, HoldTrip trip, IPublisher<SceneChangeRequested> scenes,
-                                    ISubscriber<InputActionPerformed> actions)
+                                    PlanetScene config, HoldTrip trip, IPublisher<SceneChangeRequested> scenes)
         {
             _site = site;
             _ground = ground;
@@ -95,10 +94,6 @@ namespace LuckyNumbers.Planet
             _config = config;
             _trip = trip;
             _scenes = scenes;
-            _subscription = actions.Subscribe(e =>
-            {
-                if (e.Action == InputAction.Interact) _press = true;
-            });
         }
 
         public void Tick()
@@ -109,20 +104,32 @@ namespace LuckyNumbers.Planet
                 _built = true;
                 if (_site.Gate.Exists && G != null) Build();
             }
-            if (_root == null || _entering) { _press = false; return; }
+            if (_root == null || _entering) return;
+            // Walking on into the dark takes you down too (E does it from the doorway: IInteractable, below).
+            if (_firstPerson.Active && InDoorway(_player.Body.transform.position, out var local) && local.z < -G.WalkInDepth)
+                EnterAsync().Forget();
+        }
 
-            // You, in the gate's frame: x across the door, z out from the facade (negative = inside the doorway).
-            var local = Quaternion.Inverse(_site.Gate.Rotation) * (_player.Body.transform.position - _site.Gate.Position);
-            var inDoor = math.abs(local.x) < G.DoorWidth * 0.5f;
-            var near = _firstPerson.Active && inDoor && local.z < G.PromptDistance && local.z > -G.Depth;
-            if (near) _firstPerson.InteractElsewhere = true;   // E's for the gate, not the gun
-            if (near != _prompting)
-            {
-                _prompting = near;
-                _view.Hint(near ? G.Prompt : "", near ? 1f : 0f);
-            }
-            if (near && (_press || local.z < -G.WalkInDepth)) EnterAsync().Forget();
-            _press = false;
+        /// <summary>In the doorway's reach; `local` is you in the gate's frame: x across the door, z out from the facade (negative = inside).</summary>
+        bool InDoorway(Vector3 feet, out Vector3 local)
+        {
+            local = Quaternion.Inverse(_site.Gate.Rotation) * (feet - _site.Gate.Position);
+            return math.abs(local.x) < G.DoorWidth * 0.5f && local.z < G.PromptDistance && local.z > -G.Depth;
+        }
+
+        public bool Offer(Vector3 feet, out Interaction offer)
+        {
+            offer = default;
+            if (_root == null || _entering || !InDoorway(feet, out var local)) return false;
+            offer = new Interaction(Door, InteractionPriority.Place, math.max(0f, local.z));
+            return true;
+        }
+
+        public string Prompt(object key) => G.Prompt;
+
+        public void Interact(object key)
+        {
+            if (!_entering) EnterAsync().Forget();
         }
 
         /// <summary>Fade out and go down: the hold's hall, through its gate.</summary>
@@ -159,7 +166,6 @@ namespace LuckyNumbers.Planet
 
         public void Dispose()
         {
-            _subscription?.Dispose();
             if (_material != null) UnityEngine.Object.Destroy(_material);
         }
     }
