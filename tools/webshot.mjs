@@ -37,8 +37,21 @@ const proc = spawn(chrome, ["--headless=new", `--remote-debugging-port=${port}`,
   "--hide-scrollbars", "--enable-precise-memory-info",
   // LN_UNCAPPED=1: no vsync / frame limit, so {"fps"} shows real headroom instead of the display's 60.
   ...(process.env.LN_UNCAPPED ? ["--disable-gpu-vsync", "--disable-frame-rate-limit"] : []),
-  "about:blank"], { stdio: "ignore" });
-const cleanup = (code) => { proc.kill(); try { rmSync(profile, { recursive: true, force: true }); } catch {} process.exit(code); };
+  "about:blank"], { stdio: "ignore", detached: true }); // its own process group, so its helpers go with it
+// Chrome must never outlive this script: kill its whole process group on any way out (done, error, Ctrl-C, ln.py's
+// timeout), then drop the temp profile. Only a SIGKILL of node itself can still leave it running.
+let cleaned = false;
+const killChrome = () => {
+  if (cleaned) return;
+  cleaned = true;
+  try { process.kill(-proc.pid, "SIGKILL"); } catch { try { proc.kill("SIGKILL"); } catch {} }
+  try { rmSync(profile, { recursive: true, force: true }); } catch {}
+};
+const cleanup = (code) => { killChrome(); process.exit(code); };
+process.on("exit", killChrome);
+for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"]) process.on(sig, () => cleanup(130));
+process.on("uncaughtException", (e) => { console.error(e); cleanup(1); });
+process.on("unhandledRejection", (e) => { console.error(e); cleanup(1); });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let target;
