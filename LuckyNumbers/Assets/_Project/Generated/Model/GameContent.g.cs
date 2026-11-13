@@ -3665,7 +3665,7 @@ namespace LuckyNumbers.Model
         public static readonly OrbitScene Orbit = new OrbitScene
         {
             Title = "OUTSIDE THE STATION",
-            Hint = "W/S thrust - A/D strafe - Space/C up, down - Q/E roll (Shift: barrel roll) - Shift boost - X brake - click, then mouse to aim\nFly slowly into the docking beacon at the bay, then E to dock",
+            Hint = "W/S thrust - A/D strafe - Space/C up, down - Q/E roll (Shift: barrel roll) - Shift boost - X brake - click, then mouse to aim\nFly slowly into the docking beacon at the bay, then E to dock - planet jobs leave when you board your ship inside",
             DockPrompt = "E: dock",
             SlowPrompt = "Too fast to dock - brake (X)",
             DockOffset = 0.8f,
@@ -3677,7 +3677,7 @@ namespace LuckyNumbers.Model
             ChaseDistance = 1.45f,
             ChaseHeight = 0.42f,
             ReadoutSeconds = 0.15f,
-            TouchHint = "Left stick: thrust and strafe - right stick: aim - Lift / Down - Roll ◀ ▶ - Boost - Brake\nFly slowly into the docking beacon at the bay, then Use to dock",
+            TouchHint = "Left stick: thrust and strafe - right stick: aim - Lift / Down - Roll ◀ ▶ - Boost - Brake\nFly slowly into the docking beacon at the bay, then Use to dock - planet jobs leave when you board your ship inside",
             ShakeAngle = 2.5f,
             ShakeOffset = 0.05f,
             ShakeDecay = 1.4f,
@@ -6210,7 +6210,7 @@ namespace LuckyNumbers.Model
                                 V = -0.3f,
                                 Yaw = 180.0f,
                                 Action = StationAction.Undock,
-                                Prompt = "E: launch - fly out round the station",
+                                Prompt = "E: free flight round the station (no landing: board your ship for jobs)",
                             },
                             new StationRoomItem
                             {
