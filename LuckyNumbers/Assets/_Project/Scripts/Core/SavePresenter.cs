@@ -42,8 +42,8 @@ namespace LuckyNumbers.Core
     }
 
     /// <summary>
-    /// Save slots (SaveSlots state; proto save.proto). A slot is one JSON record in PlayerPrefs (on the web, the
-    /// browser's IndexedDB): the lucky number and dice, the character (ICharacterSave: its scores roll again from the
+    /// Save slots (SaveSlots state; proto save.proto). A slot is one JSON record in LocalStore (on the web, the
+    /// browser's localStorage, so it lasts across releases): the lucky number and dice, the character (ICharacterSave: its scores roll again from the
     /// seed), the pack (IPackSave), the ship's skin and fuel, credits and trips, and the job. Play on the title asks
     /// which slot (ISaveSlots); the run then saves to it before each scene change, on arriving, and every
     /// AutosaveSeconds. A continued run wakes at the station: back from a planet (PlayerVoyage.returning, so relics
@@ -267,8 +267,7 @@ namespace LuckyNumbers.Core
                 dice = _ship.Dice.Value,
                 universe = _universeState.Id.Value ?? "",
             };
-            PlayerPrefs.SetString(KeyPrefix + index, JsonUtility.ToJson(file));
-            PlayerPrefs.Save();
+            LocalStore.SetString(KeyPrefix + index, JsonUtility.ToJson(file));
             Refresh();
             Debug.Log($"[Save] slot {index + 1}: {file.character?.callsign} at {file.scene}");
         }
@@ -281,11 +280,7 @@ namespace LuckyNumbers.Core
         {
             var index = _state.Active.Value;
             _state.Active.Value = -1;
-            if (index >= 0 && index < SlotCount)
-            {
-                PlayerPrefs.DeleteKey(KeyPrefix + index);
-                PlayerPrefs.Save();
-            }
+            if (index >= 0 && index < SlotCount) LocalStore.Delete(KeyPrefix + index);
             _voyage.Credits.Value = 0;
             _voyage.LastPayout.Value = 0;
             _voyage.Trips.Value = 0;
@@ -302,15 +297,14 @@ namespace LuckyNumbers.Core
         void Delete(int index)
         {
             if (index < 0 || index >= SlotCount || index == _state.Active.Value) return;
-            PlayerPrefs.DeleteKey(KeyPrefix + index);
-            PlayerPrefs.Save();
+            LocalStore.Delete(KeyPrefix + index);
             Refresh();
             Debug.Log($"[Save] slot {index + 1} deleted");
         }
 
         static SaveFile Read(int index)
         {
-            var json = PlayerPrefs.GetString(KeyPrefix + index, "");
+            var json = LocalStore.GetString(KeyPrefix + index);
             if (string.IsNullOrEmpty(json)) return null;
             try
             {
