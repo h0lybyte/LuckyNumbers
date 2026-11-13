@@ -18,9 +18,12 @@ enum JobKind {
   JOB_KIND_RETRIEVE = 3;
   // Out round the station (GameScene.Orbit): upload a satellite's data while rogue ships attack (content/dogfight.txtpb).
   JOB_KIND_UPLINK = 4;
+  // On foot at the wreck: plant a beacon and hold it while it charges, wave after wave of monsters coming for it
+  // (content/combat.txtpb defend). `target` / `target_per_danger`: the waves; the beacon destroyed fails the job.
+  JOB_KIND_DEFEND = 5;
   // Out round the station (GameScene.Orbit): a circuit race against AI pilots, mystery cubes on the line
   // (content/race.txtpb). `target` / `target_per_danger`: laps. Paid by place.
-  JOB_KIND_RACE = 5;
+  JOB_KIND_RACE = 6;
 }
 
 // Work from Dispatch (content/jobs.txtpb). Your first job is the museum freighter's mayday (the station's own call
@@ -64,7 +67,7 @@ message JobType {
   int32 pay_per_danger = 7;
   int32 danger_min = 8;
   int32 danger_max = 9;
-  // Clear: monsters to kill, base plus per danger.
+  // Clear: monsters to kill, base plus per danger. Defend: waves to hold the beacon through.
   int32 target = 10;
   int32 target_per_danger = 11;
   // Uplink: upload seconds (0: DogfightConfig.satellite.seconds), plus per danger; waves of rogues (0: the
@@ -92,7 +95,8 @@ message JobAcceptRequested {
 
 // The job you're on (app-wide, mirrored to the page). `body` is the planet's id in the universe, `planet` its name;
 // `seed` varies the site (terrain, wreck, cargo). `target` names the relic to retrieve, or `count` / `goal` the
-// kills so far for Clear. `done` once its goal is met (paid when you get back to the station).
+// kills so far for Clear (the waves held for Defend). `done` once its goal is met (paid when you get back to the
+// station); `failed` once it can't be any more (Defend: the beacon destroyed), so it isn't paid either.
 message PlayerJob {
   option (ln.state) = true;
   option (ln.web) = true;
@@ -115,4 +119,5 @@ message PlayerJob {
   // The relics you brought back lately (names, oldest first; StationPresenter at homecoming): Retrieve offers skip
   // them so the board doesn't send you after the same piece twice running (Jobs.Roll).
   repeated string recent_targets = 16;
+  bool failed = 17;
 }

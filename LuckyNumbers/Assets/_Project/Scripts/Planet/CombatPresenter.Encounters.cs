@@ -61,7 +61,8 @@ namespace LuckyNumbers.Planet
             _danger = danger;
             if (E == null) return;
             // Standoffs: the first few monsters wait for you instead of hunting.
-            var standoffs = math.min(_monsters.Count, E.Standoffs + (int)math.floor(E.StandoffsPerDanger * danger));
+            // (None on a Defend job: a card would stop the horde mid-wave.)
+            var standoffs = OnDefendJob ? 0 : math.min(_monsters.Count, E.Standoffs + (int)math.floor(E.StandoffsPerDanger * danger));
             for (var i = 0; i < standoffs; i++) Cue(_monsters[i], MonsterCue.Challenged);
             // Finds: placeholder blocks in a ring round the wreck.
             for (var i = 0; i < E.Finds && E.FindTypes.Count > 0; i++)

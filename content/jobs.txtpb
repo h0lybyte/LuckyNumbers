@@ -3,9 +3,10 @@
 # Dispatch's work. The first job is the museum freighter's mayday (content/station.txtpb call + the intro);
 # after that, each time you're back Dispatch rings and sends a board of offers on seeded planets to your ship; you pick
 # one at the ship (E) when you're about to leave.
-# Fills: {client} {planet} {target} {count} {pay}. Placeholder values; tune with gameplay.
+# Fills: {client} {planet} {target} {count} {pay} ({count}: Clear's kills, Defend's waves). Placeholder values; tune
+# with gameplay.
 
-offers: 5   # one of each kind (salvage, retrieve, clear, uplink, race)
+offers: 6   # one of each kind (salvage, retrieve, clear, uplink, defend, race)
 clients: ["the Meridian Museum", "Halden Salvage Co.", "a private collector", "the Survey Office", "Station Command"]
 
 first_title: "Mayday: museum freighter"
@@ -52,6 +53,14 @@ types {
   pay: 450 pay_per_danger: 250 danger_min: 1 danger_max: 5   # + the tier's pay_bonus (content/dogfight.txtpb)
   target: 1 target_per_danger: 1     # rogues per wave, capped by the tier's wave_size
   uplink_seconds: 30 uplink_seconds_per_danger: 5
+}
+types {
+  kind: JOB_KIND_DEFEND
+  title: "Hold the beacon on {planet}"
+  brief: "{client} needs a relay beacon charged at a wreck on {planet}. Plant it, then keep the locals off it for {count} waves."
+  objective: "Plant the beacon at the wreck on {planet} (E) and hold it through {count} waves"
+  pay: 700 pay_per_danger: 300 danger_min: 1 danger_max: 4
+  target: 2 target_per_danger: 1     # waves: 3 at danger 1 ... 6 at danger 4 (content/combat.txtpb defend horde)
 }
 types {
   kind: JOB_KIND_RACE

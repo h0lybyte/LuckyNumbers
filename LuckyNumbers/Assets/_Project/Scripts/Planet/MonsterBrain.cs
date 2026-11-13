@@ -98,13 +98,18 @@ namespace LuckyNumbers.Planet
         Harried = 1 << 1,
         /// <summary>A thrower winding up a throw (Chase only): `CastClock` counts up to its cast time, then it throws.</summary>
         Winding = 1 << 2,
+        /// <summary>A horde monster (a Defend job's) after the beacon rather than you (MonsterBrain.TargetBeacon).</summary>
+        OnBeacon = 1 << 3,
     }
 
-    /// <summary>What a monster's brain sees this tick (all from the presenter; no Unity objects).</summary>
+    /// <summary>
+    /// What a monster's brain sees this tick (all from the presenter; no Unity objects). "You" is its target: you, or
+    /// for a horde monster after the beacon (MonsterMark.OnBeacon) the beacon, Distance then to the beacon's side.
+    /// </summary>
     public struct MonsterSenses
     {
         public float Dt, Now;
-        /// <summary>Flat distance to you (m).</summary>
+        /// <summary>Flat distance to its target (m): you, or the beacon.</summary>
         public float Distance;
         public bool OnFoot;
         /// <summary>Seconds since you stepped out (the grace before anything comes for you).</summary>
@@ -119,6 +124,11 @@ namespace LuckyNumbers.Planet
         /// </summary>
         public bool Ranged, LineOfSight;
         public float RangeMin, RangeMax, CastTime, CastCooldown;
+        /// <summary>
+        /// A Defend job's horde: it always has a target (the beacon when you're not about), so it never loses it nor
+        /// stands about while you're in your ship.
+        /// </summary>
+        public bool Horde;
     }
 
     /// <summary>
@@ -137,6 +147,10 @@ namespace LuckyNumbers.Planet
     /// Strafe (Step while a throw is ready but it can't see you); with its cast cooled down and a line on you Cast (MonsterMark.Winding set, CastClock from 0), then
     /// Channel until CastTime, then Throw (CastCooldown restarts). A stagger, leaving Chase or you leaving your feet
     /// breaks a wind-up (CastInterrupted). In reach it still bites. Without Ranged nothing here changes.
+    ///
+    /// A Defend job's horde (MonsterSenses.Horde, spawned by <see cref="Horde"/>) chases whichever is nearer, you or the
+    /// beacon (<see cref="TargetBeacon"/>, MonsterMark.OnBeacon): the presenter senses that one, so every act above is
+    /// at it. It never loses its target and keeps on with you in your ship (the beacon's still there).
     /// </summary>
     public struct MonsterBrain
     {
@@ -168,7 +182,28 @@ namespace LuckyNumbers.Planet
 
         public readonly bool Winding => (Marks & MonsterMark.Winding) != 0;
 
+        /// <summary>A horde monster closes on its target once the other is this much nearer (m): no dithering between two about as far.</summary>
+        public const float SwitchMargin = 2f;
+
         public static MonsterBrain Spawn(bool chasing) => new() { State = chasing ? MonsterState.Chase : MonsterState.Wander };
+
+        /// <summary>A horde monster: straight into Chase, after the beacon it turned up round.</summary>
+        public static MonsterBrain Horde() => new() { State = MonsterState.Chase, Marks = MonsterMark.OnBeacon };
+
+        /// <summary>A horde monster's going for the beacon (else you).</summary>
+        public readonly bool OnBeacon => (Marks & MonsterMark.OnBeacon) != 0;
+
+        /// <summary>
+        /// A horde monster's target this tick: whichever of you (only while you're about: `you`, on foot) and the beacon
+        /// is nearer, keeping the one it has until the other is SwitchMargin nearer. Distances flat, to your body and
+        /// the beacon's side (m). Returns true for the beacon (MonsterMark.OnBeacon).
+        /// </summary>
+        public static bool TargetBeacon(ref MonsterBrain b, float toYou, bool you, float toBeacon)
+        {
+            var beacon = !you || (b.OnBeacon ? toYou >= toBeacon - SwitchMargin : toBeacon < toYou - SwitchMargin);
+            b.Marks = beacon ? b.Marks | MonsterMark.OnBeacon : b.Marks & ~MonsterMark.OnBeacon;
+            return beacon;
+        }
 
         public readonly bool Dead => State == MonsterState.Dying;
 
@@ -286,7 +321,7 @@ namespace LuckyNumbers.Planet
                 return MonsterAct.OpenStandoff;
             if (b.State == MonsterState.Calm && s.Now >= b.CalmUntil) Fire(ref b, MonsterCue.CalmedDown);
             if (b.State == MonsterState.Wander && s.OnFoot && s.OnFootFor > NoticeAfter && s.Distance < s.Sight) Fire(ref b, MonsterCue.Noticed);
-            if (b.State != MonsterState.Chase || !s.OnFoot)
+            if (b.State != MonsterState.Chase || !(s.OnFoot || s.Horde))
             {
                 if (b.Winding) Interrupt(ref b);   // you got back in your ship mid-throw
                 return MonsterAct.Amble;
@@ -296,7 +331,7 @@ namespace LuckyNumbers.Planet
                     : s.Distance > s.Reach * 0.85f ? MonsterAct.Step
                     : b.Cooldown <= 0f ? MonsterAct.Bite
                     : MonsterAct.Face;
-            if (s.Distance > s.Sight * 3f) Fire(ref b, MonsterCue.LostTarget);   // this tick's act still happens
+            if (!s.Horde && s.Distance > s.Sight * 3f) Fire(ref b, MonsterCue.LostTarget);   // this tick's act still happens
             return act;
         }
 
@@ -338,7 +373,7 @@ namespace LuckyNumbers.Planet
 
         /// <summary>Whether a thrower would start a throw this tick if it could see you (so the presenter only casts the sight ray then).</summary>
         public readonly bool WantsSight(in MonsterSenses s) =>
-            s.Ranged && State == MonsterState.Chase && s.OnFoot && !Winding && !s.Busy && CastCooldown - s.Dt <= 0f &&
+            s.Ranged && State == MonsterState.Chase && (s.OnFoot || s.Horde) && !Winding && !s.Busy && CastCooldown - s.Dt <= 0f &&
             s.Distance <= s.RangeMax && s.Distance >= s.RangeMin * CastNearest && s.Distance > s.Reach * 0.85f;
     }
 }

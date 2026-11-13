@@ -835,6 +835,7 @@ namespace LuckyNumbers.Station
                 paid = Mathf.RoundToInt(_job.Pay.Value * share);
                 _job.Pay.Value = paid;
                 _job.Done.Value = paid > 0;
+                _job.Failed.Value = paid <= 0;   // off the podium (or out): the HUD says so
                 if (!dnf && place - 1 < C.Xp.Count && C.Xp[place - 1] > 0) _xp.Publish(new CharacterXpGained(C.Xp[place - 1], "Race"));
             }
             var placed = dnf ? "Did not finish" : $"{Ordinal(place)} of {_racers.Count}";

@@ -1,6 +1,7 @@
 // Fights on the planet (Unity: Planet/CombatPresenter). Every attack is a d20 roll; the feed shows the last few,
 // newest at the bottom: who at whom, d20 + bonus = total against the armour, hit (and the damage dice) or miss.
 // The monster you hit last shows its health; going down shows the rescue. Your own rolls also land on the d20.
+// On a Defend job, the beacon's panel: its hp, this wave's charge, the wave and the horde (DefendState).
 import { useEffect, useRef, useState } from "react";
 import { useLNEvent, useLNState } from "./ln";
 import type { CombatRoll } from "./ln";
@@ -14,6 +15,7 @@ export function CombatHud() {
   return (
     <>
       <AttackD20 />
+      <DefendHud />
       {combat?.target && (
         <div className="combat-target" aria-label={`${name}: ${hp} of ${max}`}>
           <span>{name}</span>
@@ -25,6 +27,44 @@ export function CombatHud() {
       <CombatFeed />
       {combat?.downed && <div className="combat-down">Down. Rescue drone inbound…</div>}
     </>
+  );
+}
+
+/** A Defend job's beacon (DefendState): hp, charge, wave and horde; the rest between waves; won or lost. */
+function DefendHud() {
+  const d = useLNState("DefendState");
+  if (!d?.phase || d.phase === "ready") return null;
+  const pct = (v: number, max: number) => `${Math.max(0, Math.min(100, (100 * v) / Math.max(1, max)))}%`;
+  const head =
+    d.phase === "won" ? "BEACON CHARGED"
+    : d.phase === "lost" ? "BEACON LOST"
+    : d.phase === "rest" ? `WAVE ${d.wave + 1} IN ${d.rest} S`
+    : `WAVE ${d.wave}/${d.waves} · CHARGING`;
+  // The whole charge, across the waves: those done plus this one's.
+  const charged = d.phase === "won" ? d.waves : Math.max(0, d.wave - 1) + (d.phase === "rest" ? 1 : d.charge);
+  return (
+    <div className={`defend ${d.phase}${d.hp < d.hpMax * 0.3 ? " low" : ""}`} role="status"
+         aria-label={`Beacon ${d.hp} of ${d.hpMax} hp, wave ${d.wave} of ${d.waves}, ${Math.round(d.charge * 100)}% charged`}>
+      <div className="defend-head">
+        <span>{head}</span>
+        <em>{d.phase === "charging" ? `${Math.round(d.charge * 100)}%` : d.phase === "rest" ? `${d.wave}/${d.waves}` : ""}</em>
+      </div>
+      <div className="defend-row hp">
+        <span>BEACON</span>
+        <div className="dogfight-bar"><div style={{ width: pct(d.hp, d.hpMax) }} /></div>
+        <em>{d.hp}</em>
+      </div>
+      <div className="defend-row charge">
+        <span>CHARGE</span>
+        <div className="dogfight-bar"><div style={{ width: pct(charged, d.waves) }} /></div>
+        <em>{Math.round((100 * charged) / Math.max(1, d.waves))}%</em>
+      </div>
+      {(d.phase === "charging" || d.phase === "rest") && (
+        <small>
+          {d.horde} HOSTILE{d.horde === 1 ? "" : "S"}{d.waiting > 0 && ` · ${d.waiting} MORE COMING`}
+        </small>
+      )}
+    </div>
   );
 }
 

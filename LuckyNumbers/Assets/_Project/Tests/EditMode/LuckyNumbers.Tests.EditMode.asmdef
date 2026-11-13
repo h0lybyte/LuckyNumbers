@@ -2,9 +2,9 @@
     "name": "LuckyNumbers.Tests.EditMode",
     "rootNamespace": "LuckyNumbers.Tests",
     "references": [
-        "LuckyNumbers.Model",
         "LuckyNumbers.Planet",
         "LuckyNumbers.Station",
+        "LuckyNumbers.Model",
         "Unity.Mathematics",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"

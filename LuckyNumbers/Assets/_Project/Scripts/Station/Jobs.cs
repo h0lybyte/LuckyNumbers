@@ -147,6 +147,7 @@ namespace LuckyNumbers.Station
             job.Count.Value = 0;
             job.Goal.Value = o.Goal;
             job.Done.Value = false;
+            job.Failed.Value = false;
             job.Active.Value = true;
         }
 

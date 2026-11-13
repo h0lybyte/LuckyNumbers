@@ -11,8 +11,14 @@ namespace LuckyNumbers.Planet
         public static int Roll(string dice, ref Random rng, bool crit = false)
         {
             Parse(dice, out var count, out var sides, out var add);
-            var total = add;
-            for (var i = 0; i < count * (crit ? 2 : 1); i++) total += rng.NextInt(1, sides + 1);
+            return Roll(new int3(count, sides, add), ref rng, crit);
+        }
+
+        /// <summary>As <see cref="Roll(string, ref Random, bool)"/>, the dice already parsed (count, sides, add): no text to read, nothing allocated.</summary>
+        public static int Roll(int3 dice, ref Random rng, bool crit = false)
+        {
+            var total = dice.z;
+            for (var i = 0; i < dice.x * (crit ? 2 : 1); i++) total += rng.NextInt(1, dice.y + 1);
             return math.max(1, total);
         }
 

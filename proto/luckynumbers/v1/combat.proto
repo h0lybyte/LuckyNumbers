@@ -29,6 +29,78 @@ message CombatConfig {
   // for an equipped weapon with no entry.
   repeated CombatWeapon weapons = 9;
   CombatRescue rescue = 10;
+  // A Defend job's horde (JobKind.DEFEND).
+  DefendConfig defend = 11;
+}
+
+// A Defend job (JobKind.DEFEND): a beacon stands by the wreck; plant it (E) and it charges, one wave at a time, while a
+// horde comes for it. Each wave the beacon charges for charge_seconds while the wave's monsters arrive in a ring
+// spawn_radius out round it (staggered, spawn_interval apart, never more than max_alive at once: the rest wait their
+// turn); then rest_seconds' breather (the stragglers keep coming) and the next. Every wave fully charged: the job's
+// done, the horde scatters, `xp`. The beacon at 0 hp: the job's failed and the horde scatters all the same. Horde
+// monsters go for whichever is nearer, you or the beacon; they bite it (d20 + attack against beacon_armor) and an
+// arcanist's flask splashes it. Metres, seconds.
+message DefendConfig {
+  // Waves when the job doesn't say (a dev defend): waves + waves_per_danger x danger.
+  int32 waves = 1;
+  float waves_per_danger = 2;
+  int32 beacon_hp = 3;
+  int32 beacon_hp_per_danger = 4;
+  int32 beacon_armor = 5;
+  float charge_seconds = 6;
+  float rest_seconds = 7;
+  // Monsters in wave 1: budget + budget_per_danger x danger; each wave after has budget_growth x the one before.
+  int32 budget = 8;
+  float budget_per_danger = 9;
+  float budget_growth = 10;
+  // Horde monsters alive at once (the low-end tier, Rendering/LowEnd: max_alive_low_end).
+  int32 max_alive = 11;
+  int32 max_alive_low_end = 12;
+  float spawn_interval = 13;
+  // How far out round the beacon they turn up (just past their sight), and give or take.
+  float spawn_radius = 14;
+  float spawn_jitter = 15;
+  // Who comes, by weight (`weight` + weight_per_wave x the wave before this one).
+  repeated DefendMix mix = 16;
+  // On the win, on top of the job's pay.
+  int32 xp = 17;
+  // The beacon: how far out from the wreck's hull (on the landing pad's side), its pillar, and how close you stand to plant it.
+  float beacon_offset = 18;
+  Vec3 beacon_size = 19;
+  float plant_distance = 20;
+  string plant_prompt = 21;
+  // Said as it goes ({wave}, {waves}: the wave and how many there are).
+  string planted_text = 22;
+  string wave_text = 23;
+  string won_text = 24;
+  string lost_text = 25;
+}
+
+// One kind of monster a Defend horde brings (MonsterType.id); rushers bite, a thrower (its type's `ranged`) hangs back.
+message DefendMix {
+  string monster = 1;
+  float weight = 2;
+  float weight_per_wave = 3;
+  // Not before this wave (1 = from the start), nor on a job below danger_min.
+  int32 wave_min = 4;
+  int32 danger_min = 5;
+}
+
+// A Defend job's beacon and its horde (mirrored to the page). `phase`: "" none, "ready" (stands unplanted), "charging",
+// "rest" (between waves), "won", "lost". `charge`: this wave's, 0..1 (in 1% steps); `rest`: seconds to the next wave;
+// `horde`: horde monsters on the ground, `waiting` still to come this wave.
+message DefendState {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  string phase = 1;
+  int32 wave = 2;
+  int32 waves = 3;
+  float charge = 4;
+  int32 rest = 5;
+  int32 hp = 6;
+  int32 hp_max = 7;
+  int32 horde = 8;
+  int32 waiting = 9;
 }
 
 // A monster: a placeholder block, or `model` (a rigged creature, Art/Characters/<model>) once it has one.

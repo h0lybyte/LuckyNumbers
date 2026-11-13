@@ -5,7 +5,7 @@
 import { useEffect } from "react";
 import { LN, useLNState } from "./ln";
 
-const KINDS: Record<string, string> = { Salvage: "Salvage", Retrieve: "Retrieve", Clear: "Clear", Uplink: "Uplink", Race: "Race" };
+const KINDS: Record<string, string> = { Salvage: "Salvage", Retrieve: "Retrieve", Clear: "Clear", Uplink: "Uplink", Defend: "Defend", Race: "Race" };
 
 export function JobBoardPanel() {
   const board = useLNState("JobBoard");
@@ -61,14 +61,18 @@ export function JobBoardPanel() {
   );
 }
 
-/** On the planet: the job you're here for, green once its goal is met. */
+/** On the planet: the job you're here for, green once its goal is met, red once it can't be (a Defend's beacon lost). */
 export function JobLine() {
   const job = useLNState("PlayerJob");
   if (!job?.active) return null;
-  const goal = job.kind === "Clear" && job.goal > 0 ? ` (${job.count}/${job.goal})` : "";
+  const goal = (job.kind === "Clear" || job.kind === "Defend") && job.goal > 0
+    ? ` (${job.count}/${job.goal}${job.kind === "Defend" ? " waves" : ""})` : "";
+  const text = job.failed ? "Job failed: fly back to the station"
+    : job.done ? (job.kind === "Uplink" || job.kind === "Race" ? "Dock at the station to get paid" : "Fly back to the station to get paid")
+    : job.objective + goal;
   return (
-    <div className={`job-line${job.done ? " done" : ""}`}>
-      <span className="job-kind">{job.done ? "Done" : "Job"}</span> {job.done ? (job.kind === "Uplink" || job.kind === "Race" ? "Dock at the station to get paid" : "Fly back to the station to get paid") : job.objective + goal}
+    <div className={`job-line${job.done ? " done" : job.failed ? " failed" : ""}`}>
+      <span className="job-kind">{job.failed ? "Failed" : job.done ? "Done" : "Job"}</span> {text}
     </div>
   );
 }

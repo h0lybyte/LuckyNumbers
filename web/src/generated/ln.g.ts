@@ -46,6 +46,7 @@ export type JobKind =
   | "Clear"
   | "Retrieve"
   | "Uplink"
+  | "Defend"
   | "Race";
 
 /**
@@ -186,6 +187,23 @@ export interface StationState {
 }
 
 /**
+ * A Defend job's beacon and its horde (mirrored to the page). `phase`: "" none, "ready" (stands unplanted), "charging",
+ * "rest" (between waves), "won", "lost". `charge`: this wave's, 0..1 (in 1% steps); `rest`: seconds to the next wave;
+ * `horde`: horde monsters on the ground, `waiting` still to come this wave.
+ */
+export interface DefendState {
+  phase: string;
+  wave: number;
+  waves: number;
+  charge: number;
+  rest: number;
+  hp: number;
+  hpMax: number;
+  horde: number;
+  waiting: number;
+}
+
+/**
  * The fight on this site (mirrored to the page): monsters still alive and killed, the one you hit last
  * ("name|hp|max", or "" once it's dead), and you're down (being rescued).
  */
@@ -309,7 +327,8 @@ export interface JobBoard {
 /**
  * The job you're on (app-wide, mirrored to the page). `body` is the planet's id in the universe, `planet` its name;
  * `seed` varies the site (terrain, wreck, cargo). `target` names the relic to retrieve, or `count` / `goal` the
- * kills so far for Clear. `done` once its goal is met (paid when you get back to the station).
+ * kills so far for Clear (the waves held for Defend). `done` once its goal is met (paid when you get back to the
+ * station); `failed` once it can't be any more (Defend: the beacon destroyed), so it isn't paid either.
  */
 export interface PlayerJob {
   active: boolean;
@@ -333,6 +352,7 @@ export interface PlayerJob {
    * them so the board doesn't send you after the same piece twice running (Jobs.Roll).
    */
   recentTargets: string[];
+  failed: boolean;
 }
 
 /**
@@ -899,6 +919,7 @@ export interface WebStates {
   LoadingState: LoadingState;
   RangeState: RangeState;
   StationState: StationState;
+  DefendState: DefendState;
   CombatState: CombatState;
   DogfightState: DogfightState;
   DebtState: DebtState;
@@ -979,4 +1000,4 @@ export interface WebEvents {
 /** Events the page may publish into the game. */
 export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "CharacterCallsignRequested" | "SceneChangeRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "SaveSlotsReady" | "SaveSlotPicked" | "SaveSlotDeleteRequested" | "SettingsChanged" | "SettingsReset" | "SettingsToggled" | "MenuItemSelected" | "UniverseSelected" | "UpgradeBuyRequested" | "OutfitterCloseRequested";
 
-export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "CombatState", "DogfightState", "DebtState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "PlayerControl", "ShipPicker", "PlayerVoyage", "RaceState", "SaveSlots", "GameSettings", "DiceState", "UniverseState", "Outfitter"] as const;
+export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "DefendState", "CombatState", "DogfightState", "DebtState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "PlayerControl", "ShipPicker", "PlayerVoyage", "RaceState", "SaveSlots", "GameSettings", "DiceState", "UniverseState", "Outfitter"] as const;
