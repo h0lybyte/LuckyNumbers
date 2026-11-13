@@ -27,7 +27,7 @@ namespace LuckyNumbers.Planet
     ///
     /// Damage takes Stamina, then HP. At 0 HP you're down: a rescue drone takes you back to the station, without the
     /// relics you carried and `rescue.fee` credits lighter (PlayerVoyage.rescued; the job isn't done). Kills give XP
-    /// and count for a Clear job.
+    /// and count for a Clear job. A Defend job brings a horde to a beacon by the wreck (CombatPresenter.Defend).
     /// </summary>
     [Presenter]
     public sealed partial class CombatPresenter : IStartable, ITickable, IDisposable
@@ -50,6 +50,12 @@ namespace LuckyNumbers.Planet
             public MonsterRanged Ranged;
             // A thrower's cast clip still playing (its hands held out after the release): it stands its ground till then.
             public float CastUntil;
+            // A Defend job's horde (CombatPresenter.Defend): after you or the beacon, and back to the spares when it's gone.
+            public bool Horde;
+            // Its bite's dice, read once (Dice.Parse): a horde bites the beacon often, and parsing allocates.
+            public int3 BiteDice;
+            // Its place in this frame's separation (MonsterSeparation), -1: not in it.
+            public int Crowd = -1;
         }
 
         readonly ICrashSite _site;
@@ -99,8 +105,11 @@ namespace LuckyNumbers.Planet
                                IPublisher<PlayerDamaged> damaged, IPublisher<PlayerDied> died, IPublisher<CharacterXpGained> xp,
                                IPublisher<SceneChangeRequested> scenes, ISubscriber<DevWarpRequested> warps,
                                EncounterState encounter, ISubscriber<EncounterChoice> choices, IPublisher<ItemHandled> handled,
-                               IPublisher<FindRolled> foundRolls, AssetScope assets)
+                               IPublisher<FindRolled> foundRolls, AssetScope assets, DefendState defend,
+                               ISubscriber<InputActionPerformed> actions)
         {
+            _defend = defend;
+            _actions = actions;
             _assets = assets;
             _handled = handled;
             _foundRolls = foundRolls;
@@ -135,6 +144,7 @@ namespace LuckyNumbers.Planet
             _state.Armor.Value = PlayerArmor();
             _firstPerson.ShotCheck = HeldShot;   // a held gun's shots at a monster roll as they're fired
             StartEncounters();
+            StartDefend();
             MonsterBlobs.Current.Ground = _ground;   // blob shadows bend to its terrain
             LoadModelsAsync(_cts.Token).Forget();   // while you fly in: nothing spawns before you're on foot
             // Dev (the page's inspector): "monster" drops one a few metres ahead of you ("monster:<id>": that one;
@@ -143,6 +153,7 @@ namespace LuckyNumbers.Planet
             {
                 if (e.To == "standoff" || e.To == "find") { DevEncounter(e.To); return; }
                 if (e.To == "monster:heal") { DevHeal(); return; }   // "monster..." so RelicsPresenter doesn't take it for a relic warp
+                if (e.To == "defend" || e.To?.StartsWith("defend:") == true) { DevDefend(e.To); return; }   // RelicsPresenter skips these too
                 if (e.To == null || !(e.To == "monster" || e.To.StartsWith("monster:")) || C == null || C.Monsters.Count == 0) return;
                 EnsureBolts();   // seeds the dice Pick rolls
                 var wanted = e.To.Length > 8 ? e.To.Substring(8) : null;
@@ -186,7 +197,9 @@ namespace LuckyNumbers.Planet
                 _firstPerson.Look(Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg, -Mathf.Atan2(to.y, new Vector2(to.x, to.z).magnitude) * Mathf.Rad2Deg);
             }
             if (onFoot) Shoot();
+            Separate(dt);
             for (var i = _monsters.Count - 1; i >= 0; i--) Think(_monsters[i], me, onFoot, dt);
+            TickDefend(dt, me, onFoot);
         }
 
         // ---- Spawning -------------------------------------------------------------------------------------------
@@ -235,6 +248,7 @@ namespace LuckyNumbers.Planet
             }
             Debug.Log($"[Combat] {count} monster(s) round the wreck (danger {danger}); your armour {PlayerArmor()}");
             SpawnEncounters(danger, wreck);
+            if (OnDefendJob && !_job.Done.Value && !_job.Failed.Value) PlaceBeacon();   // stands ready by the wreck: E plants it
         }
 
         void EnsureBolts()
@@ -262,7 +276,7 @@ namespace LuckyNumbers.Planet
             return C.Monsters[0];
         }
 
-        void Spawn(MonsterType type, Vector3 at, bool aggro)
+        Monster Spawn(MonsterType type, Vector3 at, bool aggro)
         {
             var size = new Vector3(type.Size.X > 0f ? type.Size.X : 1f, type.Size.Y > 0f ? type.Size.Y : 1f, type.Size.Z > 0f ? type.Size.Z : 1f);
             _models.TryGetValue(type.Model ?? "", out var model);   // not loaded yet (a dev spawn): a placeholder
@@ -271,11 +285,13 @@ namespace LuckyNumbers.Planet
                 : MonsterView.Create(type.Id, size, new Color(type.Color.R, type.Color.G, type.Color.B, 1f), _bodyMaterial);
             var m = new Monster { Type = type, View = view, Position = at, Home = at, Hp = math.max(1, type.Hp), Brain = MonsterBrain.Spawn(aggro),
                                   Heading = _rng.NextFloat(360f), Wander = _rng.NextFloat(3f) };
+            Dice.Parse(type.Damage, out m.BiteDice.x, out m.BiteDice.y, out m.BiteDice.z);
             view.Damaged += (v, source, point) => Hurt(m, source);
             Arm(m, type.Ranged);
             Place(m, 0f);
             _monsters.Add(m);
             Recount();
+            return m;
         }
 
         // ---- Monsters -------------------------------------------------------------------------------------------
@@ -283,12 +299,18 @@ namespace LuckyNumbers.Planet
         /// <summary>A monster's tick: its brain (MonsterBrain.Tick) picks the act, this carries it out.</summary>
         void Think(Monster m, Vector3 me, bool onFoot, float dt)
         {
-            var to = new Vector3(me.x - m.Position.x, 0f, me.z - m.Position.z);
+            if (m.Crowd >= 0 && !m.Dead) Shove(m, dt);
+            // Its target: you, or a horde monster's pick of you and the beacon (whichever's nearer); `distance` to its side.
+            var beacon = m.Horde && _beacon != null && AfterBeacon(m, me, onFoot);
+            var target = beacon ? _beaconAt : me;
+            var to = new Vector3(target.x - m.Position.x, 0f, target.z - m.Position.z);
             var distance = to.magnitude;
+            if (beacon) distance = math.max(0f, distance - _beaconRadius);
             var senses = new MonsterSenses
             {
                 Dt = dt, Now = Time.time, Distance = distance, OnFoot = onFoot, OnFootFor = _onFootFor, Sight = m.Type.Sight,
                 Reach = math.max(0.8f, m.Type.Reach) + Size(m).z * 0.5f, StandoffDistance = StandoffDistance, Busy = m.View.Busy,
+                Horde = m.Horde && _beacon != null,
             };
             SenseRanged(m, ref senses);
             var threat = m.Brain.Threat;
@@ -327,7 +349,7 @@ namespace LuckyNumbers.Planet
                         m.Position += Quaternion.Euler(0f, m.Heading, 0f) * Vector3.forward * (m.Type.Speed * dt);
                         walked = m.Type.Speed;
                     }
-                    else if (act == MonsterAct.Bite) Bite(m);
+                    else if (act == MonsterAct.Bite) { if (beacon) BiteBeacon(m); else Bite(m); }
                     else if (act >= MonsterAct.Retreat) walked = Ranged(m, act, to, dt);
                     break;
             }
@@ -349,8 +371,9 @@ namespace LuckyNumbers.Planet
             }
             else m.View.transform.localScale = Size(m) * math.max(0.01f, 1f - t / 0.4f);
             if (t < gone) return;
-            UnityEngine.Object.Destroy(m.View.gameObject);
             _monsters.Remove(m);   // dying, so it left the count when it died (Cue / Think): nothing to recount
+            if (m.Horde) Stash(m);   // back to the spares, for the next wave
+            else UnityEngine.Object.Destroy(m.View.gameObject);
         }
 
         /// <summary>
@@ -364,14 +387,20 @@ namespace LuckyNumbers.Planet
             if (m.Brain.Threat != threat) Recount();
         }
 
-        void Recount() => _state.Alive.Value = AliveCount();
-
-        /// <summary>The monsters left (CombatState.alive): live threats only (MonsterBrain.Threat), not ones running off or dying.</summary>
-        int AliveCount()
+        /// <summary>The monsters left (CombatState.alive), and of them the horde's (DefendState.horde).</summary>
+        void Recount()
         {
             var n = 0;
-            foreach (var x in _monsters) if (x.Brain.Threat) n++;
-            return n;
+            var horde = 0;
+            foreach (var x in _monsters)
+            {
+                if (!x.Brain.Threat) continue;
+                n++;
+                if (x.Horde) horde++;
+            }
+            _state.Alive.Value = n;
+            _hordeAlive = horde;
+            _defend.Horde.Value = horde;
         }
 
         static Vector3 Size(Monster m) => new(m.Type.Size.X > 0f ? m.Type.Size.X : 1f, m.Type.Size.Y > 0f ? m.Type.Size.Y : 1f, m.Type.Size.Z > 0f ? m.Type.Size.Z : 1f);
@@ -393,10 +422,10 @@ namespace LuckyNumbers.Planet
             m.View.Attack();
             var armor = PlayerArmor();
             var (d20, total, hit, crit, fumble) = Dice.Attack(m.Type.Attack, armor, ref _rng);
-            var damage = hit ? Dice.Roll(m.Type.Damage, ref _rng, crit) : 0;
+            var damage = hit ? Dice.Roll(m.BiteDice, ref _rng, crit) : 0;
             _rolls.Publish(new CombatRoll(m.Type.Name, "You", d20, m.Type.Attack, total, armor, hit, crit, fumble, damage, m.Type.Damage, false, "bite",
                                           false, false, ""));
-            Debug.Log($"[Combat] {m.Type.Name} bites: d20 {d20} + {m.Type.Attack} = {total} vs {armor}: {(hit ? $"hit, {damage}" : "miss")}");
+            if (!m.Horde) Debug.Log($"[Combat] {m.Type.Name} bites: d20 {d20} + {m.Type.Attack} = {total} vs {armor}: {(hit ? $"hit, {damage}" : "miss")}");
             if (hit) TakeDamage(damage, m.Type.Name);
         }
 
@@ -547,6 +576,7 @@ namespace LuckyNumbers.Planet
             if (col != null) col.enabled = false;
             _state.Killed.Value++;
             if (m.Type.Xp > 0) _xp.Publish(new CharacterXpGained(m.Type.Xp, m.Type.Name));
+            if (m.Horde) { _hordeKilled++; return; }   // a horde's kills: counted, said per wave (TickDefend), not each
             if (_job.Active.Value && _job.Kind.Value == JobKind.Clear)
             {
                 _job.Count.Value++;
@@ -608,6 +638,7 @@ namespace LuckyNumbers.Planet
             _bolts?.Dispose();
             _flasks?.Dispose();
             foreach (var m in _monsters) if (m.View != null) UnityEngine.Object.Destroy(m.View.gameObject);
+            DisposeDefend();
         }
     }
 }

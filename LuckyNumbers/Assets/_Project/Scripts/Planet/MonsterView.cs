@@ -161,6 +161,28 @@ namespace LuckyNumbers.Planet
             return Length(_clips.Die);
         }
 
+        /// <summary>
+        /// Up again after its death (a horde monster back from the spares, CombatPresenter.Defend): its fall forgotten,
+        /// its collider on, a block its full `size`, standing. Its GameObject is turned back on by the caller.
+        /// </summary>
+        public void Revive(Vector3 size)
+        {
+            _dead = false;
+            _oneShotUntil = _busyUntil = 0f;
+            _flash = 0f;
+            var box = GetComponent<Collider>();
+            if (box != null) box.enabled = true;
+            if (!Modelled) { transform.localScale = size; Tint(_color); }
+            Move(0f, false);
+        }
+
+        /// <summary>A plain renderer's tint through `block` (as a placeholder block's): the beacon's glow (CombatPresenter.Defend).</summary>
+        public static void Paint(Renderer r, MaterialPropertyBlock block, Color c)
+        {
+            Set(block, c);
+            r.SetPropertyBlock(block);
+        }
+
         /// <summary>`material`: one that's in the build (a primitive's default is stripped and renders magenta).</summary>
         public static MonsterView Create(string id, Vector3 size, Color color, Material material)
         {

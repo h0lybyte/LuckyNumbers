@@ -684,6 +684,56 @@ namespace LuckyNumbers.Model
                     },
                 },
             },
+            Defend = new DefendConfig
+            {
+                Waves = 3,
+                WavesPerDanger = 0.5f,
+                BeaconHp = 300,
+                BeaconHpPerDanger = 60,
+                BeaconArmor = 13,
+                ChargeSeconds = 35.0f,
+                RestSeconds = 8.0f,
+                Budget = 18,
+                BudgetPerDanger = 4.0f,
+                BudgetGrowth = 1.3f,
+                MaxAlive = 60,
+                MaxAliveLowEnd = 25,
+                SpawnInterval = 0.15f,
+                SpawnRadius = 30.0f,
+                SpawnJitter = 4.0f,
+                Mix =
+                {
+                    new DefendMix
+                    {
+                        Monster = "skeleton",
+                        Weight = 5.0f,
+                        WaveMin = 1,
+                    },
+                    new DefendMix
+                    {
+                        Monster = "aberration",
+                        Weight = 2.0f,
+                        WeightPerWave = 0.6f,
+                        WaveMin = 1,
+                    },
+                    new DefendMix
+                    {
+                        Monster = "arcanist",
+                        Weight = 0.6f,
+                        WeightPerWave = 0.4f,
+                        WaveMin = 2,
+                    },
+                },
+                Xp = 400,
+                BeaconOffset = 9.0f,
+                BeaconSize = new Vec3(0.8f, 2.6f, 0.8f),
+                PlantDistance = 2.6f,
+                PlantPrompt = "E: plant the beacon",
+                PlantedText = "Beacon's planted and charging. Here they come: keep them off it.",
+                WaveText = "Wave {wave} of {waves}. The beacon's charging.",
+                WonText = "Beacon's fully charged. They're scattering. Job done: fly back to the station.",
+                LostText = "The beacon's gone. Nothing to hold any more: get out of here.",
+            },
         };
 
         /// <summary>From <c>content/credits.txtpb</c>.</summary>
@@ -3487,8 +3537,21 @@ namespace LuckyNumbers.Model
                     UplinkSeconds = 30.0f,
                     UplinkSecondsPerDanger = 5.0f,
                 },
+                new JobType
+                {
+                    Kind = JobKind.Defend,
+                    Title = "Hold the beacon on {planet}",
+                    Brief = "{client} needs a relay beacon charged at a wreck on {planet}. Plant it, then keep the locals off it for {count} waves.",
+                    Objective = "Plant the beacon at the wreck on {planet} (E) and hold it through {count} waves",
+                    Pay = 700,
+                    PayPerDanger = 300,
+                    DangerMin = 1,
+                    DangerMax = 4,
+                    Target = 2,
+                    TargetPerDanger = 1,
+                },
             },
-            Offers = 4,
+            Offers = 5,
             Clients =
             {
                 "the Meridian Museum",

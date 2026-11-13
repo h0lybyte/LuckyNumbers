@@ -810,6 +810,7 @@ namespace LuckyNumbers.Station
             _job.Target.Value = "";
             _job.Count.Value = _job.Goal.Value = 0;
             _job.Done.Value = false;
+            _job.Failed.Value = false;
             _job.Active.Value = true;
             Debug.Log($"[Station] job: {_job.Title.Value} on {_job.Planet.Value}");
         }

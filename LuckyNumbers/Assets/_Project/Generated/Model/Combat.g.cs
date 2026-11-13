@@ -36,9 +36,127 @@ namespace LuckyNumbers.Model
         /// </summary>
         public List<CombatWeapon> Weapons { get; } = new List<CombatWeapon>();
         public CombatRescue Rescue { get; set; }
+        /// <summary>
+        /// A Defend job's horde (JobKind.DEFEND).
+        /// </summary>
+        public DefendConfig Defend { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public CombatConfig Clone() => (CombatConfig)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// A Defend job (JobKind.DEFEND): a beacon stands by the wreck; plant it (E) and it charges, one wave at a time, while a
+    /// horde comes for it. Each wave the beacon charges for charge_seconds while the wave's monsters arrive in a ring
+    /// spawn_radius out round it (staggered, spawn_interval apart, never more than max_alive at once: the rest wait their
+    /// turn); then rest_seconds' breather (the stragglers keep coming) and the next. Every wave fully charged: the job's
+    /// done, the horde scatters, `xp`. The beacon at 0 hp: the job's failed and the horde scatters all the same. Horde
+    /// monsters go for whichever is nearer, you or the beacon; they bite it (d20 + attack against beacon_armor) and an
+    /// arcanist's flask splashes it. Metres, seconds.
+    /// </summary>
+    public sealed class DefendConfig
+    {
+        /// <summary>
+        /// Waves when the job doesn't say (a dev defend): waves + waves_per_danger x danger.
+        /// </summary>
+        public int Waves { get; set; }
+        public float WavesPerDanger { get; set; }
+        public int BeaconHp { get; set; }
+        public int BeaconHpPerDanger { get; set; }
+        public int BeaconArmor { get; set; }
+        public float ChargeSeconds { get; set; }
+        public float RestSeconds { get; set; }
+        /// <summary>
+        /// Monsters in wave 1: budget + budget_per_danger x danger; each wave after has budget_growth x the one before.
+        /// </summary>
+        public int Budget { get; set; }
+        public float BudgetPerDanger { get; set; }
+        public float BudgetGrowth { get; set; }
+        /// <summary>
+        /// Horde monsters alive at once (the low-end tier, Rendering/LowEnd: max_alive_low_end).
+        /// </summary>
+        public int MaxAlive { get; set; }
+        public int MaxAliveLowEnd { get; set; }
+        public float SpawnInterval { get; set; }
+        /// <summary>
+        /// How far out round the beacon they turn up (just past their sight), and give or take.
+        /// </summary>
+        public float SpawnRadius { get; set; }
+        public float SpawnJitter { get; set; }
+        /// <summary>
+        /// Who comes, by weight (`weight` + weight_per_wave x the wave before this one).
+        /// </summary>
+        public List<DefendMix> Mix { get; } = new List<DefendMix>();
+        /// <summary>
+        /// On the win, on top of the job's pay.
+        /// </summary>
+        public int Xp { get; set; }
+        /// <summary>
+        /// The beacon: how far out from the wreck's hull (on the landing pad's side), its pillar, and how close you stand to plant it.
+        /// </summary>
+        public float BeaconOffset { get; set; }
+        public Vec3 BeaconSize { get; set; }
+        public float PlantDistance { get; set; }
+        public string PlantPrompt { get; set; }
+        /// <summary>
+        /// Said as it goes ({wave}, {waves}: the wave and how many there are).
+        /// </summary>
+        public string PlantedText { get; set; }
+        public string WaveText { get; set; }
+        public string WonText { get; set; }
+        public string LostText { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public DefendConfig Clone() => (DefendConfig)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// One kind of monster a Defend horde brings (MonsterType.id); rushers bite, a thrower (its type's `ranged`) hangs back.
+    /// </summary>
+    public sealed class DefendMix
+    {
+        public string Monster { get; set; }
+        public float Weight { get; set; }
+        public float WeightPerWave { get; set; }
+        /// <summary>
+        /// Not before this wave (1 = from the start), nor on a job below danger_min.
+        /// </summary>
+        public int WaveMin { get; set; }
+        public int DangerMin { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public DefendMix Clone() => (DefendMix)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// A Defend job's beacon and its horde (mirrored to the page). `phase`: "" none, "ready" (stands unplanted), "charging",
+    /// "rest" (between waves), "won", "lost". `charge`: this wave's, 0..1 (in 1% steps); `rest`: seconds to the next wave;
+    /// `horde`: horde monsters on the ground, `waiting` still to come this wave.
+    /// </summary>
+    public sealed class DefendState : IDisposable
+    {
+        public readonly ReactiveProperty<string> Phase = new ReactiveProperty<string>();
+        public readonly ReactiveProperty<int> Wave = new ReactiveProperty<int>();
+        public readonly ReactiveProperty<int> Waves = new ReactiveProperty<int>();
+        public readonly ReactiveProperty<float> Charge = new ReactiveProperty<float>();
+        public readonly ReactiveProperty<int> Rest = new ReactiveProperty<int>();
+        public readonly ReactiveProperty<int> Hp = new ReactiveProperty<int>();
+        public readonly ReactiveProperty<int> HpMax = new ReactiveProperty<int>();
+        public readonly ReactiveProperty<int> Horde = new ReactiveProperty<int>();
+        public readonly ReactiveProperty<int> Waiting = new ReactiveProperty<int>();
+
+        public void Dispose()
+        {
+            Phase.Dispose();
+            Wave.Dispose();
+            Waves.Dispose();
+            Charge.Dispose();
+            Rest.Dispose();
+            Hp.Dispose();
+            HpMax.Dispose();
+            Horde.Dispose();
+            Waiting.Dispose();
+        }
     }
 
     /// <summary>

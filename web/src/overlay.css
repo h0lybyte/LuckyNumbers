@@ -1403,6 +1403,8 @@ kbd {
 }
 .job-line.done { border-color: var(--good); }
 .job-line.done .job-kind { color: var(--good); }
+.job-line.failed { border-color: var(--bad); }
+.job-line.failed .job-kind { color: var(--bad); }
 
 /* Fights (combat.tsx): the roll feed, the last monster hit, going down. */
 .combat-feed {
@@ -1926,6 +1928,35 @@ kbd {
 .dogfight-stats b { color: var(--bad); }
 .dogfight-target .combat-target-bar.shield { border-color: var(--neon); }
 .dogfight-target .combat-target-bar.shield > div { background: var(--neon); }
+/* A Defend job's beacon (combat.tsx DefendHud): under the target bar, like the satellite's upload. */
+.defend {
+  position: absolute;
+  left: 50%;
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 104px);
+  transform: translateX(-50%);
+  width: min(320px, calc(100% - 2 * var(--gap)));
+  display: grid;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px solid var(--neon);
+  background: var(--scan), rgba(2, 8, 16, 0.82);
+  font: 600 11px var(--font-mono);
+  letter-spacing: 0.08em;
+  color: var(--neon);
+  pointer-events: none;
+}
+.defend-head { display: flex; justify-content: space-between; gap: 8px; }
+.defend-head em, .defend-row em { font-style: normal; text-align: right; }
+.defend-row { display: grid; grid-template-columns: 64px 1fr 38px; align-items: center; gap: 8px; }
+.defend-row.hp { color: var(--good); }
+.defend-row.hp .dogfight-bar > div { background: var(--good); }
+.defend-row.charge .dogfight-bar > div { background: var(--neon); box-shadow: var(--neon-glow); }
+.defend small { color: var(--muted); font-weight: 400; font-size: 10px; }
+.defend.low .defend-row.hp { color: var(--bad); }
+.defend.low .defend-row.hp .dogfight-bar > div { background: var(--bad); }
+.defend.rest { border-color: var(--warn); color: var(--warn); }
+.defend.won { border-color: var(--good); color: var(--good); }
+.defend.lost { border-color: var(--bad); color: var(--bad); }
 .dogfight-uplink {
   position: absolute;
   left: 50%;

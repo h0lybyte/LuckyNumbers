@@ -67,7 +67,7 @@ namespace LuckyNumbers.Planet
         static readonly int ColorB = Shader.PropertyToID("_ColorB");
 
         CargoConfig Config => GameContent.Cargo;
-        bool _spawned, _pickup;
+        bool _spawned, _pickup, _claimedE;
         float _slowUntil, _revealUntil;
         bool _revealAll;
         string _prompt = "";
@@ -159,7 +159,9 @@ namespace LuckyNumbers.Planet
             }
             // E: a relic within reach first; else your landed ship, if you're beside it (flies you back out).
             var board = onFoot && near == null && nearDrop == null ? _fighter.BoardPrompt(me) : "";
-            _firstPerson.InteractElsewhere = near != null || nearDrop != null || board != "";   // E's for that, not the gun
+            // E's for that, not the gun; let go only if it was ours (a Defend job's beacon claims it too).
+            if (near != null || nearDrop != null || board != "") { _firstPerson.InteractElsewhere = true; _claimedE = true; }
+            else if (_claimedE) { _firstPerson.InteractElsewhere = false; _claimedE = false; }
             if (_pickup && near != null) Take(near);
             else if (_pickup && nearDrop != null) PickUp(nearDrop);
             else if (_pickup && board != "") _fighter.Board();
@@ -377,7 +379,7 @@ namespace LuckyNumbers.Planet
         void Warp(string to)
         {
             if (!_spawned || !_firstPerson.Active) return;
-            if (to is "find" or "standoff" || to?.StartsWith("monster") == true) return;   // CombatPresenter's: spawns / aims where you stand
+            if (to is "find" or "standoff" or "defend" || to?.StartsWith("monster") == true || to?.StartsWith("defend:") == true) return;   // CombatPresenter's
             var me = _player.Body.transform.position;
             Vector3? target = null;
             var best = float.MaxValue;

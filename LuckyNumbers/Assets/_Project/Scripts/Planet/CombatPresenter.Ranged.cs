@@ -10,7 +10,9 @@ namespace LuckyNumbers.Planet
     /// glowing in its hand, the launch (Ballistic: the low arc to your feet, leading you a little), the flask's flight
     /// (Flasks) and the splash's roll: within splash_radius of where it bursts, d20 + its attack (+ direct_bonus if it
     /// struck you) against your armour, damage as a bite's (Stamina, then HP), published as a "flask" CombatRoll.
-    /// It flies slowly: step aside and it bursts clear of you.
+    /// It flies slowly: step aside and it bursts clear of you. A horde thrower after the beacon (MonsterMark.OnBeacon)
+    /// lobs at the beacon's foot instead, and a splash within reach of the beacon rolls against it (CombatPresenter.Defend);
+    /// a splash can catch you both.
     ///
     /// Dev (the page's inspector): "monster:&lt;id&gt;:ranged" drops that monster as a thrower (its own ranged, or
     /// <see cref="DevRanged"/>), "monster:&lt;id&gt;:ranged:N" N of them in a ring round you; "monster:heal" fills your HP and Stamina.
@@ -79,16 +81,20 @@ namespace LuckyNumbers.Planet
             return m.Position + Quaternion.Euler(0f, m.Heading, 0f) * new Vector3(size.x * 0.3f, size.y * 0.35f, size.z * 0.5f + 0.25f);
         }
 
-        /// <summary>Nothing solid between its hand and your eyes (another monster in the way counts).</summary>
+        /// <summary>Nothing solid between its hand and your eyes, or the beacon's middle if that's its target (another monster in the way counts).</summary>
         bool CanSee(Monster m)
         {
             var from = Hand(m);
-            var to = _player.Camera.transform.position - from;
+            var beacon = m.Brain.OnBeacon && _beacon != null;
+            var to = (beacon ? BeaconMiddle : _player.Camera.transform.position) - from;
             var d = to.magnitude;
-            if (d >= 0.01f && Physics.Raycast(from, to / d, out var hit, d, ~0, QueryTriggerInteraction.Ignore) &&
-                !hit.collider.transform.IsChildOf(_player.Body.transform)) return false;
+            if (d >= 0.01f && Physics.Raycast(from, to / d, out var hit, d, ~0, QueryTriggerInteraction.Ignore) && !IsTarget(m, hit.collider)) return false;
             return ClearArc(m);
         }
+
+        /// <summary>`c` is (part of) what `m` is throwing at: your body, or the beacon.</summary>
+        bool IsTarget(Monster m, Collider c) =>
+            m.Brain.OnBeacon && _beacon != null ? c.transform.IsChildOf(_beacon) : c.transform.IsChildOf(_player.Body.transform);
 
         /// <summary>
         /// The throw it would make now (no lead) gets to you: the arc's chords (<see cref="ArcChecks"/> of them) hit
@@ -108,20 +114,29 @@ namespace LuckyNumbers.Planet
                 if (len > 1e-3f && Physics.Raycast(prev, seg / len, out var hit, len, ~0, QueryTriggerInteraction.Ignore))
                 {
                     if (hit.collider.transform.IsChildOf(m.View.transform)) { prev = next; continue; }   // its own body
-                    return hit.collider.transform.IsChildOf(_player.Body.transform) || FromYou(hit.point) <= math.max(0.3f, m.Ranged.SplashRadius);
+                    var off = m.Brain.OnBeacon && _beacon != null ? FromBeacon(hit.point) : FromYou(hit.point);
+                    return IsTarget(m, hit.collider) || off <= math.max(0.3f, m.Ranged.SplashRadius);
                 }
                 prev = next;
             }
             return true;
         }
 
-        /// <summary>The throw at you: from its hand, the low lob to your feet (leading you by `lead` if asked).</summary>
+        /// <summary>The throw at you: from its hand, the low lob to your feet (leading you by `lead` if asked); at the beacon, its foot.</summary>
         void Aim(Monster m, bool lead, out Vector3 hand, out Vector3 velocity, out float gravity, out float time)
         {
             var r = m.Ranged;
             hand = Hand(m);
             gravity = r.Gravity > 0f ? r.Gravity : 9.81f;
             var speed = math.max(1f, r.Speed);
+            if (m.Brain.OnBeacon && _beacon != null)
+            {
+                // The side of the beacon facing it, a little up: it bursts against the pillar.
+                var side = _beaconAt + Vector3.ProjectOnPlane(m.Position - _beaconAt, Vector3.up).normalized * (_beaconRadius * 0.8f);
+                Ballistic.SolveLeading(hand, side + Vector3.up * 0.4f, float3.zero, 0f, speed, gravity, out var at, out time, LobAngle);
+                velocity = at;
+                return;
+            }
             Ballistic.SolveLeading(hand, Feet() + Vector3.up * 0.3f, lead ? (float3)_player.Body.velocity : float3.zero,
                                    lead ? math.saturate(r.Lead) : 0f, speed, gravity, out var v, out time, LobAngle);
             velocity = v;
@@ -176,7 +191,7 @@ namespace LuckyNumbers.Planet
             var r = m.Ranged;
             Aim(m, true, out var hand, out var velocity, out var gravity, out var time);
             _flasks.Throw(hand, velocity, gravity, Tint(r), 0.2f, math.max(0.3f, r.SplashRadius), m.View.transform, m);
-            if (_throwLogs++ < 6)
+            if (_throwLogs++ < 6 && !m.Horde)
             {
                 var short_ = Vector3.Distance(hand, Feet()) > Ballistic.Reach(math.max(1f, r.Speed), gravity);
                 Debug.Log($"[Combat] {m.Type.Name} throws a flask: {Vector3.Distance(hand, Feet()):0.0} m, {time:0.00} s in the air" +
@@ -205,11 +220,12 @@ namespace LuckyNumbers.Planet
         {
             if (_down || tag is not Monster m || m.Ranged == null) return;
             var r = m.Ranged;
+            SplashBeacon(m, point, what);   // whoever it was thrown at: the beacon in its splash takes it too
             var off = FromYou(point);
             var radius = math.max(0.3f, r.SplashRadius);
             if (!direct && off > radius)
             {
-                Debug.Log($"[Combat] {m.Type.Name}'s flask bursts on {(what != null ? what.name : "?")} {off:0.0} m from you: clear (splash {radius:0.0} m)");
+                if (!m.Horde) Debug.Log($"[Combat] {m.Type.Name}'s flask bursts on {(what != null ? what.name : "?")} {off:0.0} m from you: clear (splash {radius:0.0} m)");
                 return;
             }
             var bonus = r.Attack + (direct ? r.DirectBonus : 0);
