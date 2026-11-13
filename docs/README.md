@@ -9,5 +9,6 @@
 - [proto.md](proto.md): proto schema, content files, C# code generation
 - [items.md](items.md): items, relics, weapons, equipment (design)
 - [flight-school.md](flight-school.md): test-flying the ships (station console, `?ln-flight`)
+- [ambience.md](ambience.md): ambient motion: motes, wreck sparks, cloud shadows, fliers, lantern flicker
 - [dogfight.md](dogfight.md): space combat, satellite jobs, memory restore, debt (`?ln-dogfight`)
 - Decisions: [0001 WebGPU + WebGL 2 fallback](decisions/0001-webgpu-with-webgl2-fallback.md), [0002 CHANGELOG releases](decisions/0002-changelog-driven-releases.md)

@@ -44,6 +44,7 @@ content/space/looks/disks/*.txtpb                library: dust disk presets (big
 content/space/generators/default.txtpb           library: seed -> solar system rules and palettes
 content/universes.txtpb                          the universes (home; the Emberdeep, with holds): each names its generator;
                                                  UniverseState (saved per slot) picks one, ?ln-universe=<id> on the web
+content/ambience/*.txtpb                         library: ambient motion (motes, clouds, fliers, lantern flicker), per universe and the holds
 content/space/grounds/*.txtpb                    library: a universe's walking terrain (GroundProfile: hills, terraces, ridges)
 content/hands/rig.txtpb                          library: first-person arms bone map (IK chains, fingers, poses)
 content/hands/poses/*.txtpb                      library: finger poses (curl per joint, spread, fidget)

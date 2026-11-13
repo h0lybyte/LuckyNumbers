@@ -18,7 +18,8 @@
         "Unity.Collections",
         "LuckyNumbers.Intro",
         "LuckyNumbers.Hands",
-        "LuckyNumbers.Cargo"
+        "LuckyNumbers.Cargo",
+        "LuckyNumbers.Rendering"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

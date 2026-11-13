@@ -4,6 +4,8 @@
 // Far ring (GroundView): _Sink lowers vertices inside the square of detailed chunks (_NearCentre = centre xz,
 // half-size, blend band), so the coarse horizon mesh never pokes through them; past _HazeHorizon the ground
 // is all atmosphere, so the ring's edge never shows.
+// Cloud shadows (globals _LnWind, _LnClouds; Planet/AmbiencePresenter, docs/ambience.md): slow fBm blobs travelling
+// with the wind take some of the sunlight. Per vertex (clouds are far bigger than the ~1.5 m grid): no pixel cost.
 Shader "LuckyNumbers/Ground"
 {
     Properties
@@ -33,6 +35,8 @@ Shader "LuckyNumbers/Ground"
             #include "Include/Noise.hlsl"
 
             float4 _LnSunPosition, _LnSunColor; // globals
+            float4 _LnWind;     // global: xy wind m/s, z cloud scale (m), w cloud shadow (0 = none)
+            float4 _LnClouds;   // global: x cover, y edge softness
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _PlanetColor, _AtmosphereColor, _NoiseOffset;
@@ -41,7 +45,7 @@ Shader "LuckyNumbers/Ground"
             CBUFFER_END
 
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; };
-            struct Varyings { float4 positionCS : SV_POSITION; float3 positionWS : TEXCOORD0; float3 normalWS : TEXCOORD1; };
+            struct Varyings { float4 positionCS : SV_POSITION; float3 positionWS : TEXCOORD0; float3 normalWS : TEXCOORD1; float sunlit : TEXCOORD2; };
 
             Varyings vert(Attributes v)
             {
@@ -54,6 +58,15 @@ Shader "LuckyNumbers/Ground"
                 }
                 o.positionCS = TransformWorldToHClip(o.positionWS);
                 o.normalWS = TransformObjectToWorldNormal(v.normalOS);
+                o.sunlit = 1.0;
+                if (_LnWind.w > 0.0)
+                {
+                    float2 q = (o.positionWS.xz - _LnWind.xy * _Time.y) / max(_LnWind.z, 1.0);
+                    float n = saturate(ln_fbm(q, 3, 1.0, 0.5, 2.0) * 0.38 + 0.5);
+                    float soft = max(_LnClouds.y, 0.02) * 0.5;
+                    float edge = 1.0 - _LnClouds.x;
+                    o.sunlit = 1.0 - _LnWind.w * smoothstep(edge - soft, edge + soft, n);
+                }
                 return o;
             }
 
@@ -73,7 +86,7 @@ Shader "LuckyNumbers/Ground"
 
                 float diffuse = saturate(dot(n, l));
                 float3 ambient = _AtmosphereColor.rgb * 0.28 + 0.04;                                 // sky light
-                float3 color = albedo * (sun * diffuse * 0.95 + ambient);
+                float3 color = albedo * (sun * diffuse * 0.95 * i.sunlit + ambient);
 
                 float dist = distance(GetCameraPositionWS(), i.positionWS);
                 float haze = _Haze * saturate(dist / max(_HazeDistance, 1.0));
