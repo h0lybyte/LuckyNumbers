@@ -452,5 +452,113 @@ namespace LuckyNumbers.Tests
             MonsterBrain.Fire(ref killed, MonsterCue.Killed);
             Assert.IsFalse(killed.Threat);
         }
+
+        // ---- a Defend job's horde -----------------------------------------------------------------------------
+
+        static MonsterSenses Horde(float distance, bool onFoot = true, bool ranged = false)
+        {
+            var s = ranged ? Thrower(distance, onFoot: onFoot) : Senses(distance, onFoot);
+            s.Horde = true;
+            return s;
+        }
+
+        [Test]
+        public void Horde_SpawnsChasingTheBeacon()
+        {
+            var b = MonsterBrain.Horde();
+            Assert.AreEqual(MonsterState.Chase, b.State);
+            Assert.IsTrue(b.OnBeacon);
+            Assert.IsTrue(b.Threat);
+            Assert.IsTrue(b.Hunting);
+        }
+
+        [Test]
+        public void TargetBeacon_TheNearer_WithAMarginBeforeItSwitches()
+        {
+            var b = MonsterBrain.Horde();
+            Assert.IsFalse(MonsterBrain.TargetBeacon(ref b, 10f, true, 30f), "you're far nearer: you");
+            b = MonsterBrain.Horde();
+            Assert.IsTrue(MonsterBrain.TargetBeacon(ref b, 10f, true, 11f), "you're nearer, but not by the margin: keeps the beacon");
+            Assert.IsTrue(b.OnBeacon);
+            Assert.IsFalse(MonsterBrain.TargetBeacon(ref b, 10f, true, 10f + MonsterBrain.SwitchMargin + 0.5f), "you're nearer by more than the margin: you");
+            Assert.IsFalse(b.OnBeacon);
+            Assert.IsFalse(MonsterBrain.TargetBeacon(ref b, 10f, true, 9f), "the beacon's a little nearer: keeps on at you");
+            Assert.IsTrue(MonsterBrain.TargetBeacon(ref b, 10f, true, 10f - MonsterBrain.SwitchMargin - 0.5f), "the beacon's nearer by the margin: back to it");
+        }
+
+        [Test]
+        public void TargetBeacon_YouInYourShip_OnlyTheBeacon()
+        {
+            var b = MonsterBrain.Horde();
+            Assert.IsFalse(MonsterBrain.TargetBeacon(ref b, 1f, true, 30f));
+            Assert.IsTrue(MonsterBrain.TargetBeacon(ref b, 1f, false, 30f), "you're not about: the beacon, however near you are");
+            Assert.IsTrue(b.OnBeacon);
+        }
+
+        [Test]
+        public void TargetBeacon_KeepsItsOtherMarks()
+        {
+            var b = MonsterBrain.Horde();
+            b.Marks |= MonsterMark.Winding;
+            MonsterBrain.TargetBeacon(ref b, 1f, true, 30f);
+            Assert.IsTrue(b.Winding, "switching targets doesn't break a wind-up");
+            MonsterBrain.TargetBeacon(ref b, 30f, true, 1f);
+            Assert.IsTrue(b.Winding);
+            Assert.IsTrue(b.OnBeacon);
+        }
+
+        [Test]
+        public void Horde_KeepsComing_WithYouInYourShip()
+        {
+            var b = MonsterBrain.Horde();
+            Assert.AreEqual(MonsterAct.Step, MonsterBrain.Tick(ref b, Horde(8f, onFoot: false)), "after the beacon: on foot or not");
+            Assert.AreEqual(MonsterAct.Bite, MonsterBrain.Tick(ref b, Horde(Bitten, onFoot: false)));
+            Assert.AreEqual(MonsterState.Chase, b.State);
+
+            var plain = Chasing();
+            Assert.AreEqual(MonsterAct.Amble, MonsterBrain.Tick(ref plain, Senses(8f, onFoot: false)), "not a horde one: it ambles");
+        }
+
+        [Test]
+        public void Horde_NeverLosesItsTarget()
+        {
+            var b = MonsterBrain.Horde();
+            Assert.AreEqual(MonsterAct.Step, MonsterBrain.Tick(ref b, Horde(Sight * 3f + 5f)));
+            Assert.AreEqual(MonsterState.Chase, b.State, "a horde monster from far off: still coming");
+
+            var plain = Chasing();
+            MonsterBrain.Tick(ref plain, Senses(Sight * 3f + 5f));
+            Assert.AreEqual(MonsterState.Wander, plain.State);
+        }
+
+        [Test]
+        public void Horde_ThrowerKeepsItsBand_AndThrowsWithYouInYourShip()
+        {
+            var b = MonsterBrain.Horde();
+            Assert.AreEqual(MonsterAct.Step, MonsterBrain.Tick(ref b, Horde(Max + 3f, onFoot: false, ranged: true)), "past the band: closes in");
+            Assert.AreEqual(MonsterAct.Retreat, MonsterBrain.Tick(ref b, Horde(Min * 0.5f, onFoot: false, ranged: true)), "well inside it: backs off");
+            var s = Horde((Min + Max) * 0.5f, onFoot: false, ranged: true);
+            Assert.IsTrue(b.WantsSight(s), "a throw's ready at the beacon: it asks for the line");
+            Assert.AreEqual(MonsterAct.Cast, MonsterBrain.Tick(ref b, s));
+            var act = MonsterAct.Cast;
+            for (var t = 0f; t <= CastTime + Dt; t += Dt)
+            {
+                act = MonsterBrain.Tick(ref b, s);
+                if (act == MonsterAct.Throw) break;
+            }
+            Assert.AreEqual(MonsterAct.Throw, act, "the wind-up runs to its throw, at the beacon, with you in your ship");
+        }
+
+        [Test]
+        public void Horde_FleesWhenScattered()
+        {
+            var b = MonsterBrain.Horde();
+            MonsterBrain.Fire(ref b, MonsterCue.Scared);
+            Assert.AreEqual(MonsterState.Flee, b.State);
+            Assert.IsFalse(b.Threat, "scattered: not one of the horde left");
+            Assert.AreEqual(MonsterAct.Run, MonsterBrain.Tick(ref b, Horde(5f)));
+            while (!b.Dead) MonsterBrain.Tick(ref b, Horde(5f));
+            Assert.IsTrue(b.Dead, "and gone");
+        }
     }
 }

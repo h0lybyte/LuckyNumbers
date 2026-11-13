@@ -31,6 +31,11 @@ namespace LuckyNumbers.Model
         /// Out round the station (GameScene.Orbit): upload a satellite's data while rogue ships attack (content/dogfight.txtpb).
         /// </summary>
         Uplink = 4,
+        /// <summary>
+        /// On foot at the wreck: plant a beacon and hold it while it charges, wave after wave of monsters coming for it
+        /// (content/combat.txtpb defend). `target` / `target_per_danger`: the waves; the beacon destroyed fails the job.
+        /// </summary>
+        Defend = 5,
     }
 
     /// <summary>
@@ -101,7 +106,7 @@ namespace LuckyNumbers.Model
         public int DangerMin { get; set; }
         public int DangerMax { get; set; }
         /// <summary>
-        /// Clear: monsters to kill, base plus per danger.
+        /// Clear: monsters to kill, base plus per danger. Defend: waves to hold the beacon through.
         /// </summary>
         public int Target { get; set; }
         public int TargetPerDanger { get; set; }
@@ -148,7 +153,8 @@ namespace LuckyNumbers.Model
     /// <summary>
     /// The job you're on (app-wide, mirrored to the page). `body` is the planet's id in the universe, `planet` its name;
     /// `seed` varies the site (terrain, wreck, cargo). `target` names the relic to retrieve, or `count` / `goal` the
-    /// kills so far for Clear. `done` once its goal is met (paid when you get back to the station).
+    /// kills so far for Clear (the waves held for Defend). `done` once its goal is met (paid when you get back to the
+    /// station); `failed` once it can't be any more (Defend: the beacon destroyed), so it isn't paid either.
     /// </summary>
     public sealed class PlayerJob : IDisposable
     {
@@ -175,6 +181,7 @@ namespace LuckyNumbers.Model
         /// them so the board doesn't send you after the same piece twice running (Jobs.Roll).
         /// </summary>
         public readonly ObservableList<string> RecentTargets = new ObservableList<string>();
+        public readonly ReactiveProperty<bool> Failed = new ReactiveProperty<bool>();
 
         public void Dispose()
         {
@@ -193,6 +200,7 @@ namespace LuckyNumbers.Model
             Goal.Dispose();
             Done.Dispose();
             Completed.Dispose();
+            Failed.Dispose();
         }
     }
 }

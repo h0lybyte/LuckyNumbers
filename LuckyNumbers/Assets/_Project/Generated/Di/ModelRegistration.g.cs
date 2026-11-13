@@ -76,6 +76,7 @@ namespace LuckyNumbers.Model
             builder.Register<LoadingState>(Lifetime.Singleton);
             builder.Register<RangeState>(Lifetime.Singleton);
             builder.Register<StationState>(Lifetime.Singleton);
+            builder.Register<DefendState>(Lifetime.Singleton);
             builder.Register<CombatState>(Lifetime.Singleton);
             builder.Register<CameraHandoff>(Lifetime.Singleton);
             builder.Register<DogfightState>(Lifetime.Singleton);

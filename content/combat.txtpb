@@ -91,6 +91,29 @@ monsters {
   }
 }
 
+# A Defend job's horde (JobKind.DEFEND): plant the beacon by the wreck, hold it while it charges, wave after wave.
+# Danger 3: a 480 hp beacon; waves of 30, 39, 51, 66... (never more than 60 on the ground at once, 25 on the low-end
+# tier: the rest queue), from 30 m out, one every 0.15 s. Rattleframes and Aberrations rush it; Plague Arcanists
+# (from wave 2) hang back in their band and lob flasks at whichever of you is nearer.
+defend {
+  waves: 3 waves_per_danger: 0.5      # a dev defend; a job says its own (content/jobs.txtpb target)
+  beacon_hp: 300 beacon_hp_per_danger: 60 beacon_armor: 13
+  charge_seconds: 35 rest_seconds: 8
+  budget: 18 budget_per_danger: 4 budget_growth: 1.3
+  max_alive: 60 max_alive_low_end: 25
+  spawn_interval: 0.15 spawn_radius: 30 spawn_jitter: 4
+  mix { monster: "skeleton" weight: 5 wave_min: 1 }
+  mix { monster: "aberration" weight: 2 weight_per_wave: 0.6 wave_min: 1 }
+  mix { monster: "arcanist" weight: 0.6 weight_per_wave: 0.4 wave_min: 2 }
+  xp: 400
+  beacon_offset: 9 beacon_size { x: 0.8 y: 2.6 z: 0.8 } plant_distance: 2.6
+  plant_prompt: "E: plant the beacon"
+  planted_text: "Beacon's planted and charging. Here they come: keep them off it."
+  wave_text: "Wave {wave} of {waves}. The beacon's charging."
+  won_text: "Beacon's fully charged. They're scattering. Job done: fly back to the station."
+  lost_text: "The beacon's gone. Nothing to hold any more: get out of here."
+}
+
 rescue {
   fee: 250
   downed_text: "You're down. A rescue drone is on its way..."

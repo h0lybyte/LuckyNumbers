@@ -82,7 +82,7 @@ namespace LuckyNumbers.Core
         [Serializable]
         sealed class JobSave
         {
-            public bool active, done;
+            public bool active, done, failed;
             public int kind, danger, pay, count, goal, completed;
             public string title, objective, client, body, planet, target;
             public uint seed;
@@ -349,7 +349,7 @@ namespace LuckyNumbers.Core
 
         JobSave CaptureJob() => new()
         {
-            active = _job.Active.Value, done = _job.Done.Value, kind = (int)_job.Kind.Value, danger = _job.Danger.Value,
+            active = _job.Active.Value, done = _job.Done.Value, failed = _job.Failed.Value, kind = (int)_job.Kind.Value, danger = _job.Danger.Value,
             pay = _job.Pay.Value, count = _job.Count.Value, goal = _job.Goal.Value, completed = _job.Completed.Value,
             title = _job.Title.Value, objective = _job.Objective.Value, client = _job.Client.Value, body = _job.Body.Value,
             planet = _job.Planet.Value, target = _job.Target.Value, seed = _job.Seed.Value,
@@ -372,6 +372,7 @@ namespace LuckyNumbers.Core
             _job.Count.Value = j.count;
             _job.Goal.Value = j.goal;
             _job.Done.Value = j.done;
+            _job.Failed.Value = j.failed;
             _job.Completed.Value = j.completed;
             _job.RecentTargets.Clear();
             if (j.recent != null) foreach (var r in j.recent) if (!string.IsNullOrEmpty(r)) _job.RecentTargets.Add(r);
