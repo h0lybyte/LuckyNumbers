@@ -1,0 +1,73 @@
+# proto-file: luckynumbers/v1/ambience.proto
+# proto-message: luckynumbers.v1.Ambience
+# The Emberdeep: forge-worlds under dim red suns. Grey ash sifting down, embers carried up on hot wind, smoke-shadow
+# rolling over the terraces, great ash kites wheeling over the quarries.
+
+# Ash: grey flakes falling slowly, blown sideways.
+motes {
+  count: 200
+  low_end_share: 0.4
+  box { x: 24 y: 12 z: 24 }
+  size: 0.06
+  color { r: 0.55 g: 0.5 b: 0.48 a: 0.55 }
+  drift { x: 0.9 y: -0.25 z: 0.4 }
+  flutter: 0.45
+  flutter_speed: 0.9
+  glow: 0
+  twinkle: 0.1
+  gust: 2
+}
+
+# Embers: a scatter of glowing sparks rising on the hot wind.
+motes {
+  count: 70
+  low_end_share: 0.4
+  box { x: 28 y: 14 z: 28 }
+  size: 0.07
+  color { r: 2.6 g: 0.75 b: 0.18 a: 0.9 }
+  drift { x: 1.1 y: 0.45 z: 0.5 }
+  flutter: 0.7
+  flutter_speed: 1.8
+  glow: 1
+  twinkle: 0.75
+  gust: 2.4
+}
+
+# The wreck burns hotter here: a thicker plume of sparks.
+wreck {
+  count: 70
+  low_end_share: 0.5
+  box { x: 20 y: 18 z: 20 }
+  size: 0.1
+  color { r: 2.8 g: 0.8 b: 0.2 a: 0.95 }
+  drift { x: 0.7 y: 1.8 z: 0.3 }
+  flutter: 0.7
+  flutter_speed: 2.4
+  glow: 1
+  twinkle: 0.8
+  gust: 1.4
+}
+
+# Smoke drifting between the sun and the land: patchier, darker, faster than home's clouds.
+clouds {
+  shadow: 0.55
+  scale: 110
+  cover: 0.5
+  wind { x: 6 y: 2.5 }
+  softness: 0.25
+}
+
+# Ash kites: big, slow, few.
+flock {
+  birds: 5
+  flocks: 2
+  distance_min: 140
+  distance_max: 300
+  height_min: 55
+  height_max: 110
+  circle_radius: 45
+  speed: 8
+  wingspan: 5
+  flap_speed: 1.6
+  color { r: 0.07 g: 0.035 b: 0.03 a: 1 }
+}

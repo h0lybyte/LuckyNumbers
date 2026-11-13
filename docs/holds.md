@@ -20,7 +20,8 @@ Structures on and under dwarven worlds: a cell grid, meshed into chunks, skinned
 - One mesh per `chunk_cells` x `chunk_cells` column of cells (all levels), one material for everything.
 - Faces: floor, ceiling (unless OpenAbove), and a wall wherever a walkable cell meets Solid; door frames in trim;
   pillars as boxes. Texture slice per face from the cell's palette (`HoldPalettes.Resolve`).
-- Vertex: position, normal, uv (u, v, slice) and colour (baked lantern light + ambient).
+- Vertex: position, normal, uv (u, v, slice) and colour (baked lantern light + ambient). The shader flickers the light
+  above ambient per vertex (`ambience_ref`, docs/ambience.md).
 - Code: `HoldMesher.Build(grid, palettes, config)` (or `Schedule(...)` then `Complete()`): one Burst job per chunk,
   then Mesh.MeshData. Face rules (`HoldRules`: Linked, HasWall, HasFloor, HasCeiling) are shared with anything that
   must agree with the mesh. Vertex stream (40 bytes): Position float3, Normal float3, Color UNorm8x4 (light rgb, a 1),

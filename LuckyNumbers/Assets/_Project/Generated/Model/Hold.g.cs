@@ -70,6 +70,10 @@ namespace LuckyNumbers.Model
         /// Depth seals, drop shafts, collapses, falling (hold_depth.proto).
         /// </summary>
         public DepthRules Depth { get; set; }
+        /// <summary>
+        /// Ambient motion underground: dust motes round you, lantern flicker (docs/ambience.md).
+        /// </summary>
+        public Ambience Ambience { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public HoldConfig Clone() => (HoldConfig)MemberwiseClone();

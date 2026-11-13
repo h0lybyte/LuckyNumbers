@@ -1,0 +1,57 @@
+# proto-file: luckynumbers/v1/ambience.proto
+# proto-message: luckynumbers.v1.Ambience
+# Home worlds: a breeze, pollen and seed fluff drifting past, cloud shadows rolling over the hills, birds wheeling far off.
+
+# Pollen and fluff: sunlit specks in a 24 m box round you, carried on the breeze.
+motes {
+  count: 220
+  low_end_share: 0.4
+  box { x: 24 y: 12 z: 24 }
+  size: 0.05
+  color { r: 1 g: 0.96 b: 0.82 a: 0.6 }
+  drift { x: 0.7 y: 0.04 z: 0.3 }
+  flutter: 0.5
+  flutter_speed: 0.8
+  glow: 0
+  twinkle: 0.3
+  gust: 1.6
+}
+
+# The wreck still smoulders: a thin stream of sparks off the hull.
+wreck {
+  count: 40
+  low_end_share: 0.5
+  box { x: 18 y: 14 z: 18 }
+  size: 0.09
+  color { r: 2.2 g: 0.9 b: 0.3 a: 0.9 }
+  drift { x: 0.5 y: 1.4 z: 0.2 }
+  flutter: 0.6
+  flutter_speed: 2.2
+  glow: 1
+  twinkle: 0.7
+  gust: 1
+}
+
+# Big, soft cloud shadows sliding over the land on a steady breeze.
+clouds {
+  shadow: 0.45
+  scale: 140
+  cover: 0.45
+  wind { x: 4 y: 1.6 }
+  softness: 0.35
+}
+
+# A few birds circling high and far off.
+flock {
+  birds: 10
+  flocks: 3
+  distance_min: 110
+  distance_max: 260
+  height_min: 40
+  height_max: 85
+  circle_radius: 26
+  speed: 10
+  wingspan: 2.6
+  flap_speed: 4.5
+  color { r: 0.08 g: 0.08 b: 0.09 a: 1 }
+}
