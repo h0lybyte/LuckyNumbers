@@ -46,7 +46,9 @@ namespace LuckyNumbers.Planet
         int _skin;
         View _camera;
         readonly HoverFlight _flight = new();
-        Vector3 _position, _camPos;
+        readonly ChaseCamera _chase = new();   // the cameras' spring, lead, roll and rumble (landing.feel)
+        readonly ShipSway _sway = new();       // the hull's bank and bob
+        Vector3 _position;
         Quaternion _rotation = Quaternion.identity;
         float _orbit, _fade = 1f, _readoutAt;
         ShipStats _stats = new();
@@ -54,6 +56,7 @@ namespace LuckyNumbers.Planet
         static FlightSchoolScene S => GameContent.School;
         static FlightLanding L => GameContent.Planet.Landing;
         static FlightHover H => L.Hover;
+        static FlightFeel Feel => L.Feel;
         float Length => _freighter ? S.FreighterLength : S.FighterLength;
         float Speed => _freighter ? S.FreighterSpeed : math.max(0.1f, _stats.Speed);
         float Agility => _freighter ? S.FreighterAgility : math.max(0.1f, _stats.Agility);
@@ -109,7 +112,7 @@ namespace LuckyNumbers.Planet
             _curtain.Hold("freighter", _yard.Fit(_view.Wreck));   // its hull from Addressables (M swaps to it)
             ShowShip(false);
             _position = new Vector3(0f, S.StartHeight, 0f);
-            _camPos = _position - Vector3.forward * (Length * S.ChaseDistance) + Vector3.up * (Length * S.ChaseHeight);
+            _chase.Snap(_position - Vector3.forward * (Length * S.ChaseDistance) + Vector3.up * (Length * S.ChaseHeight), Vector3.up);
             _view.FlightCamera.gameObject.SetActive(true);
             Debug.Log($"[School] ready: {_stats.Name} ({SkinName}), {fighter.SkinCount} skins");   // marker for ln.py webshot
         }
@@ -151,7 +154,10 @@ namespace LuckyNumbers.Planet
                 _fade = Mathf.MoveTowards(_fade, _leaving ? 1f : 0f, dt / (_leaving ? 0.5f : 0.8f));
             _view.Fade(_fade);
             if (!_leaving) Fly(dt);
-            _ship.Pose(_position, _flight.Pose);   // the hull rolls (barrel roll); the cameras don't
+            // The hull rolls (barrel roll), banks into turns and bobs when slow (low over the deck, less); the cameras don't.
+            _sway.Step(_rotation, _flight.Velocity, _flight.Spin, H.StrafeSpeed * Speed, HoverFlight.TopSpeed(Speed), Length,
+                       math.saturate((_position.y - Floor) / Length), dt, Feel);
+            _ship.Pose(_position + _sway.Offset, _flight.PoseWith(_sway.Tilt));
             Aim(dt);
 
             if (Time.time >= _readoutAt)
@@ -195,6 +201,7 @@ namespace LuckyNumbers.Planet
             var right = _rotation * Vector3.right;
             Vector3 want, at = _position;
             var camUp = Vector3.up;
+            var chase = _camera == View.Chase;
             switch (_camera)
             {
                 case View.Side:
@@ -220,12 +227,24 @@ namespace LuckyNumbers.Planet
                     break;
                 }
             }
-            _camPos = Vector3.Lerp(_camPos, want, 1f - math.exp(-6f * dt));
-            if (_camPos.y < 1.5f) _camPos.y = 1.5f;   // the deck is opaque: stay above it
-            var look = at - _camPos;
+            var camPos = _chase.Follow(want, dt, Feel);
+            if (camPos.y < 1.5f) camPos.y = 1.5f;   // the deck is opaque: stay above it
+            _chase.Place(camPos);
+            var top = HoverFlight.TopSpeed(Speed);
+            _chase.Fov(_view.FlightCamera, chase ? _flight.Velocity.magnitude / top : 0f, 0f, dt, Feel);
+            if (chase)
+            {
+                // Level, taking a share of the ship's roll (faded out past its side, where there's no one way to tilt);
+                // led into turns, rumbling under boost and hard thrust.
+                var share = math.saturate(Feel?.RollFollow ?? 0f) * math.saturate(Vector3.Dot(up, Vector3.up) * 2f);
+                _chase.Aim(cam, at, _rotation, _flight.Spin, H.TurnRate * Agility, Vector3.Slerp(Vector3.up, up, share), l,
+                           _leaving ? 0f : _flight.Rumble, dt, Feel);
+                return;
+            }
+            var look = at - camPos;
             if (look.sqrMagnitude < 1e-4f) look = fwd;
             if (Mathf.Abs(Vector3.Dot(look.normalized, camUp)) > 0.98f) camUp = fwd;
-            cam.SetPositionAndRotation(_camPos, Quaternion.LookRotation(look, camUp));
+            cam.SetPositionAndRotation(camPos, Quaternion.LookRotation(look, camUp));
         }
 
         async UniTaskVoid Leave()

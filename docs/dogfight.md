@@ -177,6 +177,9 @@ Ships are solid against each other and against the station's hull. All numbers a
 - **Dust** (`Station/SpaceDust.cs`): `dust` motes hang still round you and streak along your velocity, so speed and
   drift read in open space. They wrap round a box about you and shrink near its edge, so none pops in. They're drawn
   in one instanced draw.
+- **The camera and the hull** (spring follow, lead into turns, roll lag, engine rumble, speed FOV, the hull's bank
+  and bob) and **space round the station** (traffic, debris, blinking lights, the station's slow turn, parallax):
+  see [flight-feel.md](flight-feel.md).
 
 ## Satellite uplink job
 
@@ -254,6 +257,7 @@ behind 1 armour, so it lasts about 4 seconds at full accuracy, or about 8 at 50%
 | `Station/SpaceNav.cs` | routing round the station, hull avoidance, line of sight |
 | `Station/Impacts.cs` | crashes: damage by closing speed, bounce, pushing out of the hull |
 | `Station/SpaceDust.cs` | dust motes round your ship |
+| `Station/OrbitScenery.cs` | traffic, debris, nav lights, radar mast ([flight-feel.md](flight-feel.md)) |
 | `Station/Steering.cs` | steering behaviours: arrive, lead, orbit, closest-approach avoidance |
 | `Station/RogueFlight.cs` | the rogues' flight model: bank and pull, eased rates, energy |
 | `Station/OrbitPresenter.cs` | guns, the satellite, the memory restore |

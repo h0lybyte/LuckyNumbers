@@ -3624,6 +3624,21 @@ namespace LuckyNumbers.Model
             ShakeDecay = 1.4f,
             FovKick = 7.0f,
             Dust = 140,
+            Life = new OrbitLife
+            {
+                Traffic = 2,
+                TrafficDistance = 14.0f,
+                TrafficSpeed = 90.0f,
+                TrafficSeconds = 14.0f,
+                Debris = 40,
+                DebrisRadius = 14.0f,
+                DebrisSize = 0.18f,
+                DebrisSpin = 25.0f,
+                BlinkSeconds = 1.6f,
+                Spin = 0.35f,
+                Parallax = 0.04f,
+                RadarSpin = 30.0f,
+            },
         };
 
         /// <summary>From <c>content/planet.txtpb</c>.</summary>
@@ -4626,6 +4641,28 @@ namespace LuckyNumbers.Model
                 Ceiling = 1.6f,
                 TouchHint = "Left stick: thrust and strafe - right stick: aim - Lift / Down - Roll ◀ ▶ - Boost - Brake. Stop over the green pad, hold Down to land.",
                 TouchTakeoffHint = "Lift to rise off the ground - fly anywhere, land with Down - climb above 260 m and press Use to go back to the station",
+                Feel = new FlightFeel
+                {
+                    FollowSeconds = 0.18f,
+                    LookAhead = 0.35f,
+                    LookAheadRate = 4.0f,
+                    RollLag = 8.0f,
+                    RollFollow = 0.3f,
+                    SpeedFov = 5.0f,
+                    RumbleAngle = 0.35f,
+                    RumbleOffset = 0.004f,
+                    RumbleFrequency = 22.0f,
+                    BankPerYaw = 0.18f,
+                    StrafeBank = 10.0f,
+                    MaxBank = 24.0f,
+                    BankRate = 5.0f,
+                    Bob = 0.012f,
+                    BobSeconds = 3.4f,
+                    BobDegrees = 0.8f,
+                    BobSpeed = 0.25f,
+                    ApproachAltitude = 30.0f,
+                    ApproachHeight = 0.35f,
+                },
             },
             TouchHint = "Left stick to move - right stick to look - Run - Jump - Use to pick up, Fire to throw - Map",
             Gate = new SurfaceGate
