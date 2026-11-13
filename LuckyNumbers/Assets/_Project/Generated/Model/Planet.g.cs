@@ -139,6 +139,48 @@ namespace LuckyNumbers.Model
         /// In universes with holds (Universe.holds): the surface gate into the hold, near where you land.
         /// </summary>
         public SurfaceGate Gate { get; set; }
+        /// <summary>
+        /// On-foot movement feel (also the station and holds, which clone these settings).
+        /// Ground acceleration and braking, steering in the air (m/s^2; ground 0 = instant, the old feel), and seconds
+        /// to ease from walk to run speed.
+        /// </summary>
+        public float GroundAccel { get; set; }
+        public float GroundDecel { get; set; }
+        public float AirAccel { get; set; }
+        public float SprintRampSeconds { get; set; }
+        /// <summary>
+        /// One scale on every camera motion below and the head bob (0 = a still camera, 1 = as tuned): for a future
+        /// comfort setting. The arms keep their own sway.
+        /// </summary>
+        public float CameraMotion { get; set; }
+        /// <summary>
+        /// Head bob shape: 0 = smooth (sin^2), 1 = a sharp footfall at each step (|sin|, the old bob).
+        /// </summary>
+        public float BobShape { get; set; }
+        /// <summary>
+        /// Camera roll (degrees): strafing at run speed, turning at 180 deg/s (clamped at twice that), and each step.
+        /// </summary>
+        public float StrafeRollDegrees { get; set; }
+        public float TurnRollDegrees { get; set; }
+        public float StepRollDegrees { get; set; }
+        /// <summary>
+        /// Head dip on a spring: metres per m/s of landing speed (above a light step), at most land_dip_max; a small
+        /// dip as you jump; the spring's frequency (Hz) and damping ratio (under 1 bounces back a little).
+        /// </summary>
+        public float LandDipPerSpeed { get; set; }
+        public float LandDipMax { get; set; }
+        public float JumpDip { get; set; }
+        public float DipSpringHz { get; set; }
+        public float DipDamping { get; set; }
+        /// <summary>
+        /// Breathing when standing (metres of head rise, breaths per second at rest; faster and deeper after a run).
+        /// </summary>
+        public float BreathAmount { get; set; }
+        public float BreathRate { get; set; }
+        /// <summary>
+        /// Field of view widens this much (degrees) at full run.
+        /// </summary>
+        public float SprintFovKick { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public PlanetScene Clone() => (PlanetScene)MemberwiseClone();
