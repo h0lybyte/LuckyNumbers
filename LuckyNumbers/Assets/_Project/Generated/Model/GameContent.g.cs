@@ -1060,6 +1060,7 @@ namespace LuckyNumbers.Model
                     Aggression = 0.7f,
                     EvadeHull = 0.6f,
                     RetreatHull = 0.25f,
+                    Skill = 0.55f,
                 },
                 new RogueShip
                 {
@@ -1106,6 +1107,7 @@ namespace LuckyNumbers.Model
                     AttackSeconds = 4.0f,
                     Aggression = 0.5f,
                     EvadeHull = 0.4f,
+                    Skill = 0.5f,
                 },
                 new RogueShip
                 {
@@ -1151,6 +1153,7 @@ namespace LuckyNumbers.Model
                     AggroRange = 900.0f,
                     AttackSeconds = 6.0f,
                     Aggression = 0.85f,
+                    Skill = 0.7f,
                 },
             },
             Satellite = new Satellite
@@ -1260,6 +1263,16 @@ namespace LuckyNumbers.Model
                     WaveSize = 3,
                 },
             },
+            Collisions = new Collisions
+            {
+                MinSpeed = 10.0f,
+                DamagePerSpeed = 0.35f,
+                Restitution = 0.35f,
+                Scrape = 0.85f,
+                HullSize = 1.5f,
+                Cooldown = 0.4f,
+            },
+            SimRate = 60.0f,
         };
 
         /// <summary>From <c>content/encounters.txtpb</c>.</summary>
@@ -3543,6 +3556,11 @@ namespace LuckyNumbers.Model
             ChaseHeight = 0.42f,
             ReadoutSeconds = 0.15f,
             TouchHint = "Left stick: thrust and strafe - right stick: aim - Lift / Down - Roll ◀ ▶ - Boost - Brake\nFly slowly into the docking beacon at the bay, then Use to dock",
+            ShakeAngle = 2.5f,
+            ShakeOffset = 0.05f,
+            ShakeDecay = 1.4f,
+            FovKick = 7.0f,
+            Dust = 140,
         };
 
         /// <summary>From <c>content/planet.txtpb</c>.</summary>

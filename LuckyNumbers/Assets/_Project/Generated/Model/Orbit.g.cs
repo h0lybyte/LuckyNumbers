@@ -61,6 +61,16 @@ namespace LuckyNumbers.Model
         /// On a touch screen (PointerLock.Touch), in place of the keyboard / mouse line above; empty: that one.
         /// </summary>
         public string TouchHint { get; set; }
+        /// <summary>
+        /// Camera shake (trauma: hits and crashes add to it, it fades at `shake_decay` a second; the shake is trauma
+        /// squared): at most `shake_angle` degrees and `shake_offset` ship lengths. `fov_kick`: degrees the view widens
+        /// at full boost speed. `dust`: motes drifting round you (count), so speed reads in empty space; 0 = none.
+        /// </summary>
+        public float ShakeAngle { get; set; }
+        public float ShakeOffset { get; set; }
+        public float ShakeDecay { get; set; }
+        public float FovKick { get; set; }
+        public int Dust { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public OrbitScene Clone() => (OrbitScene)MemberwiseClone();

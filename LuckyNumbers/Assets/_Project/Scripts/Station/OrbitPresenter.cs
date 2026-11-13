@@ -54,6 +54,10 @@ namespace LuckyNumbers.Station
         readonly ISubscriber<DevWarpRequested> _warps;
         ShipGuns _guns;
         Dogfight _fight;
+        SpaceDust _dust;
+        // Feel: camera trauma (hits and crashes; the shake is its square), the view's own field of view and the boost's
+        // share of it now, and when you last took crash damage off the hull.
+        float _trauma, _baseFov = -1f, _fovBoost, _hullBumpAt = -99f;
         GameObject _rogueTemplate;
         Vector3? _satellite;   // a satellite job's relay
         bool _lockClick, _canFire, _destroyed;
@@ -285,6 +289,8 @@ namespace LuckyNumbers.Station
             if (_fight != null)
             {
                 _fight.Tick(dt, _flight.Position, _flight.Velocity);
+                if (!_destroyed) _flight.Velocity += _fight.TakeKick();   // bounced off a rogue
+                _trauma += _fight.TakeJolt();
                 if (_fight.Destroyed && !_destroyed) Restore().Forget();
             }
             Physics.SyncTransforms();   // the hitboxes where the ships are now, for this frame's bolts
@@ -312,12 +318,24 @@ namespace LuckyNumbers.Station
             }
         }
 
-        /// <summary>The hull is solid: a sphere round the ship is pushed out of every block it's in, losing speed into it.</summary>
+        /// <summary>
+        /// The hull is solid: a sphere round the ship is pushed out of every block it's in and bounces off (Impacts),
+        /// keeping most of its speed along the face. Hit hard enough, it's a crash: damage in a fight (dogfight.txtpb
+        /// collisions), and a jolt either way.
+        /// </summary>
         void KeepOutOfHull()
         {
+            var p = _flight.Position;
             var v = _flight.Velocity;
-            _flight.Position = OutOfHull(_flight.Position, Length * 0.35f, ref v);
+            var k = GameContent.Dogfight?.Collisions;
+            var crash = Impacts.OutOfBoxes(_hull, ref p, ref v, Length * 0.35f, k?.Restitution ?? 0.35f, k?.Scrape ?? 0.85f, out _);
+            _flight.Position = p;
             _flight.Velocity = v;
+            if (crash < 2f || Time.time < _hullBumpAt) return;
+            _hullBumpAt = Time.time + math.max(0.05f, k?.Cooldown ?? 0.4f);
+            var damage = Impacts.Damage(crash, k?.MinSpeed ?? 10f, k?.DamagePerSpeed ?? 0.35f, k?.HullSize ?? 1.5f);
+            if (_fight != null) _fight.Crash(damage, "the station", crash);
+            else _trauma += math.saturate(0.15f + crash / 60f);
         }
 
         /// <summary>`p` pushed out of every hull block by `radius` (along its shallowest side); `v` loses its speed into them.</summary>
@@ -351,7 +369,35 @@ namespace LuckyNumbers.Station
                 _camPos = OutOfHull(_camPos, 2f, ref none);   // the hull is opaque: the camera stays outside it
                 var look = _flight.Position + fwd * Length - _camPos;
                 if (look.sqrMagnitude < 1e-4f) look = fwd;
-                cam.SetPositionAndRotation(_camPos, Quaternion.LookRotation(look, up));
+                var rotation = Quaternion.LookRotation(look, up);
+
+                // Shake: trauma squared, smooth noise (not a jitter), fading at shake_decay a second.
+                _trauma = math.saturate(_trauma);
+                _trauma = math.max(0f, _trauma - math.max(0.1f, O.ShakeDecay is > 0f ? O.ShakeDecay : 1.4f) * dt);
+                var shake = _trauma * _trauma;
+                var shakePos = Vector3.zero;
+                if (shake > 1e-4f)
+                {
+                    var t = Time.time * 18f;
+                    float N(float seed) => Mathf.PerlinNoise(seed, t) * 2f - 1f;
+                    var angle = math.max(0f, O.ShakeAngle);   // 0: no shake
+                    rotation *= Quaternion.Euler(N(1.3f) * angle * shake, N(7.9f) * angle * shake, N(4.1f) * angle * 0.6f * shake);
+                    shakePos = rotation * new Vector3(N(11.7f), N(15.2f), 0f) * (Length * math.max(0f, O.ShakeOffset) * shake);
+                }
+                cam.SetPositionAndRotation(_camPos + shakePos, rotation);
+
+                // Boost widens the view with the speed past cruise (eased, so it breathes rather than jumps).
+                var flightCam = _view.FlightCamera;
+                if (_baseFov < 0f) _baseFov = flightCam.fieldOfView;
+                var top = HoverFlight.TopSpeed(math.max(0.1f, _stats.Speed));
+                var boost = math.max(1.01f, GameContent.Planet?.Landing?.Hover?.Boost ?? 1.5f);
+                var past = math.saturate((_flight.Velocity.magnitude - top) / (top * (boost - 1f)));
+                _fovBoost = Mathf.Lerp(_fovBoost, past, 1f - math.exp(-(past > _fovBoost ? 7f : 3.5f) * dt));
+                flightCam.fieldOfView = _baseFov + O.FovKick * _fovBoost;
+
+                if (_dust == null && O.Dust > 0)
+                    _dust = new SpaceDust(O.Dust, Length * 7f, Length * 0.012f, Layers.Local, _space.Seed);
+                _dust?.Draw(_flight.Position, _flight.Velocity);
             }
             if (_inSpace)
             {
@@ -386,7 +432,7 @@ namespace LuckyNumbers.Station
             if (GameContent.Dogfight == null) return;
             var seed = _space.Seed ^ (_job.Seed.Value * 0x9E3779B9u) ^ (uint)_voyage.Trips.Value;
             _fight = new Dogfight(_ship, _rogueTemplate, _stats, _sheet, _space.Seed, Length, _dogfight, _job, _voyage, _rolls, _xp,
-                                  (p, r) => { var none = Vector3.zero; return OutOfHull(p, r, ref none); }, seed, _hull);
+                                  seed, _hull);
             _fight.Arm(_guns);
             var onJob = _job.Active.Value && _job.Kind.Value == JobKind.Uplink;
             if (!onJob && !DevDogfight) return;
@@ -457,6 +503,7 @@ namespace LuckyNumbers.Station
         public void Dispose()
         {
             _fight?.Dispose();
+            _dust?.Dispose();
             _guns?.Dispose();
             _dogfight.Destroyed.Value = false;
             if (_rogueTemplate != null) Object.Destroy(_rogueTemplate);

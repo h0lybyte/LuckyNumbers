@@ -6,7 +6,7 @@ using Random = Unity.Mathematics.Random;
 namespace LuckyNumbers.Station
 {
     /// <summary>What a rogue's pilot is doing (the page's target card shows it).</summary>
-    public enum RogueState : byte { Patrol, Approach, Attack, BreakOff, Flank, Evade, Retreat }
+    public enum RogueState : byte { Patrol, Approach, Attack, BreakOff, Flank, Evade, Retreat, Break }
 
     /// <summary>What a rogue knows this frame (Dogfight fills it).</summary>
     public struct RogueSenses
@@ -48,6 +48,13 @@ namespace LuckyNumbers.Station
     ///   not looking.
     /// - Evade: hit with its shield down and its hull below evade_hull: jinks (a new heading every half second).
     /// - Retreat: below retreat_hull with its shield down: runs out, and comes back once the shield's up again.
+    /// - Break (FreeSpace 2's "get away"): you've been on its tail, nose on it, for its reaction time: a hard break turn
+    ///   across your line of fire and out, then flank.
+    ///
+    /// On top of any state: lined up in your sights (inside 8 degrees, 450 m) for its reaction time, it sidesteps
+    /// across your line of fire for a moment (harder the better the pilot). An Approach that drags on (a turning fight
+    /// it isn't winning) extends: straight out to gain room, then back in head on. `skill` sets the reaction time,
+    /// the dodge and (in Dogfight) the aim.
     /// </summary>
     public sealed class RogueBrain
     {
@@ -57,6 +64,8 @@ namespace LuckyNumbers.Station
         Vector3 _point;
         int _side;
         bool _token;
+        float _tailSince = -1f, _sightSince = -1f, _dodgeUntil, _dodgeNext;
+        Vector3 _dodge;
 
         public RogueState State { get; private set; } = RogueState.Patrol;
 
@@ -71,6 +80,19 @@ namespace LuckyNumbers.Station
         }
 
         float Close => math.max(20f, _t.Close);
+        /// <summary>Its pilot's skill, 0..1 (unset reads as 0.5).</summary>
+        public float Skill => _t.Skill > 0f ? math.saturate(_t.Skill) : 0.5f;
+        /// <summary>Seconds before it reacts to you on its tail or lining it up.</summary>
+        float Reaction => math.lerp(0.9f, 0.2f, Skill);
+        /// <summary>
+        /// Where a run breaks off: `pass`, but never closer than it can turn away from (its turn radius, speed over turn
+        /// rate, plus the ground it covers rolling into the bank, about 0.3 s, and room for its hull), so a run passes
+        /// close rather than through you.
+        /// </summary>
+        float Pass => math.max(math.max(10f, _t.Pass),
+                               Speed / math.radians(math.max(10f, _t.TurnRate)) * 1.2f + Speed * 0.3f + math.max(0f, _t.Length));
+        /// <summary>How long it closes on you before it gives up on a turning fight and extends.</summary>
+        const float ApproachSeconds = 10f;
         float Speed => math.max(1f, _t.Speed);
         /// <summary>What arrival brakes at: a little under what RogueFlight can do, for the lag in its turns.</summary>
         float Brake => RogueFlight.Accel(Speed * 1.3f) * 0.6f;
@@ -90,6 +112,38 @@ namespace LuckyNumbers.Station
         /// </summary>
         public (Vector3 goal, Vector3 velocity, bool fire) Think(in RogueSenses s, ref Random rng)
         {
+            var (goal, velocity, fire) = Decide(s, ref rng);
+            if (!s.PlayerAlive || State is RogueState.Patrol or RogueState.Retreat) return (goal, velocity, fire);
+
+            // In your sights: a sidestep across your line of fire, now and then, while it lasts.
+            var fromYou = s.Position - s.Player;
+            var inSights = s.Distance < 450f && Vector3.Angle(s.PlayerForward, fromYou) < 8f;
+            _sightSince = inSights ? _sightSince < 0f ? s.Time : _sightSince : -1f;
+            if (inSights && s.Time - _sightSince > Reaction && s.Time > _dodgeNext)
+            {
+                var across = Vector3.ProjectOnPlane((Vector3)rng.NextFloat3Direction(), s.PlayerForward);
+                _dodge = across.sqrMagnitude > 1e-4f ? across.normalized : Vector3.up;
+                _dodgeUntil = s.Time + rng.NextFloat(0.5f, 0.9f);
+                _dodgeNext = _dodgeUntil + rng.NextFloat(0.4f, 1.2f);
+            }
+            if (s.Time < _dodgeUntil)
+            {
+                // Eased in and out over the sidestep, so it slides rather than snaps.
+                var left = (_dodgeUntil - s.Time) / 0.7f;
+                var ease = math.sin(math.saturate(left) * math.PI);
+                velocity += _dodge * (Speed * math.lerp(0.35f, 0.8f, Skill) * ease);
+            }
+            return (goal, velocity, fire);
+        }
+
+        (Vector3 goal, Vector3 velocity, bool fire) Decide(in RogueSenses s, ref Random rng)
+        {
+            // You on its tail with your nose on it, close enough to matter.
+            var fromYou = s.Position - s.Player;
+            var onTail = s.PlayerAlive && s.Distance < 500f && Vector3.Dot(s.Forward, fromYou) > 0.5f * s.Distance &&
+                         Vector3.Angle(s.PlayerForward, fromYou) < 20f;
+            _tailSince = onTail ? _tailSince < 0f ? s.Time : _tailSince : -1f;
+
             // Changes that can come from any state.
             if (!s.PlayerAlive)
             {
@@ -97,13 +151,26 @@ namespace LuckyNumbers.Station
             }
             else if (State == RogueState.Patrol)
             {
-                if (s.Distance < Aggro || s.Hit) Go(RogueState.Approach, s, 0f);
+                if (s.Distance < Aggro || s.Hit) Go(RogueState.Approach, s, ApproachSeconds);
             }
             else if (_t.RetreatHull > 0f && s.HullShare < _t.RetreatHull && s.ShieldDown && State != RogueState.Retreat)
                 Go(RogueState.Retreat, s, 8f);
             else if (s.Hit && s.ShieldDown && s.HullShare < _t.EvadeHull &&
                      State is RogueState.Attack or RogueState.Approach or RogueState.Flank)
                 Go(RogueState.Evade, s, rng.NextFloat(1.4f, 2.4f));
+            else if (onTail && s.Time - _tailSince > Reaction &&
+                     State is RogueState.Approach or RogueState.Flank or RogueState.BreakOff)
+            {
+                // Break: hard across your line of fire (the side it's already on), a little up or down, and out.
+                var across = Vector3.ProjectOnPlane(fromYou, s.PlayerForward);
+                var side = Vector3.Cross(s.PlayerForward, Vector3.up);
+                if (side.sqrMagnitude < 1e-3f) side = Vector3.right;
+                var dir = across.sqrMagnitude > 1f ? across.normalized : side.normalized * _side;
+                _point = s.Position + dir * (Close * 3f) + s.Forward * (Close * 1.5f) +
+                         Vector3.up * (rng.NextFloat(-1f, 1f) * Close);
+                _tailSince = -1f;
+                Go(RogueState.Break, s, rng.NextFloat(1.2f, 2f));
+            }
 
             switch (State)
             {
@@ -115,6 +182,13 @@ namespace LuckyNumbers.Station
                     return (s.Position + v * 1.5f, v, false);
                 }
                 case RogueState.Approach:
+                    if (s.Time > _until)
+                    {
+                        // Dragging on (a turning fight): extend straight out for room, then come back in head on.
+                        _point = s.Position + s.Forward * (Close * 4f);
+                        Go(RogueState.BreakOff, s, rng.NextFloat(2.2f, 3f));
+                        return At(s, _point, 1.3f, false);
+                    }
                     if (s.Distance < math.max(Close * 2f, _t.FireRange))
                     {
                         if (TakeToken()) Go(RogueState.Attack, s, Run());
@@ -123,15 +197,20 @@ namespace LuckyNumbers.Station
                     return At(s, Steering.Lead(s.Position, Speed * 1.2f, s.Player, s.PlayerVelocity, 1.5f), 1.2f, false);
 
                 case RogueState.Attack:
-                    if (s.Distance < math.max(10f, _t.Pass) || s.Time > _until)
+                    if (s.Distance < Pass || s.Time > _until)
                     {
-                        // Past you, then up and over (or down and under) and out to one side: a climbing break that
-                        // RogueFlight flies as a bank and pull, so it comes round in an arc rather than flat.
+                        // Peel away on the side of you it's already on (never back across your nose): mostly out
+                        // from your line, usually climbing (sometimes diving), then on past you. RogueFlight flies it
+                        // as a bank and pull, so it comes round in an arc rather than flat.
                         var side = Vector3.Cross(s.Forward, Vector3.up);
                         if (side.sqrMagnitude < 1e-3f) side = Vector3.right;
                         var vertical = rng.NextFloat() < 0.7f ? 1f : -1f;
-                        _point = s.Position + s.Forward * (Close * 2f) + Vector3.up * (vertical * Close * 2.5f) +
-                                 side.normalized * (_side * Close * 1.5f);
+                        var fallback = (Vector3.up * (vertical * 2.5f) + side.normalized * (_side * 1.5f)).normalized;
+                        var offLine = Vector3.ProjectOnPlane(s.Position - s.Player, s.Forward);
+                        var away = offLine.magnitude > 2f
+                            ? (offLine.normalized * 2f + fallback).normalized   // its own side, bent the way it chose
+                            : fallback;
+                        _point = s.Position + away * (Close * 3f) + s.Forward * Close;
                         _side = -_side;   // the other way next time
                         Go(RogueState.BreakOff, s, rng.NextFloat(1.5f, 2.6f));
                         return At(s, _point, 1.25f, false);
@@ -184,8 +263,12 @@ namespace LuckyNumbers.Station
                     if (s.Time > _until) Go(RogueState.Flank, s, rng.NextFloat(3f, 5f));
                     return At(s, _point, 1.3f, false);
 
+                case RogueState.Break:
+                    if (s.Time > _until) Go(RogueState.Flank, s, rng.NextFloat(3f, 5f));
+                    return At(s, _point, 1.3f, false);
+
                 case RogueState.Retreat:
-                    if (s.ShieldFull || s.Time > _until) Go(RogueState.Approach, s, 0f);
+                    if (s.ShieldFull || s.Time > _until) Go(RogueState.Approach, s, ApproachSeconds);
                     return At(s, s.Player + (s.Position - s.Player).normalized * (Aggro * 0.9f), 1.3f, false);
             }
             return At(s, s.Player, 1f, false);

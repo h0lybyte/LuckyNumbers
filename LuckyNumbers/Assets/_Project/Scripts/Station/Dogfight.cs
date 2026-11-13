@@ -32,7 +32,12 @@ namespace LuckyNumbers.Station
             public RogueFlight Flight;
             public Vector3 Position, Velocity, Home;
             public Quaternion Rotation;
-            public float Hull, Shield, Ready, HitAt = -99f;
+            // Where it was at the last fixed step (drawn between that and now), and the velocity its pilot wants,
+            // eased so a change of mind turns into a curve rather than a snap.
+            public Vector3 PrevPosition, Wanted;
+            public Quaternion PrevRotation;
+            public float Pace;
+            public float Hull, Shield, Ready, HitAt = -99f, BumpAt = -99f;
             public int Barrel;
             public bool Dead, Waiting;   // Waiting: lying in wait at the satellite (the ambush is sprung once it moves)
         }
@@ -46,7 +51,7 @@ namespace LuckyNumbers.Station
         readonly PlayerVoyage _voyage;
         readonly IPublisher<CombatRoll> _rolls;
         readonly IPublisher<CharacterXpGained> _xp;
-        readonly Func<Vector3, float, Vector3> _outOfHull;   // keeps a point (with a radius) out of the station's hull
+        readonly IReadOnlyList<Bounds> _boxes;   // the station's hull blocks (solid: ships bounce off them)
         readonly List<Rogue> _rogues = new();
         readonly Dictionary<Collider, Rogue> _byCollider = new();
         readonly BoltField _field;   // every rogue's bolts
@@ -59,7 +64,9 @@ namespace LuckyNumbers.Station
         readonly string _gunneryMods;
         Rogue _target;
         float _targetAt;
-        Vector3 _playerPos;
+        Vector3 _playerPos, _prevPlayerPos, _kick;
+        float _simAcc, _simTime, _jolt;
+        bool _hasPrevPlayer;
         readonly float _length;   // your ship's, for keeping the rogues off it
         readonly SpaceNav _nav;   // round the station's hull
         readonly AttackTokens _tokens = new();
@@ -81,8 +88,7 @@ namespace LuckyNumbers.Station
 
         public Dogfight(ShipView player, GameObject rogueTemplate, ShipStats stats, CharacterSheet sheet, uint luck,
                         float length, DogfightState state, PlayerJob job, PlayerVoyage voyage, IPublisher<CombatRoll> rolls,
-                        IPublisher<CharacterXpGained> xp, Func<Vector3, float, Vector3> outOfHull, uint seed,
-                        IReadOnlyList<Bounds> obstacles)
+                        IPublisher<CharacterXpGained> xp, uint seed, IReadOnlyList<Bounds> obstacles)
         {
             _nav = new SpaceNav(obstacles);
             _tokens.Max = math.max(1, C?.Attackers ?? 2);
@@ -93,7 +99,8 @@ namespace LuckyNumbers.Station
             _voyage = voyage;
             _rolls = rolls;
             _xp = xp;
-            _outOfHull = outOfHull;
+            _boxes = obstacles;
+            _simTime = Time.time;
             _rng = new Random(seed | 1u);
 
             var d = C?.Defense ?? new ShipDefense();
@@ -236,6 +243,9 @@ namespace LuckyNumbers.Station
                 Ready = Time.time + _rng.NextFloat(1f, 2.5f),   // a moment before the first shot
             };
             r.Velocity = r.Rotation * Vector3.forward * type.Speed;
+            r.Wanted = r.Velocity;
+            r.PrevPosition = r.Position;
+            r.PrevRotation = r.Rotation;
             r.Flight.Speed = type.Speed;
             view.Pose(r.Position, r.Rotation);
             view.SetHeat(0f, 1.2f);
@@ -255,6 +265,7 @@ namespace LuckyNumbers.Station
         /// <summary>One frame: the rogues fly and shoot, shields recharge, the upload runs; then the page's state.</summary>
         public void Tick(float dt, Vector3 playerPos, Vector3 playerVel)
         {
+            if (!_hasPrevPlayer) { _prevPlayerPos = playerPos; _hasPrevPlayer = true; }
             _playerPos = playerPos;
             if (!Destroyed)
             {
@@ -262,13 +273,42 @@ namespace LuckyNumbers.Station
                 if (d != null && Time.time - _hitAt > d.ShieldDelay && _shield < _shieldMax)
                     _shield = math.min(_shieldMax, _shield + d.ShieldRegen * dt);
             }
-            for (var i = _rogues.Count - 1; i >= 0; i--)
+            // The rogues fly at a fixed rate (the same flight however the frame rate wobbles, which matters most on a
+            // slow web page) and are drawn between their last two steps. You moved once this frame: each step sees you
+            // part of the way along.
+            var h = 1f / math.clamp(C?.SimRate is > 0f ? C.SimRate : 60f, 20f, 240f);
+            _simAcc = math.min(_simAcc + dt, h * 5f);
+            var steps = (int)(_simAcc / h);
+            for (var k = 0; k < steps; k++)
             {
-                var r = _rogues[i];
-                if (r.Dead) continue;
-                Fly(r, dt, playerPos, playerVel);
+                _simAcc -= h;
+                _simTime += h;
+                var at = Vector3.Lerp(_prevPlayerPos, playerPos, (k + 1f) / steps);
+                foreach (var r in _rogues)
+                {
+                    if (r.Dead) continue;
+                    r.PrevPosition = r.Position;
+                    r.PrevRotation = r.Rotation;
+                }
+                for (var i = _rogues.Count - 1; i >= 0; i--)
+                {
+                    var r = _rogues[i];
+                    if (r.Dead) continue;
+                    Fly(r, h, at, playerVel + _kick);
+                }
+                Collide(at, playerVel);
             }
-            Separate(playerPos);
+            _prevPlayerPos = playerPos;
+            var alpha = math.saturate(_simAcc / h);
+            foreach (var r in _rogues)
+            {
+                if (r.Dead) continue;
+                r.View.Pose(Vector3.Lerp(r.PrevPosition, r.Position, alpha), Quaternion.Slerp(r.PrevRotation, r.Rotation, alpha));
+                var spin = r.Flight.Spin / math.max(10f, r.Type.TurnRate);
+                r.View.SetThrust(new Vector3(0f, 0.2f, math.min(1.4f, r.Pace)),
+                                 new Vector3(math.clamp(spin.x, -1f, 1f), math.clamp(spin.y, -1f, 1f), math.clamp(spin.z * 0.4f, -1f, 1f)),
+                                 r.Pace > 1.1f ? 1.4f : 1f);
+            }
             // The ones lying in wait: once one moves on you, the ambush is sprung.
             var sprung = false;
             foreach (var r in _rogues)
@@ -305,11 +345,14 @@ namespace LuckyNumbers.Station
             {
                 Position = r.Position, Forward = fwd, Velocity = r.Velocity, Home = r.Home,
                 Player = playerPos, PlayerVelocity = playerVel, PlayerForward = _player.Pivot.forward, Aim = aim,
-                Distance = dist, HullShare = r.Hull / math.max(1f, t.Hull), Time = Time.time,
+                Distance = dist, HullShare = r.Hull / math.max(1f, t.Hull), Time = _simTime,
                 PlayerAlive = !Destroyed, ShieldDown = r.Shield <= 0.5f, ShieldFull = r.Shield >= t.Shield - 0.5f,
                 Hit = Time.time - r.HitAt < 0.5f,
             };
-            var (goal, wanted, mayFire) = r.Brain.Think(senses, ref _rng);
+            var (goal, asked, mayFire) = r.Brain.Think(senses, ref _rng);
+            // Eased (direction and speed together, ~0.2 s), so a change of plan becomes a curve, not a snap.
+            r.Wanted = Vector3.Slerp(r.Wanted, asked, 1f - math.exp(-5f * dt));
+            var wanted = r.Wanted;
 
             // Getting there: round the station (keeping its speed while it detours), and off the hull just ahead.
             var radius = t.Length * 0.5f + math.max(0f, C?.Clearance ?? 18f);
@@ -321,7 +364,8 @@ namespace LuckyNumbers.Station
                 desired = (detour.sqrMagnitude > 1e-3f ? detour.normalized : fwd) * math.max(wanted.magnitude, t.Speed * 0.9f);
             }
             // Other ships: where it'll pass closest to each in the next second and a half. A near miss coming takes over
-            // from the goal while it lasts (fully for a dead-on one right now); you only count when it isn't on a run.
+            // from the goal while it lasts (fully for a dead-on one right now); on a run, only a
+            // last-moment swerve keeps it off you.
             var ships = Vector3.zero;
             const float horizon = 1.5f;
             foreach (var o in _rogues)
@@ -331,22 +375,27 @@ namespace LuckyNumbers.Station
             }
             if (!mayFire && !Destroyed)
                 ships += Steering.AvoidShip(-to, r.Velocity - playerVel, (t.Length + _length) * 2f, horizon);
+            else if (!Destroyed)   // on a run: it passes close, but a pilot doesn't ram (a short look, a tight gap)
+                ships += Steering.AvoidShip(-to, r.Velocity - playerVel, (t.Length + _length) * 1.1f, 0.9f);
             var urgency = math.saturate(ships.magnitude);
             if (urgency > 0f)
                 desired = Vector3.Lerp(desired, ships.normalized * math.max(desired.magnitude, t.Speed), urgency);
             var hull = _nav.Avoid(r.Position, r.Velocity.sqrMagnitude > 1f ? r.Velocity : fwd * t.Speed, radius, C?.Lookahead ?? 1.6f);
             desired += hull * (t.Speed * 2f);
             if (desired.sqrMagnitude < 1e-4f) desired = fwd * t.Speed;
-            var pace = desired.magnitude / math.max(1f, t.Speed);
+            r.Pace = desired.magnitude / math.max(1f, t.Speed);
 
             // Flying it like a fighter: bank and pull, eased rates, speed bled in hard turns (RogueFlight).
             r.Flight.Step(ref r.Rotation, ref r.Velocity, desired, t.Speed, t.TurnRate, t.Speed * 1.3f, dt);
             fwd = r.Rotation * Vector3.forward;
-            r.Position = _outOfHull(r.Position + r.Velocity * dt, t.Length * 0.5f);
-            r.View.Pose(r.Position, r.Rotation);
-            var spin = r.Flight.Spin / math.max(10f, t.TurnRate);
-            r.View.SetThrust(new Vector3(0f, 0.2f, math.min(1.4f, pace)), new Vector3(math.clamp(spin.x, -1f, 1f), math.clamp(spin.y, -1f, 1f),
-                             math.clamp(spin.z * 0.4f, -1f, 1f)), pace > 1.1f ? 1.4f : 1f);
+            r.Position += r.Velocity * dt;
+            var crash = Impacts.OutOfBoxes(_boxes, ref r.Position, ref r.Velocity, t.Length * 0.5f, Restitution, Scrape, out var face);
+            if (crash > 0f && Time.time > r.BumpAt)
+            {
+                r.BumpAt = Time.time + Cooldown;
+                var hurt = Impacts.Damage(crash, MinSpeed, PerSpeed, C?.Collisions?.HullSize ?? 1.5f);
+                if (hurt > 0) Bumped(r, hurt, r.Position - face * (t.Length * 0.5f));
+            }
 
             // Rogue shields recharge too (a fifth of the way a second, after the same quiet spell).
             var d = C?.Defense;
@@ -359,16 +408,25 @@ namespace LuckyNumbers.Station
             if (_nav.Blocked(r.Position, playerPos, 0f)) return;   // the station's in the way: no shooting through it
             r.Ready = Time.time + math.max(0.1f, t.Cooldown) * _rng.NextFloat(0.85f, 1.2f);
             // Not a perfect shot: off the lead by up to a few degrees (more at range), so dodging pays.
-            var spread = math.lerp(1f, 4f, math.saturate(dist / math.max(1f, t.FireRange)));
+            var spread = math.lerp(1f, 4f, math.saturate(dist / math.max(1f, t.FireRange))) * math.lerp(1.6f, 0.6f, r.Brain.Skill);
             var off = Quaternion.AngleAxis(_rng.NextFloat(0f, spread), Vector3.Cross(lead, (Vector3)_rng.NextFloat3Direction()));
             Fire(r, off * lead.normalized);
         }
 
+        static Collisions K => C?.Collisions;
+        static float MinSpeed => K?.MinSpeed ?? 10f;
+        static float PerSpeed => K?.DamagePerSpeed ?? 0.35f;
+        static float Restitution => K?.Restitution ?? 0.35f;
+        static float Scrape => K?.Scrape ?? 0.85f;
+        static float Cooldown => math.max(0.05f, K?.Cooldown ?? 0.4f);
+        static float Mass(float length) => math.max(1f, length * length);
+
         /// <summary>
-        /// Ships don't pass through each other: a rogue inside your ship's room is pushed back out (losing its speed
-        /// toward you; its pilot breaks off inside `pass`); two rogues too close push apart.
+        /// Ships don't pass through each other: touching ships are pushed apart and bounce (Impacts.Bounce: the heavier
+        /// moves less), and a hard enough crash hurts both, by closing speed and size (once per `cooldown` per ship).
+        /// Your share of the bounce builds up in TakeKick for OrbitPresenter to put on your flight.
         /// </summary>
-        void Separate(Vector3 playerPos)
+        void Collide(Vector3 playerPos, Vector3 playerVel)
         {
             for (var i = 0; i < _rogues.Count; i++)
             {
@@ -383,8 +441,20 @@ namespace LuckyNumbers.Station
                     {
                         var n = d > 1e-3f ? away / d : a.Rotation * Vector3.back;
                         a.Position = playerPos + n * room;
-                        var toward = Vector3.Dot(a.Velocity, -n);
-                        if (toward > 0f) a.Velocity += n * toward;
+                        var before = playerVel + _kick;
+                        var you = before;
+                        var closing = Impacts.Bounce(ref a.Velocity, ref you, n, Mass(a.Type.Length), Mass(_length), Restitution, Scrape);
+                        _kick += you - before;
+                        if (closing > 0f && Time.time > a.BumpAt)
+                        {
+                            a.BumpAt = Time.time + Cooldown;
+                            var contact = playerPos + n * (_length * 0.5f);
+                            Crash(Impacts.Damage(closing, MinSpeed, PerSpeed, a.Type.Length / math.max(1f, _length)), a.Type.Name, closing);
+                            var hurt = Impacts.Damage(closing, MinSpeed, PerSpeed, _length / math.max(1f, a.Type.Length));
+                            if (hurt > 0) Bumped(a, hurt, contact);
+                            else _field.Flash(contact, a.Type.Length * 0.4f, 0.2f, new Color(2.5f, 2.2f, 1.6f));
+                            if (a.Dead) continue;
+                        }
                     }
                 }
                 for (var j = i + 1; j < _rogues.Count; j++)
@@ -396,12 +466,71 @@ namespace LuckyNumbers.Station
                     var d = gap.magnitude;
                     if (d >= room) continue;
                     var n = d > 1e-3f ? gap / d : Vector3.up;
-                    var push = (room - d) * 0.5f;
-                    a.Position += n * push;
-                    b.Position -= n * push;
+                    var ma = Mass(a.Type.Length);
+                    var mb = Mass(b.Type.Length);
+                    var push = room - d;
+                    a.Position += n * (push * mb / (ma + mb));
+                    b.Position -= n * (push * ma / (ma + mb));
+                    var closing = Impacts.Bounce(ref a.Velocity, ref b.Velocity, n, ma, mb, Restitution, Scrape);
+                    if (closing <= 0f || Time.time < a.BumpAt || Time.time < b.BumpAt) continue;
+                    a.BumpAt = b.BumpAt = Time.time + Cooldown;
+                    var contact = b.Position + n * (b.Type.Length * 0.5f);
+                    var toA = Impacts.Damage(closing, MinSpeed, PerSpeed, b.Type.Length / math.max(1f, a.Type.Length));
+                    var toB = Impacts.Damage(closing, MinSpeed, PerSpeed, a.Type.Length / math.max(1f, b.Type.Length));
+                    if (toA > 0) Bumped(a, toA, contact);
+                    if (toB > 0) Bumped(b, toB, contact);
+                    if (a.Dead) break;
                 }
-                a.View.Pose(a.Position, a.Rotation);
             }
+        }
+
+        /// <summary>A rogue's crash damage (no roll: physics), with sparks; a crash that kills it still pays its bounty.</summary>
+        void Bumped(Rogue r, int damage, Vector3 at)
+        {
+            Take(ref r.Shield, ref r.Hull, r.Type.Armor, damage, out _);
+            r.HitAt = Time.time;
+            _field.Flash(at, r.Type.Length * 0.6f, 0.3f, new Color(3.2f, 2.4f, 1.2f));
+            Jolt(0.25f, at, 250f);
+            Debug.Log($"[Dogfight] {r.Type.Name} crashed ({r.Brain.State}): {damage} damage");
+            if (r.Hull <= 0f) Kill(r);
+        }
+
+        /// <summary>
+        /// You crashed (into a rogue, or the hull: OrbitPresenter calls this) at `closing` m/s for `damage`: through
+        /// your shield, armour and hull like a bolt, and a jolt for the camera however soft.
+        /// </summary>
+        public void Crash(int damage, string into, float closing)
+        {
+            if (Destroyed) return;
+            _jolt += math.saturate(0.15f + closing / 60f);
+            if (damage <= 0) return;
+            var shieldBefore = _shield;
+            Take(ref _shield, ref _hull, _armor, damage, out var toHull);
+            _hitAt = Time.time;
+            if (_shield < shieldBefore) _shieldHitAt = Time.time;
+            if (toHull > 0) _hullHitAt = Time.time;
+            Debug.Log($"[Dogfight] crashed into {into} at {closing:0} m/s: {damage} damage ({toHull} to the hull)");
+            if (_hull <= 0f) Die(into);
+        }
+
+        /// <summary>Camera trauma from something at `at`, fading out by `reach` m from you.</summary>
+        void Jolt(float amount, Vector3 at, float reach) =>
+            _jolt += amount * math.saturate(1f - Vector3.Distance(at, _playerPos) / math.max(1f, reach));
+
+        /// <summary>Camera trauma built up since the last call (hits, crashes, blasts nearby), 0..1-ish.</summary>
+        public float TakeJolt()
+        {
+            var j = _jolt;
+            _jolt = 0f;
+            return j;
+        }
+
+        /// <summary>The change to your velocity from bounces since the last call (OrbitPresenter adds it to your flight).</summary>
+        public Vector3 TakeKick()
+        {
+            var k = _kick;
+            _kick = Vector3.zero;
+            return k;
         }
 
         void Fire(Rogue r, Vector3 dir)
@@ -496,7 +625,8 @@ namespace LuckyNumbers.Station
             if (toHull > 0) _hullHitAt = Time.time;
             _rolls.Publish(new CombatRoll(t.Name, "You", roll.D20, t.Attack, roll.Total, _evasion, true, roll.Crit, false,
                                           roll.Damage, dice, false, t.Name, roll.Graze, roll.Strong, ""));
-            if (_hull <= 0f) Die(r);
+            _jolt += math.saturate(0.2f + roll.Damage / math.max(1f, _hullMax) * 2f);
+            if (_hull <= 0f) Die(t.Name);
         }
 
         struct Shot
@@ -538,6 +668,7 @@ namespace LuckyNumbers.Station
             var at = r.Position;
             _field.Flash(at, r.Type.Length * 2.2f, 0.7f, new Color(3.5f, 1.6f, 0.4f));
             _field.Flash(at, r.Type.Length * 1.2f, 0.35f, new Color(4f, 3.5f, 2.5f));
+            Jolt(0.45f, at, 350f);
             Object.Destroy(r.View.gameObject);
             if (r.Type.Xp > 0) _xp.Publish(new CharacterXpGained(r.Type.Xp, r.Type.Name));
             if (r.Type.Bounty > 0)
@@ -550,7 +681,7 @@ namespace LuckyNumbers.Station
             Debug.Log($"[Dogfight] {r.Type.Name} destroyed: +{r.Type.Xp} XP, +{r.Type.Bounty} cr ({Alive()} left)");
         }
 
-        void Die(Rogue by)
+        void Die(string by)
         {
             Destroyed = true;
             _hull = 0f;
@@ -560,7 +691,7 @@ namespace LuckyNumbers.Station
             _state.Destroyed.Value = true;
             _state.DestroyedText.Value = C?.Restore?.DestroyedText ?? "";
             Publish();
-            Debug.Log($"[Dogfight] destroyed by {by.Type.Name}");
+            Debug.Log($"[Dogfight] destroyed by {by}");
         }
 
         int Alive()

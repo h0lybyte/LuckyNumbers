@@ -70,14 +70,23 @@ behaviour, below) and whether it may fire.
 |---|---|---|
 | Patrol | orbits where it came in | you come within `aggro_range`, or you shoot it |
 | Approach | closes on where you'll be (lead capped at 1.5 s) | in range: it attacks if an attack token is free, else it flanks |
-| Attack | flies at where you'll be (its lead) and fires | inside `pass` metres, or after `attack_seconds`: break off |
+| Attack | flies at where you'll be (its lead) and fires | inside `pass` metres (or its turn radius, roll-in distance and length, if bigger: about 58 m scout, 62 m raider, 72 m gunship), or after `attack_seconds`: break off |
 | Break off | overshoots out to one side, then switches sides for next time | after 1.5 to 2.6 s: attack again (chance: `aggression`), else flank |
 | Flank | arrives at a slot at your side and behind you, matching your velocity | it gets there: attack if a token is free, else flank the other side |
 | Evade | jinks to a new heading every half second, away from your nose | after about 2 s: flank |
 | Retreat | runs out to recharge its shield | its shield is full, or after 8 s: approach |
+| Break | you're on its tail with your nose on it: a hard turn across your line of fire and out | after 1.2 to 2 s: flank |
 
 - **Evade** starts when it's hit with its shield down and its hull below `evade_hull`.
 - **Retreat** starts when its hull is below `retreat_hull` with its shield down. 0 means never.
+- **Break** starts after its reaction time with you on its tail (within 500 m, your nose within 20° of it). Ideas
+  from FreeSpace 2's "get away" chase submode.
+- **Dodge:** in any hunting state, once you've had it in your sights (8°, 450 m) for its reaction time, it
+  sidesteps across your line of fire for half a second or so, eased in and out, then waits a moment before the next.
+- **Extend:** an approach that lasts 10 s (a turning fight it isn't winning) flies straight out for room, then
+  comes back in head on.
+- **Skill** (`skill`, 0 to 1, per rogue type): reaction time 0.9 s to 0.2 s, dodge strength, and aim spread x1.6 to
+  x0.6. Scout 0.55, Raider 0.5, Gunship 0.7.
 - **Attack tokens:** only `attackers` rogues (default 2) may make a run at once. The rest flank and wait their
   turn, so a wave comes at you from several sides instead of in one line.
 
@@ -92,7 +101,7 @@ and differ only by `speed` and `turn_rate`.
 | Arrive | Flank | speed toward the slot capped at `sqrt(2 a (d - r))`, so it brakes in time; plus your velocity, so it settles in the slot instead of overshooting and swinging back |
 | Lead | Approach | heads for where you'll be, looking at most 1.5 s ahead so a sudden turn doesn't throw it far off |
 | Orbit | Patrol | tangential speed plus a radial pull back to the radius. A circle of radius R at speed v needs v²/R of turn, and a ship turning at w gives v·w, so it orbits no faster than w·R: heavy ships fly visibly wider or slower circles |
-| Avoid ships | everyone | predicts where it passes closest to each other ship (and you, unless it's on a run) in the next 1.5 s. A near miss inside the safe gap takes priority over the goal, fully for a dead-on one |
+| Avoid ships | everyone | predicts where it passes closest to each other ship (and you) in the next 1.5 s. On an attack run it only swerves off you at the last moment (0.9 s, a tight gap), and a run breaks off no closer than its turn radius (speed over turn rate) allows, so runs pass close without ramming. A near miss inside the safe gap takes priority over the goal, fully for a dead-on one |
 
 ### Flying (`Station/RogueFlight.cs`)
 
@@ -109,7 +118,16 @@ Rogues fly like fighters, not turrets. They have a main engine, so heading is pa
 - **Slide:** the velocity swings round after the nose, so a hard turn carries a little drift.
 - **Weave:** on the way in for an attack run, a rogue weaves side to side and up and down, then steadies to shoot
   as it closes.
-- **Break off:** usually a climb up and over (sometimes a dive under) and out to one side, flown as an arc.
+- **Break off:** peels away on the side of you it's already on (never back across your nose), usually climbing (sometimes diving), flown as an arc.
+
+### Smoothness
+
+- **Fixed rate:** rogues fly at `sim_rate` steps a second (60) whatever the frame rate, and are drawn between their
+  last two steps. Slow or uneven frames on the web build don't change how they fly.
+- **Eased intent:** the velocity a pilot asks for is eased over about 0.2 s (direction and speed together), so a
+  change of state becomes a curve instead of a snap.
+- **No flip-flop banking:** banking into a turn and levelling the wings blend between 8° and 22° off the nose, and a
+  goal right under the wing keeps the roll going the way it already was.
 
 ### Pathfinding (`Station/SpaceNav.cs`)
 
@@ -122,10 +140,43 @@ Space is empty except for the station's hull blocks, so two things are enough:
 - **Steering:** a ray `lookahead` seconds down its velocity. If the ray hits a hull block, the rogue is pushed
   mostly along that face (to keep going round) and partly out from it.
 - **Spacing:** closest-approach avoidance (above) keeps rogues apart and off your nose when they aren't attacking.
-  A hard push-out stops any ship from passing through yours, or rogues through each other.
+  If ships still touch, they collide (below).
 - **Line of sight:** a rogue never fires through the station.
 
 The HUD target card shows the state of the rogue you're on (for example "FLANK").
+
+## Collisions (`Station/Impacts.cs`)
+
+Ships are solid against each other and against the station's hull. All numbers are in `collisions` in
+`content/dogfight.txtpb`.
+
+- **Damage** comes from the closing speed along the contact, so a head-on hit hurts and a scrape doesn't:
+  (closing - `min_speed`) x `damage_per_speed`, scaled by how big the other thing is next to you (the ratio of
+  lengths, kept within 0.5 to 2; `hull_size` for the station). It goes through shield, armour and hull like a bolt,
+  but with no roll.
+- **Bounce:** both ships bounce apart, and the heavier one (length squared) moves less. `restitution` of the closing
+  speed comes back, and the scrape keeps `scrape` of the speed along the face. Sliding along a wall costs nothing.
+- **Cooldown:** a ship takes crash damage at most once per `cooldown` seconds, so grinding along the hull isn't
+  instantly fatal.
+- Ramming a rogue to death still pays its bounty. Crashing into the station can destroy you ("destroyed by the
+  station").
+
+| Crash (raider into you, defaults) | Closing speed | Damage |
+|---|---|---|
+| Docking bump | under 10 m/s | none |
+| Glancing pass | 25 m/s | 6 |
+| Head on at full speed | 80 m/s | 25 |
+
+## Feel (`content/orbit.txtpb`)
+
+- **Camera shake:** hits, crashes and nearby explosions add trauma. The shake is trauma squared (small hits barely
+  move it), uses smooth noise rather than random jitter, and fades at `shake_decay` a second. `shake_angle` (degrees)
+  and `shake_offset` (ship lengths) set the size. `shake_angle: 0` turns it off.
+- **Boost FOV:** the view widens by up to `fov_kick` degrees with your speed past cruise. It eases in quickly and
+  out slowly.
+- **Dust** (`Station/SpaceDust.cs`): `dust` motes hang still round you and streak along your velocity, so speed and
+  drift read in open space. They wrap round a box about you and shrink near its edge, so none pops in. They're drawn
+  in one instanced draw.
 
 ## Satellite uplink job
 
@@ -201,6 +252,8 @@ behind 1 armour, so it lasts about 4 seconds at full accuracy, or about 8 at 50%
 | `Station/Dogfight.cs` | the fight: rolls, layers, rogue flying, waves, upload |
 | `Station/RogueBrain.cs` | the rogues' pilot state machine and attack tokens |
 | `Station/SpaceNav.cs` | routing round the station, hull avoidance, line of sight |
+| `Station/Impacts.cs` | crashes: damage by closing speed, bounce, pushing out of the hull |
+| `Station/SpaceDust.cs` | dust motes round your ship |
 | `Station/Steering.cs` | steering behaviours: arrive, lead, orbit, closest-approach avoidance |
 | `Station/RogueFlight.cs` | the rogues' flight model: bank and pull, eased rates, energy |
 | `Station/OrbitPresenter.cs` | guns, the satellite, the memory restore |
