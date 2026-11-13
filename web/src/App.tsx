@@ -119,7 +119,7 @@ function StationHudGate() {
       <>
         <FlightHud />
         <RelicHud />
-        <JobLine />
+        <JobLine tracker />
         <CombatHud />
         <EncounterCard />
       </>

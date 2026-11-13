@@ -24,9 +24,11 @@ namespace LuckyNumbers.Planet
     /// did, and shows how many lie out and a revealed one's bearing (RelicSite).
     /// It's also where the pack drops things (IDropTarget): a dropped item lies at your feet as a placeholder block
     /// (PLACEHOLDER_&lt;item id&gt;, sized from its grid shape, until it has a model) and E picks it back up.
+    /// What's in reach (a relic, a dropped item, or the ready item's use hint) goes to InteractionPresenter
+    /// (IInteractable), which shows the prompt and hands this E.
     /// </summary>
     [Presenter]
-    public sealed class RelicsPresenter : IDropTarget, IStartable, ITickable, IDisposable
+    public sealed class RelicsPresenter : IDropTarget, IInteractable, IStartable, ITickable, IDisposable
     {
         sealed class Dropped
         {
@@ -56,7 +58,6 @@ namespace LuckyNumbers.Planet
         readonly IPublisher<CharacterXpGained> _xp;
         readonly RelicSite _relicSite;
         readonly ISubscriber<RelicRolled> _rolled;
-        readonly ISubscriber<InputActionPerformed> _actions;
         readonly ISubscriber<DevWarpRequested> _warps;
         readonly AssetScope _assets;   // the relics' own models (Prefabs/Relics, the Relics group), released with the scene
         readonly List<IDisposable> _subscriptions = new();
@@ -67,17 +68,15 @@ namespace LuckyNumbers.Planet
         static readonly int ColorB = Shader.PropertyToID("_ColorB");
 
         CargoConfig Config => GameContent.Cargo;
-        bool _spawned, _pickup, _claimedE;
+        bool _spawned;
         float _slowUntil, _revealUntil;
         bool _revealAll;
-        string _prompt = "";
-        object _promptFor;   // what _prompt is about (a Lying, a Dropped, the board prompt, the ready item's name; null: nothing)
 
         [Inject]
         public RelicsPresenter(ICrashSite site, PlanetView view, PlayerView player, GroundView ground, IFirstPerson firstPerson,
                                IPublisher<CharacterXpGained> xp, IInventory pack, PlayerInventory packState,
                                ISubscriber<ItemEffectRequested> itemEffects, RelicSite relicSite, ISubscriber<RelicRolled> rolled,
-                               ISubscriber<InputActionPerformed> actions, ISubscriber<DevWarpRequested> warps, IFighter fighter, PlayerJob job,
+                               ISubscriber<DevWarpRequested> warps, IFighter fighter, PlayerJob job,
                                AssetScope assets)
         {
             _assets = assets;
@@ -95,17 +94,12 @@ namespace LuckyNumbers.Planet
             _xp = xp;
             _relicSite = relicSite;
             _rolled = rolled;
-            _actions = actions;
         }
 
         public void Start()
         {
             _relicSite.Lying.Value = 0;
             _relicSite.Reveal.Value = "";
-            _subscriptions.Add(_actions.Subscribe(e =>
-            {
-                if (e.Action == InputAction.Interact) _pickup = true;
-            }));
             _subscriptions.Add(_warps.Subscribe(e => Warp(e.To)));
             // Relic rolls and pack consumables (ping beacon, flare): the effects only the crash site can do.
             _subscriptions.Add(_itemEffects.Subscribe(e => Apply(e.Effect, e.Amount, e.Seconds)));
@@ -124,7 +118,7 @@ namespace LuckyNumbers.Planet
             if (!_spawned && _site.Built && _view.Wreck != null && _view.Wreck.Pivot.gameObject.activeInHierarchy && _view.Wreck.Fitted &&
                 (padReady || _firstPerson.Active)) Spawn();
             // No relics yet (or never: a Clear job's site has no wreck to scatter them from), but the rest still runs:
-            // boarding your ship, picking up what you dropped and the use prompt mustn't wait on the relics.
+            // picking up what you dropped and the use hint mustn't wait on the relics.
 
             // Lying relics turn slowly and bob, so they read as something to pick up.
             foreach (var l in _lying)
@@ -138,56 +132,53 @@ namespace LuckyNumbers.Planet
                 d.Shape.SetPositionAndRotation(d.Rest + Vector3.up * (0.05f * math.sin(Time.time * 2f + d.Item.Def.Id.Length)),
                                                Quaternion.Euler(0f, Time.time * 30f, 0f));
 
-            var onFoot = _firstPerson.Active;
-            var me = _player.Body.transform.position;
-            Lying near = null;
-            Dropped nearDrop = null;
-            if (onFoot)
-            {
-                var best = Config.PickupDistance > 0f ? Config.PickupDistance : 2.2f;
-                foreach (var l in _lying)
-                {
-                    if (l.Taken) continue;
-                    var d = Vector2.Distance(new Vector2(l.Rest.x, l.Rest.z), new Vector2(me.x, me.z));
-                    if (d < best) { best = d; near = l; }
-                }
-                foreach (var dr in _dropped)
-                {
-                    var d = Vector2.Distance(new Vector2(dr.Rest.x, dr.Rest.z), new Vector2(me.x, me.z));
-                    if (d < best) { best = d; nearDrop = dr; near = null; }
-                }
-            }
-            // E: a relic within reach first; else your landed ship, if you're beside it (flies you back out).
-            var board = onFoot && near == null && nearDrop == null ? _fighter.BoardPrompt(me) : "";
-            // E's for that, not the gun; let go only if it was ours (a Defend job's beacon claims it too).
-            if (near != null || nearDrop != null || board != "") { _firstPerson.InteractElsewhere = true; _claimedE = true; }
-            else if (_claimedE) { _firstPerson.InteractElsewhere = false; _claimedE = false; }
-            if (_pickup && near != null) Take(near);
-            else if (_pickup && nearDrop != null) PickUp(nearDrop);
-            else if (_pickup && board != "") _fighter.Board();
-            _pickup = false;
-
             // Effects that last.
             var load = _packState.Speed.Value > 0f ? _packState.Speed.Value : 1f;   // a heavy pack slows you
             _firstPerson.SpeedScale = (Time.time < _slowUntil ? _slowScale : 1f) * load;
-            UpdateReveal(me);
+            UpdateReveal(_player.Body.transform.position);
+        }
 
-            // The prompt is for one thing at a time (the drop, the relic, the ship, the ready item, or nothing). Its
-            // text is only built when that thing changes, not every frame you stand next to it.
-            var ready = _packState.ReadyName.Value;
-            var use = !string.IsNullOrEmpty(ready) && onFoot && _packState.Cooldown.Value <= 0f ? ready : null;
-            var about = nearDrop != null ? nearDrop : near != null ? near : board != "" ? board : (object)use;
-            if (ReferenceEquals(about, _promptFor)) return;
-            _promptFor = about;
-            var prompt = nearDrop != null ? Fill(Config.PickupPrompt, Label(nearDrop.Item))
-                       : near != null ? Fill(Config.PickupPrompt, near.Relic.Name)
-                       : board != "" ? board
-                       : use != null ? Fill(Config.UsePrompt, use) : "";
-            if (prompt != _prompt)
+        // ---- IInteractable: E on a relic or a dropped item; the ready item's use, said ---------------------------
+
+        public bool Offer(Vector3 feet, out Interaction offer)
+        {
+            var best = Config.PickupDistance > 0f ? Config.PickupDistance : 2.2f;
+            object near = null;
+            foreach (var l in _lying)
             {
-                _prompt = prompt;
-                _view.Hint(prompt, prompt == "" ? 0f : 1f);
+                if (l.Taken) continue;
+                var d = Vector2.Distance(new Vector2(l.Rest.x, l.Rest.z), new Vector2(feet.x, feet.z));
+                if (d < best) { best = d; near = l; }
             }
+            foreach (var dr in _dropped)
+            {
+                var d = Vector2.Distance(new Vector2(dr.Rest.x, dr.Rest.z), new Vector2(feet.x, feet.z));
+                if (d < best) { best = d; near = dr; }
+            }
+            if (near != null) { offer = new Interaction(near, InteractionPriority.Pickup, best); return true; }
+            // Nothing to pick up: R uses the ready item (the key is its name, so the hint changes with it).
+            var ready = _packState.ReadyName.Value;
+            if (!string.IsNullOrEmpty(ready) && _packState.Cooldown.Value <= 0f)
+            {
+                offer = new Interaction(ready, InteractionPriority.Info, float.MaxValue, usable: false);
+                return true;
+            }
+            offer = default;
+            return false;
+        }
+
+        public string Prompt(object key) => key switch
+        {
+            Dropped d => Fill(Config.PickupPrompt, Label(d.Item)),
+            Lying l => Fill(Config.PickupPrompt, l.Relic.Name),
+            string ready => Fill(Config.UsePrompt, ready),
+            _ => "",
+        };
+
+        public void Interact(object key)
+        {
+            if (key is Lying l && !l.Taken) Take(l);
+            else if (key is Dropped d && _dropped.Contains(d)) PickUp(d);
         }
 
         float _slowScale = 1f;
@@ -382,11 +373,12 @@ namespace LuckyNumbers.Planet
             if (_relicSite.Reveal.Value != text) _relicSite.Reveal.Value = text;
         }
 
-        /// <summary>Dev: on foot beside the nearest named relic ("artifact"), any relic, the wreck, or your ship ("find", "standoff", "monster" are CombatPresenter's).</summary>
+        /// <summary>Dev: on foot beside the nearest named relic ("artifact"), any relic, the wreck ("salvage" too), or your ship ("find", "standoff", "monster" are CombatPresenter's).</summary>
         void Warp(string to)
         {
             if (!_spawned || !_firstPerson.Active) return;
             if (to is "find" or "standoff" or "defend" || to?.StartsWith("monster") == true || to?.StartsWith("defend:") == true) return;   // CombatPresenter's
+            if (to == "salvage") to = "wreck";   // WreckSalvagePresenter starts a practice job; you go and flag it
             var me = _player.Body.transform.position;
             Vector3? target = null;
             var best = float.MaxValue;

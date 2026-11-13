@@ -36,7 +36,7 @@ namespace LuckyNumbers.Planet
     /// skips to wave N, "defend:stand:N" stands you N m off it, "defend:heal" fills its hp, "defend:watch" has the horde
     /// leave you be (to watch or measure it), "defend:win" / "defend:lose" end it.
     /// </summary>
-    public sealed partial class CombatPresenter
+    public sealed partial class CombatPresenter : IInteractable
     {
         enum DefendPhase { None, Ready, Charging, Rest, Won, Lost }
 
@@ -46,7 +46,6 @@ namespace LuckyNumbers.Planet
         const float ShoveSpeed = 8f;
 
         readonly DefendState _defend;
-        readonly ISubscriber<InputActionPerformed> _actions;
         readonly Dictionary<MonsterType, Stack<Monster>> _spare = new();
         MonsterSeparation _separation;
         DefendPhase _phase;
@@ -59,7 +58,6 @@ namespace LuckyNumbers.Planet
         int _wave, _waves, _defendDanger;
         float _charge, _restLeft, _spawnClock, _beaconFlash;
         int _waiting, _hordeAlive, _hordeKilled, _waveKilled, _hordeSpawned;
-        bool _plantPress, _plantPrompting, _claimedE;
         bool _devWatch;   // dev "defend:watch": the horde leaves you be (only the beacon), to watch or measure it
         // ?ln-perf: the separation's cost, summed between reports.
         long _sepTicks, _sepMaxTicks;
@@ -85,10 +83,6 @@ namespace LuckyNumbers.Planet
             _defend.HpMax.Value = 0;
             _defend.Horde.Value = 0;
             _defend.Waiting.Value = 0;
-            _subscriptions.Add(_actions.Subscribe(e =>
-            {
-                if (e.Action == InputAction.Interact) _plantPress = true;
-            }));
         }
 
         // ---- The beacon -----------------------------------------------------------------------------------------
@@ -184,7 +178,6 @@ namespace LuckyNumbers.Planet
             _defend.Waves.Value = _waves;
             _defend.HpMax.Value = _beaconMax;
             _defend.Hp.Value = _beaconHp;
-            ClearPlantPrompt();
             Say(D.PlantedText);
             Debug.Log($"[Defend] planted: {_waves} wave(s), beacon {_beaconMax} hp, armour {D.BeaconArmor}, danger {_defendDanger}, " +
                       $"at most {DefendWaves.MaxAlive(D, LowEnd.Active)} at once{(LowEnd.Active ? " (low-end tier)" : "")}");
@@ -213,11 +206,9 @@ namespace LuckyNumbers.Planet
 
         void TickDefend(float dt, Vector3 me, bool onFoot)
         {
-            if (_beacon == null) { _plantPress = false; return; }
+            if (_beacon == null) return;
             Glow(dt);
-            if (_phase == DefendPhase.Ready) { TickPlant(me, onFoot); return; }
-            _plantPress = false;
-            if (!Holding) return;
+            if (!Holding) return;   // standing ready: E plants it (IInteractable, below)
             SpawnFromQueue(dt);
             if (_phase == DefendPhase.Charging)
             {
@@ -236,28 +227,23 @@ namespace LuckyNumbers.Planet
             if (Perf) PerfReport();
         }
 
-        /// <summary>Standing ready: near it on foot, "E: plant the beacon", and E plants it.</summary>
-        void TickPlant(Vector3 me, bool onFoot)
+        // ---- IInteractable: standing ready, near it on foot, "E: plant the beacon" -------------------------------
+
+        static readonly object Planting = new();
+
+        public bool Offer(Vector3 feet, out Interaction offer)
         {
-            var near = onFoot && Vector2.Distance(new Vector2(me.x, me.z), new Vector2(_beaconAt.x, _beaconAt.z)) < _beaconRadius + math.max(1f, D.PlantDistance);
-            if (near) { _firstPerson.InteractElsewhere = true; _claimedE = true; }   // E's for the beacon, not the gun
-            else if (_claimedE) { _firstPerson.InteractElsewhere = false; _claimedE = false; }
-            if (near != _plantPrompting)
-            {
-                _plantPrompting = near;
-                _view.Hint(near ? D.PlantPrompt : "", near ? 1f : 0f);
-            }
-            if (near && _plantPress) Plant();
-            _plantPress = false;
+            offer = default;
+            if (_beacon == null || _phase != DefendPhase.Ready || D == null) return false;
+            var distance = Vector2.Distance(new Vector2(feet.x, feet.z), new Vector2(_beaconAt.x, _beaconAt.z)) - _beaconRadius;
+            if (distance >= math.max(1f, D.PlantDistance)) return false;
+            offer = new Interaction(Planting, InteractionPriority.Job, math.max(0f, distance));
+            return true;
         }
 
-        void ClearPlantPrompt()
-        {
-            if (_plantPrompting) _view.Hint("", 0f);
-            _plantPrompting = false;
-            if (_claimedE) _firstPerson.InteractElsewhere = false;
-            _claimedE = false;
-        }
+        public string Prompt(object key) => D?.PlantPrompt ?? "";
+
+        public void Interact(object key) => Plant();
 
         void WaveCharged()
         {
@@ -535,7 +521,6 @@ namespace LuckyNumbers.Planet
 
         void DisposeDefend()
         {
-            ClearPlantPrompt();
             _separation?.Dispose();
             foreach (var spares in _spare.Values)
                 foreach (var m in spares)

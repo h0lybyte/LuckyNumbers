@@ -64,6 +64,17 @@ namespace LuckyNumbers.Model
         /// </summary>
         public string PickupPrompt { get; set; }
         public string UsePrompt { get; set; }
+        /// <summary>
+        /// Salvage jobs: walk up to the wreck (this many metres past its hull) and E flags it for processing, which meets
+        /// the job's goal; the lines say so and send you back to your ship. Relics stay out for extra credits.
+        /// </summary>
+        public float SalvageDistance { get; set; }
+        public string SalvagePrompt { get; set; }
+        public List<Dialogue> SalvageLines { get; } = new List<Dialogue>();
+        /// <summary>
+        /// Shown once it's flagged and you're near the wreck again.
+        /// </summary>
+        public string SalvagedPrompt { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public CargoConfig Clone() => (CargoConfig)MemberwiseClone();

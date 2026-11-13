@@ -1401,6 +1401,15 @@ kbd {
   text-overflow: ellipsis;
   pointer-events: none;
 }
+/* On the planet: top left, so the on-foot prompt (Unity's hint line, bottom centre) is never under it. */
+.job-line.tracker {
+  left: max(var(--gap), env(safe-area-inset-left));
+  top: calc(max(var(--gap), env(safe-area-inset-top)) + 8px);
+  bottom: auto;
+  transform: none;
+  max-width: min(48ch, 42%);
+  white-space: normal;
+}
 .job-line.done { border-color: var(--good); }
 .job-line.done .job-kind { color: var(--good); }
 .job-line.failed { border-color: var(--bad); }

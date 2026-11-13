@@ -4,6 +4,7 @@ package luckynumbers.v1;
 
 import "ln/options.proto";
 import "luckynumbers/v1/common.proto";
+import "luckynumbers/v1/cutscene.proto";
 
 option csharp_namespace = "LuckyNumbers.Model";
 
@@ -27,6 +28,13 @@ message CargoConfig {
   // Prompts ({name}): picking up, and using what you carry.
   string pickup_prompt = 13;
   string use_prompt = 14;
+  // Salvage jobs: walk up to the wreck (this many metres past its hull) and E flags it for processing, which meets
+  // the job's goal; the lines say so and send you back to your ship. Relics stay out for extra credits.
+  float salvage_distance = 16;
+  string salvage_prompt = 17;
+  repeated Dialogue salvage_lines = 18;
+  // Shown once it's flagged and you're near the wreck again.
+  string salvaged_prompt = 19;
 }
 
 enum RelicEffect {

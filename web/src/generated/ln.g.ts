@@ -82,6 +82,16 @@ export type MenuAction =
   | "Settings"
   | "Credits";
 
+export interface FlowState {
+  scene: GameScene;
+}
+
+/** Background loading of the next scene (title doubles as preloader). */
+export interface LoadingState {
+  progress: number;
+  ready: boolean;
+}
+
 /**
  * The crash site's relics, for the page: how many still lie out, and a revealed one's bearing ("Water Amulet:
  * 23 m north-east").
@@ -139,16 +149,6 @@ export interface CharacterSheet {
   /** CharacterConfig.heritage and its blurb. */
   heritage: string;
   heritageBlurb: string;
-}
-
-export interface FlowState {
-  scene: GameScene;
-}
-
-/** Background loading of the next scene (title doubles as preloader). */
-export interface LoadingState {
-  progress: number;
-  ready: boolean;
 }
 
 /** You in the range: whether you're in the room, and your shots and hits (on its targets) since you walked in or reset. */
@@ -605,6 +605,33 @@ export interface Outfitter {
   armor: number;
 }
 
+export interface SceneChangeRequested {
+  target: GameScene;
+}
+
+export interface SceneEntered {
+  scene: GameScene;
+}
+
+/** The dice roll's lucky number: Space regenerates the universe from it. */
+export interface UniverseSeedChanged {
+  seed: number;
+  /** Dice roles as 0..1 (face low..high), or -1 when no die has that role (the seed decides). */
+  star: number;
+  worlds: number;
+  luck: number;
+  moons: number;
+}
+
+export interface CutsceneStepStarted {
+  cutsceneId: string;
+  index: number;
+}
+
+export interface CutsceneFinished {
+  cutsceneId: string;
+}
+
 /** A relic was used (Core/InventoryPresenter): the d20, your bonuses (luck die + sheet), the total, and what it did. */
 export interface RelicRolled {
   relic: string;
@@ -666,14 +693,6 @@ export interface CharacterCallsignRequested {
   callsign: string;
 }
 
-export interface SceneChangeRequested {
-  target: GameScene;
-}
-
-export interface SceneEntered {
-  scene: GameScene;
-}
-
 /** The page: start the count again. */
 export interface RangeResetRequested {
 }
@@ -724,25 +743,6 @@ export interface CombatRoll {
   strong: boolean;
   /** What made up the bonus, e.g. "DEX +1 · aim +2 · steady +1 · recoil -3". */
   mods: string;
-}
-
-/** The dice roll's lucky number: Space regenerates the universe from it. */
-export interface UniverseSeedChanged {
-  seed: number;
-  /** Dice roles as 0..1 (face low..high), or -1 when no die has that role (the seed decides). */
-  star: number;
-  worlds: number;
-  luck: number;
-  moons: number;
-}
-
-export interface CutsceneStepStarted {
-  cutsceneId: string;
-  index: number;
-}
-
-export interface CutsceneFinished {
-  cutsceneId: string;
 }
 
 /** The run is over (game over): the save slot goes (SavePresenter) and the page reloads to the title. */
@@ -913,10 +913,10 @@ export interface UpgradeBought {
 
 /** Every (ln.web) state, by name: the page holds the latest snapshot of each. */
 export interface WebStates {
-  RelicSite: RelicSite;
-  CharacterSheet: CharacterSheet;
   FlowState: FlowState;
   LoadingState: LoadingState;
+  RelicSite: RelicSite;
+  CharacterSheet: CharacterSheet;
   RangeState: RangeState;
   StationState: StationState;
   DefendState: DefendState;
@@ -945,6 +945,11 @@ export interface WebStates {
 
 /** Every (ln.web) event, by name: Unity -> page as they happen. */
 export interface WebEvents {
+  SceneChangeRequested: SceneChangeRequested;
+  SceneEntered: SceneEntered;
+  UniverseSeedChanged: UniverseSeedChanged;
+  CutsceneStepStarted: CutsceneStepStarted;
+  CutsceneFinished: CutsceneFinished;
   RelicRolled: RelicRolled;
   DevWarpRequested: DevWarpRequested;
   CharacterSheetReady: CharacterSheetReady;
@@ -955,17 +960,12 @@ export interface WebEvents {
   CharacterResetRequested: CharacterResetRequested;
   CharacterXpGained: CharacterXpGained;
   CharacterCallsignRequested: CharacterCallsignRequested;
-  SceneChangeRequested: SceneChangeRequested;
-  SceneEntered: SceneEntered;
   RangeResetRequested: RangeResetRequested;
   StationCallAnswered: StationCallAnswered;
   StationPlanRequested: StationPlanRequested;
   PsxModeRequested: PsxModeRequested;
   StationLightsRequested: StationLightsRequested;
   CombatRoll: CombatRoll;
-  UniverseSeedChanged: UniverseSeedChanged;
-  CutsceneStepStarted: CutsceneStepStarted;
-  CutsceneFinished: CutsceneFinished;
   RunEnded: RunEnded;
   EncounterChoice: EncounterChoice;
   FindRolled: FindRolled;
@@ -998,6 +998,6 @@ export interface WebEvents {
 }
 
 /** Events the page may publish into the game. */
-export type InboundEvent = "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "CharacterCallsignRequested" | "SceneChangeRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "SaveSlotsReady" | "SaveSlotPicked" | "SaveSlotDeleteRequested" | "SettingsChanged" | "SettingsReset" | "SettingsToggled" | "MenuItemSelected" | "UniverseSelected" | "UpgradeBuyRequested" | "OutfitterCloseRequested";
+export type InboundEvent = "SceneChangeRequested" | "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "CharacterCallsignRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "SaveSlotsReady" | "SaveSlotPicked" | "SaveSlotDeleteRequested" | "SettingsChanged" | "SettingsReset" | "SettingsToggled" | "MenuItemSelected" | "UniverseSelected" | "UpgradeBuyRequested" | "OutfitterCloseRequested";
 
-export const STATE_NAMES = ["RelicSite", "CharacterSheet", "FlowState", "LoadingState", "RangeState", "StationState", "DefendState", "CombatState", "DogfightState", "DebtState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "PlayerControl", "ShipPicker", "PlayerVoyage", "RaceState", "SaveSlots", "GameSettings", "DiceState", "UniverseState", "Outfitter"] as const;
+export const STATE_NAMES = ["FlowState", "LoadingState", "RelicSite", "CharacterSheet", "RangeState", "StationState", "DefendState", "CombatState", "DogfightState", "DebtState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "PlayerControl", "ShipPicker", "PlayerVoyage", "RaceState", "SaveSlots", "GameSettings", "DiceState", "UniverseState", "Outfitter"] as const;

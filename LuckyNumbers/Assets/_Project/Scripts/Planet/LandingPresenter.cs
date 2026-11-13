@@ -13,15 +13,9 @@ using VContainer.Unity;
 
 namespace LuckyNumbers.Planet
 {
-    /// <summary>Your landed fighter, for the on-foot prompts (RelicsPresenter): boarding it flies you back out.</summary>
+    /// <summary>Your landed fighter, for the dev warp and the map (boarding it is an IInteractable: E beside it).</summary>
     public interface IFighter
     {
-        /// <summary>The board prompt when `feet` is close enough to the landed ship to board it, else "".</summary>
-        string BoardPrompt(Vector3 feet);
-
-        /// <summary>Climb aboard and lift off: fly anywhere; above FlightLanding.orbit_altitude E goes back to the station.</summary>
-        void Board();
-
         /// <summary>Where you step out beside the landed ship (the dev warp "ship"); null while it isn't landed.</summary>
         Vector3? BoardingSpot { get; }
     }
@@ -30,7 +24,7 @@ namespace LuckyNumbers.Planet
     /// You arrive in your own fighter and land it near the wreck, fully piloted (content/planet.txtpb landing):
     /// mouse pitches and yaws, A/D roll (wings level themselves when you let go), W/S throttle, Shift boost,
     /// Space lift thrusters, under gravity and air drag. Touch down slow, level and gentle, or crash and start
-    /// over. Landed: you step out beside your ship and walk (first person). Back beside it, E boards it (IFighter):
+    /// over. Landed: you step out beside your ship and walk (first person). Back beside it, E boards it (IInteractable):
     /// fly it anywhere and set it down wherever you like (step out again there). Above orbit_altitude, E breaks orbit
     /// and you're back at the station (PlayerVoyage.returning, so it knows you're back); climbing stops at the ceiling.
     ///
@@ -45,7 +39,7 @@ namespace LuckyNumbers.Planet
     /// shows descent, drift and tilt against the touchdown limits (green / amber / red) once you're low.
     /// </summary>
     [Presenter]
-    public sealed class LandingPresenter : ITickable, IArrival, IFighter, IDisposable
+    public sealed class LandingPresenter : ITickable, IArrival, IFighter, IInteractable, IDisposable
     {
         enum Phase { Idle, Flying, Crashed, Landed }
 
@@ -794,22 +788,32 @@ namespace LuckyNumbers.Planet
             _done?.TrySetResult();
         }
 
-        // ---- IFighter: flying back out ----------------------------------------------------------------------
+        // ---- IInteractable: E beside your landed ship boards it, flying back out ------------------------------
 
-        public string BoardPrompt(Vector3 feet)
+        static readonly object Boarding = new();
+
+        public bool Offer(Vector3 feet, out Interaction offer)
         {
-            if (_phase != Phase.Landed || Is(Flight.Boarding) || !_firstPerson.Active || L.OrbitAltitude <= 0f) return "";
+            offer = default;
+            if (_phase != Phase.Landed || Is(Flight.Boarding) || L.OrbitAltitude <= 0f) return false;
             // From the hull (its bounds), not the middle: a 24 m ship can be boarded from any side.
             var hull = Ship.Hull;
             var flat = new Vector3(feet.x, hull.center.y, feet.z);
-            var reach = L.BoardDistance > 0f ? L.BoardDistance : 4f;
-            return Vector3.Distance(hull.ClosestPoint(flat), flat) <= reach ? L.BoardPrompt ?? "E: board your ship" : "";
+            var distance = Vector3.Distance(hull.ClosestPoint(flat), flat);
+            if (distance > (L.BoardDistance > 0f ? L.BoardDistance : 4f)) return false;
+            offer = new Interaction(Boarding, InteractionPriority.Place, distance);
+            return true;
         }
+
+        public string Prompt(object key) => L.BoardPrompt ?? "E: board your ship";
+
+        public void Interact(object key) => Board();
 
         public Vector3? BoardingSpot =>
             _phase == Phase.Landed ? _position + _rotation * Vector3.right * (L.ShipLength * 0.5f + 2f) : null;
 
-        public void Board()
+        /// <summary>Climb aboard and lift off: fly anywhere; above FlightLanding.orbit_altitude E goes back to the station.</summary>
+        void Board()
         {
             if (_phase != Phase.Landed || Is(Flight.Boarding)) return;
             BoardAsync().Forget();

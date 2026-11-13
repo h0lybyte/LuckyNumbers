@@ -61,8 +61,11 @@ export function JobBoardPanel() {
   );
 }
 
-/** On the planet: the job you're here for, green once its goal is met, red once it can't be (a Defend's beacon lost). */
-export function JobLine() {
+/**
+ * The job you're here for, green once its goal is met, red once it can't be (a Defend's beacon lost). `tracker`: top
+ * left (the planet), clear of Unity's on-foot prompt and dialogue at the bottom.
+ */
+export function JobLine({ tracker = false }: { tracker?: boolean }) {
   const job = useLNState("PlayerJob");
   if (!job?.active) return null;
   const goal = (job.kind === "Clear" || job.kind === "Defend") && job.goal > 0
@@ -71,7 +74,7 @@ export function JobLine() {
     : job.done ? (job.kind === "Uplink" || job.kind === "Race" ? "Dock at the station to get paid" : "Fly back to the station to get paid")
     : job.objective + goal;
   return (
-    <div className={`job-line${job.done ? " done" : job.failed ? " failed" : ""}`}>
+    <div className={`job-line${tracker ? " tracker" : ""}${job.done ? " done" : job.failed ? " failed" : ""}`}>
       <span className="job-kind">{job.failed ? "Failed" : job.done ? "Done" : "Job"}</span> {text}
     </div>
   );

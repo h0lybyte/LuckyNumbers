@@ -105,11 +105,9 @@ namespace LuckyNumbers.Planet
                                IPublisher<PlayerDamaged> damaged, IPublisher<PlayerDied> died, IPublisher<CharacterXpGained> xp,
                                IPublisher<SceneChangeRequested> scenes, ISubscriber<DevWarpRequested> warps,
                                EncounterState encounter, ISubscriber<EncounterChoice> choices, IPublisher<ItemHandled> handled,
-                               IPublisher<FindRolled> foundRolls, AssetScope assets, DefendState defend,
-                               ISubscriber<InputActionPerformed> actions)
+                               IPublisher<FindRolled> foundRolls, AssetScope assets, DefendState defend)
         {
             _defend = defend;
-            _actions = actions;
             _assets = assets;
             _handled = handled;
             _foundRolls = foundRolls;

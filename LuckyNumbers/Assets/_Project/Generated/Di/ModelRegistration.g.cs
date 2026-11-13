@@ -12,6 +12,11 @@ namespace LuckyNumbers.Model
         /// <summary>Registers a MessagePipe broker for every (ln.event) message.</summary>
         public static void RegisterModelEvents(this IContainerBuilder builder, MessagePipeOptions options)
         {
+            builder.RegisterMessageBroker<SceneChangeRequested>(options);
+            builder.RegisterMessageBroker<SceneEntered>(options);
+            builder.RegisterMessageBroker<UniverseSeedChanged>(options);
+            builder.RegisterMessageBroker<CutsceneStepStarted>(options);
+            builder.RegisterMessageBroker<CutsceneFinished>(options);
             builder.RegisterMessageBroker<RelicRolled>(options);
             builder.RegisterMessageBroker<DevWarpRequested>(options);
             builder.RegisterMessageBroker<CharacterSheetReady>(options);
@@ -22,17 +27,12 @@ namespace LuckyNumbers.Model
             builder.RegisterMessageBroker<CharacterResetRequested>(options);
             builder.RegisterMessageBroker<CharacterXpGained>(options);
             builder.RegisterMessageBroker<CharacterCallsignRequested>(options);
-            builder.RegisterMessageBroker<SceneChangeRequested>(options);
-            builder.RegisterMessageBroker<SceneEntered>(options);
             builder.RegisterMessageBroker<RangeResetRequested>(options);
             builder.RegisterMessageBroker<StationCallAnswered>(options);
             builder.RegisterMessageBroker<StationPlanRequested>(options);
             builder.RegisterMessageBroker<PsxModeRequested>(options);
             builder.RegisterMessageBroker<StationLightsRequested>(options);
             builder.RegisterMessageBroker<CombatRoll>(options);
-            builder.RegisterMessageBroker<UniverseSeedChanged>(options);
-            builder.RegisterMessageBroker<CutsceneStepStarted>(options);
-            builder.RegisterMessageBroker<CutsceneFinished>(options);
             builder.RegisterMessageBroker<RunEnded>(options);
             builder.RegisterMessageBroker<EncounterChoice>(options);
             builder.RegisterMessageBroker<FindRolled>(options);
@@ -70,15 +70,15 @@ namespace LuckyNumbers.Model
         /// <summary>Registers every (ln.state) class as a singleton.</summary>
         public static void RegisterModelState(this IContainerBuilder builder)
         {
-            builder.Register<RelicSite>(Lifetime.Singleton);
-            builder.Register<CharacterSheet>(Lifetime.Singleton);
             builder.Register<FlowState>(Lifetime.Singleton);
             builder.Register<LoadingState>(Lifetime.Singleton);
+            builder.Register<CameraHandoff>(Lifetime.Singleton);
+            builder.Register<RelicSite>(Lifetime.Singleton);
+            builder.Register<CharacterSheet>(Lifetime.Singleton);
             builder.Register<RangeState>(Lifetime.Singleton);
             builder.Register<StationState>(Lifetime.Singleton);
             builder.Register<DefendState>(Lifetime.Singleton);
             builder.Register<CombatState>(Lifetime.Singleton);
-            builder.Register<CameraHandoff>(Lifetime.Singleton);
             builder.Register<DogfightState>(Lifetime.Singleton);
             builder.Register<DebtState>(Lifetime.Singleton);
             builder.Register<EncounterState>(Lifetime.Singleton);

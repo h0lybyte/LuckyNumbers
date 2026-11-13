@@ -41,6 +41,33 @@ namespace LuckyNumbers.Model
             PickupDistance = 2.2f,
             PickupPrompt = "E: pick up the {name}",
             UsePrompt = "R: use the {name}",
+            SalvageDistance = 6.0f,
+            SalvagePrompt = "E: flag the wreck for salvage",
+            SalvageLines =
+            {
+                new Dialogue
+                {
+                    Speaker = "You",
+                    Text = "Salvage beacon's on. Claim's ours.",
+                    DurationSeconds = 2.5f,
+                    CharsPerSecond = 40.0f,
+                },
+                new Dialogue
+                {
+                    Speaker = "Dispatch",
+                    Text = "Got your tag. The wreck's flagged for processing: our crews take it from here.",
+                    DurationSeconds = 4.0f,
+                    CharsPerSecond = 40.0f,
+                },
+                new Dialogue
+                {
+                    Speaker = "Dispatch",
+                    Text = "Get back to your ship and fly up to the station to get paid. Grab any relics on the way: they sell too.",
+                    DurationSeconds = 5.0f,
+                    CharsPerSecond = 40.0f,
+                },
+            },
+            SalvagedPrompt = "Wreck flagged for processing - back to your ship",
         };
 
         /// <summary>From <c>content/character.txtpb</c>.</summary>
@@ -3512,7 +3539,7 @@ namespace LuckyNumbers.Model
                     Kind = JobKind.Salvage,
                     Title = "Salvage on {planet}",
                     Brief = "A hauler went down on {planet}. {client} pays for anything you bring back.",
-                    Objective = "Salvage relics from the wreck on {planet}, then fly back to the station",
+                    Objective = "Flag the wreck on {planet} for salvage (E beside it), then fly back to the station",
                     Pay = 300,
                     PayPerDanger = 150,
                     DangerMin = 1,
@@ -3593,7 +3620,7 @@ namespace LuckyNumbers.Model
                 "Station Command",
             },
             FirstTitle = "Mayday: museum freighter",
-            FirstObjective = "Salvage the freighter's relics and fly back to the station",
+            FirstObjective = "Walk to the freighter's wreck and flag it for salvage (E), then fly back to the station",
             RingPrompt = "Dispatch is calling - E to answer",
             BoardLines =
             {

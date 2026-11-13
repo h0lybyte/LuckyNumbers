@@ -10,7 +10,7 @@ offers: 6   # one of each kind (salvage, retrieve, clear, uplink, defend, race)
 clients: ["the Meridian Museum", "Halden Salvage Co.", "a private collector", "the Survey Office", "Station Command"]
 
 first_title: "Mayday: museum freighter"
-first_objective: "Salvage the freighter's relics and fly back to the station"
+first_objective: "Walk to the freighter's wreck and flag it for salvage (E), then fly back to the station"
 first_pay: 0
 
 ring_prompt: "Dispatch is calling - E to answer"
@@ -27,7 +27,7 @@ types {
   kind: JOB_KIND_SALVAGE
   title: "Salvage on {planet}"
   brief: "A hauler went down on {planet}. {client} pays for anything you bring back."
-  objective: "Salvage relics from the wreck on {planet}, then fly back to the station"
+  objective: "Flag the wreck on {planet} for salvage (E beside it), then fly back to the station"
   pay: 300 pay_per_danger: 150 danger_min: 1 danger_max: 3
 }
 types {
