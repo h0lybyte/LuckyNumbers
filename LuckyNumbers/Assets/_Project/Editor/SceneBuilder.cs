@@ -66,6 +66,8 @@ namespace LuckyNumbers.Editor
             Debug.Log("[SceneBuilder] built Title, Intro, Planet, Station, FlightSchool, Orbit, Hold; build settings = [Title, Intro, Planet, Station, FlightSchool, Orbit, Hold]");
         }
 
+        const string TitleMusicClip = "Assets/_Project/Art/Music/BreakBeatJazzFusion.mp3";
+
         static void BuildTitle(Rig rig)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -77,6 +79,9 @@ namespace LuckyNumbers.Editor
             var dice = new GameObject("DiceView").AddComponent<DiceView>();
             Assign(dice, ("document", ui));
             ShipRig();   // your fighter, for the hangar after character creation (ShipPickerPresenter)
+            // Music under the menu, character creation and the hangar; the scene's only listener rides along.
+            var music = new GameObject("TitleMusic", typeof(AudioSource), typeof(AudioListener)).AddComponent<TitleMusic>();
+            Assign(music, ("clip", AssetDatabase.LoadAssetAtPath<AudioClip>(TitleMusicClip)));
 
             Scopes<TitleScope>();
             EditorSceneManager.SaveScene(scene, $"{ScenesDir}/Title.unity");

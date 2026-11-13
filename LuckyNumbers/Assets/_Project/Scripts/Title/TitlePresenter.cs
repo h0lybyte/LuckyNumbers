@@ -37,6 +37,7 @@ namespace LuckyNumbers.Title
         readonly IShipPicker _hangar;
         readonly ISaveSlots _saves;
         readonly GameSettings _settings;
+        readonly TitleMusic _music;
         readonly CompositeDisposable _disposables = new();
         readonly System.Threading.CancellationTokenSource _cts = new();
         bool _creditsOpen, _leaving;
@@ -48,8 +49,10 @@ namespace LuckyNumbers.Title
                               IPublisher<MenuItemSelected> menuPublisher, ISubscriber<MenuItemSelected> menu,
                               IPublisher<SceneChangeRequested> sceneRequests,
                               ISpaceDirector space, CameraHandoff handoff, ICharacterSetup character,
-                              IShipPicker hangar, ISaveSlots saves, GameSettings settings)
+                              IShipPicker hangar, ISaveSlots saves, GameSettings settings,
+                              TitleMusic music)
         {
+            _music = music;
             _settings = settings;
             _saves = saves;
             _hangar = hangar;
@@ -151,6 +154,7 @@ namespace LuckyNumbers.Title
         {
             var content = GameContent.Title;
             var duration = math.max(0.01f, content.PlayTransitionSeconds);
+            _music.FadeOut(duration);
             var cam = _space.Camera.transform;
             _space.TakeCamera();
             _space.TryGetBody(_space.Focus, out var home0, out _);   // the crash site the title orbits

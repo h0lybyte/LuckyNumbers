@@ -29,6 +29,7 @@ Docs: [docs/](docs/README.md)
 - Space station props (imported for later: cryo pods, crates, lab bench, chairs) and early room walls: [PSX Sci-Fi Station Kit Free](https://heyheythere.itch.io/psx-sci-fi-station-kit-free) by heyheythere ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/))
 - First-person arms (rig, 13 animations, skin and glove textures): [PSX First Person Arms](https://drillimpact.itch.io/psx-first-person-arms-free) by DrillImpact (CC0, public domain)
 - Futuristic weapons: 9 guns (rifles, snipers, carbine, heavy cannon), 2 melee weapons (hammer, knife) and gun mods (scope, sight, grip, box): [Free Futuristic Weapon Assets](https://niko-3d-models.itch.io/free-futuristic-weapon-assets) by Niko-3d-models (Free with credit)
+- Title music (menu, character creation and the hangar): [Break Beat Jazz Fusion](https://liamt15.itch.io) by Rory_Donovan (Made for Lucky Numbers (game jam), used with permission)
 - Dwarven hold surfaces (stone, slate, wood, metal, doors, windows, tapestries, lanterns), for the dwarven worlds' structures: [Delven Textures](https://strideh.itch.io/delven) by Bradley D. (Strideh) (Free for free and commercial games, with attribution; not for resale or AI training)
 - Planet shader look: [Simple 2D Planet shader](https://www.shadertoy.com/view/Wcf3W7) by Ikkemcwood (Shadertoy)
 - Seeded nebula sky (layered gas, dark dust, emission knots): [Nebula Background Shadertoy Study (inspiration)](https://github.com/guinetik) by guinetik
