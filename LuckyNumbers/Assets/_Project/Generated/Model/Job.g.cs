@@ -31,6 +31,11 @@ namespace LuckyNumbers.Model
         /// Out round the station (GameScene.Orbit): upload a satellite's data while rogue ships attack (content/dogfight.txtpb).
         /// </summary>
         Uplink = 4,
+        /// <summary>
+        /// Out round the station (GameScene.Orbit): a circuit race against AI pilots, mystery cubes on the line
+        /// (content/race.txtpb). `target` / `target_per_danger`: laps. Paid by place.
+        /// </summary>
+        Race = 5,
     }
 
     /// <summary>

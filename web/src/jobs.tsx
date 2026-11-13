@@ -5,7 +5,7 @@
 import { useEffect } from "react";
 import { LN, useLNState } from "./ln";
 
-const KINDS: Record<string, string> = { Salvage: "Salvage", Retrieve: "Retrieve", Clear: "Clear", Uplink: "Uplink" };
+const KINDS: Record<string, string> = { Salvage: "Salvage", Retrieve: "Retrieve", Clear: "Clear", Uplink: "Uplink", Race: "Race" };
 
 export function JobBoardPanel() {
   const board = useLNState("JobBoard");
@@ -68,7 +68,7 @@ export function JobLine() {
   const goal = job.kind === "Clear" && job.goal > 0 ? ` (${job.count}/${job.goal})` : "";
   return (
     <div className={`job-line${job.done ? " done" : ""}`}>
-      <span className="job-kind">{job.done ? "Done" : "Job"}</span> {job.done ? (job.kind === "Uplink" ? "Dock at the station to get paid" : "Fly back to the station to get paid") : job.objective + goal}
+      <span className="job-kind">{job.done ? "Done" : "Job"}</span> {job.done ? (job.kind === "Uplink" || job.kind === "Race" ? "Dock at the station to get paid" : "Fly back to the station to get paid") : job.objective + goal}
     </div>
   );
 }

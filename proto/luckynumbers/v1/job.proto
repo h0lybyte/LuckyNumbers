@@ -18,6 +18,9 @@ enum JobKind {
   JOB_KIND_RETRIEVE = 3;
   // Out round the station (GameScene.Orbit): upload a satellite's data while rogue ships attack (content/dogfight.txtpb).
   JOB_KIND_UPLINK = 4;
+  // Out round the station (GameScene.Orbit): a circuit race against AI pilots, mystery cubes on the line
+  // (content/race.txtpb). `target` / `target_per_danger`: laps. Paid by place.
+  JOB_KIND_RACE = 5;
 }
 
 // Work from Dispatch (content/jobs.txtpb). Your first job is the museum freighter's mayday (the station's own call

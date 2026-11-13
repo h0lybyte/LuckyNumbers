@@ -1,0 +1,89 @@
+# proto-file: luckynumbers/v1/race.proto
+# proto-message: luckynumbers.v1.RaceConfig
+# Circuit racing round the station (Station/Race; docs/race.md). A seeded loop of gates, you and the rivals, mystery
+# cubes in rows across the line: fly through one, roll d20 + luck + catch-up, the colour's table picks the effect.
+# Natural 1: the fumble (backfire). Natural 20: the cube's nat20. Placeholder values; tune with gameplay.
+
+title: "CIRCUIT RACE"
+hint: "W thrust - mouse to steer - Shift boost - fly through the gates in order\nCubes: fly through to roll the dice - guns are cold"
+touch_hint: "Left stick: thrust - right stick: steer - Boost\nFly through the gates in order; cubes roll the dice"
+
+rivals: 10
+laps: 2              # practice (?ln-race); a job's goal sets its own
+speed_scale: 1.6     # racing trim: 32 x 1.8 boost x 1.6 = ~92 m/s flat out on a baseline fighter
+accel: 14            # m/s² on top of the hover's while you thrust forward
+max_shields: 3
+countdown: 3
+finish_seconds: 8
+dnf_seconds: 45
+
+pay_shares: [1, 0.6, 0.4, 0.2, 0.1]          # 1st..5th; 6th on pays nothing
+xp: [120, 80, 60, 40, 30, 20, 15, 10, 10, 10, 10]
+
+track {
+  points: 9 radius: 1100 radius_jitter: 0.3 height: 160
+  gate_spacing: 260 gate_size: 110 start_distance: 300
+  cube_every: 3 cube_row: 4 cube_size: 9 cube_respawn: 6
+  hazards: 36 hazard_size_min: 20 hazard_size_max: 70 hazard_spread: 220
+}
+
+ai {
+  pace_min: 0.82 pace_max: 0.95 pace_per_danger: 0.02   # of the baseline boosted top speed
+  turn_rate: 75 lookahead: 140 rubber_band: 0.12
+  lane: 0.45 length: 24 cube_seek: 0.5
+}
+
+roll { luck_max: 2 catch_up_per_place: 1 catch_up_max: 4 }
+
+fumble { effect: RACE_EFFECT_STALL name: "Backfire" power: 0.35 seconds: 2.5 }
+
+# Pilots (original names), skins from Art/Models/Fighter/Skins.
+pilots { name: "Vexa Morrow"     skin: "krulspeld1" }
+pilots { name: "Dax Halloran"    skin: "lordshadow" }
+pilots { name: "Juno Pike"       skin: "krulspeld3" }
+pilots { name: "Old Brannick"    skin: "nmt3000" }
+pilots { name: "Sable Quist"     skin: "psionic" }
+pilots { name: "Teo Varga"       skin: "snazf1" }
+pilots { name: "Mira Kessel"     skin: "cubik" }
+pilots { name: "Rook Adeyemi"    skin: "freelancer" }
+pilots { name: "Lark Ostrander"  skin: "krulspeld5" }
+pilots { name: "Pim Calloway"    skin: "robin" }
+pilots { name: "Hask the Quiet"  skin: "shadee" }
+pilots { name: "Nell Fairweather" skin: "jodomatis" }
+
+# Green: common, gentle. Mostly speed and shields.
+cubes {
+  id: "green" name: "Spark" color { r: 0.3 g: 2.4 b: 0.5 a: 1 } weight: 4
+  outcomes { min: 1  effect: RACE_EFFECT_BOOST  name: "Nudge"       power: 1.2 seconds: 2 }
+  outcomes { min: 8  effect: RACE_EFFECT_SHIELD name: "Shield"      count: 1 }
+  outcomes { min: 13 effect: RACE_EFFECT_BOOST  name: "Turbo"       power: 1.45 seconds: 3 }
+  outcomes { min: 18 effect: RACE_EFFECT_BOOST  name: "Overdrive"   power: 1.65 seconds: 4 }
+  nat20       { effect: RACE_EFFECT_BOOST  name: "Afterburner" power: 1.9 seconds: 5 }
+}
+# Blue: tactical. Slow the others down.
+cubes {
+  id: "blue" name: "Static" color { r: 0.3 g: 0.9 b: 3.0 a: 1 } weight: 3
+  outcomes { min: 1  effect: RACE_EFFECT_MINE name: "Mine"       power: 0.5 seconds: 2.5 radius: 45 }
+  outcomes { min: 8  effect: RACE_EFFECT_EMP  name: "EMP"        power: 0.6 seconds: 2.5 radius: 220 }
+  outcomes { min: 13 effect: RACE_EFFECT_ZAP  name: "Zap"        power: 0.45 seconds: 3 }
+  outcomes { min: 18 effect: RACE_EFFECT_ZAP  name: "Leader zap" power: 0.4 seconds: 3.5 leader: true }
+  nat20       { effect: RACE_EFFECT_EMP  name: "Storm"      power: 0.4 seconds: 3.5 radius: 600 }
+}
+# Gold: rare, big swings forward.
+cubes {
+  id: "gold" name: "Gilded" color { r: 3.0 g: 2.2 b: 0.3 a: 1 } weight: 1
+  outcomes { min: 1  effect: RACE_EFFECT_BOOST name: "Turbo"     power: 1.6 seconds: 3 }
+  outcomes { min: 8  effect: RACE_EFFECT_PHASE name: "Phase"     seconds: 4 }
+  outcomes { min: 14 effect: RACE_EFFECT_WARP  name: "Warp"      count: 1 }
+  outcomes { min: 19 effect: RACE_EFFECT_WARP  name: "Long warp" count: 2 }
+  nat20       { effect: RACE_EFFECT_WARP  name: "Fold space" count: 3 }
+}
+# Red: risky. Low rolls hurt you; high ones pay big.
+cubes {
+  id: "red" name: "Risk" color { r: 3.0 g: 0.35 b: 0.3 a: 1 } weight: 2
+  outcomes { min: 1  effect: RACE_EFFECT_STALL   name: "Stall"      power: 0.4 seconds: 2.5 }
+  outcomes { min: 7  effect: RACE_EFFECT_NOTHING name: "Dud" }
+  outcomes { min: 12 effect: RACE_EFFECT_BOOST   name: "Overdrive"  power: 1.9 seconds: 4 }
+  outcomes { min: 17 effect: RACE_EFFECT_SWAP    name: "Swap" }
+  nat20       { effect: RACE_EFFECT_BOOST   name: "Hyperdrive" power: 2.2 seconds: 5 }
+}

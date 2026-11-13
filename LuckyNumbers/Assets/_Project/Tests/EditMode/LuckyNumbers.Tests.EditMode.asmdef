@@ -2,6 +2,7 @@
     "name": "LuckyNumbers.Tests.EditMode",
     "rootNamespace": "LuckyNumbers.Tests",
     "references": [
+        "LuckyNumbers.Model",
         "LuckyNumbers.Planet",
         "LuckyNumbers.Station",
         "Unity.Mathematics",

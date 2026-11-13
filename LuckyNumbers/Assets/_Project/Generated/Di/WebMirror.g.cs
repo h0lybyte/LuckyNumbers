@@ -49,6 +49,7 @@ namespace LuckyNumbers.Model
             "PlayerControl",
             "ShipPicker",
             "PlayerVoyage",
+            "RaceState",
             "SaveSlots",
             "GameSettings",
             "DiceState",
@@ -375,61 +376,95 @@ namespace LuckyNumbers.Model
                 sink.MarkState(20);
             }
             {
-                var s = c.Resolve<SaveSlots>();
-                d.Add(s.Open.Subscribe(_ => sink.MarkState(21)));
+                var s = c.Resolve<RaceState>();
                 d.Add(s.Active.Subscribe(_ => sink.MarkState(21)));
-                NotifyCollectionChangedEventHandler<string> hSlots = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(21);
-                s.Slots.CollectionChanged += hSlots;
-                d.Add(Disposable.Create(() => s.Slots.CollectionChanged -= hSlots));
+                d.Add(s.Practice.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Lap.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Laps.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Gate.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Gates.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Place.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Racers.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Countdown.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Finished.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Time.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.BestLap.Subscribe(_ => sink.MarkState(21)));
+                NotifyCollectionChangedEventHandler<string> hStandings = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(21);
+                s.Standings.CollectionChanged += hStandings;
+                d.Add(Disposable.Create(() => s.Standings.CollectionChanged -= hStandings));
+                NotifyCollectionChangedEventHandler<string> hFeed = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(21);
+                s.Feed.CollectionChanged += hFeed;
+                d.Add(Disposable.Create(() => s.Feed.CollectionChanged -= hFeed));
+                d.Add(s.Roll.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.RollSeq.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Shields.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Effects.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Banner.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.NextGate.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Result.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Payout.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.Speed.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.GateAngle.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.GateOff.Subscribe(_ => sink.MarkState(21)));
+                d.Add(s.OffCourse.Subscribe(_ => sink.MarkState(21)));
                 sink.MarkState(21);
             }
             {
-                var s = c.Resolve<GameSettings>();
-                d.Add(s.LookSensitivity.Subscribe(_ => sink.MarkState(22)));
-                d.Add(s.InvertY.Subscribe(_ => sink.MarkState(22)));
-                d.Add(s.Quality.Subscribe(_ => sink.MarkState(22)));
-                d.Add(s.ShowFps.Subscribe(_ => sink.MarkState(22)));
+                var s = c.Resolve<SaveSlots>();
                 d.Add(s.Open.Subscribe(_ => sink.MarkState(22)));
+                d.Add(s.Active.Subscribe(_ => sink.MarkState(22)));
+                NotifyCollectionChangedEventHandler<string> hSlots = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(22);
+                s.Slots.CollectionChanged += hSlots;
+                d.Add(Disposable.Create(() => s.Slots.CollectionChanged -= hSlots));
                 sink.MarkState(22);
             }
             {
-                var s = c.Resolve<DiceState>();
-                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(23);
-                s.Faces.CollectionChanged += hFaces;
-                d.Add(Disposable.Create(() => s.Faces.CollectionChanged -= hFaces));
-                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(23)));
-                d.Add(s.Seed.Subscribe(_ => sink.MarkState(23)));
+                var s = c.Resolve<GameSettings>();
+                d.Add(s.LookSensitivity.Subscribe(_ => sink.MarkState(23)));
+                d.Add(s.InvertY.Subscribe(_ => sink.MarkState(23)));
+                d.Add(s.Quality.Subscribe(_ => sink.MarkState(23)));
+                d.Add(s.ShowFps.Subscribe(_ => sink.MarkState(23)));
+                d.Add(s.Open.Subscribe(_ => sink.MarkState(23)));
                 sink.MarkState(23);
             }
             {
-                var s = c.Resolve<UniverseState>();
-                d.Add(s.Id.Subscribe(_ => sink.MarkState(24)));
-                d.Add(s.Name.Subscribe(_ => sink.MarkState(24)));
-                d.Add(s.Holds.Subscribe(_ => sink.MarkState(24)));
+                var s = c.Resolve<DiceState>();
+                NotifyCollectionChangedEventHandler<int> hFaces = (in NotifyCollectionChangedEventArgs<int> _) => sink.MarkState(24);
+                s.Faces.CollectionChanged += hFaces;
+                d.Add(Disposable.Create(() => s.Faces.CollectionChanged -= hFaces));
+                d.Add(s.Rolling.Subscribe(_ => sink.MarkState(24)));
+                d.Add(s.Seed.Subscribe(_ => sink.MarkState(24)));
                 sink.MarkState(24);
             }
             {
+                var s = c.Resolve<UniverseState>();
+                d.Add(s.Id.Subscribe(_ => sink.MarkState(25)));
+                d.Add(s.Name.Subscribe(_ => sink.MarkState(25)));
+                d.Add(s.Holds.Subscribe(_ => sink.MarkState(25)));
+                sink.MarkState(25);
+            }
+            {
                 var s = c.Resolve<Outfitter>();
-                d.Add(s.Open.Subscribe(_ => sink.MarkState(25)));
-                NotifyCollectionChangedEventHandler<string> hItems = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(25);
+                d.Add(s.Open.Subscribe(_ => sink.MarkState(26)));
+                NotifyCollectionChangedEventHandler<string> hItems = (in NotifyCollectionChangedEventArgs<string> _) => sink.MarkState(26);
                 s.Items.CollectionChanged += hItems;
                 d.Add(Disposable.Create(() => s.Items.CollectionChanged -= hItems));
-                d.Add(s.CommonTitle.Subscribe(_ => sink.MarkState(25)));
-                d.Add(s.CommonBlurb.Subscribe(_ => sink.MarkState(25)));
-                d.Add(s.ExoticTitle.Subscribe(_ => sink.MarkState(25)));
-                d.Add(s.ExoticBlurb.Subscribe(_ => sink.MarkState(25)));
-                d.Add(s.Ship.Subscribe(_ => sink.MarkState(25)));
-                d.Add(s.Speed.Subscribe(_ => sink.MarkState(25)));
-                d.Add(s.Agility.Subscribe(_ => sink.MarkState(25)));
-                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(25)));
-                d.Add(s.Efficiency.Subscribe(_ => sink.MarkState(25)));
-                d.Add(s.Toughness.Subscribe(_ => sink.MarkState(25)));
-                d.Add(s.Firepower.Subscribe(_ => sink.MarkState(25)));
-                d.Add(s.Payout.Subscribe(_ => sink.MarkState(25)));
-                d.Add(s.Guns.Subscribe(_ => sink.MarkState(25)));
-                d.Add(s.Shield.Subscribe(_ => sink.MarkState(25)));
-                d.Add(s.Armor.Subscribe(_ => sink.MarkState(25)));
-                sink.MarkState(25);
+                d.Add(s.CommonTitle.Subscribe(_ => sink.MarkState(26)));
+                d.Add(s.CommonBlurb.Subscribe(_ => sink.MarkState(26)));
+                d.Add(s.ExoticTitle.Subscribe(_ => sink.MarkState(26)));
+                d.Add(s.ExoticBlurb.Subscribe(_ => sink.MarkState(26)));
+                d.Add(s.Ship.Subscribe(_ => sink.MarkState(26)));
+                d.Add(s.Speed.Subscribe(_ => sink.MarkState(26)));
+                d.Add(s.Agility.Subscribe(_ => sink.MarkState(26)));
+                d.Add(s.Fuel.Subscribe(_ => sink.MarkState(26)));
+                d.Add(s.Efficiency.Subscribe(_ => sink.MarkState(26)));
+                d.Add(s.Toughness.Subscribe(_ => sink.MarkState(26)));
+                d.Add(s.Firepower.Subscribe(_ => sink.MarkState(26)));
+                d.Add(s.Payout.Subscribe(_ => sink.MarkState(26)));
+                d.Add(s.Guns.Subscribe(_ => sink.MarkState(26)));
+                d.Add(s.Shield.Subscribe(_ => sink.MarkState(26)));
+                d.Add(s.Armor.Subscribe(_ => sink.MarkState(26)));
+                sink.MarkState(26);
             }
             d.Add(c.Resolve<ISubscriber<RelicRolled>>().Subscribe(e =>
             {
@@ -710,11 +745,12 @@ namespace LuckyNumbers.Model
                 case 18: Write(b, c.Resolve<PlayerControl>()); break;
                 case 19: Write(b, c.Resolve<ShipPicker>()); break;
                 case 20: Write(b, c.Resolve<PlayerVoyage>()); break;
-                case 21: Write(b, c.Resolve<SaveSlots>()); break;
-                case 22: Write(b, c.Resolve<GameSettings>()); break;
-                case 23: Write(b, c.Resolve<DiceState>()); break;
-                case 24: Write(b, c.Resolve<UniverseState>()); break;
-                case 25: Write(b, c.Resolve<Outfitter>()); break;
+                case 21: Write(b, c.Resolve<RaceState>()); break;
+                case 22: Write(b, c.Resolve<SaveSlots>()); break;
+                case 23: Write(b, c.Resolve<GameSettings>()); break;
+                case 24: Write(b, c.Resolve<DiceState>()); break;
+                case 25: Write(b, c.Resolve<UniverseState>()); break;
+                case 26: Write(b, c.Resolve<Outfitter>()); break;
             }
         }
 
@@ -1530,6 +1566,84 @@ namespace LuckyNumbers.Model
             b.Append('}');
         }
 
+        static void Write(StringBuilder b, RaceState s)
+        {
+            b.Append('{');
+            b.Append("\"active\":");
+            b.Append(s.Active.Value ? "true" : "false");
+            b.Append(",\"practice\":");
+            b.Append(s.Practice.Value ? "true" : "false");
+            b.Append(",\"lap\":");
+            Json.Num(b, s.Lap.Value);
+            b.Append(",\"laps\":");
+            Json.Num(b, s.Laps.Value);
+            b.Append(",\"gate\":");
+            Json.Num(b, s.Gate.Value);
+            b.Append(",\"gates\":");
+            Json.Num(b, s.Gates.Value);
+            b.Append(",\"place\":");
+            Json.Num(b, s.Place.Value);
+            b.Append(",\"racers\":");
+            Json.Num(b, s.Racers.Value);
+            b.Append(",\"countdown\":");
+            Json.Num(b, s.Countdown.Value);
+            b.Append(",\"finished\":");
+            b.Append(s.Finished.Value ? "true" : "false");
+            b.Append(",\"time\":");
+            Json.Num(b, s.Time.Value);
+            b.Append(",\"bestLap\":");
+            Json.Num(b, s.BestLap.Value);
+            b.Append(",\"standings\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Standings)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Str(b, x);
+                }
+            }
+            b.Append(']');
+            b.Append(",\"feed\":");
+            b.Append('[');
+            {
+                var first = true;
+                foreach (var x in s.Feed)
+                {
+                    if (!first) b.Append(',');
+                    first = false;
+                    Json.Str(b, x);
+                }
+            }
+            b.Append(']');
+            b.Append(",\"roll\":");
+            Json.Str(b, s.Roll.Value);
+            b.Append(",\"rollSeq\":");
+            Json.Num(b, s.RollSeq.Value);
+            b.Append(",\"shields\":");
+            Json.Num(b, s.Shields.Value);
+            b.Append(",\"effects\":");
+            Json.Str(b, s.Effects.Value);
+            b.Append(",\"banner\":");
+            Json.Str(b, s.Banner.Value);
+            b.Append(",\"nextGate\":");
+            Json.Num(b, s.NextGate.Value);
+            b.Append(",\"result\":");
+            Json.Str(b, s.Result.Value);
+            b.Append(",\"payout\":");
+            Json.Num(b, s.Payout.Value);
+            b.Append(",\"speed\":");
+            Json.Num(b, s.Speed.Value);
+            b.Append(",\"gateAngle\":");
+            Json.Num(b, s.GateAngle.Value);
+            b.Append(",\"gateOff\":");
+            Json.Num(b, s.GateOff.Value);
+            b.Append(",\"offCourse\":");
+            b.Append(s.OffCourse.Value ? "true" : "false");
+            b.Append('}');
+        }
+
         static void Write(StringBuilder b, SaveSlots s)
         {
             b.Append('{');
@@ -2263,6 +2377,7 @@ namespace LuckyNumbers.Model
                 case JobKind.Clear: return "Clear";
                 case JobKind.Retrieve: return "Retrieve";
                 case JobKind.Uplink: return "Uplink";
+                case JobKind.Race: return "Race";
                 default: return ((int)v).ToString(CultureInfo.InvariantCulture);
             }
         }
@@ -2277,6 +2392,7 @@ namespace LuckyNumbers.Model
                 case "Clear": return JobKind.Clear;
                 case "Retrieve": return JobKind.Retrieve;
                 case "Uplink": return JobKind.Uplink;
+                case "Race": return JobKind.Race;
                 default: return default;
             }
         }

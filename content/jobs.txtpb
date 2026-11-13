@@ -5,7 +5,7 @@
 # one at the ship (E) when you're about to leave.
 # Fills: {client} {planet} {target} {count} {pay}. Placeholder values; tune with gameplay.
 
-offers: 4   # one of each kind (salvage, retrieve, clear, uplink)
+offers: 5   # one of each kind (salvage, retrieve, clear, uplink, race)
 clients: ["the Meridian Museum", "Halden Salvage Co.", "a private collector", "the Survey Office", "Station Command"]
 
 first_title: "Mayday: museum freighter"
@@ -52,4 +52,12 @@ types {
   pay: 450 pay_per_danger: 250 danger_min: 1 danger_max: 5   # + the tier's pay_bonus (content/dogfight.txtpb)
   target: 1 target_per_danger: 1     # rogues per wave, capped by the tier's wave_size
   uplink_seconds: 30 uplink_seconds_per_danger: 5
+}
+types {
+  kind: JOB_KIND_RACE
+  title: "Circuit race for {client}"
+  brief: "{client} is running a race round the station: ten pilots, {count} laps, mystery cubes on the line. {pay} credits to the winner, less for a podium."
+  objective: "Race {count} laps through the gates; fly through the mystery cubes to roll for an edge"
+  pay: 400 pay_per_danger: 200 danger_min: 1 danger_max: 5   # x the place's share (content/race.txtpb pay_shares)
+  target: 2 target_per_danger: 0     # laps
 }
