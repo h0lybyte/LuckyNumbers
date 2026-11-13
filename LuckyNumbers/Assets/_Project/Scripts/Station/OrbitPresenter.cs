@@ -505,7 +505,7 @@ namespace LuckyNumbers.Station
             var start = _beacon + _out * math.max(Length * 4f, R.Track?.StartDistance ?? 300f);
             _race = new Race(_flight, _ship, _rogueTemplate, Length, _space.Seed, seed, laps, danger, !onJob, start, _out, _hull,
                              _raceState, _job, _xp);
-            _camPos = _flight.Position - _flight.Rotation * Vector3.forward * (Length * O.ChaseDistance) + Vector3.up * (Length * O.ChaseHeight);
+            _chase.Snap(_flight.Position - _flight.Rotation * Vector3.forward * (Length * O.ChaseDistance) + Vector3.up * (Length * O.ChaseHeight), Vector3.up);
             _ship.Pose(_flight.Position, _flight.Pose);
         }
 
