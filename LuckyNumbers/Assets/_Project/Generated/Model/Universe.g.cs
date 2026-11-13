@@ -41,6 +41,10 @@ namespace LuckyNumbers.Model
         /// The folk who live there (flavour, empty for none).
         /// </summary>
         public string People { get; set; }
+        /// <summary>
+        /// Ambient motion on its worlds: motes, wreck embers, cloud shadows, flocks (docs/ambience.md).
+        /// </summary>
+        public Ambience Ambience { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public Universe Clone() => (Universe)MemberwiseClone();

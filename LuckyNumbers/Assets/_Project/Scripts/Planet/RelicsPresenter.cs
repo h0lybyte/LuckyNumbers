@@ -250,6 +250,13 @@ namespace LuckyNumbers.Planet
                 shape.gameObject.SetActive(true);
                 shape.position = at;
                 if (own == null) Colour(shape, relic);   // own models keep their materials
+                // Its blob shadow on the ground it hovers over (it bobs and turns above it, so the shadow breathes).
+                if (BlobSpec.Fit(shape, shape.GetComponentsInChildren<Renderer>(), out var blob))
+                {
+                    blob.Offset = Vector2.zero;   // it spins about its root
+                    blob.FadeHeight = math.max(1.5f, blob.Size.y * 3f);
+                    BlobCaster.Attach(shape.gameObject, blob).SetGround(at.y - 0.35f);
+                }
                 Transform beam = null;
                 if (_view.RelicBeamTemplate != null)
                 {
@@ -440,6 +447,7 @@ namespace LuckyNumbers.Planet
             block.SetColor(ColorA, new Color(c.R, c.G, c.B, 1f));
             block.SetColor(ColorB, new Color(c.R * 0.7f, c.G * 0.7f, c.B * 0.7f, 1f));
             cube.GetComponent<Renderer>().SetPropertyBlock(block);
+            BlobCaster.Attach(cube, BlobSpec.Centred(size)).SetGround(at.y - size.y * 0.5f - 0.05f);
             _dropped.Add(new Dropped { Item = item, Shape = cube.transform, Rest = at });
             Debug.Log($"[Relics] dropped {Label(item)} ({cube.name})");
         }

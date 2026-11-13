@@ -5,6 +5,9 @@
 // shadows; Forward and Forward+). Distance fades to _HazeColor (dark underground air): fully hazed at _HazeDistance.
 // Cutouts: _ALPHATEST_ON clips below _Cutoff (layer alpha; the array is DXT5 only if a layer has alpha).
 // PS1 look (global _LnPsx): vertex snap, affine UVs, 15-bit dithered colour, as StationKit.
+// Lantern flicker (global _LnLanternFlicker = amount, speed, ambient; HoldScene/HoldAmbiencePresenter): the baked
+// light above the ambient level breathes with a slow 3D noise (neighbouring walls together, each lantern's pool out of
+// step with the next) plus a quick shiver. Per vertex; 0 amount = steady (the planet's gate).
 Shader "LuckyNumbers/HoldKit"
 {
     Properties
@@ -39,6 +42,7 @@ Shader "LuckyNumbers/HoldKit"
             #pragma multi_compile_fragment _ _CLUSTER_LIGHT_LOOP
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Include/Noise.hlsl"
 
             TEXTURE2D_ARRAY(_Layers);
             SAMPLER(sampler_Layers);
@@ -48,6 +52,7 @@ Shader "LuckyNumbers/HoldKit"
                 float _Brightness, _HazeDistance, _LightGain, _MaxLod, _Cutoff;
             CBUFFER_END
             float _LnPsx;   // global: 1 = PS1 look
+            float4 _LnLanternFlicker;   // global: x amount, y speed, z the ambient level (unflickered)
 
             struct Attributes
             {
@@ -81,6 +86,15 @@ Shader "LuckyNumbers/HoldKit"
                 o.affine = float3(v.uv.xy * o.positionCS.w, o.positionCS.w);
                 o.normalWS = TransformObjectToWorldNormal(v.normalOS);
                 o.color = v.color;
+                if (_LnLanternFlicker.x > 0.0)
+                {
+                    float t = _Time.y * _LnLanternFlicker.y;
+                    float slow = ln_simplex(float3(o.positionWS.xz * 0.11, t * 0.35) + o.positionWS.y * 0.05);
+                    float quick = sin(t * 4.1 + slow * 9.0) * sin(t * 2.3 + o.positionWS.x * 0.3);
+                    float flicker = 1.0 + _LnLanternFlicker.x * (slow * 0.75 + quick * 0.35);
+                    float3 ambient = _LnLanternFlicker.zzz;
+                    o.color.rgb = min(o.color.rgb, ambient) + max(o.color.rgb - ambient, 0.0) * flicker;
+                }
                 return o;
             }
 

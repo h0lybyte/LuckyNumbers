@@ -61,9 +61,13 @@ namespace LuckyNumbers.Station
         ShipGuns _guns;
         Dogfight _fight;
         SpaceDust _dust;
-        // Feel: camera trauma (hits and crashes; the shake is its square), the view's own field of view and the boost's
-        // share of it now, and when you last took crash damage off the hull.
-        float _trauma, _baseFov = -1f, _fovBoost, _hullBumpAt = -99f;
+        OrbitScenery _scenery;
+        // Feel (planet.txtpb landing.feel, and this scene's shake / fov kick): the chase camera's spring, lead, roll
+        // lag, rumble and trauma shake (ChaseCamera), the hull's bank and bob (ShipSway); when you last took crash
+        // damage off the hull.
+        readonly ChaseCamera _chase = new();
+        readonly ShipSway _sway = new();
+        float _hullBumpAt = -99f, _spinAngle, _orbitDiameter;
         GameObject _rogueTemplate;
         Vector3? _satellite;   // a satellite job's relay
         bool _lockClick, _canFire, _destroyed;
@@ -72,7 +76,7 @@ namespace LuckyNumbers.Station
         ShipStats _stats = new();
         bool _ready, _leaving, _interact, _inSpace;
         float _fade = 1f, _readoutAt, _scale = 1f, _pulse;
-        Vector3 _camPos, _beacon, _out, _centre;
+        Vector3 _beacon, _out, _centre;
         Vector3 _orbitPosition;
         // The station orbits with its planet: the camera keeps this offset from the body (`_orbitBody`) as it moves.
         Vector3 _orbitOffset;
@@ -81,6 +85,8 @@ namespace LuckyNumbers.Station
 
         static OrbitScene O => GameContent.Orbit;
         static float Length => GameContent.School.FighterLength;   // the ship at its flying size
+        static FlightFeel Feel => GameContent.Planet?.Landing?.Feel;
+        static FlightHover H => GameContent.Planet.Landing.Hover;
 
         [Inject]
         public OrbitPresenter(PlanetView view, OrbitView orbit, PlayerInput input, PlayerShip playerShip,
@@ -171,8 +177,10 @@ namespace LuckyNumbers.Station
             _flight.Position = _beacon + _out * (Length * math.max(0f, O.StartDistance));
             _flight.Rotation = Quaternion.LookRotation(-_out, Vector3.up);
             _flight.Stop();
-            _camPos = _flight.Position + _out * (Length * O.ChaseDistance) + Vector3.up * (Length * O.ChaseHeight);
+            _chase.Snap(_flight.Position + _out * (Length * O.ChaseDistance) + Vector3.up * (Length * O.ChaseHeight), Vector3.up);
+            _sway.Reset();
             _ship.Pose(_flight.Position, _flight.Pose);
+            _scenery = new OrbitScenery(O.Life, _orbit, _rogueTemplate, _hull, _centre, Length, O.Range, _space.Seed, Layers.Local);
             if (RaceMode && R != null) StartRace();
             else Fight();
             _ready = true;
@@ -256,7 +264,32 @@ namespace LuckyNumbers.Station
             };
             _orbit.BuildHull(_hull, trims);
             _orbit.Beacon(_beacon, _out, size);
+            Dressing();
             _centre = new Vector3(width * cell / 2f, 0f, depth * cell / 2f);
+        }
+
+        /// <summary>
+        /// Lights on the hull's far edges (west, north, east, south: the two sets blink in turn) and a radar mast on top
+        /// of its biggest block (OrbitView.Dressing; placeholders).
+        /// </summary>
+        void Dressing()
+        {
+            if (_hull.Count == 0) return;
+            Bounds w = _hull[0], e = _hull[0], n = _hull[0], so = _hull[0], big = _hull[0];
+            foreach (var b in _hull)
+            {
+                if (b.min.x < w.min.x) w = b;
+                if (b.max.x > e.max.x) e = b;
+                if (b.max.z > n.max.z) n = b;
+                if (b.min.z < so.min.z) so = b;
+                if (b.size.x * b.size.z > big.size.x * big.size.z) big = b;
+            }
+            var points = new[]
+            {
+                new Vector3(w.min.x, w.max.y, w.center.z), new Vector3(e.max.x, e.max.y, e.center.z),
+                new Vector3(n.center.x, n.max.y, n.max.z), new Vector3(so.center.x, so.max.y, so.min.z),
+            };
+            _orbit.Dressing(points, new Vector3(big.center.x, big.max.y, big.center.z), Length * 0.1f);
         }
 
         /// <summary>The space camera at the station's point in orbit (as StationPresenter: sunward, its north to the body).</summary>
@@ -277,6 +310,7 @@ namespace LuckyNumbers.Station
             _stationInSpace = Quaternion.LookRotation((Vector3)(at - (float3)_orbitPosition), Vector3.up);
             _orbitOffset = _orbitPosition - (Vector3)at;
             _orbitBody = target;
+            _orbitDiameter = diameter;
             _space.Camera.nearClipPlane = math.max(0.001f, diameter * 0.01f);
             _inSpace = true;
         }
@@ -303,12 +337,20 @@ namespace LuckyNumbers.Station
                 if (_race == null || !_race.Phased) KeepOutOfHull();
                 if (_race == null) Shoot();   // guns cold in a race: the cubes are the weapons
             }
-            if (!_destroyed) _ship.Pose(_flight.Position, _flight.Pose);
+            if (!_destroyed)
+            {
+                // The hull banks into turns and strafes and bobs when slow (looks only; the flight stays steady).
+                var sp = math.max(0.1f, _stats.Speed);
+                _sway.Step(_flight.Rotation, _flight.Velocity, _flight.Spin, H.StrafeSpeed * sp, HoverFlight.TopSpeed(sp),
+                           Length, 1f, dt, Feel);
+                _ship.Pose(_flight.Position + _sway.Offset, _flight.PoseWith(_sway.Tilt));
+            }
+            _scenery?.Tick(dt);
             if (_fight != null)
             {
                 _fight.Tick(dt, _flight.Position, _flight.Velocity);
                 if (!_destroyed) _flight.Velocity += _fight.TakeKick();   // bounced off a rogue
-                _trauma += _fight.TakeJolt();
+                _chase.AddTrauma(_fight.TakeJolt());
                 if (_fight.Destroyed && !_destroyed) Restore().Forget();
             }
             if (_race != null && !_leaving)
@@ -364,7 +406,7 @@ namespace LuckyNumbers.Station
             _hullBumpAt = Time.time + math.max(0.05f, k?.Cooldown ?? 0.4f);
             var damage = Impacts.Damage(crash, k?.MinSpeed ?? 10f, k?.DamagePerSpeed ?? 0.35f, k?.HullSize ?? 1.5f);
             if (_fight != null) _fight.Crash(damage, "the station", crash);
-            else _trauma += math.saturate(0.15f + crash / 60f);
+            else _chase.AddTrauma(math.saturate(0.15f + crash / 60f));
         }
 
         /// <summary>`p` pushed out of every hull block by `radius` (along its shallowest side); `v` loses its speed into them.</summary>
@@ -390,39 +432,26 @@ namespace LuckyNumbers.Station
             var cam = _view.FlightCamera.transform;
             if (_ready)
             {
+                var f = Feel;
                 var fwd = _flight.Rotation * Vector3.forward;
                 var up = _flight.Rotation * Vector3.up;
                 var want = _flight.Position - fwd * (Length * O.ChaseDistance) + up * (Length * O.ChaseHeight);
-                _camPos = Vector3.Lerp(_camPos, want, 1f - math.exp(-6f * dt));
                 var none = Vector3.zero;
-                _camPos = OutOfHull(_camPos, 2f, ref none);   // the hull is opaque: the camera stays outside it
-                var look = _flight.Position + fwd * Length - _camPos;
-                if (look.sqrMagnitude < 1e-4f) look = fwd;
-                var rotation = Quaternion.LookRotation(look, up);
+                _chase.Place(OutOfHull(_chase.Follow(want, dt, f), 2f, ref none));   // the hull is opaque: the camera stays outside it
 
-                // Shake: trauma squared, smooth noise (not a jitter), fading at shake_decay a second.
-                _trauma = math.saturate(_trauma);
-                _trauma = math.max(0f, _trauma - math.max(0.1f, O.ShakeDecay is > 0f ? O.ShakeDecay : 1.4f) * dt);
-                var shake = _trauma * _trauma;
-                var shakePos = Vector3.zero;
-                if (shake > 1e-4f)
-                {
-                    var t = Time.time * 18f;
-                    float N(float seed) => Mathf.PerlinNoise(seed, t) * 2f - 1f;
-                    var angle = math.max(0f, O.ShakeAngle);   // 0: no shake
-                    rotation *= Quaternion.Euler(N(1.3f) * angle * shake, N(7.9f) * angle * shake, N(4.1f) * angle * 0.6f * shake);
-                    shakePos = rotation * new Vector3(N(11.7f), N(15.2f), 0f) * (Length * math.max(0f, O.ShakeOffset) * shake);
-                }
-                cam.SetPositionAndRotation(_camPos + shakePos, rotation);
-
-                // Boost widens the view with the speed past cruise (eased, so it breathes rather than jumps).
-                var flightCam = _view.FlightCamera;
-                if (_baseFov < 0f) _baseFov = flightCam.fieldOfView;
+                // Space has no ground: the view takes all the ship's roll (trailing it a moment), leads into turns,
+                // rumbles under boost and hard thrust, and shakes with trauma (hits and crashes; shake_* here).
                 var top = HoverFlight.TopSpeed(math.max(0.1f, _stats.Speed));
-                var boost = math.max(1.01f, GameContent.Planet?.Landing?.Hover?.Boost ?? 1.5f);
-                var past = math.saturate((_flight.Velocity.magnitude - top) / (top * (boost - 1f)));
-                _fovBoost = Mathf.Lerp(_fovBoost, past, 1f - math.exp(-(past > _fovBoost ? 7f : 3.5f) * dt));
-                flightCam.fieldOfView = _baseFov + O.FovKick * _fovBoost;
+                _chase.Aim(cam, _flight.Position + fwd * Length, _flight.Rotation, _flight.Spin,
+                           H.TurnRate * math.max(0.1f, _stats.Agility), up, Length,
+                           _destroyed || _leaving ? 0f : _flight.Rumble, dt, f,
+                           math.max(0f, O.ShakeAngle), Length * math.max(0f, O.ShakeOffset), O.ShakeDecay is > 0f ? O.ShakeDecay : 1.4f);
+
+                // Speed widens the view a little, and boost past cruise by fov_kick more.
+                var boost = math.max(1.01f, H.Boost);
+                var speed = _flight.Velocity.magnitude;
+                var past = math.saturate((speed - top) / (top * (boost - 1f)));
+                _chase.Fov(_view.FlightCamera, speed / top, O.FovKick * past, dt, f);
 
                 if (_dust == null && O.Dust > 0)
                     _dust = new SpaceDust(O.Dust, Length * 7f, Length * 0.012f, Layers.Local, _space.Seed);
@@ -432,7 +461,13 @@ namespace LuckyNumbers.Station
             {
                 var space = _space.Camera;
                 if (_space.TryGetBody(_orbitBody, out var body, out _)) _orbitPosition = (Vector3)body + _orbitOffset;
-                space.transform.SetPositionAndRotation(_orbitPosition, _stationInSpace * cam.rotation);
+                // The station turns slowly in its orbit (the planet and stars wheel round), and the space camera moves
+                // a little with yours (parallax: the planet shifts as you fly about).
+                var life = O.Life;
+                _spinAngle = (_spinAngle + (life?.Spin ?? 0f) * dt) % 360f;
+                var frame = _stationInSpace * Quaternion.AngleAxis(_spinAngle, Vector3.up);
+                var shift = (life?.Parallax ?? 0f) * _orbitDiameter / (Length * math.max(5f, O.Range));
+                space.transform.SetPositionAndRotation(_orbitPosition + frame * ((cam.position - _centre) * shift), frame * cam.rotation);
                 space.fieldOfView = _view.FlightCamera.fieldOfView;
             }
         }
@@ -470,7 +505,7 @@ namespace LuckyNumbers.Station
             var start = _beacon + _out * math.max(Length * 4f, R.Track?.StartDistance ?? 300f);
             _race = new Race(_flight, _ship, _rogueTemplate, Length, _space.Seed, seed, laps, danger, !onJob, start, _out, _hull,
                              _raceState, _job, _xp);
-            _camPos = _flight.Position - _flight.Rotation * Vector3.forward * (Length * O.ChaseDistance) + Vector3.up * (Length * O.ChaseHeight);
+            _chase.Snap(_flight.Position - _flight.Rotation * Vector3.forward * (Length * O.ChaseDistance) + Vector3.up * (Length * O.ChaseHeight), Vector3.up);
             _ship.Pose(_flight.Position, _flight.Pose);
         }
 
@@ -568,6 +603,7 @@ namespace LuckyNumbers.Station
             _race?.Dispose();
             _fight?.Dispose();
             _dust?.Dispose();
+            _scenery?.Dispose();
             _guns?.Dispose();
             _dogfight.Destroyed.Value = false;
             if (_rogueTemplate != null) Object.Destroy(_rogueTemplate);

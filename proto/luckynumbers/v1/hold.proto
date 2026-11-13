@@ -3,6 +3,7 @@ syntax = "proto3";
 package luckynumbers.v1;
 
 import "ln/options.proto";
+import "luckynumbers/v1/ambience.proto";
 import "luckynumbers/v1/hold_hall.proto";
 import "luckynumbers/v1/hold_life.proto";
 import "luckynumbers/v1/hold_vertical.proto";
@@ -53,6 +54,9 @@ message HoldConfig {
   // Depth seals, drop shafts, collapses, falling (hold_depth.proto).
   DepthRules depth = 24;
   string depth_ref = 25 [(ln.ref) = "depth"];
+  // Ambient motion underground: dust motes round you, lantern flicker (docs/ambience.md).
+  Ambience ambience = 26;
+  string ambience_ref = 27 [(ln.ref) = "ambience"];
 }
 
 // Travel between a dwarven planet's surface and its hold (Planet <-> Hold scenes).

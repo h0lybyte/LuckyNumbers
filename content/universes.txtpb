@@ -8,6 +8,7 @@ universes {
   blurb: "Bright young stars, gas giants, living worlds."
   generator_ref: "space/generators/default"
   holds: false
+  ambience_ref: "ambience/home"
 }
 
 universes {
@@ -17,4 +18,5 @@ universes {
   generator_ref: "space/generators/emberdeep"
   holds: true
   people: "Varrun"
+  ambience_ref: "ambience/emberdeep"
 }

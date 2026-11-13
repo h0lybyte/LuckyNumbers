@@ -95,7 +95,11 @@ namespace LuckyNumbers.Planet
         float _heading, _pitch, _bank, _yawRate, _pitchRate;
         Vector3 _pad;                  // the landing pad: the flattest spot a little way from the wreck
         Transform _padMarker;
-        Vector3 _camPos;
+        // The chase camera's spring, lead and roll (landing.feel), how far into the landing approach it is (0..1:
+        // risen, looking down), and the hull's bank and bob.
+        readonly ChaseCamera _chase = new();
+        readonly ShipSway _sway = new();
+        float _approach;
         Transform _beacon;
         Collider[] _ownColliders = Array.Empty<Collider>();
         readonly Collider[] _hits = new Collider[16];
@@ -168,6 +172,8 @@ namespace LuckyNumbers.Planet
             Ship.Show(PlayerShipSkin.Current(_playerShip), L.ShipLength);
             Ship.GearUp(instant: true);                            // coming in from orbit: legs tucked away
             _ownColliders = Ship.Pivot.GetComponentsInChildren<Collider>(true);
+            CrashSitePresenter.ShadowShip(Ship, L.ShipLength);              // its blob shadow: the landing cue
+            BlobShadows.Current.View = _view.FlightCamera;                  // blobs fade and cull for the chase camera while it's on
             _stats = PlayerShipStats.Of(_playerShip);
             PlayerShipStats.EnsureFuel(_playerShip);
             _arrivalFuel = _playerShip.Fuel.Value;
@@ -197,6 +203,8 @@ namespace LuckyNumbers.Planet
             _site = site;
             Ship.Show(PlayerShipSkin.Current(_playerShip), L.ShipLength);
             _ownColliders = Ship.Pivot.GetComponentsInChildren<Collider>(true);
+            CrashSitePresenter.ShadowShip(Ship, L.ShipLength);              // its blob shadow: the landing cue
+            BlobShadows.Current.View = _view.FlightCamera;                  // blobs fade and cull for the chase camera while it's on
             _stats = PlayerShipStats.Of(_playerShip);
             PlayerShipStats.EnsureFuel(_playerShip);
             _guns?.Dispose();
@@ -245,7 +253,8 @@ namespace LuckyNumbers.Planet
             _pitch = _bank = _yawRate = _pitchRate = 0f;
             // Assisted, the throttle is a speed: start at the speed you arrive with.
             _throttle = Assisted ? math.saturate(L.StartSpeed / math.max(1f, A.MaxSpeed)) : 0.35f;
-            _camPos = _position - _rotation * Vector3.forward * (L.ShipLength * L.ChaseDistance * 3f) + Vector3.up * L.ShipLength;
+            _chase.Snap(_position - _rotation * Vector3.forward * (L.ShipLength * L.ChaseDistance * 3f) + Vector3.up * L.ShipLength, Vector3.up);
+            _sway.Reset();
             SetSolid(false);
             _phase = Phase.Flying;
             _phaseTime = 0f;
@@ -263,7 +272,16 @@ namespace LuckyNumbers.Planet
             _phaseTime += dt;
             if (_phase == Phase.Flying) Fly(dt);
             else if (_phase == Phase.Crashed && _phaseTime > 2.2f) Restart();
-            Ship.Pose(_position, _rotation * _barrel.Offset);   // the hull rolls; the camera and steering don't
+            // The hull rolls (barrel roll), and the hover ship banks into turns and bobs when slow (less near the
+            // ground); the camera and steering don't.
+            if (_phase == Phase.Flying && HoverShip)
+            {
+                var sp = math.max(0.1f, _stats.Speed);
+                _sway.Step(_rotation, _velocity, _spin, H.StrafeSpeed * sp, H.MaxSpeed * sp, L.ShipLength,
+                           math.saturate((_altitude - 2f) / 10f), dt, L.Feel);
+                Ship.Pose(_position + _sway.Offset, _rotation * _sway.Tilt * _barrel.Offset);
+            }
+            else Ship.Pose(_position, _rotation * _barrel.Offset);
             Chase(dt);
         }
 
@@ -814,7 +832,9 @@ namespace LuckyNumbers.Planet
             _heading = _rotation.eulerAngles.y;
             _pitch = _bank = _yawRate = _pitchRate = 0f;
             var flatForward = Vector3.ProjectOnPlane(_rotation * Vector3.forward, Vector3.up).normalized;
-            _camPos = _position - flatForward * (L.ShipLength * L.ChaseDistance) + Vector3.up * (L.ShipLength * L.ChaseHeight);
+            _chase.Snap(_position - flatForward * (L.ShipLength * L.ChaseDistance) + Vector3.up * (L.ShipLength * L.ChaseHeight), Vector3.up);
+            _sway.Reset();
+            _approach = 0f;
             _flight |= Flight.Roaming | Flight.Clearing;
             _phase = Phase.Flying;
             _phaseTime = 0f;
@@ -869,19 +889,34 @@ namespace LuckyNumbers.Planet
         void Chase(float dt)
         {
             var cam = _view.FlightCamera.transform;
+            var f = L.Feel;
+            var l = L.ShipLength;
             var flatForward = Vector3.ProjectOnPlane(_rotation * Vector3.forward, Vector3.up);
             if (flatForward.sqrMagnitude < 1e-4f) flatForward = _rotation * Vector3.up;
-            var want = _position - flatForward.normalized * (L.ShipLength * L.ChaseDistance) + Vector3.up * (L.ShipLength * L.ChaseHeight);
-            _camPos = Vector3.Lerp(_camPos, want, 1f - math.exp(-5f * dt));
-            var floor = _ground.SurfaceAt(_camPos) + 1.5f;                      // never under the ground (its mesh)
-            if (_camPos.y < floor) _camPos.y = floor;
+            // The landing approach: low and slow, the camera rises and looks down past the ship (the ground, the pad).
+            var low = HoverShip && _phase == Phase.Flying && f != null && f.ApproachAltitude > 0f
+                ? math.saturate(1f - _altitude / f.ApproachAltitude) * math.saturate(1.5f - _velocity.magnitude / math.max(1f, H.MaxSpeed * 0.5f))
+                : 0f;
+            _approach = Mathf.Lerp(_approach, low, 1f - math.exp(-1.5f * dt));
+            var rise = l * (f?.ApproachHeight ?? 0f) * _approach;
+            var want = _position - flatForward.normalized * (l * L.ChaseDistance) + Vector3.up * (l * L.ChaseHeight + rise);
+            var camPos = _chase.Follow(want, dt, f);
+            var floor = _ground.SurfaceAt(camPos) + 1.5f;                      // never under the ground (its mesh)
+            if (camPos.y < floor) camPos.y = floor;
+            _chase.Place(camPos);
             // Assisted: tilt a little with the bank, and widen the view with speed (a sense of speed).
             // The tilt fades out as the ship goes past its side (Q/E all the way over): halfway between up and upside
             // down there's no one way to tilt, and the view would flip.
             var shipUp = _rotation * Vector3.up;
             var bank = math.saturate(A.CameraBank) * math.saturate(Vector3.Dot(shipUp, Vector3.up) * 2f);
             var camUp = Assisted ? Vector3.Slerp(Vector3.up, shipUp, bank) : Vector3.up;
-            cam.SetPositionAndRotation(_camPos, Quaternion.LookRotation(_position + _rotation * Vector3.forward * L.ShipLength - _camPos, camUp));
+            // Led into turns (the hover ship's), rumbling under boost and a hard brake.
+            var flying = _phase == Phase.Flying && HoverShip;
+            var rumble = flying && !_dry
+                ? _input.Sprinting.Value && _input.Move.Value.Y > 0.1f ? 1f : _input.Braking.Value && _velocity.sqrMagnitude > 4f ? 0.6f : 0f
+                : 0f;
+            _chase.Aim(cam, _position + _rotation * Vector3.forward * l - Vector3.up * (rise * 1.5f), _rotation,
+                       flying ? _spin : Vector3.zero, flying ? H.TurnRate : 90f, camUp, l, rumble, dt, f);
             if (Assisted)
                 _view.FlightCamera.fieldOfView = math.lerp(_view.FlightCamera.fieldOfView,
                     65f + A.SpeedFov * math.saturate(_velocity.magnitude / math.max(1f, A.MaxSpeed)), 1f - math.exp(-3f * dt));

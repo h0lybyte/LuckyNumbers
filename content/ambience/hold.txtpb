@@ -1,0 +1,22 @@
+# proto-file: luckynumbers/v1/ambience.proto
+# proto-message: luckynumbers.v1.Ambience
+# The holds: old dust hanging in the lantern light, and the lanterns themselves never quite steady.
+
+# Dust: fine specks hanging almost still round you, lit warm by the lanterns.
+motes {
+  count: 160
+  low_end_share: 0.4
+  box { x: 10 y: 6 z: 10 }
+  size: 0.025
+  color { r: 1 g: 0.85 b: 0.62 a: 0.55 }
+  drift { x: 0.03 y: -0.015 z: 0.02 }
+  flutter: 0.3
+  flutter_speed: 0.35
+  glow: 0
+  twinkle: 0.5
+  gust: 0
+}
+
+# Flame flicker on the baked lantern light: subtle, a few times a second.
+lantern_flicker: 0.16
+lantern_flicker_speed: 3.2

@@ -73,7 +73,12 @@ namespace LuckyNumbers.Planet
         IDisposable _subscription;
         float _reportAt = float.MaxValue;   // when to toast how well the hands settled on what they just picked up
 
-        float _yaw, _pitch, _vertical, _stride, _moving, _landDip, _errorLogAt, _sprint, _air, _crouch, _awakeAt = -1f;
+        float _yaw, _pitch, _vertical, _stride, _moving, _errorLogAt, _sprint, _air, _crouch, _awakeAt = -1f;
+        // Movement feel: horizontal velocity (eased toward what the keys ask), walk-to-run ramp (0..1), how winded
+        // you are (0..1, from running), breathing phase, head dip on a spring (metres down, m/s), view roll
+        // (degrees), the sprint FOV kick (degrees) over the camera's own FOV (captured on the first active frame).
+        Vector3 _velocity;
+        float _sprintRamp, _exert, _breath, _dip, _dipVel, _roll, _fovKick, _baseFov = -1f;
         /// <summary>Presses since they were last used (Jump, Interact), set by the input subscription.</summary>
         [System.Flags] enum Press : byte { None = 0, Jump = 1, Interact = 2 }
         Press _press;
@@ -190,12 +195,35 @@ namespace LuckyNumbers.Planet
             _arms.Play(_config.IdleClip);
             _arms.SetLife(_config.ArmBreathDegrees, _config.ArmSwingDegrees, _config.FingerFidgetDegrees);
             _arms.SetFeel(_config.SprintPump, _config.AirRaiseDegrees);
+            // Your blob shadow (BlobShadows): under your feet when you look down, swept away from the sun outdoors.
+            var body = _player.Body;
+            if (body != null)
+            {
+                var scale = body.transform.lossyScale.y;
+                var height = body.height * scale;
+                _blob = BlobCaster.Attach(body.gameObject, new BlobSpec
+                {
+                    Size = new Vector3(body.radius * 2f * scale, height, body.radius * 1.4f * scale),
+                    Bottom = body.center.y * scale - height * 0.5f,
+                    Strength = BlobShadows.Tune.PlayerStrength,
+                    Probe = true,
+                });
+            }
         }
+
+        BlobCaster _blob;
 
         public void Tick()
         {
             var dt = Time.deltaTime;
-            if (!Active || dt <= 0f) { _press = Press.None; return; }
+            _blob?.SetHidden((Locks & ControlLock.Vehicle) != 0);   // in your ship's seat: no body on the ground
+            if (!Active || dt <= 0f)
+            {
+                _press = Press.None;
+                _velocity = Vector3.zero;   // control comes back from a standstill
+                if (_fovKick != 0f && _baseFov > 0f) { _player.Camera.fieldOfView = _baseFov; _fovKick = 0f; }
+                return;
+            }
             if (_awakeAt < 0f) _awakeAt = Time.time;
 
             // Pointer lock: browsers need a click; Esc releases it. A click while locked throws.
@@ -214,45 +242,89 @@ namespace LuckyNumbers.Planet
             var grounded = body.isGrounded || Climbing;   // on a ladder: footed, not airborne (arms don't fly up)
             var move = _input.Move.Value;
             var running = _input.Sprinting.Value;
-            var speed = (running ? _config.SprintSpeed : _config.WalkSpeed) * SpeedScale;
+            var keys = move.X * move.X + move.Y * move.Y > 1e-4f;
+            // Walk to run over sprint_ramp_seconds (eased), not a step in speed.
+            _sprintRamp = _config.SprintRampSeconds > 0f
+                ? Mathf.MoveTowards(_sprintRamp, running && keys ? 1f : 0f, dt / _config.SprintRampSeconds)
+                : (running ? 1f : 0f);
+            var speed = math.lerp(_config.WalkSpeed, _config.SprintSpeed, Smooth(_sprintRamp)) * SpeedScale;
             var yawRot = Quaternion.Euler(0f, _yaw, 0f);
             var wish = yawRot * new Vector3(move.X, 0f, move.Y);
             if (wish.sqrMagnitude > 1f) wish.Normalize();
             if (_reaching != null && _reachT < 0.5f) wish += StepIn(_reaching.position) / math.max(0.1f, speed);   // step in to grab
 
+            var jumped = false;
             if (Climbing)
             {
                 _vertical = 0f;   // whoever climbs moves the body; letting go starts the fall from rest
+                _velocity = Vector3.zero;
                 Use(Press.Jump);
             }
             else
             {
                 if (grounded && _vertical < 0f) _vertical = -2f;                 // stick to slopes
-                if (Pressed(Press.Jump) && grounded && _reaching == null) _vertical = _config.JumpSpeed;
+                if (Pressed(Press.Jump) && grounded && _reaching == null) { _vertical = _config.JumpSpeed; jumped = true; }
                 Use(Press.Jump);
                 _vertical -= _config.Gravity * dt;
-                body.Move((wish * speed + Vector3.up * _vertical) * dt);
+                Accelerate(wish * speed, grounded, dt);
+                var from = body.transform.position;
+                var flags = body.Move((_velocity + Vector3.up * _vertical) * dt);
+                if ((flags & CollisionFlags.Sides) != 0)
+                {
+                    // Into a wall: keep only what we actually moved, so sliding off it doesn't wait for momentum to turn.
+                    var moved = (body.transform.position - from) / dt;
+                    moved.y = 0f;
+                    if (moved.sqrMagnitude < _velocity.sqrMagnitude) _velocity = moved;
+                }
             }
             var falling = -_vertical;   // the speed down this frame moved at (the next frame's landing resets it)
             body.transform.rotation = yawRot;
 
             if (!_wasGrounded && body.isGrounded)
             {
-                _landDip = 1f;                                                 // landing thump
+                // Landing thump, by how hard: a step down a slope (falling ~2 m/s: the slope stick) barely registers.
+                DipKick(math.min(_config.LandDipMax, math.max(0f, falling - 2.5f) * _config.LandDipPerSpeed));
                 if (!Climbing && falling > 0f) Landed?.Invoke(falling);
             }
+            if (jumped) DipKick(_config.JumpDip);   // a quick push down as the legs take off
             _wasGrounded = body.isGrounded;
-            _landDip = math.max(0f, _landDip - dt * 3f);
+            DipSpring(dt);
 
             // Head bob from stride, scaled by how fast we move over ground; crouch while grabbing.
             var planar = new Vector3(body.velocity.x, 0f, body.velocity.z).magnitude;
-            // Eased: velocity stops dead when you let go of the keys, and swing/bob scaled by it would snap to rest.
+            // Eased: swing/bob scaled by speed would snap to rest on a sudden stop (a wall, a lock).
             var movingNow = body.isGrounded ? math.saturate(planar / math.max(0.1f, _config.WalkSpeed)) : 0f;
             _moving = math.lerp(_moving, movingNow, 1f - math.exp(-(movingNow > _moving ? 8f : 5f) * dt));
             var moving = _moving;
             _stride += dt * _config.BobFrequency * 2f * math.PI * math.max(0.2f, planar / math.max(0.1f, _config.WalkSpeed));
-            var bobY = math.abs(math.sin(_stride)) * _config.BobAmount * moving - _landDip * 0.08f;
-            var bobX = math.sin(_stride) * _config.BobAmount * 0.5f * moving;
+            // Footstep-shaped: low at each footfall, up through the stride; bob_shape blends a smooth sin^2 with the
+            // sharper |sin| (a heel strike).
+            var step = math.sin(_stride);
+            var bobY = math.lerp(step * step, math.abs(step), math.saturate(_config.BobShape)) * _config.BobAmount * moving;
+            var bobX = step * _config.BobAmount * 0.5f * moving;
+            var cam = _config.CameraMotion;
+
+            // Breathing, standing still mostly: faster and deeper after a run, easing back over ~10 s.
+            _exert = Mathf.MoveTowards(_exert, _sprint > 0.5f ? 1f : 0f, dt / (_sprint > 0.5f ? 6f : 10f));
+            _breath += dt * 2f * math.PI * _config.BreathRate * (1f + 1.4f * _exert);
+            if (_breath > 2f * math.PI) _breath -= 2f * math.PI;
+            var breathAmp = _config.BreathAmount * (1f + _exert) * (1f - 0.7f * moving);
+            var breathY = math.sin(_breath) * breathAmp;
+
+            // View roll: lean into a strafe and a turn (eased), a hair of sway with each step.
+            var side = Vector3.Dot(_velocity, yawRot * Vector3.right) / math.max(0.1f, _config.SprintSpeed);
+            var yawRate = lookDelta.x * _config.LookDegreesPerPixel / dt;
+            var rollTarget = -math.clamp(side, -1f, 1f) * _config.StrafeRollDegrees
+                           - math.clamp(yawRate / 180f, -2f, 2f) * _config.TurnRollDegrees;
+            _roll = math.lerp(_roll, rollTarget, 1f - math.exp(-8f * dt));
+            var roll = (_roll - step * moving * _config.StepRollDegrees) * cam;
+            var pitchLife = (_dip * 20f - math.cos(_breath) * breathAmp * 30f) * cam;   // nod with the dip; breathe
+
+            // A small FOV kick at a run.
+            var cameraEye = _player.Camera;
+            if (_baseFov < 0f) _baseFov = cameraEye.fieldOfView;
+            _fovKick = math.lerp(_fovKick, _config.SprintFovKick * Smooth(_sprintRamp) * moving * cam, 1f - math.exp(-5f * dt));
+            cameraEye.fieldOfView = _baseFov + _fovKick;
             // Lean in toward far reaches (head and arms together, so the arm mesh's open ends stay out of view):
             // integrate the overshoot the arms report, never leaning back past upright, ease out when not reaching.
             if (_arms.IsReaching)
@@ -262,8 +334,8 @@ namespace LuckyNumbers.Planet
                 if (back < 0f) _lean -= body.transform.forward * back;
             }
             else _lean = Vector3.Lerp(_lean, Vector3.zero, 1f - math.exp(-6f * dt));
-            _player.Head.localPosition = new Vector3(0f, _config.EyeHeight + bobY - _crouch, 0f) + Quaternion.Inverse(body.transform.rotation) * _lean;
-            _player.Head.localRotation = Quaternion.Euler(_pitch, 0f, 0f);
+            _player.Head.localPosition = new Vector3(0f, _config.EyeHeight + (bobY + breathY - _dip) * cam - _crouch, 0f) + Quaternion.Inverse(body.transform.rotation) * _lean;
+            _player.Head.localRotation = Quaternion.Euler(math.clamp(_pitch + pitchLife, -89f, 89f), 0f, roll);
 
             // Body feel: running (pump + run clip), airborne (arms up), shaky hands after the crash.
             var ease = 1f - math.exp(-6f * dt);
@@ -277,12 +349,59 @@ namespace LuckyNumbers.Planet
             // Arms lag against the look and follow the stride.
             var target = new Vector3(-lookDelta.y, lookDelta.x, 0f) * _config.Sway;
             _sway = Vector3.Lerp(_sway, target, 1f - math.exp(-10f * dt));
-            _viewBob = new Vector3(bobX, bobY * 0.6f - _landDip * 0.04f, 0f);
+            _viewBob = new Vector3(bobX, bobY * 0.6f - _dip * 1.1f, 0f);   // the arms sink a little further than the head
             _viewTilt = Quaternion.Euler(math.clamp(_sway.x, -6f, 6f), math.clamp(_sway.y, -6f, 6f), -bobX * 30f);
             _armsShift = Vector3.Lerp(_armsShift, _weapon != null && _held != null ? _weapon.ArmsShift : Vector3.zero, 1f - math.exp(-8f * dt));
             _arms.Pose(_viewBob + _armsShift, _viewTilt);
             Hands(dt, click);
             Use(Press.Interact);
+        }
+
+        /// <summary>
+        /// Ease the horizontal velocity toward `target`: ground_accel to speed up or turn, ground_decel to stop; in the
+        /// air, air_accel steers only while keys are held (momentum carries otherwise). Ground accel 0: instant.
+        /// </summary>
+        void Accelerate(Vector3 target, bool grounded, float dt)
+        {
+            var asking = target.sqrMagnitude > 1e-4f;
+            if (grounded)
+            {
+                if (_config.GroundAccel <= 0f) { _velocity = target; return; }
+                var rate = asking ? _config.GroundAccel : math.max(_config.GroundDecel, 0.01f);
+                _velocity = Vector3.MoveTowards(_velocity, target, rate * dt);
+            }
+            else if (asking) _velocity = Vector3.MoveTowards(_velocity, target, _config.AirAccel * dt);
+        }
+
+        /// <summary>
+        /// Push the head down so the spring's first dip reaches about `metres` (from its frequency and damping:
+        /// an underdamped spring's peak is v0 / w * exp(-z / sqrt(1 - z^2) * atan(sqrt(1 - z^2) / z))).
+        /// </summary>
+        void DipKick(float metres)
+        {
+            if (metres <= 0f || _config.DipSpringHz <= 0f) return;
+            var w = 2f * math.PI * _config.DipSpringHz;
+            var z = math.clamp(_config.DipDamping, 0.05f, 1f);
+            var peak = z < 0.999f ? math.exp(-z / math.sqrt(1f - z * z) * math.atan2(math.sqrt(1f - z * z), z)) : 0.3679f;
+            _dipVel += metres * w / peak;
+        }
+
+        /// <summary>The head dip's spring back to rest: substeps keep it stable on slow frames.</summary>
+        void DipSpring(float dt)
+        {
+            if (_config.DipSpringHz <= 0f) { _dip = _dipVel = 0f; return; }
+            var w = 2f * math.PI * _config.DipSpringHz;
+            var z = math.max(0f, _config.DipDamping);
+            var n = math.clamp((int)math.ceil(dt * 120f), 1, 8);
+            var h = dt / n;
+            for (var i = 0; i < n; i++)
+            {
+                _dipVel += (-w * w * _dip - 2f * z * w * _dipVel) * h;
+                _dip += _dipVel * h;
+            }
+            var max = math.max(0.02f, _config.LandDipMax);
+            if (_dip > max) { _dip = max; _dipVel = math.min(_dipVel, 0f); }
+            else if (_dip < -max) { _dip = -max; _dipVel = math.max(_dipVel, 0f); }
         }
 
         /// <summary>Horizontal velocity (m/s) to close in until within arm's length of a point.</summary>
@@ -431,7 +550,7 @@ namespace LuckyNumbers.Planet
                 }
                 return;
             }
-            _crouch = math.max(0f, _crouch - dt * 2f);
+            _crouch = _crouch < 1e-4f ? 0f : math.lerp(_crouch, 0f, 1f - math.exp(-7f * dt));   // stand back up, eased
 
             if (_held != null && _melee != null)
             {

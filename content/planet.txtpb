@@ -24,6 +24,26 @@ look_degrees_per_pixel: 0.12
 bob_amount: 0.045
 bob_frequency: 1.9
 sway: 0.06
+# Movement feel: no instant starts and stops, a little steering in the air, a short ramp into a run.
+ground_accel: 38
+ground_decel: 28
+air_accel: 7
+sprint_ramp_seconds: 0.35
+# Camera life, all scaled by camera_motion (0 = still camera; kept subtle for motion sickness).
+camera_motion: 1
+bob_shape: 0.35
+strafe_roll_degrees: 1.4
+turn_roll_degrees: 0.6
+step_roll_degrees: 0.25
+# Landing: 1.2 cm of dip per m/s of fall (a hop: ~3 cm, a long drop: capped at 14 cm), springing back.
+land_dip_per_speed: 0.012
+land_dip_max: 0.14
+jump_dip: 0.025
+dip_spring_hz: 2.4
+dip_damping: 0.55
+breath_amount: 0.006
+breath_rate: 0.28
+sprint_fov_kick: 4
 # Arms: the idle clip barely moves (4 degrees), so add breathing, a stride swing and finger fidgets.
 arm_breath_degrees: 2.5
 arm_swing_degrees: 7
@@ -183,6 +203,29 @@ landing {
     speed_fov: 14
     camera_bank: 0.3
     cushion_height: 5
+  }
+  # Feel (looks only, shared with the Flight School and outside the station): camera lag, lead into turns and
+  # roll, speed widening the view, engine rumble, the hull banking and bobbing; the landing approach camera.
+  feel {
+    follow_seconds: 0.18     # the camera springs after its spot; the lag grows with speed
+    look_ahead: 0.35         # ship lengths it aims into a turn at full turn rate
+    look_ahead_rate: 4
+    roll_lag: 8              # its up eases after the ship's
+    roll_follow: 0.3         # level cameras: share of the ship's roll the view takes
+    speed_fov: 5             # degrees wider at top speed (the planet keeps assist.speed_fov)
+    rumble_angle: 0.35       # degrees, boosting / thrusting hard
+    rumble_offset: 0.004     # ship lengths
+    rumble_frequency: 22
+    bank_per_yaw: 0.18       # degrees of roll per degree/s of yaw (90 deg/s: 16 degrees)
+    strafe_bank: 10          # degrees at full strafe
+    max_bank: 24
+    bank_rate: 5
+    bob: 0.012               # ship lengths, hovering or slow
+    bob_seconds: 3.4
+    bob_degrees: 0.8
+    bob_speed: 0.25          # of top speed: faster, no bob
+    approach_altitude: 30    # m: low and slow, the camera rises to show the ground
+    approach_height: 0.35
   }
   landed_text: "Landed."
   crashed_text: "Too hard. Try again."

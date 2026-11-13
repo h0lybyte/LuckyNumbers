@@ -139,6 +139,48 @@ namespace LuckyNumbers.Model
         /// In universes with holds (Universe.holds): the surface gate into the hold, near where you land.
         /// </summary>
         public SurfaceGate Gate { get; set; }
+        /// <summary>
+        /// On-foot movement feel (also the station and holds, which clone these settings).
+        /// Ground acceleration and braking, steering in the air (m/s^2; ground 0 = instant, the old feel), and seconds
+        /// to ease from walk to run speed.
+        /// </summary>
+        public float GroundAccel { get; set; }
+        public float GroundDecel { get; set; }
+        public float AirAccel { get; set; }
+        public float SprintRampSeconds { get; set; }
+        /// <summary>
+        /// One scale on every camera motion below and the head bob (0 = a still camera, 1 = as tuned): for a future
+        /// comfort setting. The arms keep their own sway.
+        /// </summary>
+        public float CameraMotion { get; set; }
+        /// <summary>
+        /// Head bob shape: 0 = smooth (sin^2), 1 = a sharp footfall at each step (|sin|, the old bob).
+        /// </summary>
+        public float BobShape { get; set; }
+        /// <summary>
+        /// Camera roll (degrees): strafing at run speed, turning at 180 deg/s (clamped at twice that), and each step.
+        /// </summary>
+        public float StrafeRollDegrees { get; set; }
+        public float TurnRollDegrees { get; set; }
+        public float StepRollDegrees { get; set; }
+        /// <summary>
+        /// Head dip on a spring: metres per m/s of landing speed (above a light step), at most land_dip_max; a small
+        /// dip as you jump; the spring's frequency (Hz) and damping ratio (under 1 bounces back a little).
+        /// </summary>
+        public float LandDipPerSpeed { get; set; }
+        public float LandDipMax { get; set; }
+        public float JumpDip { get; set; }
+        public float DipSpringHz { get; set; }
+        public float DipDamping { get; set; }
+        /// <summary>
+        /// Breathing when standing (metres of head rise, breaths per second at rest; faster and deeper after a run).
+        /// </summary>
+        public float BreathAmount { get; set; }
+        public float BreathRate { get; set; }
+        /// <summary>
+        /// Field of view widens this much (degrees) at full run.
+        /// </summary>
+        public float SprintFovKick { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public PlanetScene Clone() => (PlanetScene)MemberwiseClone();
@@ -275,9 +317,69 @@ namespace LuckyNumbers.Model
         /// </summary>
         public string TouchHint { get; set; }
         public string TouchTakeoffHint { get; set; }
+        /// <summary>
+        /// How flying feels on screen (Planet/ChaseCamera, Planet/ShipSway): the chase camera's lag, lead and roll, the
+        /// engines' rumble, and the hull's bank and idle bob. Shared by the planet, the Flight School and outside the station.
+        /// </summary>
+        public FlightFeel Feel { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public FlightLanding Clone() => (FlightLanding)MemberwiseClone();
+    }
+
+    /// <summary>
+    /// Flight feel: what the camera and the hull do on top of the flight model (looks only: aim, hits and physics stay
+    /// on the steady ship). Lengths are ship lengths; rates are per second; 0 turns a part off.
+    /// </summary>
+    public sealed class FlightFeel
+    {
+        /// <summary>
+        /// Chase camera: it springs after its spot (critically damped, `follow_seconds` to catch up: the lag grows with
+        /// speed), aims `look_ahead` ship lengths into a turn at full turn rate (eased at `look_ahead_rate`), and its up
+        /// eases after the ship's at `roll_lag`. `roll_follow`: on the level cameras (the planet, the Flight School), the
+        /// share of the ship's roll the view takes (space, with no ground, takes all of it).
+        /// </summary>
+        public float FollowSeconds { get; set; }
+        public float LookAhead { get; set; }
+        public float LookAheadRate { get; set; }
+        public float RollLag { get; set; }
+        public float RollFollow { get; set; }
+        /// <summary>
+        /// The view widens with speed: degrees at top speed (outside the station boost adds orbit.txtpb's fov_kick).
+        /// </summary>
+        public float SpeedFov { get; set; }
+        /// <summary>
+        /// Engine rumble while boosting or thrusting hard: at most `rumble_angle` degrees and `rumble_offset` ship
+        /// lengths, smooth noise at `rumble_frequency`.
+        /// </summary>
+        public float RumbleAngle { get; set; }
+        public float RumbleOffset { get; set; }
+        public float RumbleFrequency { get; set; }
+        /// <summary>
+        /// The hull banks into turns and strafes: degrees of roll per degree/s of yaw, degrees at full strafe speed, at
+        /// most `max_bank`, eased at `bank_rate`.
+        /// </summary>
+        public float BankPerYaw { get; set; }
+        public float StrafeBank { get; set; }
+        public float MaxBank { get; set; }
+        public float BankRate { get; set; }
+        /// <summary>
+        /// Hovering or slow (below `bob_speed` of top speed), the hull bobs `bob` ship lengths over `bob_seconds` and
+        /// wobbles `bob_degrees`.
+        /// </summary>
+        public float Bob { get; set; }
+        public float BobSeconds { get; set; }
+        public float BobDegrees { get; set; }
+        public float BobSpeed { get; set; }
+        /// <summary>
+        /// The planet's landing approach: below `approach_altitude` m and slow, the chase camera rises `approach_height`
+        /// ship lengths and looks down past the ship, so the ground and the pad come into view.
+        /// </summary>
+        public float ApproachAltitude { get; set; }
+        public float ApproachHeight { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public FlightFeel Clone() => (FlightFeel)MemberwiseClone();
     }
 
     /// <summary>

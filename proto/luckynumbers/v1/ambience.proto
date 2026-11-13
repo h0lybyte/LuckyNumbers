@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "luckynumbers/v1/common.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// Ambient motion, so a place feels alive (docs/ambience.md): drifting motes round the camera, embers off the wreck,
+// cloud shadows sweeping the ground, far-off flocks circling, flickering lanterns. All of it moves in shaders
+// (LuckyNumbers/Ambient, Ground, HoldKit): each layer is one static mesh built once and one draw, nothing per frame on
+// the CPU but a couple of globals. A universe has one for its worlds (Universe.ambience); the holds have their own
+// (HoldConfig.ambience). Unset parts are off.
+message Ambience {
+  // Motes that fill a box round the camera (pollen, dust, ash, embers). Several layers draw at once.
+  repeated Motes motes = 1;
+  // Embers and sparks rising off the crash site's wreck (the box sits on it, not on the camera). Planet only.
+  Motes wreck = 2;
+  // Cloud shadows over the ground, and the wind that drives them and the motes' gusts. Planet only.
+  Clouds clouds = 3;
+  // Big fliers circling far off. Planet only.
+  Flock flock = 4;
+  // Hold only: the lantern light baked into the walls flickers by this share (0 = steady, 0.2 = a lively flame),
+  // about this many flickers a second.
+  float lantern_flicker = 5;
+  float lantern_flicker_speed = 6;
+}
+
+// One layer of motes: soft dots that drift with the wind, wander, and wrap round the box as you move (shrinking to
+// nothing at its faces, so none pops in).
+message Motes {
+  int32 count = 1;
+  // Low-end tier (Rendering/LowEnd): the share of `count` drawn (0 = none, 1 = all).
+  float low_end_share = 2;
+  // The box (metres, x y z) round the camera they live in; for Ambience.wreck, round the wreck (its floor on the hull).
+  Vec3 box = 3;
+  // Each mote's size (metres).
+  float size = 4;
+  // Linear colour; a = opacity. Glowing motes may go over 1 (HDR: they bloom).
+  Rgba color = 5;
+  // Steady drift (m/s, world: x east, y up, z north).
+  Vec3 drift = 6;
+  // Wander round the drift: metres, and how fast (radians a second, roughly).
+  float flutter = 7;
+  float flutter_speed = 8;
+  // 0 = dust (lit by the sun and sky, soft alpha); 1 = embers (self-lit, additive, fade as they rise).
+  float glow = 9;
+  // 0..1: how much each one's brightness flickers.
+  float twinkle = 10;
+  // Metres a gust pushes them downwind (gusts roll across with Clouds.wind; 0 = none).
+  float gust = 11;
+}
+
+// Cloud shadows: slow fBm blobs travelling with the wind, darkening the ground's sunlight (Ground shader, per vertex).
+message Clouds {
+  // 0..1 of the sunlight a shadow takes (0 = no clouds).
+  float shadow = 1;
+  // Metres across a cloud.
+  float scale = 2;
+  // 0..1 share of the ground in shade.
+  float cover = 3;
+  // Wind (m/s, x east, y north): clouds travel with it; gusts in the motes too.
+  Vec2 wind = 4;
+  // 0..1: how soft a shadow's edge is.
+  float softness = 5;
+}
+
+// Fliers (birds, ash kites) circling in small flocks far off. Each flock wheels round a point that wraps round you
+// like the motes, so wherever you walk or fly a few are in the sky. Dark silhouettes, hazed by the atmosphere.
+message Flock {
+  int32 birds = 1;
+  int32 flocks = 2;
+  // How far from you a flock's centre stays (metres; flocks wrap in a square of side 2 x distance_max).
+  float distance_min = 3;
+  float distance_max = 4;
+  // Height above the ground under you (metres).
+  float height_min = 5;
+  float height_max = 6;
+  // Circle radius (metres) and airspeed (m/s).
+  float circle_radius = 7;
+  float speed = 8;
+  // Wingspan (metres) and wingbeats a second (they glide now and then).
+  float wingspan = 9;
+  float flap_speed = 10;
+  // Linear colour (a unused).
+  Rgba color = 11;
+}

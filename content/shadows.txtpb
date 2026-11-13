@@ -1,0 +1,35 @@
+# proto-file: luckynumbers/v1/shadows.proto
+# proto-message: luckynumbers.v1.BlobShadowConfig
+# Blob shadows: fake shadows (no shadow maps) under everything on the ground. Planet/BlobShadows draws them all.
+
+# Full strength to 16 m from the camera, gone by 28 m; on low-end devices 0.7 of that, and no pebble/crate blobs.
+fade_near: 16
+fade_far: 28
+low_end_distance: 0.7
+
+# Shape: 1.5 x the footprint, a soft rim (0.55 of the radius), a body 0.7 dark plus a 0.45 contact core under the
+# feet (half the blob's radius).
+spread: 1.5
+softness: 0.55
+body_strength: 0.7
+core_strength: 0.45
+core_size: 0.5
+
+# Sun: swept away from it by half the caster's height x cot(elevation), at most 1.5 x its height (cot capped at 2.5,
+# about 22 degrees). On the horizon 0.55 as strong; the sweep's far end fades to 0.35.
+sun_stretch: 0.5
+max_sweep: 1.5
+max_cot: 2.5
+low_sun_fade: 0.55
+tip_fade: 0.35
+
+# Lifted off the ground: shrinks to 0.75 and softens on its way out.
+rise_shrink: 0.75
+rise_soften: 0.35
+
+# You on foot.
+player_strength: 0.8
+
+# Ships: a shadow from 18 m up (the landing cue), seen 3 x as far.
+ship_fade_height: 18
+ship_far_scale: 3

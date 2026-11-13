@@ -33,6 +33,7 @@ content/character.txtpb                          the player's character sheet: a
 content/dogfight.txtpb                           space combat: defences, gunnery, rogue ships, the satellite, memory restore, debt (docs/dogfight.md)
 content/race.txtpb                               circuit racing: the course, rivals, mystery cubes and their dice tables, pay by place (docs/race.md)
 content/credits.txtpb                            credits: the title's Credits panel; `gen` also writes CREDITS.md and README.md's block
+content/shadows.txtpb                            blob shadows: fade distances, shape, sun sweep, player and ship casters (docs/shadows.md)
 content/engines.txtpb                            engine flames and cold-gas puffs: each ship's jets (position, direction, size, flame or gas) and their looks (Core/ShipView)
 content/school.txtpb                             the Flight School: ship lengths, the freighter's handling, the deck, the cameras
 content/space/systems/home.txtpb                 library: a whole solar system (camera, bodies, orbits)
@@ -45,6 +46,7 @@ content/space/looks/disks/*.txtpb                library: dust disk presets (big
 content/space/generators/default.txtpb           library: seed -> solar system rules and palettes
 content/universes.txtpb                          the universes (home; the Emberdeep, with holds): each names its generator;
                                                  UniverseState (saved per slot) picks one, ?ln-universe=<id> on the web
+content/ambience/*.txtpb                         library: ambient motion (motes, clouds, fliers, lantern flicker), per universe and the holds
 content/space/grounds/*.txtpb                    library: a universe's walking terrain (GroundProfile: hills, terraces, ridges)
 content/hands/rig.txtpb                          library: first-person arms bone map (IK chains, fingers, poses)
 content/hands/poses/*.txtpb                      library: finger poses (curl per joint, spread, fidget)

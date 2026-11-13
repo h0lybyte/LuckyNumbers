@@ -98,6 +98,35 @@ message PlanetScene {
   string touch_hint = 60;
   // In universes with holds (Universe.holds): the surface gate into the hold, near where you land.
   SurfaceGate gate = 61;
+
+  // On-foot movement feel (also the station and holds, which clone these settings).
+  // Ground acceleration and braking, steering in the air (m/s^2; ground 0 = instant, the old feel), and seconds
+  // to ease from walk to run speed.
+  float ground_accel = 62;
+  float ground_decel = 63;
+  float air_accel = 64;
+  float sprint_ramp_seconds = 65;
+  // One scale on every camera motion below and the head bob (0 = a still camera, 1 = as tuned): for a future
+  // comfort setting. The arms keep their own sway.
+  float camera_motion = 66;
+  // Head bob shape: 0 = smooth (sin^2), 1 = a sharp footfall at each step (|sin|, the old bob).
+  float bob_shape = 67;
+  // Camera roll (degrees): strafing at run speed, turning at 180 deg/s (clamped at twice that), and each step.
+  float strafe_roll_degrees = 68;
+  float turn_roll_degrees = 69;
+  float step_roll_degrees = 70;
+  // Head dip on a spring: metres per m/s of landing speed (above a light step), at most land_dip_max; a small
+  // dip as you jump; the spring's frequency (Hz) and damping ratio (under 1 bounces back a little).
+  float land_dip_per_speed = 71;
+  float land_dip_max = 72;
+  float jump_dip = 73;
+  float dip_spring_hz = 74;
+  float dip_damping = 75;
+  // Breathing when standing (metres of head rise, breaths per second at rest; faster and deeper after a run).
+  float breath_amount = 76;
+  float breath_rate = 77;
+  // Field of view widens this much (degrees) at full run.
+  float sprint_fov_kick = 78;
 }
 
 // A hold's gate set into the ground (Planet/SurfaceGatePresenter): a stone facade with a dark doorway, two lanterns and
@@ -186,6 +215,46 @@ message FlightLanding {
   // On a touch screen (PointerLock.Touch), in place of the keyboard / mouse line above; empty: that one.
   string touch_hint = 34;
   string touch_takeoff_hint = 35;
+  // How flying feels on screen (Planet/ChaseCamera, Planet/ShipSway): the chase camera's lag, lead and roll, the
+  // engines' rumble, and the hull's bank and idle bob. Shared by the planet, the Flight School and outside the station.
+  FlightFeel feel = 36;
+}
+
+// Flight feel: what the camera and the hull do on top of the flight model (looks only: aim, hits and physics stay
+// on the steady ship). Lengths are ship lengths; rates are per second; 0 turns a part off.
+message FlightFeel {
+  // Chase camera: it springs after its spot (critically damped, `follow_seconds` to catch up: the lag grows with
+  // speed), aims `look_ahead` ship lengths into a turn at full turn rate (eased at `look_ahead_rate`), and its up
+  // eases after the ship's at `roll_lag`. `roll_follow`: on the level cameras (the planet, the Flight School), the
+  // share of the ship's roll the view takes (space, with no ground, takes all of it).
+  float follow_seconds = 1;
+  float look_ahead = 2;
+  float look_ahead_rate = 3;
+  float roll_lag = 4;
+  float roll_follow = 5;
+  // The view widens with speed: degrees at top speed (outside the station boost adds orbit.txtpb's fov_kick).
+  float speed_fov = 6;
+  // Engine rumble while boosting or thrusting hard: at most `rumble_angle` degrees and `rumble_offset` ship
+  // lengths, smooth noise at `rumble_frequency`.
+  float rumble_angle = 7;
+  float rumble_offset = 8;
+  float rumble_frequency = 9;
+  // The hull banks into turns and strafes: degrees of roll per degree/s of yaw, degrees at full strafe speed, at
+  // most `max_bank`, eased at `bank_rate`.
+  float bank_per_yaw = 10;
+  float strafe_bank = 11;
+  float max_bank = 12;
+  float bank_rate = 13;
+  // Hovering or slow (below `bob_speed` of top speed), the hull bobs `bob` ship lengths over `bob_seconds` and
+  // wobbles `bob_degrees`.
+  float bob = 14;
+  float bob_seconds = 15;
+  float bob_degrees = 16;
+  float bob_speed = 17;
+  // The planet's landing approach: below `approach_altitude` m and slow, the chase camera rises `approach_height`
+  // ship lengths and looks down past the ship, so the ground and the pad come into view.
+  float approach_altitude = 18;
+  float approach_height = 19;
 }
 
 // Six-axis ship controls with flight assist: the mouse aims the nose (yaw, pitch), Q/E roll; W/S thrust

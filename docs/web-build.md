@@ -40,7 +40,8 @@ the console logs `[web] textures: ...`.
 - **Low-end tier:** `Rendering/LowEnd.cs` turns off post-processing (bloom) and the HDR colour buffer, and makes Low
   (540p) the default render quality until the player picks one. It's on when the browser reports 4 GB of memory or less
   (`navigator.deviceMemory`), or for a phone or tablet on WebGL 2. `?ln-low` forces it on and `?ln-low=0` forces it
-  off. The console logs `[LowEnd] on (...)`.
+  off. The console logs `[LowEnd] on (...)`. Ambient motes draw only their `low_end_share` (docs/ambience.md).
+  Blob shadows (docs/shadows.md) fade out nearer and skip pebbles and crates.
 - **Frame time, garbage and memory in the console:** add `?ln-perf`. Every 5 s it logs
   `[perf] <scene>: frame ms median / p95 | gc alloc/frame | GCs | mono used/heap | total used/reserved`.
   `webshot` steps `{"throttle":4}` (Chrome's CPU slowdown), `{"mem":1}` (wasm and JS heap) and
