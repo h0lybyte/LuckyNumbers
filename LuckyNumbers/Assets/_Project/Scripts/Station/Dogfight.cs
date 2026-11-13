@@ -288,9 +288,10 @@ namespace LuckyNumbers.Station
         }
 
         /// <summary>
-        /// A rogue's flying: its pilot (RogueBrain) picks a goal, a speed and whether it may shoot; SpaceNav routes the
-        /// goal round the station (a detour point while the hull's in the way) and pushes it off the hull just ahead;
-        /// it turns toward that at its turn rate, banks level, and fires when you're in its cone, in range and in sight.
+        /// A rogue's flying: its pilot (RogueBrain) picks a goal, the velocity it wants and whether it may shoot; SpaceNav
+        /// routes the goal round the station (a detour point while the hull's in the way) and pushes it off the hull just
+        /// ahead; ships it's on course to pass too close to (closest approach, Steering.AvoidShip) take priority while
+        /// they're near; RogueFlight flies the result, and it fires when you're in its cone, in range and in sight.
         /// </summary>
         void Fly(Rogue r, float dt, Vector3 playerPos, Vector3 playerVel)
         {
@@ -302,39 +303,49 @@ namespace LuckyNumbers.Station
             var fwd = r.Rotation * Vector3.forward;
             var senses = new RogueSenses
             {
-                Position = r.Position, Forward = fwd, Home = r.Home,
+                Position = r.Position, Forward = fwd, Velocity = r.Velocity, Home = r.Home,
                 Player = playerPos, PlayerVelocity = playerVel, PlayerForward = _player.Pivot.forward, Aim = aim,
                 Distance = dist, HullShare = r.Hull / math.max(1f, t.Hull), Time = Time.time,
                 PlayerAlive = !Destroyed, ShieldDown = r.Shield <= 0.5f, ShieldFull = r.Shield >= t.Shield - 0.5f,
                 Hit = Time.time - r.HitAt < 0.5f,
             };
-            var (goal, pace, mayFire) = r.Brain.Think(senses, ref _rng);
+            var (goal, wanted, mayFire) = r.Brain.Think(senses, ref _rng);
 
-            // Getting there: round the station, and off the hull just ahead.
+            // Getting there: round the station (keeping its speed while it detours), and off the hull just ahead.
             var radius = t.Length * 0.5f + math.max(0f, C?.Clearance ?? 18f);
             var waypoint = _nav.Waypoint(r.Position, goal, radius);
-            var want = waypoint - r.Position;
-            var desired = want.sqrMagnitude > 1e-3f ? want.normalized : fwd;
-            var avoid = _nav.Avoid(r.Position, r.Velocity.sqrMagnitude > 1f ? r.Velocity : fwd * t.Speed, radius, C?.Lookahead ?? 1.6f);
-            // Soft room round you and its wingmen (the hard push is Separate), so they don't line up nose to tail.
+            var desired = wanted;
+            if ((waypoint - goal).sqrMagnitude > 1f)
+            {
+                var detour = waypoint - r.Position;
+                desired = (detour.sqrMagnitude > 1e-3f ? detour.normalized : fwd) * math.max(wanted.magnitude, t.Speed * 0.9f);
+            }
+            // Other ships: where it'll pass closest to each in the next second and a half. A near miss coming takes over
+            // from the goal while it lasts (fully for a dead-on one right now); you only count when it isn't on a run.
+            var ships = Vector3.zero;
+            const float horizon = 1.5f;
             foreach (var o in _rogues)
             {
                 if (o == r || o.Dead) continue;
-                var gap = r.Position - o.Position;
-                var room = (t.Length + o.Type.Length) * 1.5f;
-                if (gap.sqrMagnitude < room * room && gap.sqrMagnitude > 1e-3f) avoid += gap.normalized * (1f - gap.magnitude / room) * 0.6f;
+                ships += Steering.AvoidShip(r.Position - o.Position, r.Velocity - o.Velocity, (t.Length + o.Type.Length) * 1.5f, horizon);
             }
-            if (!mayFire && !Destroyed && dist < (t.Length + _length) * 2f) avoid -= to.normalized * 0.8f;
-            desired = (desired + avoid * 2f).normalized;
-            if (desired.sqrMagnitude < 1e-4f) desired = fwd;
+            if (!mayFire && !Destroyed)
+                ships += Steering.AvoidShip(-to, r.Velocity - playerVel, (t.Length + _length) * 2f, horizon);
+            var urgency = math.saturate(ships.magnitude);
+            if (urgency > 0f)
+                desired = Vector3.Lerp(desired, ships.normalized * math.max(desired.magnitude, t.Speed), urgency);
+            var hull = _nav.Avoid(r.Position, r.Velocity.sqrMagnitude > 1f ? r.Velocity : fwd * t.Speed, radius, C?.Lookahead ?? 1.6f);
+            desired += hull * (t.Speed * 2f);
+            if (desired.sqrMagnitude < 1e-4f) desired = fwd * t.Speed;
+            var pace = desired.magnitude / math.max(1f, t.Speed);
 
             // Flying it like a fighter: bank and pull, eased rates, speed bled in hard turns (RogueFlight).
-            r.Flight.Step(ref r.Rotation, ref r.Velocity, desired, t.Speed * pace, t.TurnRate, t.Speed * 1.3f, dt);
+            r.Flight.Step(ref r.Rotation, ref r.Velocity, desired, t.Speed, t.TurnRate, t.Speed * 1.3f, dt);
             fwd = r.Rotation * Vector3.forward;
             r.Position = _outOfHull(r.Position + r.Velocity * dt, t.Length * 0.5f);
             r.View.Pose(r.Position, r.Rotation);
             var spin = r.Flight.Spin / math.max(10f, t.TurnRate);
-            r.View.SetThrust(new Vector3(0f, 0.2f, pace), new Vector3(math.clamp(spin.x, -1f, 1f), math.clamp(spin.y, -1f, 1f),
+            r.View.SetThrust(new Vector3(0f, 0.2f, math.min(1.4f, pace)), new Vector3(math.clamp(spin.x, -1f, 1f), math.clamp(spin.y, -1f, 1f),
                              math.clamp(spin.z * 0.4f, -1f, 1f)), pace > 1.1f ? 1.4f : 1f);
 
             // Rogue shields recharge too (a fifth of the way a second, after the same quiet spell).

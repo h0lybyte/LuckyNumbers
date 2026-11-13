@@ -11,7 +11,7 @@ namespace LuckyNumbers.Station
     /// <summary>What a rogue knows this frame (Dogfight fills it).</summary>
     public struct RogueSenses
     {
-        public Vector3 Position, Forward, Home;
+        public Vector3 Position, Forward, Velocity, Home;
         /// <summary>You, your velocity and nose; where you'll be when its bolt gets there.</summary>
         public Vector3 Player, PlayerVelocity, PlayerForward, Aim;
         public float Distance, HullShare, Time;
@@ -34,13 +34,18 @@ namespace LuckyNumbers.Station
     /// <summary>
     /// A rogue's pilot: a small state machine (content/dogfight.txtpb rogues: aggro_range, attack_seconds,
     /// aggression, evade_hull, retreat_hull). Each frame Think says where it wants to be (the goal; SpaceNav gets it
-    /// there round the station), how fast (a share of its speed) and whether it may fire.
+    /// there round the station), the velocity it wants (Steering: arrive, lead, orbit; RogueFlight flies it) and whether
+    /// it may fire.
     ///
-    /// - Patrol: circles where it came in, until you're within aggro_range or you shoot it.
-    /// - Approach: closes on you; in range it starts a run if there's a token free, else flanks.
+    /// - Patrol: orbits where it came in (no faster than its turn rate allows for that circle), until you're within
+    ///   aggro_range or you shoot it.
+    /// - Approach: closes on where you'll be (a short, capped lead); in range it starts a run if there's a token free,
+    ///   else flanks.
     /// - Attack: the run: at where you'll be (the lead), firing; past `pass` metres or after attack_seconds, breaks off.
     /// - BreakOff: overshoots out to one side, then (aggression) goes straight back in, or flanks.
-    /// - Flank: swings round to your side and behind, so the next run comes from somewhere you're not looking.
+    /// - Flank: swings round to a slot at your side and behind, arriving there (braking in time and matching your
+    ///   velocity, so it settles in the slot rather than overshooting), so the next run comes from somewhere you're
+    ///   not looking.
     /// - Evade: hit with its shield down and its hull below evade_hull: jinks (a new heading every half second).
     /// - Retreat: below retreat_hull with its shield down: runs out, and comes back once the shield's up again.
     /// </summary>
@@ -66,10 +71,24 @@ namespace LuckyNumbers.Station
         }
 
         float Close => math.max(20f, _t.Close);
+        float Speed => math.max(1f, _t.Speed);
+        /// <summary>What arrival brakes at: a little under what RogueFlight can do, for the lag in its turns.</summary>
+        float Brake => RogueFlight.Accel(Speed * 1.3f) * 0.6f;
+
+        /// <summary>Straight at a point, at `pace` x its speed (fly through it, no braking).</summary>
+        (Vector3, Vector3, bool) At(in RogueSenses s, Vector3 point, float pace, bool fire)
+        {
+            var to = point - s.Position;
+            var dir = to.sqrMagnitude > 1e-4f ? to.normalized : s.Forward;
+            return (point, dir * (Speed * pace), fire);
+        }
         float Aggro => AggroOverride > 0f ? AggroOverride : _t.AggroRange > 0f ? _t.AggroRange : 800f;
 
-        /// <summary>Where to go, how fast (x its speed), and whether it may shoot (if it's lined up).</summary>
-        public (Vector3 goal, float speed, bool fire) Think(in RogueSenses s, ref Random rng)
+        /// <summary>
+        /// Where it's headed (for routing round the station), the velocity it wants, and whether it may shoot (if it's
+        /// lined up).
+        /// </summary>
+        public (Vector3 goal, Vector3 velocity, bool fire) Think(in RogueSenses s, ref Random rng)
         {
             // Changes that can come from any state.
             if (!s.PlayerAlive)
@@ -90,9 +109,10 @@ namespace LuckyNumbers.Station
             {
                 case RogueState.Patrol:
                 {
-                    // A slow circle round where it came in.
-                    var a = s.Time * 0.25f + _side;
-                    return (s.Home + new Vector3(math.cos(a), 0.15f * math.sin(a * 0.7f), math.sin(a)) * (Close * 2f), 0.55f, false);
+                    // A slow orbit round where it came in.
+                    var v = Steering.Orbit(s.Position, s.Home, Vector3.zero, Vector3.up, Close * 2f, Speed * 0.55f,
+                                           _t.TurnRate, 0.4f, _side);
+                    return (s.Position + v * 1.5f, v, false);
                 }
                 case RogueState.Approach:
                     if (s.Distance < math.max(Close * 2f, _t.FireRange))
@@ -100,7 +120,7 @@ namespace LuckyNumbers.Station
                         if (TakeToken()) Go(RogueState.Attack, s, Run());
                         else Go(RogueState.Flank, s, rng.NextFloat(4f, 6f));
                     }
-                    return (s.Player, 1.2f, false);
+                    return At(s, Steering.Lead(s.Position, Speed * 1.2f, s.Player, s.PlayerVelocity, 1.5f), 1.2f, false);
 
                 case RogueState.Attack:
                     if (s.Distance < math.max(10f, _t.Pass) || s.Time > _until)
@@ -114,7 +134,7 @@ namespace LuckyNumbers.Station
                                  side.normalized * (_side * Close * 1.5f);
                         _side = -_side;   // the other way next time
                         Go(RogueState.BreakOff, s, rng.NextFloat(1.5f, 2.6f));
-                        return (_point, 1.25f, false);
+                        return At(s, _point, 1.25f, false);
                     }
                     {
                         // Weave on the way in (harder to hit), steadying up as it closes to shoot.
@@ -123,7 +143,7 @@ namespace LuckyNumbers.Station
                         var weave = math.saturate((s.Distance - Close * 2f) / (Close * 4f));
                         var aim = s.Aim + across.normalized * (math.sin(s.Time * 1.3f + _side * 2f) * Close * 0.8f * weave) +
                                   Vector3.up * (math.sin(s.Time * 0.9f + _side) * Close * 0.4f * weave);
-                        return (aim, s.Distance > Close * 3f ? 1.25f : s.Distance < Close ? 0.75f : 1f, true);
+                        return At(s, aim, s.Distance > Close * 3f ? 1.25f : s.Distance < Close ? 0.75f : 1f, true);
                     }
 
                 case RogueState.BreakOff:
@@ -132,7 +152,7 @@ namespace LuckyNumbers.Station
                         if (rng.NextFloat() < _t.Aggression && TakeToken()) Go(RogueState.Attack, s, Run());
                         else Go(RogueState.Flank, s, rng.NextFloat(4f, 6f));
                     }
-                    return (_point, 1.25f, false);
+                    return At(s, _point, 1.25f, false);
 
                 case RogueState.Flank:
                 {
@@ -149,7 +169,8 @@ namespace LuckyNumbers.Station
                             Go(RogueState.Flank, s, rng.NextFloat(3f, 5f));
                         }
                     }
-                    return (spot, 1.15f, false);
+                    var v = Steering.Arrive(s.Position, spot, s.PlayerVelocity, Speed * 1.15f, Brake, Close * 0.5f);
+                    return (spot, v, false);
                 }
 
                 case RogueState.Evade:
@@ -161,13 +182,13 @@ namespace LuckyNumbers.Station
                         _point = s.Position + (away.normalized + (s.Position - s.Player).normalized * 0.5f) * (Close * 2f);
                     }
                     if (s.Time > _until) Go(RogueState.Flank, s, rng.NextFloat(3f, 5f));
-                    return (_point, 1.3f, false);
+                    return At(s, _point, 1.3f, false);
 
                 case RogueState.Retreat:
                     if (s.ShieldFull || s.Time > _until) Go(RogueState.Approach, s, 0f);
-                    return (s.Player + (s.Position - s.Player).normalized * (Aggro * 0.9f), 1.3f, false);
+                    return At(s, s.Player + (s.Position - s.Player).normalized * (Aggro * 0.9f), 1.3f, false);
             }
-            return (s.Player, 1f, false);
+            return At(s, s.Player, 1f, false);
         }
 
         float Run() => _t.AttackSeconds > 0f ? _t.AttackSeconds : 4f;
