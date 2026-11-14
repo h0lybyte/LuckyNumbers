@@ -4,6 +4,16 @@ Releases are driven by this file: the **top `## x.y.z` entry is the game version
 Bumping it on `main` builds the Web player, uploads it to itch.io with that version,
 and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version does not rebuild.
 
+## 0.4.2 (2026-11-13)
+
+- Saves and settings now carry over between releases on the web. Earlier builds lost them with every new
+  upload. Saves left by 0.4.1 and older come back the first time you launch this version
+- Saves keep working as the game changes. Renamed items, upgrades, skins and universes still load. Removed
+  items are paid back at what they were worth, and anything else that's gone falls back to the default. A slot
+  that can't be read is kept as a backup instead of being overwritten
+- Title music: Break Beat Jazz Fusion by Rory_Donovan, streamed by the page so it doesn't add to the download
+- Fix: you can no longer jump through the station ceiling or clip through corridor walls
+
 ## 0.4.1 (2026-11-13)
 
 - Circuit racing round the station: race jobs on Dispatch's board against ten rival pilots, paid by where you
