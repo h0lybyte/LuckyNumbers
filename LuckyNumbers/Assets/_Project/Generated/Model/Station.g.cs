@@ -444,6 +444,10 @@ namespace LuckyNumbers.Model
         /// What to do next, shown once the call ends.
         /// </summary>
         public string Objective { get; set; }
+        /// <summary>
+        /// A new run, before it rings: where to go ({room}: the call's room), so you don't wander the station.
+        /// </summary>
+        public string StartObjective { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public StationCall Clone() => (StationCall)MemberwiseClone();
