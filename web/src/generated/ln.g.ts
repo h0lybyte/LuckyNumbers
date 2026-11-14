@@ -356,6 +356,20 @@ export interface PlayerJob {
 }
 
 /**
+ * The music playing now (Core/MusicPresenter, IMusic). Tracks are plain files under StreamingAssets, never in the
+ * Web build's .data download or the wasm heap: on the Web build the page plays them (web/src/music.tsx: an
+ * <audio> element streamed through a gain node); in the editor and on desktop Unity loads the same file.
+ */
+export interface MusicState {
+  /** File under StreamingAssets (e.g. "Music/BreakBeatJazzFusion.mp3"); empty = silence. */
+  track: string;
+  /** Loudness to fade to (0..1); 0 pauses the track once faded. */
+  volume: number;
+  /** Seconds the fade to `volume` takes. */
+  fadeSeconds: number;
+}
+
+/**
  * Flying in, for the page's flight HUD (the steps, the pad arrow, instruments, landing gauges): in the air /
  * crashed / landed; altitude, climb, speed and the set speed (m, m/s); hovering, boost; the pad's distance and
  * bearing from your nose (degrees, + right); descent, drift and tilt against the touchdown limits; why you
@@ -927,6 +941,7 @@ export interface WebStates {
   PlayerInventory: PlayerInventory;
   JobBoard: JobBoard;
   PlayerJob: PlayerJob;
+  MusicState: MusicState;
   FlightState: FlightState;
   MapState: MapState;
   LandingSite: LandingSite;
@@ -1000,4 +1015,4 @@ export interface WebEvents {
 /** Events the page may publish into the game. */
 export type InboundEvent = "SceneChangeRequested" | "DevWarpRequested" | "CharacterSheetReady" | "CharacterSetupDone" | "CharacterAbilityAdjustRequested" | "CharacterClassRequested" | "CharacterOriginRequested" | "CharacterResetRequested" | "CharacterCallsignRequested" | "RangeResetRequested" | "StationCallAnswered" | "StationPlanRequested" | "PsxModeRequested" | "StationLightsRequested" | "EncounterChoice" | "InputActionPerformed" | "InventoryEquipRequested" | "InventoryUnequipRequested" | "InventoryMoveRequested" | "InventoryUseRequested" | "InventoryDropRequested" | "JobAcceptRequested" | "FlightHudReady" | "ShipPickerReady" | "ShipSkinStepRequested" | "ShipPickDone" | "SaveSlotsReady" | "SaveSlotPicked" | "SaveSlotDeleteRequested" | "SettingsChanged" | "SettingsReset" | "SettingsToggled" | "MenuItemSelected" | "UniverseSelected" | "UpgradeBuyRequested" | "OutfitterCloseRequested";
 
-export const STATE_NAMES = ["FlowState", "LoadingState", "RelicSite", "CharacterSheet", "RangeState", "StationState", "DefendState", "CombatState", "DogfightState", "DebtState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "PlayerControl", "ShipPicker", "PlayerVoyage", "RaceState", "SaveSlots", "GameSettings", "DiceState", "UniverseState", "Outfitter"] as const;
+export const STATE_NAMES = ["FlowState", "LoadingState", "RelicSite", "CharacterSheet", "RangeState", "StationState", "DefendState", "CombatState", "DogfightState", "DebtState", "EncounterState", "PlayerInventory", "JobBoard", "PlayerJob", "MusicState", "FlightState", "MapState", "LandingSite", "PlayerShip", "PlayerHealth", "PlayerControl", "ShipPicker", "PlayerVoyage", "RaceState", "SaveSlots", "GameSettings", "DiceState", "UniverseState", "Outfitter"] as const;

@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package luckynumbers.v1;
+
+import "ln/options.proto";
+
+option csharp_namespace = "LuckyNumbers.Model";
+
+// The music playing now (Core/MusicPresenter, IMusic). Tracks are plain files under StreamingAssets, never in the
+// Web build's .data download or the wasm heap: on the Web build the page plays them (web/src/music.tsx: an
+// <audio> element streamed through a gain node); in the editor and on desktop Unity loads the same file.
+message MusicState {
+  option (ln.state) = true;
+  option (ln.web) = true;
+  // File under StreamingAssets (e.g. "Music/BreakBeatJazzFusion.mp3"); empty = silence.
+  string track = 1;
+  // Loudness to fade to (0..1); 0 pauses the track once faded.
+  float volume = 2;
+  // Seconds the fade to `volume` takes.
+  float fade_seconds = 3;
+}

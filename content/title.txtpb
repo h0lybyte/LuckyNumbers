@@ -44,6 +44,12 @@ play_transition_seconds: 1.4
 play_push_in: 0.3
 # Continue (a filled save slot): watch your universe form again first.
 continue_seconds: 1.6
+# Break Beat Jazz Fusion by Rory_Donovan (credits.txtpb), a file under StreamingAssets: never in the .data download.
+music {
+  track: "Music/BreakBeatJazzFusion.mp3"
+  volume: 0.6
+  fade_in_seconds: 2
+}
 
 # The universe behind the title: see content/space/.
 backdrop_ref: "space/systems/home"
