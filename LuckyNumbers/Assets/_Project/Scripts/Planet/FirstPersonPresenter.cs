@@ -669,7 +669,8 @@ namespace LuckyNumbers.Planet
             _arms.SetTriggerFinger(Right, true);
             Grasp(rb, true, Left, Right);
             Debug.Log($"[Hands] {(_drawing ? "drew" : "picked up")} {rb.name}");
-            Toast(rb, _drawing ? "drew" : "picked up", _drawing ? $"equipped - {Controls.Use} holsters it" : $"gun - scale {gun.HeldScale:0.00}, arms shift {gun.ArmsShift.x * 100f:0} cm");
+            Toast(rb, _drawing ? "drew" : "picked up", _drawing ? $"equipped - {Controls.Use} holsters it" : $"click fires - {Controls.Use} puts it down");
+            Debug.Log($"[Hands] gun {rb.name}: scale {gun.HeldScale:0.00}, arms shift {gun.ArmsShift.x * 100f:0} cm");
         }
 
         void GrabMelee(Rigidbody rb, MeleeView blade, Transform eye)
@@ -683,7 +684,7 @@ namespace LuckyNumbers.Planet
             blade.Take(_player.Body.transform);
             Grasp(rb, true, Right);
             Debug.Log($"[Hands] {(_drawing ? "drew" : "picked up")} {rb.name}");
-            Toast(rb, _drawing ? "drew" : "picked up", _drawing ? "equipped - click swings, E puts it away" : "melee - click swings");
+            Toast(rb, _drawing ? "drew" : "picked up", _drawing ? $"equipped - click swings, {Controls.Use} puts it away" : $"click swings - {Controls.Use} puts it down");
         }
 
         /// <summary>
@@ -805,7 +806,8 @@ namespace LuckyNumbers.Planet
             rb.angularVelocity = UnityEngine.Random.insideUnitSphere * 8f;
             if (velocity == Vector3.zero) _arms.SetPose(Right, null);
             Debug.Log(velocity == Vector3.zero ? $"[Hands] dropped {rb.name}" : $"[Hands] threw {rb.name} at {velocity.magnitude:0.0} m/s");
-            Toast(rb, velocity == Vector3.zero ? "dropped" : "threw", velocity == Vector3.zero ? "" : $"{velocity.magnitude:0.0} m/s");
+            Toast(rb, velocity == Vector3.zero ? "dropped" : "threw", "");
+            if (velocity != Vector3.zero) Debug.Log($"[Hands] threw {rb.name} at {velocity.magnitude:0.0} m/s");
             _reportAt = float.MaxValue;
         }
 
@@ -899,8 +901,9 @@ namespace LuckyNumbers.Planet
         void Toast(Component thing, string action, string detail)
         {
             var name = thing.name.StartsWith("Weapon ") ? thing.name.Substring("Weapon ".Length) : thing.name;
+            // "holding": the grip's IK report, for the log only (a marker for ln.py webshot), never a player's toast.
+            if (action == "holding") { Debug.Log($"[Hands] holding {name}: {detail}"); return; }
             _handled.Publish(new ItemHandled(name, action, detail));
-            if (action == "holding") Debug.Log($"[Hands] holding {name}: {detail}");   // marker for ln.py webshot
         }
 
         static float Smooth(float x) { x = math.saturate(x); return x * x * (3f - 2f * x); }

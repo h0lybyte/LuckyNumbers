@@ -453,7 +453,7 @@
     position: absolute;
     left: 15%;
     right: 15%;
-    bottom: 9%;
+    bottom: 16%;   /* above the hint line (.ln-hint, bottom 7%, up to two lines): the E prompt stays readable */
     padding: 14px 22px 16px 22px;
     background-color: rgba(3, 10, 20, 0.82);
     border-width: 1px 1px 1px 4px;

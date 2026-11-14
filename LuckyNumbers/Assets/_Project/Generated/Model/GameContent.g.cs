@@ -6033,6 +6033,7 @@ namespace LuckyNumbers.Model
                 },
                 CharsPerSecond = 38.0f,
                 Objective = "Board your ship in the Docking Bay (west of the hub)",
+                StartObjective = "Head to the {room} - check the map (M) if you get lost",
             },
             Switches =
             {

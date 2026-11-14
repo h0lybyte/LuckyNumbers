@@ -22,7 +22,8 @@ namespace LuckyNumbers.HoldScene
     /// open (E) once you carry the band's seal key, keys lie on plinths in a few regions of each band, and the first
     /// time you enter a band its name shows. Keys held and seals opened last for this visit.
     /// E and the prompts go through InteractionPresenter (IInteractable): Tick finds what's nearest, Offer hands it over.
-    /// Dev: LN.send('DevWarpRequested', {to: 'seal' | 'key' | 'drop' | 'collapse' | 'sealkey'}).
+    /// Dev: LN.send('DevWarpRequested', {to: 'seal' | 'key' | 'drop' | 'collapse' | 'sealkey' | 'door' | 'lever' |
+    /// 'puzzlekey' | 'cache'}).
     /// </summary>
     [Presenter]
     public sealed class DepthPresenter : IInteractable, IStartable, ITickable, IDisposable
@@ -414,6 +415,8 @@ namespace LuckyNumbers.HoldScene
 
         void Warp(string to)
         {
+            if (to is "door" or "lever" or "puzzlekey") { WarpToPuzzle(to); return; }
+            if (to == "cache") { WarpToCache(); return; }
             if (to != "seal" && to != "key" && to != "drop" && to != "collapse" && to != "sealkey") return;
             var me = _player.Body.transform.position;
             var here = _world.RegionOf(me);
@@ -477,6 +480,74 @@ namespace LuckyNumbers.HoldScene
             return false;
         }
 
+        /// <summary>Dev: beside the nearest locked door, lever or puzzle key (PuzzlePresenter), this level and a few below.</summary>
+        void WarpToPuzzle(string to)
+        {
+            var kind = to == "door" ? FixtureKind.LockedDoor : to == "lever" ? FixtureKind.Lever : FixtureKind.Key;
+            var here = _world.RegionOf(_player.Body.transform.position);
+            for (var dy = 0; dy <= 3; dy++)
+            for (var r = 0; r <= 3; r++)
+            for (var dx = -r; dx <= r; dx++)
+            for (var dz = -r; dz <= r; dz++)
+            {
+                if (math.max(math.abs(dx), math.abs(dz)) != r) continue;
+                if (WarpToPuzzle(new int3(here.x + dx, math.min(0, here.y) - dy, here.z + dz), kind)) return;
+            }
+            Debug.Log($"[Depth] dev warp {to}: none found near region {here}");
+        }
+
+        /// <summary>In reach (PuzzleRules.reach): a lever from its own cell, facing its wall; a door or key from the next cell, most of the way in.</summary>
+        bool WarpToPuzzle(int3 region, FixtureKind kind)
+        {
+            _world.LoadNow(region);
+            if (!_world.TryGrid(region, out var grid) || !grid.Fixtures.IsCreated) return false;
+            foreach (var f in grid.Fixtures)
+            {
+                if (f.Kind != kind) continue;
+                if (kind == FixtureKind.Lever)
+                {
+                    var wall = new float3(MinePasses.PuzzleDirStep(f.Dir));
+                    var at = _world.CellFloor(grid.ToWorld(f.Cell)) + new float3(0f, 0.05f, 0f);
+                    _hold.Teleport(at, math.degrees(math.atan2(wall.x, wall.z)));
+                    _top = at.y;
+                }
+                else if (!StandBeside(grid, f.Cell, 1, _world.CellSize.x * 0.45f)) continue;
+                Debug.Log($"[Depth] dev warp: {kind} at {grid.ToWorld(f.Cell)} (region {region}, link {f.Link})");
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>Dev: in front of the nearest strongbox (RelicCaches: HoldLifePlan), facing it.</summary>
+        void WarpToCache()
+        {
+            var life = GameContent.Hold.Life;
+            var here = _world.RegionOf(_player.Body.transform.position);
+            if (life == null) return;
+            var caches = new List<CachePlan>();
+            var creatures = new List<CreaturePlan>();
+            for (var dy = 0; dy <= 3; dy++)
+            for (var r = 0; r <= 3; r++)
+            for (var dx = -r; dx <= r; dx++)
+            for (var dz = -r; dz <= r; dz++)
+            {
+                if (math.max(math.abs(dx), math.abs(dz)) != r) continue;
+                var region = new int3(here.x + dx, math.min(0, here.y) - dy, here.z + dz);
+                _world.LoadNow(region);
+                if (!_world.TryGrid(region, out var grid)) continue;
+                HoldLifePlan.Plan(_world.Seed, region, grid, life, caches, creatures);
+                if (caches.Count == 0) continue;
+                var c = caches[0];
+                var wall = new float3(c.Wall.x, 0f, c.Wall.y);
+                var at = _world.CellFloor(c.Cell) - wall * (_world.CellSize.x * 0.25f) + new float3(0f, 0.05f, 0f);
+                _hold.Teleport(at, math.degrees(math.atan2(wall.x, wall.z)));
+                _top = at.y;
+                Debug.Log($"[Depth] dev warp: cache at {c.Cell} (region {region})");
+                return;
+            }
+            Debug.Log($"[Depth] dev warp cache: none found near region {here}");
+        }
+
         bool WarpToRubble(int3 region)
         {
             _world.LoadNow(region);
@@ -495,7 +566,7 @@ namespace LuckyNumbers.HoldScene
         }
 
         /// <summary>Stand `away` cells off a target cell on its level (a plain standable cell), facing it.</summary>
-        bool StandBeside(HoldGrid grid, int3 target, int away)
+        bool StandBeside(HoldGrid grid, int3 target, int away, float closer = 0f)
         {
             for (var a = away; a >= 1; a--)
             for (var i = 0; i < 4; i++)
@@ -504,8 +575,8 @@ namespace LuckyNumbers.HoldScene
                 var c = target + d * a;
                 var cell = grid.Get(c);
                 if (!HoldLifePlan.Passable(cell)) continue;
-                var at = _world.CellFloor(grid.ToWorld(c)) + new float3(0f, 0.05f, 0f);
                 var face = -new float3(d);
+                var at = _world.CellFloor(grid.ToWorld(c)) + face * closer + new float3(0f, 0.05f, 0f);
                 _hold.Teleport(at, math.degrees(math.atan2(face.x, face.z)));
                 _top = at.y;
                 return true;

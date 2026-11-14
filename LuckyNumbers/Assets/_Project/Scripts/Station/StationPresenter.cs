@@ -194,6 +194,9 @@ namespace LuckyNumbers.Station
             _caller = _config.Call?.Caller ?? "";
             _state.Caller.Value = _caller;
             _state.Objective.Value = "";
+            // A new run (the mayday still to come): where it'll ring.
+            if (_voyage.Trips.Value == 0 && !_job.Active.Value && !string.IsNullOrEmpty(_config.Call?.StartObjective))
+                _state.Objective.Value = _config.Call.StartObjective.Replace("{room}", _layout.CallRoom ?? "Hub");
             _subscriptions.Add(_lightRequests.Subscribe(e => SetLights(e.Mode)));
             _subscriptions.Add(_actions.Subscribe(e =>
             {
@@ -312,9 +315,23 @@ namespace LuckyNumbers.Station
         void WarpTo(string piece)
         {
             if (_layout == null || string.IsNullOrEmpty(piece) || piece.StartsWith("range")) return;   // range: RangeRoom
+            if (piece.StartsWith("room:"))
+            {
+                // The middle of a room by name ("room:Hub"): walking in sets off what it would (the call).
+                var name = piece.Substring(5);
+                var room = _layout.Rooms.Find(r => string.Equals(r.Name, name, StringComparison.OrdinalIgnoreCase));
+                if (room == null) { Debug.Log($"[Station] dev warp: no room '{name}'"); return; }
+                var mid = _station.Plan.PlanToWorld(room.Col, room.Row);
+                mid.y = _player.Body.transform.position.y;
+                Teleport(mid, _player.Body.transform.eulerAngles.y);
+                Debug.Log($"[Station] dev warp to room {room.Name}");
+                return;
+            }
+            // A prop by piece name, or a switch by its action ("answer", "outfitter"...).
             var prop = _layout.Props.Find(p => p.Piece == piece);
-            if (prop == null) { Debug.Log($"[Station] dev warp: no prop '{piece}'"); return; }
-            var at = _station.Plan.PlanToWorld(prop.Col, prop.Row);
+            var sw = prop == null ? _layout.Switches.Find(s => s.Action.ToString().Equals(piece.Replace("_", ""), StringComparison.OrdinalIgnoreCase)) : null;
+            if (prop == null && sw == null) { Debug.Log($"[Station] dev warp: no prop or switch '{piece}'"); return; }
+            var at = prop != null ? _station.Plan.PlanToWorld(prop.Col, prop.Row) : _station.Plan.PlanToWorld(sw.Col, sw.Row);
             // Towards the nearest room's middle: that's the open side of something against a wall.
             var inside = at + Vector3.forward;
             var best = float.MaxValue;
@@ -540,6 +557,7 @@ namespace LuckyNumbers.Station
             _caller = kind == CallKind.Board ? "Dispatch" : _config.Call?.Caller ?? "Dispatch";
             _state.Caller.Value = _caller;
             _state.Call.Value = CallPhase.Ringing;
+            if (kind == CallKind.Dispatch) _state.Objective.Value = "";   // you're here: the start objective's done
             Debug.Log($"[Station] call from {_caller} ({kind})");
         }
 

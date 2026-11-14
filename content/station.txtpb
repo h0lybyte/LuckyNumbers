@@ -102,6 +102,7 @@ call {
   lines { speaker: "Dispatch" text: "{museum} relics on board. Salvage rights go to whoever reaches the wreck first." seconds: 5.5 }
   lines { speaker: "Dispatch" text: "Your ship's fuelled in the docking bay. Go." seconds: 3.5 }
   objective: "Board your ship in the Docking Bay (west of the hub)"
+  start_objective: "Head to the {room} - check the map (M) if you get lost"
 }
 
 # --- Consoles (E) ---

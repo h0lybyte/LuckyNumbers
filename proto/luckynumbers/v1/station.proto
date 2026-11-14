@@ -229,6 +229,8 @@ message StationCall {
   float chars_per_second = 5;
   // What to do next, shown once the call ends.
   string objective = 6;
+  // A new run, before it rings: where to go ({room}: the call's room), so you don't wander the station.
+  string start_objective = 7;
 }
 
 enum StationAction {
