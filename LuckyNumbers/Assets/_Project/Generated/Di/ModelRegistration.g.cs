@@ -87,6 +87,7 @@ namespace LuckyNumbers.Model
             builder.Register<PlayerInventory>(Lifetime.Singleton);
             builder.Register<JobBoard>(Lifetime.Singleton);
             builder.Register<PlayerJob>(Lifetime.Singleton);
+            builder.Register<MusicState>(Lifetime.Singleton);
             builder.Register<FlightState>(Lifetime.Singleton);
             builder.Register<MapState>(Lifetime.Singleton);
             builder.Register<LandingSite>(Lifetime.Singleton);

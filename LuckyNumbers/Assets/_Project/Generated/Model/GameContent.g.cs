@@ -925,7 +925,7 @@ namespace LuckyNumbers.Model
                             Author = "Rory_Donovan",
                             License = "Made for Lucky Numbers (game jam), used with permission",
                             Url = "https://liamt15.itch.io",
-                            Path = "LuckyNumbers/Assets/_Project/Art/Music/BreakBeatJazzFusion.mp3",
+                            Path = "LuckyNumbers/Assets/StreamingAssets/Music/BreakBeatJazzFusion.mp3",
                         },
                     },
                 },
@@ -7037,6 +7037,12 @@ namespace LuckyNumbers.Model
                 EnterSeconds = 0.6f,
             },
             ContinueSeconds = 1.6f,
+            Music = new TitleMusic
+            {
+                Track = "Music/BreakBeatJazzFusion.mp3",
+                Volume = 0.6f,
+                FadeInSeconds = 2.0f,
+            },
         };
 
         /// <summary>From <c>content/universes.txtpb</c>.</summary>

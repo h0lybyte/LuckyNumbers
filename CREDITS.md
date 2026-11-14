@@ -61,7 +61,7 @@ Lucky Numbers is made with the work of these people. Thank you.
 
 - **Title music (menu, character creation and the hangar)**: "Break Beat Jazz Fusion" by **Rory_Donovan** (Made for Lucky Numbers (game jam), used with permission)
   https://liamt15.itch.io
-  (`LuckyNumbers/Assets/_Project/Art/Music/BreakBeatJazzFusion.mp3`)
+  (`LuckyNumbers/Assets/StreamingAssets/Music/BreakBeatJazzFusion.mp3`)
 
 ## Textures
 

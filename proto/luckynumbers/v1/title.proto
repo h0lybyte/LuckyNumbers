@@ -37,6 +37,15 @@ message TitleScreen {
   ShipHangar hangar = 13;
   // Continuing a save slot: seconds to watch its universe form again (the big bang) before the push to the station.
   float continue_seconds = 14;
+  // Music under the menu, character creation and the hangar (fades out over the Play push).
+  TitleMusic music = 15;
+}
+
+message TitleMusic {
+  // File under StreamingAssets (IMusic).
+  string track = 1;
+  float volume = 2;
+  float fade_in_seconds = 3;
 }
 
 // The hangar's fighter, posed in front of the title camera (space units: the camera's own scale).

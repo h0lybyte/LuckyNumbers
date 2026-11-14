@@ -80,9 +80,26 @@ namespace LuckyNumbers.Model
         /// Continuing a save slot: seconds to watch its universe form again (the big bang) before the push to the station.
         /// </summary>
         public float ContinueSeconds { get; set; }
+        /// <summary>
+        /// Music under the menu, character creation and the hangar (fades out over the Play push).
+        /// </summary>
+        public TitleMusic Music { get; set; }
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public TitleScreen Clone() => (TitleScreen)MemberwiseClone();
+    }
+
+    public sealed class TitleMusic
+    {
+        /// <summary>
+        /// File under StreamingAssets (IMusic).
+        /// </summary>
+        public string Track { get; set; }
+        public float Volume { get; set; }
+        public float FadeInSeconds { get; set; }
+
+        /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
+        public TitleMusic Clone() => (TitleMusic)MemberwiseClone();
     }
 
     /// <summary>

@@ -14,6 +14,7 @@ import { RaceHud } from "./race";
 import { EncounterCard } from "./encounter";
 import { CharacterSheetGate } from "./sheet";
 import { HangarGate } from "./hangar";
+import { Music } from "./music";
 import { SaveSlotsGate } from "./saves";
 import { RotatePrompt, TouchControls, touchDevice } from "./touch";
 import { FpsMeter } from "./fps";
@@ -65,6 +66,7 @@ export function App({ dock }: { dock: HTMLElement | null }) {
       <StationHudGate />
       <CharacterSheetGate />
       <HangarGate />
+      <Music />
       <SaveSlotsGate />
       <UniverseSwitch />
       <Toasts />
