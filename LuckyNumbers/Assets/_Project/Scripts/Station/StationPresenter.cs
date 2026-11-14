@@ -505,7 +505,8 @@ namespace LuckyNumbers.Station
             // Hint line: the E prompt, else the objective, else the controls (fading out).
             _hintAlpha = Mathf.MoveTowards(_hintAlpha, 0f, dt / 8f);
             if (prompt != "") _ui.Hint(prompt, 1f);
-            else if (_state.Objective.Value != "") _ui.Hint(_state.Objective.Value, 0.8f);
+            // Once a call has ended the page shows the objective top left (station.tsx): not twice.
+            else if (_state.Objective.Value != "" && _state.Call.Value != CallPhase.Ended) _ui.Hint(_state.Objective.Value, 0.8f);
             else _ui.Hint(Controls.Pick(_config.Hint, _config.TouchHint), Mathf.Clamp01(_hintAlpha * 2f));
         }
 

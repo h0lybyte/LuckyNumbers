@@ -578,11 +578,14 @@ namespace LuckyNumbers.Planet
                 }
                 if (Time.time > _errorLogAt)
                 {
+                    // Every 2 s, but only when the grip is off (a web log captures a stack trace: not for nothing).
                     _errorLogAt = Time.time + 2f;
-                    Debug.Log($"[Hands] fingers inside {_held.name} over the last 2 s: left {_arms.GraspClippingMax[Left]}, right {_arms.GraspClippingMax[Right]} (at most); now left [{_arms.GraspClippingNames[Left]}] right [{_arms.GraspClippingNames[Right]}]");
+                    if (_arms.GraspClippingMax[Left] > 0 || _arms.GraspClippingMax[Right] > 0)
+                        Debug.Log($"[Hands] fingers inside {_held.name} over the last 2 s: left {_arms.GraspClippingMax[Left]}, right {_arms.GraspClippingMax[Right]} (at most); now left [{_arms.GraspClippingNames[Left]}] right [{_arms.GraspClippingNames[Right]}]");
                     _arms.GraspClippingMax[Left] = _arms.GraspClippingMax[Right] = 0;
-                    Debug.Log($"[Hands] holding {_held.name}: IK error L {_arms.LastError[Left]:0.000} m R {_arms.LastError[Right]:0.000} m; " +
-                              $"shoulders (eye space) L {eye.InverseTransformPoint(_arms.ShoulderPosition(Left))} R {eye.InverseTransformPoint(_arms.ShoulderPosition(Right))}");
+                    if (_arms.LastError[Left] > 0.005f || _arms.LastError[Right] > 0.005f)
+                        Debug.Log($"[Hands] holding {_held.name}: IK error L {_arms.LastError[Left]:0.000} m R {_arms.LastError[Right]:0.000} m; " +
+                                  $"shoulders (eye space) L {eye.InverseTransformPoint(_arms.ShoulderPosition(Left))} R {eye.InverseTransformPoint(_arms.ShoulderPosition(Right))}");
                 }
                 if (click) Fire(eye);
                 return;
