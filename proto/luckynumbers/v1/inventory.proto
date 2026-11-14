@@ -92,6 +92,9 @@ message ItemDef {
   // 25-27: hold / ranged / melee (docs/items.md step 5).
   // A second colour (the relic shader's _ColorB; `color` is _ColorA).
   Rgba color_b = 28;
+  // Ids it went by before (a rename): a save holding one of them gets this. Never reuse a shipped id
+  // (content/shipped_ids.json, kept by `ln.py gen`).
+  repeated string old_ids = 29;
 }
 
 message ItemLore {

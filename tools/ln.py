@@ -799,6 +799,65 @@ def generated_path(rel: str) -> Path:
     return WEB_GENERATED_DIR / rel[len("@web/"):] if rel.startswith("@web/") else GENERATED_DIR / rel
 
 
+SHIPPED_IDS = CONTENT_DIR / "shipped_ids.json"
+
+
+def save_ids(protogen, model, resolved) -> dict[str, dict[str, str]]:
+    """The content ids a save slot can hold, by kind: {kind: {id or old id: the live id}} (Core/SaveFormat
+    resolves the same way)."""
+    def dec(key):
+        return protogen.decode(model, *resolved[key]) if key in resolved else {}
+
+    items = list(dec("items").get("items", []))
+    items += [protogen.decode(model, *v) for k, v in sorted(resolved.items())
+              if k.startswith("items/") and v[0].endswith(".ItemDef")]
+    character = dec("character")
+    kinds = {
+        "items": (items, "id", "old_ids"),
+        "upgrades": (dec("upgrades").get("upgrades", []), "id", "old_ids"),
+        "skins": (dec("ships").get("ships", []), "skin", "old_skins"),
+        "universes": (dec("universes").get("universes", []), "id", "old_ids"),
+        "classes": (character.get("classes", []), "id", "old_ids"),
+        "origins": (character.get("origins", []), "id", "old_ids"),
+    }
+    out, errors = {}, []
+    for kind, (defs, key, old) in kinds.items():
+        names: dict[str, str] = {}
+        for d in defs:
+            live = d.get(key, "")
+            if not live:
+                continue
+            if live in names:
+                errors.append(f"{kind}: '{live}' is used twice")
+            names[live] = live
+        for d in defs:
+            for o in d.get(old, []):
+                if o in names:
+                    errors.append(f"{kind}: old id '{o}' of '{d.get(key)}' is already '{names[o]}'")
+                names[o] = d.get(key, "")
+        out[kind] = names
+    if errors:
+        raise ValueError("content ids:\n  " + "\n  ".join(errors))
+    return out
+
+
+def shipped_ids(protogen, model, resolved) -> str:
+    """content/shipped_ids.json: every id the content has ever had (what's there now joins the list; nothing
+    leaves it). A save can hold any of them, so each must still resolve: a live id, or an old_ids alias of one.
+    Fails on one that doesn't (renamed or removed without an alias)."""
+    live = save_ids(protogen, model, resolved)
+    shipped = json.loads(SHIPPED_IDS.read_text(encoding="utf-8")) if SHIPPED_IDS.is_file() else {}
+    lost, merged = [], {}
+    for kind, names in live.items():
+        before = set(shipped.get(kind, []))
+        lost += [f"{kind}: '{i}'" for i in sorted(before) if i not in names]
+        merged[kind] = sorted(before | {n for n, to in names.items() if n == to})
+    if lost:
+        raise ValueError("saves can hold ids the content no longer has (add each to its replacement's "
+                         "old_ids, see docs/saves.md):\n  " + "\n  ".join(lost))
+    return json.dumps(merged, indent=2) + "\n"
+
+
 def cmd_gen(args) -> int:
     """proto/ + content/ -> C# under Assets/_Project/Generated (see tools/protogen.py)."""
     sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -822,7 +881,12 @@ def cmd_gen(args) -> int:
         wanted[ROOT / "CREDITS.md"] = credits.credits_md(cfg)
         readme = ROOT / "README.md"
         wanted[readme] = credits.readme(readme.read_text(encoding="utf-8") if readme.is_file() else "", cfg)
-    existing = {p for d in (GENERATED_DIR, WEB_GENERATED_DIR) if d.exists()
+    # Every content id a save can hold, ever shipped (content/shipped_ids.json): each must still resolve.
+    try:
+        wanted[SHIPPED_IDS] = shipped_ids(protogen, model, resolved)
+    except ValueError as e:
+        return fail(str(e))
+    existing ={p for d in (GENERATED_DIR, WEB_GENERATED_DIR) if d.exists()
                 for p in d.rglob("*") if p.is_file() and not p.name.endswith(".meta")}
     changed = [p for p, t in wanted.items() if not p.is_file() or p.read_text(encoding="utf-8") != t]
     stale = sorted(existing - set(wanted))

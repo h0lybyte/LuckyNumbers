@@ -43,6 +43,9 @@ message ShipStats {
   // In space combat (content/dogfight.txtpb defense): shield points and armour multiply by these (toughness: the hull).
   float shield = 12;
   float armor = 13;
+  // Skin names it went by before (a rename): a save holding one of them gets this. Never reuse a shipped id
+  // (content/shipped_ids.json, kept by `ln.py gen`).
+  repeated string old_skins = 14;
 }
 
 // Fuel, in units. Flying burns it (holding in the air a little, thrust a lot more, boost more again); with the tank

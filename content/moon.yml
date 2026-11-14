@@ -11,6 +11,7 @@ toolchains:
 fileGroups:
   sources:
     - "**/*.txtpb"
+    - "shipped_ids.json"
     - "/proto/**/*.proto"
     - "/tools/ln.py"
     - "/tools/protogen.py"
