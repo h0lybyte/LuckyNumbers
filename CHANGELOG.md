@@ -12,7 +12,7 @@ and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version
   items are paid back at what they were worth, and anything else that's gone falls back to the default. A slot
   that can't be read is kept as a backup instead of being overwritten
 - Title music: Break Beat Jazz Fusion by Rory_Donovan, streamed by the page so it doesn't add to the download
-- Fix: you can no longer jump through the station ceiling or clip through corridor walls
+- Fix: jumping in the station no longer puts you through the ceiling or into the sloped corridor walls
 
 ## 0.4.1 (2026-11-13)
 
