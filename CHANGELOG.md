@@ -4,6 +4,14 @@ Releases are driven by this file: the **top `## x.y.z` entry is the game version
 Bumping it on `main` builds the Web player, uploads it to itch.io with that version,
 and tags/releases `vx.y.z` on GitHub. Editing notes without changing the version does not rebuild.
 
+## 0.4.3 (2026-11-13)
+
+- A new run tells you where to go: head to the Hub, where Dispatch's call comes in
+- Dialogue no longer covers the E prompt and objective line at the bottom of the screen
+- The station objective shows once, top left, instead of twice
+- Weapon pickups say how to use them, and the hand rig's debug numbers no longer pop up in game
+- Quieter browser console while holding a weapon
+
 ## 0.4.2 (2026-11-13)
 
 - Saves and settings now carry over between releases on the web. Earlier builds lost them with every new
