@@ -69,6 +69,9 @@ message CharacterClass {
   int32 hp_per_level = 6;
   // Skill ids.
   repeated string trained_skills = 7;
+  // Ids it went by before (a rename): a save holding one of them gets this. Never reuse a shipped id
+  // (content/shipped_ids.json, kept by `ln.py gen`).
+  repeated string old_ids = 8;
 }
 
 // Where you grew up: ability bonuses (and penalties) and starting HP.
@@ -78,6 +81,9 @@ message CharacterOrigin {
   string blurb = 3;
   repeated AbilityBonus bonuses = 4;
   int32 hp = 5;
+  // Ids it went by before (a rename): a save holding one of them gets this. Never reuse a shipped id
+  // (content/shipped_ids.json, kept by `ln.py gen`).
+  repeated string old_ids = 6;
 }
 
 message AbilityBonus {

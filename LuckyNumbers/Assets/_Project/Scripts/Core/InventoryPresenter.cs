@@ -64,9 +64,10 @@ namespace LuckyNumbers.Core
     public sealed class SavedItem
     {
         public string id;
-        public int x, y, rot, equipped, count;
-        // Older saves also carry name, description and value: copies of the item's content, ignored (it's read from
-        // items.txtpb, so a reworded item reads the new way in an old save too).
+        public int x, y, rot, equipped, count, value;
+        // What one was worth when saved: paid back if the item is ever removed from the content (SaveFormat). The
+        // rest is read from items.txtpb, so a reworded item reads the new way in an old save too (the oldest saves
+        // also carry a name and description: ignored).
     }
 
     /// <summary>The pack, for save slots (Core/SavePresenter).</summary>
@@ -238,7 +239,7 @@ namespace LuckyNumbers.Core
 
         public List<SavedItem> Capture() => _items.ConvertAll(i => new SavedItem
         {
-            id = i.Def.Id, x = i.X, y = i.Y, rot = i.Rot, equipped = (int)i.Equipped, count = i.Count,
+            id = i.Def.Id, x = i.X, y = i.Y, rot = i.Rot, equipped = (int)i.Equipped, count = i.Count, value = i.Def.Value,
         });
 
         public void Restore(List<SavedItem> saved)

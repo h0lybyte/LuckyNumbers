@@ -92,6 +92,11 @@ namespace LuckyNumbers.Model
         /// </summary>
         public float Shield { get; set; }
         public float Armor { get; set; }
+        /// <summary>
+        /// Ids it went by before (a rename): a save holding one of them gets this. Never reuse a shipped id
+        /// (content/shipped_ids.json, kept by `ln.py gen`).
+        /// </summary>
+        public List<string> OldIds { get; } = new List<string>();
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public ShipUpgrade Clone() => (ShipUpgrade)MemberwiseClone();

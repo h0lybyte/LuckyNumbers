@@ -42,8 +42,9 @@ namespace LuckyNumbers.Core
     }
 
     /// <summary>
-    /// Save slots (SaveSlots state; proto save.proto). A slot is one JSON record in LocalStore (on the web, the
-    /// browser's localStorage, so it lasts across releases): the lucky number and dice, the character (ICharacterSave: its scores roll again from the
+    /// Save slots (SaveSlots state; proto save.proto). A slot is one JSON record (SaveFormat: read across versions
+    /// and content changes, docs/saves.md) in LocalStore (on the web, the browser's localStorage, so it lasts across
+    /// releases): the lucky number and dice, the character (ICharacterSave: its scores roll again from the
     /// seed), the pack (IPackSave), the ship's skin and fuel, credits and trips, and the job. Play on the title asks
     /// which slot (ISaveSlots); the run then saves to it before each scene change, on arriving, and every
     /// AutosaveSeconds. A continued run wakes at the station: back from a planet (PlayerVoyage.returning, so relics
@@ -54,40 +55,9 @@ namespace LuckyNumbers.Core
     public sealed class SavePresenter : ISaveSlots, IStartable, ITickable, IDisposable
     {
         public const int SlotCount = 3;
-        const int Version = 1;
         const float AutosaveSeconds = 30f;
         const string KeyPrefix = "ln.save.";
-
-        [Serializable]
-        sealed class SaveFile
-        {
-            public int version;
-            public long played;
-            public string scene;
-            // The universe: the lucky number, its dice roles (0..1, -1 none) and the faces.
-            public uint seed;
-            public float star, worlds, luck, moons;
-            public int[] faces;
-            public CharacterSave character;
-            public List<SavedItem> pack;
-            public string skin;
-            public float fuel;
-            public int credits, trips;
-            public JobSave job;
-            public string[] upgrades;   // PlayerShip.upgrades, "id|level" (absent in older saves)
-            public uint dice;           // the dice drive's roll
-            public string universe;     // UniverseState.id (absent in older saves: the default, home)
-        }
-
-        [Serializable]
-        sealed class JobSave
-        {
-            public bool active, done, failed;
-            public int kind, danger, pay, count, goal, completed;
-            public string title, objective, client, body, planet, target;
-            public uint seed;
-            public string[] recent;   // PlayerJob.RecentTargets (absent in older saves)
-        }
+        const string BrokenSuffix = ".broken";
 
         readonly SaveSlots _state;
         readonly FlowState _flow;
@@ -194,8 +164,10 @@ namespace LuckyNumbers.Core
 
         public void Load(int index)
         {
-            var save = Read(index);
+            var notes = new List<string>();
+            var save = Read(index, notes);
             if (save == null) return;
+            foreach (var n in notes) Debug.Log($"[Save] slot {index + 1}: {n}");
             // The universe first (the character's scores roll from it), then the character, then its pack.
             if (save.faces != null)
             {
@@ -208,7 +180,7 @@ namespace LuckyNumbers.Core
             _character.Restore(save.character);
             _pack.Restore(save.pack);
 
-            if (!string.IsNullOrEmpty(save.skin)) _ship.Skin.Value = save.skin;
+            _ship.Skin.Value = string.IsNullOrEmpty(save.skin) ? GameContent.Player.ShipSkin : save.skin;   // gone: the default
             _ship.Upgrades.Clear();
             if (save.upgrades != null) foreach (var u in save.upgrades) if (!string.IsNullOrEmpty(u)) _ship.Upgrades.Add(u);
             _ship.Dice.Value = save.dice;
@@ -236,6 +208,7 @@ namespace LuckyNumbers.Core
         public void Begin(int index)
         {
             if (index < 0 || index >= SlotCount) return;
+            KeepBroken(index);
             _state.Active.Value = index;
             Save();
         }
@@ -250,7 +223,6 @@ namespace LuckyNumbers.Core
             var scene = _flow.Scene.Value;
             var file = new SaveFile
             {
-                version = Version,
                 played = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
                 scene = (scene == GameScene.Title || scene == GameScene.Unspecified ? GameScene.Station : scene).ToString(),
                 seed = _universe.Seed,
@@ -267,7 +239,7 @@ namespace LuckyNumbers.Core
                 dice = _ship.Dice.Value,
                 universe = _universeState.Id.Value ?? "",
             };
-            LocalStore.SetString(KeyPrefix + index, JsonUtility.ToJson(file));
+            LocalStore.SetString(KeyPrefix + index, SaveFormat.Write(file));
             Refresh();
             Debug.Log($"[Save] slot {index + 1}: {file.character?.callsign} at {file.scene}");
         }
@@ -302,20 +274,25 @@ namespace LuckyNumbers.Core
             Debug.Log($"[Save] slot {index + 1} deleted");
         }
 
-        static SaveFile Read(int index)
+        static SaveFile Read(int index, List<string> notes = null)
         {
             var json = LocalStore.GetString(KeyPrefix + index);
-            if (string.IsNullOrEmpty(json)) return null;
-            try
-            {
-                var file = JsonUtility.FromJson<SaveFile>(json);
-                return file != null && file.version > 0 && file.character != null ? file : null;
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"[Save] slot {index + 1} unreadable: {e.Message}");
-                return null;
-            }
+            var file = SaveFormat.Read(json, notes, out var error);
+            if (file == null && !string.IsNullOrEmpty(json) && notes != null)
+                Debug.LogWarning($"[Save] slot {index + 1} unreadable ({error})");
+            return file;
+        }
+
+        /// <summary>
+        /// A slot holding something that doesn't read as a save (corrupt, or a format this build can't follow) shows
+        /// as empty; before a new run is written over it the old text is kept beside it (ln.save.N.broken), never lost.
+        /// </summary>
+        static void KeepBroken(int index)
+        {
+            var json = LocalStore.GetString(KeyPrefix + index);
+            if (string.IsNullOrEmpty(json) || SaveFormat.Read(json, null, out _) != null) return;
+            LocalStore.SetString(KeyPrefix + index + BrokenSuffix, json);
+            Debug.LogWarning($"[Save] slot {index + 1} was unreadable: kept as {KeyPrefix}{index}{BrokenSuffix}");
         }
 
         /// <summary>The page's list: each slot "callsign|class|level|seed|played|where|credits", "" when empty.</summary>

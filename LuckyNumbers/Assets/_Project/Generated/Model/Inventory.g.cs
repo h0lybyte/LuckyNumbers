@@ -122,6 +122,11 @@ namespace LuckyNumbers.Model
         /// A second colour (the relic shader's _ColorB; `color` is _ColorA).
         /// </summary>
         public Rgba ColorB { get; set; }
+        /// <summary>
+        /// Ids it went by before (a rename): a save holding one of them gets this. Never reuse a shipped id
+        /// (content/shipped_ids.json, kept by `ln.py gen`).
+        /// </summary>
+        public List<string> OldIds { get; } = new List<string>();
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public ItemDef Clone() => (ItemDef)MemberwiseClone();

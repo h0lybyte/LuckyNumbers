@@ -116,6 +116,11 @@ namespace LuckyNumbers.Model
         /// Skill ids.
         /// </summary>
         public List<string> TrainedSkills { get; } = new List<string>();
+        /// <summary>
+        /// Ids it went by before (a rename): a save holding one of them gets this. Never reuse a shipped id
+        /// (content/shipped_ids.json, kept by `ln.py gen`).
+        /// </summary>
+        public List<string> OldIds { get; } = new List<string>();
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public CharacterClass Clone() => (CharacterClass)MemberwiseClone();
@@ -131,6 +136,11 @@ namespace LuckyNumbers.Model
         public string Blurb { get; set; }
         public List<AbilityBonus> Bonuses { get; } = new List<AbilityBonus>();
         public int Hp { get; set; }
+        /// <summary>
+        /// Ids it went by before (a rename): a save holding one of them gets this. Never reuse a shipped id
+        /// (content/shipped_ids.json, kept by `ln.py gen`).
+        /// </summary>
+        public List<string> OldIds { get; } = new List<string>();
 
         /// <summary>Shallow copy (nested message instances and lists are shared).</summary>
         public CharacterOrigin Clone() => (CharacterOrigin)MemberwiseClone();

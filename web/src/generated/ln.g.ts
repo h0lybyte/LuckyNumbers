@@ -530,7 +530,8 @@ export interface RaceState {
  * Save slots (Core/SavePresenter). Play on the title opens the page's picker: an empty slot starts a new character
  * there (creation, the hangar, then the station), a filled one continues it (its universe, sheet, pack, ship, credits
  * and job come back and you wake at the station). The run then saves to its slot on every scene change and every
- * half minute. Kept in PlayerPrefs (the browser's IndexedDB on the web), one JSON record per slot.
+ * half minute. One JSON record per slot in Core/LocalStore (the browser's localStorage on the web), read across
+ * versions and content changes by Core/SaveFormat (docs/saves.md).
  */
 export interface SaveSlots {
   /** The title's picker is up (Play was pressed). */

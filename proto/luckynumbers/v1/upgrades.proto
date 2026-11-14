@@ -58,6 +58,9 @@ message ShipUpgrade {
   // Per level, multiplies the ship's shield and armour in space combat (content/dogfight.txtpb).
   float shield = 19;
   float armor = 20;
+  // Ids it went by before (a rename): a save holding one of them gets this. Never reuse a shipped id
+  // (content/shipped_ids.json, kept by `ln.py gen`).
+  repeated string old_ids = 21;
 }
 
 // The outfitter while it's open (mirrored to the page). Each item is

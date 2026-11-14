@@ -30,6 +30,9 @@ message Universe {
   // Ambient motion on its worlds: motes, wreck embers, cloud shadows, flocks (docs/ambience.md).
   Ambience ambience = 8;
   string ambience_ref = 9 [(ln.ref) = "ambience"];
+  // Ids it went by before (a rename): a save holding one of them gets this. Never reuse a shipped id
+  // (content/shipped_ids.json, kept by `ln.py gen`).
+  repeated string old_ids = 10;
 }
 
 // The universe this run is in: saved with the slot, read by every scene that builds a system (Space, Planet).
